@@ -2,17 +2,6 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Commands
-
-- `npm run dev` — start dev server (Cloudflare workerd runtime, via Astro)
-- `npm run build` — production build (SSR via `@astrojs/cloudflare`)
-- `npm run preview` — preview production build (Cloudflare runtime)
-- `npm run lint` / `npm run lint:fix` — ESLint with type-checked rules
-- `npm run format` — Prettier (includes prettier-plugin-astro + prettier-plugin-tailwindcss)
-- `npm run smoke` — dependency-free auth-flow smoke test (`scripts/smoke.mjs`) against a running server, `BASE_URL` env (default `http://localhost:4321`). Run after dependency upgrades; it's a sanity check for the starter itself, not a substitute for a real test suite.
-
-Pre-commit hooks (husky + lint-staged) run `eslint --fix` on `*.{ts,tsx,astro}` and `prettier --write` on `*.{json,css,md}`. No test runner is configured — `npm run smoke` plus lint/build is the current automated check.
-
 ## Architecture
 
 Astro 7 SSR app (`output: "server"` in `astro.config.mjs`) with React 19 islands, Tailwind 4, Supabase auth, and shadcn/ui, deployed to Cloudflare Workers. API routes must export `const prerender = false`.
@@ -34,14 +23,15 @@ Astro 7 SSR app (`output: "server"` in `astro.config.mjs`) with React 19 islands
 - Services/helpers go in `src/lib/`; shared types (entities, DTOs) belong in `src/types.ts` (not yet created).
 - Supabase migrations, once added, go in `supabase/migrations/` named `YYYYMMDDHHmmss_short_description.sql`, with RLS enabled and granular per-operation/per-role policies on every new table. No custom tables/migrations exist yet — the app currently relies only on Supabase Auth's built-in `auth.users`.
 
+## Commands
+
+`npm run {dev,build,preview,lint,lint:fix,format,smoke}` — see `@README.md` (Available Scripts, Smoke test) for what each does and when to run it.
+
+Pre-commit hooks (husky + lint-staged) run `eslint --fix` on `*.{ts,tsx,astro}` and `prettier --write` on `*.{json,css,md}`. No test runner beyond `npm run smoke` plus lint/build.
+
 ## Environment
 
-- Node.js v22.14.0 (`.nvmrc`).
-- `SUPABASE_URL` / `SUPABASE_KEY`: copy `.env.example` to `.env` (Node/Supabase CLI) and to `.dev.vars` (Cloudflare local dev, gitignored).
-- Local Supabase stack: `npx supabase start` (requires Docker); Studio UI at `http://localhost:54323`.
-- Deploy: `npx wrangler deploy` (secrets via Cloudflare dashboard or `npx wrangler secret put`).
-
-CI (`.github/workflows/ci.yml`, on push/PR to `master`) runs two jobs: `ci` (lint, `astro check`, build — needs `SUPABASE_URL`/`SUPABASE_KEY` repo secrets) and `smoke` (starts local Supabase via its CLI, builds, serves the Cloudflare preview, runs `npm run smoke` against it — no secrets needed).
+Node.js v22.14.0 (`.nvmrc`). Local Supabase/env-var setup, deployment, and CI jobs are documented in `@README.md` (Supabase Configuration, Deployment, CI) — don't duplicate that here.
 
 <!-- BEGIN @przeprogramowani/10x-cli -->
 
