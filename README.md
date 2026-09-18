@@ -151,21 +151,31 @@ Route protection is handled in `src/middleware.ts`. Add paths to the `PROTECTED_
 
 ## Deployment
 
-This project deploys to [Cloudflare Workers](https://workers.cloudflare.com/).
+This project deploys to [Cloudflare Workers](https://workers.cloudflare.com/). Deploys are a deliberate, manual action — there is no CI job that deploys on push/merge; `.github/workflows/ci.yml` only lints, type-checks, builds, and runs the smoke test.
 
-1. Build the project:
-
-```bash
-npm run build
-```
-
-2. Deploy with Wrangler:
+1. Set `SUPABASE_URL` and `SUPABASE_KEY` as Worker secrets (one-time, or whenever they change):
 
 ```bash
-npx wrangler deploy
+npx wrangler secret put SUPABASE_URL
+npx wrangler secret put SUPABASE_KEY
 ```
 
-Set `SUPABASE_URL` and `SUPABASE_KEY` as secrets in your Cloudflare dashboard or via `npx wrangler secret put`.
+2. Build and deploy:
+
+```bash
+npm run build && npx wrangler deploy
+```
+
+First deploy on a fresh Cloudflare account also needs a one-time `workers.dev` subdomain registered for the account — if `wrangler deploy` fails with "could not automatically register ... as your workers.dev subdomain", enable it from the Worker's **Domains** tab in the Cloudflare dashboard (Workers & Pages → your Worker → Domains → enable the `workers.dev` route), then re-run the deploy.
+
+### Rollback
+
+```bash
+npx wrangler deployments list   # see deployment history and version IDs
+npx wrangler rollback [version-id]   # reverts to the given version, or the prior one if omitted
+```
+
+`wrangler rollback` prompts for a message and a confirmation; both fall back to sane defaults in a non-interactive shell. Rollback only affects the Worker's code/version — it does not touch Supabase (managed separately) or any bound resources.
 
 ## Smoke test
 

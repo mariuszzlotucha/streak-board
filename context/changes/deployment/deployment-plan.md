@@ -2,7 +2,7 @@
 project: streak-board
 based_on: context/foundation/infrastructure.md
 platform: Cloudflare Workers
-status: in_progress
+status: phases_0-4_done_pending_auth_smoke_test
 last_updated: 2026-09-18
 ---
 
@@ -91,21 +91,23 @@ Still outstanding from this phase (not yet done — needs a real, non-local Supa
 
 ## Phase 3 — Rollback drill
 
-**Status: ⏳ Not started (depends on Phase 2)**
+**Status: ✅ Done (2026-09-18)**
 
-- [ ] Make a trivial, obviously-visible change (comment or text tweak), deploy it, confirm it's live.
-- [ ] `npx wrangler deployments list` to see both deployments, then `npx wrangler rollback` to revert to the prior one.
-- [ ] Confirm the rollback took effect in the browser, then redeploy the real `master` state.
+Used two already-live, visually distinct deploys (ad hoc background-color changes) as the drill's before/after instead of a synthetic change:
+- [x] `npx wrangler deployments list` — reviewed full deployment history, identified current (`609006fb`, hero-section red) and prior (`62719a11`, global-background red only) version IDs.
+- [x] `npx wrangler rollback 62719a11-...` — succeeded (non-interactive prompts auto-answered: default rollback message, confirmed "yes" to deploy to 100% of traffic).
+- [x] Confirmed rollback effect via curl: hero-section `bg-red-600` class gone from HTML, global `--background` CSS var still red (matches the rolled-back-to version exactly) — proves rollback restores the *exact* prior version, not just "some" prior state.
+- [x] Redeployed current working-tree state (`npm run build && npx wrangler deploy`) to restore the hero-section change — confirmed `bg-red-600` back in the live HTML.
 
-Turns "rollback works in theory" into a proven, once-rehearsed step before you need it under pressure.
+Turns "rollback works in theory" into a proven, once-rehearsed step before you need it under pressure. **Note:** `wrangler rollback` prompts interactively (rollback message, confirm-to-100%) — in a non-interactive/scripted context it falls back to defaults ("Rollback" message, "yes" to confirm) rather than failing, which is convenient but means a scripted rollback can't be silently declined — know this before wiring it into anything automated.
 
 ## Phase 4 — Documentation
 
-**Status: ⏳ Not started (depends on Phase 2/3)**
+**Status: ✅ Done (2026-09-18)**
 
-- [ ] Update `README.md`'s Deployment section: confirm the manual deploy flow (`npm run build && npx wrangler deploy`), and note that deploys are a deliberate human action (no CI automation).
-- [ ] Add a "Rollback" subsection to `README.md` pointing at `npx wrangler rollback` / `npx wrangler deployments list`.
-- [ ] Note that `context/foundation/infrastructure.md`'s "Getting Started" step 2 (`session: false`-on-adapter phrasing) is superseded by this file's Phase 1 — leave `infrastructure.md` itself untouched (research output, not a living runbook).
+- [x] Updated `README.md`'s Deployment section: secrets-first ordering, explicit "deploys are manual, CI does not deploy" statement, and the discovered `workers.dev` subdomain first-deploy edge case with its fix.
+- [x] Added a "Rollback" subsection to `README.md` (`wrangler rollback` / `wrangler deployments list`, non-interactive default-prompt behavior noted).
+- [x] `context/foundation/infrastructure.md` intentionally left untouched (research output, not a living runbook) — this file and the README are now the accurate operational references; the `session: false`-on-adapter phrasing there is known-superseded by Phase 1 above.
 
 ## Verification checklist (end-to-end, once unblocked)
 
