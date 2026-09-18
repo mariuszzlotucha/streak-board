@@ -12,12 +12,14 @@ Deployment runbook for streak-board, derived from `context/foundation/infrastruc
 
 This file is a living checklist, not a one-time research artifact — update the checkboxes and "Discovered issues" as phases complete or new edge cases surface.
 
-## Starting state (verified 2026-09-18)
+## Phase 0 — Pre-flight verification
 
-- `npx wrangler deployments list` → `This Worker does not exist on your account` (error 10007) — nothing deployed yet.
-- `npx wrangler kv namespace list` → `[]` — no KV namespaces provisioned.
-- `npx wrangler whoami` → authenticated as `mariusz.zlotucha@gmail.com`, account ID `cef23e668d98bfbd15b2253f243c5556`.
-- Repo already has `@astrojs/cloudflare@^14.3.1` and a Workers-with-static-assets `wrangler.jsonc` (not Cloudflare Pages — the adapter dropped Pages support; don't follow Pages-era tutorials or `_worker.js`/`functions/`-directory instructions).
+**Status: ✅ Done, re-verified 2026-09-18 (see update below — state changed since first check)**
+
+- [x] `npx wrangler whoami` → authenticated as `mariusz.zlotucha@gmail.com`, account ID `cef23e668d98bfbd15b2253f243c5556`.
+- [x] Repo already has `@astrojs/cloudflare@^14.3.1` and a Workers-with-static-assets `wrangler.jsonc` (not Cloudflare Pages — the adapter dropped Pages support; don't follow Pages-era tutorials or `_worker.js`/`functions/`-directory instructions).
+- [x] `npx wrangler kv namespace list` → `[]` — no KV namespaces provisioned (still true after Phase 2's secret-put below — confirms Phase 1's fix holds).
+- [x] `npx wrangler deployments list` — **initially** `This Worker does not exist on your account` (error 10007, first check). **Update:** running `wrangler secret put` in Phase 2 caused wrangler to auto-create a stub Worker (an empty "Upload" deployment + two "Secret Change" deployments, timestamps ~13:22–13:23 UTC 2026-09-18) purely to hold the secrets — no real code has been deployed yet. Don't mistake this stub's existence for a completed deploy.
 
 ---
 
@@ -44,25 +46,24 @@ session: false,
 - [x] `grep -r kv_namespaces dist/` — `dist/server/wrangler.json` now shows `"kv_namespaces":[]`.
 
 **Remaining:**
-- [ ] Commit `astro.config.mjs` (holding until you review/request the commit — not done automatically).
+- [x] Commit `astro.config.mjs` — done, commit `760f4fa`.
 - [ ] If a future feature genuinely needs Astro's session API (flash messages, CSRF nonces) alongside Supabase auth, don't silently flip this back — re-open the decision explicitly and log it via `/10x-lesson`.
 
 ## Phase 2 — Manual first deploy
 
-**Status: ⚠️ Blocked — discovered issue below**
+**Status: ✅ Done (2026-09-18)** — deployed and verified at the route level; full browser auth smoke test still outstanding (needs a real Supabase project).
 
-- [ ] Set production secrets (**you run these yourself**, not through this session — `wrangler secret put` reads a real credential from stdin and shouldn't pass through a chat transcript):
+- [x] Set production secrets — done by you directly (not through this session, by design: `wrangler secret put` reads a real credential from stdin and shouldn't pass through a chat transcript).
   ```
   npx wrangler secret put SUPABASE_URL
   npx wrangler secret put SUPABASE_KEY
   ```
-  Use your **production** Supabase project's URL and anon/public key (Supabase dashboard → Project Settings → API) — not the `.env` file's `http://127.0.0.1:54321` local-dev values.
-- [ ] Confirm: `npx wrangler secret list` (shows names only, never values).
-- [ ] Build and deploy: `npm run build && npx wrangler deploy`.
-- [ ] Note the resulting `*.workers.dev` URL from the deploy output.
-- [ ] Tail logs while exercising the app: `npx wrangler tail` in one terminal, then in a browser hit sign-up, sign-in, and the `/dashboard` check-off flow against the deployed URL.
+- [x] Confirm: `npx wrangler secret list` → both `SUPABASE_KEY` and `SUPABASE_URL` present (`secret_text` type, values never shown).
+- [x] Build and deploy: `npm run build && npx wrangler deploy` — succeeded, version `0ed45ab6-d20e-466b-9bcb-1dbddad831fc`.
+- [x] Live URL: `https://10x-astro-starter.mariusz-zlotucha.workers.dev`
+- [ ] Full browser smoke test (sign-up, sign-in, `/dashboard` check-off) — route-level checks only so far (`/` 200, `/auth/signin` 200, `/dashboard` unauth 302).
 
-### Discovered issue: account has no `workers.dev` subdomain registered
+### Blocking issue: account has no `workers.dev` subdomain registered
 
 Attempted `npx wrangler deploy` on 2026-09-18 and hit:
 ```
@@ -72,9 +73,16 @@ Attempted `npx wrangler deploy` on 2026-09-18 and hit:
 ```
 This account has never had a `workers.dev` subdomain claimed. This is a **one-time, account-level, human decision** (you're picking a public, permanent subdomain prefix — e.g. `<something>.workers.dev` — that every Worker on the account will be reachable under) and there's no CLI command for it in this wrangler version (`wrangler --help` lists no `subdomain` command).
 
-**Extra support step:**
-- [ ] Open the dashboard link above and register a `workers.dev` subdomain for the account.
-- [ ] Re-run `npx wrangler deploy` afterward — the Worker name (`10x-astro-starter`, from `wrangler.jsonc`) itself was not the problem; the account-level subdomain was.
+**Resolved 2026-09-18:** instead of the account-level onboarding link, the subdomain was registered per-Worker via the dashboard's **Domains** tab for `10x-astro-starter` (Workers & Pages → 10x-astro-starter → Domains → toggled on `10x-astro-starter.mariusz-zlotucha.workers.dev`). Verified reachable: `curl https://10x-astro-starter.mariusz-zlotucha.workers.dev/` → `HTTP 500` (expected — only the empty stub Worker from `wrangler secret put` is live, not the real app; the 500 confirms the URL itself now resolves instead of erroring on "subdomain unavailable").
+
+- [x] `workers.dev` subdomain registered and Worker URL reachable: `https://10x-astro-starter.mariusz-zlotucha.workers.dev`
+- [x] Ran `npm run build && npx wrangler deploy` — succeeded. Version ID `0ed45ab6-d20e-466b-9bcb-1dbddad831fc`, uploaded 8 static assets + 28 server modules.
+- [x] Verified: `/` → 200, `/auth/signin` → 200, `/dashboard` (unauthenticated) → 302 redirect (middleware guard working). `npx wrangler kv namespace list` still `[]` — Phase 1's fix holds under a real deploy.
+
+**Phase 2 complete.** Live app: `https://10x-astro-starter.mariusz-zlotucha.workers.dev`
+
+Still outstanding from this phase (not yet done — needs a real, non-local Supabase project to fully verify):
+- [ ] Full browser sign-up/sign-in/check-off smoke test against the live URL (only route-level HTTP checks done so far, not actual Supabase auth flow).
 
 **Other edge cases / extra support steps for this phase:**
 - **`astro:env/server` resolves to `undefined` in production** (real upstream issue, withastro/astro#16790, open as of Sept 2026): if `wrangler tail` shows `createClient` returning `null` (sign-in silently no-ops) even though `wrangler secret list` shows both secrets set, the workaround is to read the Worker's native `env` directly instead of trusting `astro:env/server` — import `env` from `cloudflare:workers` inside `src/lib/supabase.ts`'s Cloudflare code path as a fallback. Only apply this if the tail/browser check actually shows the failure — don't patch preemptively.
