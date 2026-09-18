@@ -14,6 +14,9 @@ export default defineConfig({
     plugins: [tailwindcss()],
   },
   adapter: cloudflare(),
+  // Supabase cookies (src/lib/supabase.ts) are the single session source of truth —
+  // without this, the Cloudflare adapter auto-provisions a second, unused KV session store.
+  session: false,
   env: {
     schema: {
       SUPABASE_URL: envField.string({ context: "server", access: "secret", optional: true }),
