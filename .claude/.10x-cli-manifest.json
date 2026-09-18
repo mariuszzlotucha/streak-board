@@ -2,8 +2,8 @@
   "package": "@przeprogramowani/10x-cli",
   "version": "1.22.0",
   "manifestVersion": 3,
-  "lastApplied": "2026-09-18T09:46:25.106Z",
-  "lessonId": "m1l5",
+  "lastApplied": "2026-09-18T12:10:09.391Z",
+  "lessonId": "m1l4",
   "course": "10xdevs4",
   "tool": "claude-code",
   "files": {
@@ -176,7 +176,7 @@
   },
   "lessons": {
     "m1l1": {
-      "appliedAt": "2026-09-14T18:20:27.635Z",
+      "appliedAt": "2026-09-18T12:09:43.756Z",
       "skills": {
         "10x-idea-check": {
           "files": [
@@ -216,7 +216,7 @@
       "installedManifestHash": "1ec3800cfa5c5d37754debba7e9172f32e71330ee1a29531d6ec8fff1c4bfaaa"
     },
     "m1l2": {
-      "appliedAt": "2026-09-14T21:15:04.502Z",
+      "appliedAt": "2026-09-18T12:09:50.183Z",
       "skills": {
         "10x-idea-check": {
           "files": [
@@ -280,7 +280,7 @@
       "installedManifestHash": "1ec3800cfa5c5d37754debba7e9172f32e71330ee1a29531d6ec8fff1c4bfaaa"
     },
     "m1l3": {
-      "appliedAt": "2026-09-16T12:11:01.130Z",
+      "appliedAt": "2026-09-18T12:10:03.761Z",
       "skills": {
         "10x-idea-check": {
           "files": [
@@ -362,7 +362,7 @@
       "installedManifestHash": "1ec3800cfa5c5d37754debba7e9172f32e71330ee1a29531d6ec8fff1c4bfaaa"
     },
     "m1l4": {
-      "appliedAt": "2026-09-17T20:14:13.743Z",
+      "appliedAt": "2026-09-18T12:10:09.391Z",
       "skills": {
         "10x-idea-check": {
           "files": [
@@ -556,12 +556,6 @@
         "m1l5-4-store-plan.md"
       ],
       "configs": [],
-      "representation": {
-        "lang": "pl",
-        "tool": "claude-code",
-        "courseRules": true,
-        "rules": true
-      },
       "installedReleaseId": "r-01931641e2446d2c391ae2a5580585d7b137173dca2b63b9a85ed32388155a66",
       "installedManifestHash": "1ec3800cfa5c5d37754debba7e9172f32e71330ee1a29531d6ec8fff1c4bfaaa"
     }
@@ -570,6 +564,6 @@
     "path": "CLAUDE.md",
     "begin": "<!-- BEGIN @przeprogramowani/10x-cli -->",
     "end": "<!-- END @przeprogramowani/10x-cli -->",
-    "upstreamHash": "48f585efd2acf0bf7ebfb6d282f19e222715b0903654f90009e270610614feb2"
+    "upstreamHash": "2b57a5cda11e85fc1a87390ff8f1f32a226949ac96d5f0403ec3a0f7620be3b3"
   }
 }
