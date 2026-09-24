@@ -149,6 +149,16 @@ Users can then sign in immediately after sign-up without clicking a confirmation
 
 Route protection is handled in `src/middleware.ts`. Add paths to the `PROTECTED_ROUTES` array there to require authentication.
 
+### RLS scenario checks
+
+`supabase/checks/rls-scenarios.sql` asserts the row-level security rules of `groups` and `group_members` (visibility, joining via `join_group`, leaving, column privileges) and exits non-zero on the first regression. Run it after every migration that touches group RLS, with the local stack running:
+
+```bash
+docker exec -i supabase_db_10x-astro-starter psql -U postgres -d postgres -X -v ON_ERROR_STOP=1 < supabase/checks/rls-scenarios.sql
+```
+
+It only works against the local database (the container name comes from `project_id` in `supabase/config.toml`) and always ends with a rollback, so it leaves no data behind.
+
 ## Deployment
 
 This project deploys to [Cloudflare Workers](https://workers.cloudflare.com/). Deploys are a deliberate, manual action — there is no CI job that deploys on push/merge; `.github/workflows/ci.yml` only lints, type-checks, builds, and runs the smoke test.

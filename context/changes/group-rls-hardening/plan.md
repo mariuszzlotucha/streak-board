@@ -210,23 +210,23 @@ N/A — brak test runnera w repo poza lint/build/smoke; logika RLS jest w SQL i 
 
 #### Automated
 
-- [x] 1.1 Obie migracje stosują się od zera bez błędów (`npx supabase db reset`)
-- [x] 1.2 Typy Supabase generują się i zawierają `join_group` (`npx supabase gen types typescript --local > src/types.ts && npx prettier --write src/types.ts && grep -q join_group src/types.ts`)
-- [x] 1.3 Lint przechodzi (`npm run lint`)
-- [x] 1.4 Build przechodzi (`npm run build`)
+- [x] 1.1 Obie migracje stosują się od zera bez błędów (`npx supabase db reset`) — 0bcef72
+- [x] 1.2 Typy Supabase generują się i zawierają `join_group` (`npx supabase gen types typescript --local > src/types.ts && npx prettier --write src/types.ts && grep -q join_group src/types.ts`) — 0bcef72
+- [x] 1.3 Lint przechodzi (`npm run lint`) — 0bcef72
+- [x] 1.4 Build przechodzi (`npm run build`) — 0bcef72
 
 #### Manual
 
-- [x] 1.5 Szybka kontrola: `join_group` (dobry/zły kod), bezpośredni INSERT odrzucony, właściciel nie usuwa własnego członkostwa
+- [x] 1.5 Szybka kontrola: `join_group` (dobry/zły kod), bezpośredni INSERT odrzucony, właściciel nie usuwa własnego członkostwa — 0bcef72
 
 ### Phase 2: Skrypt scenariuszy RLS
 
 #### Automated
 
-- [ ] 2.1 Skrypt scenariuszy przechodzi na pełnym schemacie (kod wyjścia 0)
-- [ ] 2.2 Skrypt kończy się kodem ≠ 0 po odtworzeniu starej polityki INSERT na `group_members` (celowana mutacja), a po `db reset` przechodzi z kodem 0
-- [ ] 2.3 README jest sformatowane (`npx prettier --check README.md`)
+- [x] 2.1 Skrypt scenariuszy przechodzi na pełnym schemacie (kod wyjścia 0)
+- [x] 2.2 Skrypt kończy się kodem ≠ 0 po odtworzeniu starej polityki INSERT na `group_members` (celowana mutacja), a po `db reset` przechodzi z kodem 0
+- [x] 2.3 README jest sformatowane (`npx prettier --check README.md`)
 
 #### Manual
 
-- [ ] 2.4 Każdy z punktów #1–#8 z review ma co najmniej jedną asercję w skrypcie, a wynik wypisuje linie PASS
+- [x] 2.4 Każdy z punktów #1–#8 z review ma co najmniej jedną asercję w skrypcie, a wynik wypisuje linie PASS
