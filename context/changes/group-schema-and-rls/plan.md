@@ -157,17 +157,17 @@ N/A — z tego samego powodu.
 
 #### Automated
 
-- [x] 1.1 Migracja stosuje się bez błędów lokalnie (`npx supabase db reset`)
-- [x] 1.2 Typy Supabase generują się bez błędów (`npx supabase gen types typescript --local > src/types.ts && npx prettier --write src/types.ts`)
-- [x] 1.3 Lint przechodzi (`npm run lint`)
-- [x] 1.4 Build przechodzi (`npm run build`)
+- [x] 1.1 Migracja stosuje się bez błędów lokalnie (`npx supabase db reset`) — 9efb772
+- [x] 1.2 Typy Supabase generują się bez błędów (`npx supabase gen types typescript --local > src/types.ts && npx prettier --write src/types.ts`) — 9efb772
+- [x] 1.3 Lint przechodzi (`npm run lint`) — 9efb772
+- [x] 1.4 Build przechodzi (`npm run build`) — 9efb772
 
 #### Manual
 
-- [x] 1.5 Izolacja widoczności: User A nie widzi Grupy B ani jej członków
-- [x] 1.6 Auto-dołączenie właściciela do `group_members` przy tworzeniu grupy potwierdzone
-- [x] 1.7 `INSERT ... RETURNING` na `groups` jako twórca działa bez błędu RLS
-- [x] 1.8 Próba utworzenia drugiej grupy przez tego samego użytkownika kończy się błędem
-- [x] 1.9 User C dołącza do Grupy A przez insert; User A (już w grupie) nie może dołączyć do Grupy B
-- [x] 1.10 Twórca grupy może usunąć wiersz członkostwa innego użytkownika; nie-twórca nie może usunąć żadnego wiersza w cudzej grupie
-- [x] 1.11 Tylko twórca grupy może zaktualizować lub usunąć samą grupę
+- [x] 1.5 Izolacja widoczności: User A nie widzi Grupy B ani jej członków — 9efb772
+- [x] 1.6 Auto-dołączenie właściciela do `group_members` przy tworzeniu grupy potwierdzone — 9efb772
+- [x] 1.7 `INSERT ... RETURNING` na `groups` jako twórca działa bez błędu RLS — 9efb772
+- [x] 1.8 Próba utworzenia drugiej grupy przez tego samego użytkownika kończy się błędem — 9efb772
+- [x] 1.9 User C dołącza do Grupy A przez insert; User A (już w grupie) nie może dołączyć do Grupy B — 9efb772
+- [x] 1.10 Twórca grupy może usunąć wiersz członkostwa innego użytkownika; nie-twórca nie może usunąć żadnego wiersza w cudzej grupie — 9efb772
+- [x] 1.11 Tylko twórca grupy może zaktualizować lub usunąć samą grupę — 9efb772
