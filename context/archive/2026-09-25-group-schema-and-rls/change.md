@@ -1,10 +1,10 @@
 ---
 change_id: group-schema-and-rls
 title: Schemat grup i RLS dla widoczności per-grupa
-status: implemented
+status: archived
 created: 2026-09-25
 updated: 2026-09-25
-archived_at: null
+archived_at: 2026-09-24T22:53:41Z
 ---
 
 ## Notes
