@@ -1,10 +1,10 @@
 ---
 change_id: group-rls-hardening
 title: Group rls hardening
-status: impl_reviewed
+status: archived
 created: 2026-09-25
 updated: 2026-09-25
-archived_at: null
+archived_at: 2026-09-24T23:37:31Z
 ---
 
 ## Notes
