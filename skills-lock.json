@@ -1,17 +1,4 @@
 {
   "version": 1,
-  "skills": {
-    "design-mobile-apps": {
-      "source": "designed-by-ai/skills",
-      "sourceType": "github",
-      "skillPath": "skills/design-mobile-apps/SKILL.md",
-      "computedHash": "52c6844cc9284ea07aa0346adc67c64756475e2e29f1233d3a0dc66dba45bdcc"
-    },
-    "reddit-automation": {
-      "source": "flowkit-labs/skills",
-      "sourceType": "github",
-      "skillPath": "reddit-automation/SKILL.md",
-      "computedHash": "b9541be8aa1d4b0fa2e91730bc93e810c02bfb639aa951ad9a1a7612e4666c02"
-    }
-  }
+  "skills": {}
 }
