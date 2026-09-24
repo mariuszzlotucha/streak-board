@@ -31,3 +31,4 @@ pnpm-debug.log*
 .github/**/10x-*
 .agents/**/10x-*
 .claude/prompts/m*
+.notes

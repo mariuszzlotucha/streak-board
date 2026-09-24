@@ -3,7 +3,7 @@ project: "StreakBoard"
 version: 1
 status: draft
 created: 2026-09-24
-updated: 2026-09-24
+updated: 2026-09-25
 prd_version: 1
 main_goal: market-feedback
 top_blocker: time
@@ -41,7 +41,7 @@ Grono znajomych korzystało wcześniej ze wspólnego arkusza Google, w którym r
 
 | ID   | Change ID                 | Outcome (user can …)                                                  | Prerequisites | PRD refs                              | Status   |
 | ---- | -------------------------- | ------------------------------------------------------------------------ | -------------- | ---------------------------------------- | -------- |
-| F-01 | group-schema-and-rls       | (foundation) schemat grup/członkostwa + RLS wg guardrail widoczności     | —              | Access Control, Guardrail                | ready    |
+| F-01 | group-schema-and-rls       | (foundation) schemat grup/członkostwa + RLS wg guardrail widoczności     | —              | Access Control, Guardrail                | in-progress |
 | S-01 | group-create-join-manage   | założyć/dołączyć do grupy przez link/kod; jako twórca zarządzać grupą     | F-01           | FR-001, FR-002, FR-003                   | proposed |
 | S-02 | task-create-and-manage     | utworzyć task w grupie; jako twórca edytować/usunąć swój task            | S-01           | FR-004, FR-005                           | proposed |
 | S-03 | task-join-and-leave        | dołączyć do tasku innego członka i wypisać się z niego                   | S-02           | FR-006, FR-007                           | proposed |
@@ -72,7 +72,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Błąd w RLS na tym etapie po cichu łamie guardrail (wyciek widoczności między grupami) dla każdego kolejnego wycinka — warto to domknąć, zanim jakakolwiek praca pionowa na tym wyląduje.
-- **Status:** ready
+- **Status:** in-progress
 
 ## Slices
 
