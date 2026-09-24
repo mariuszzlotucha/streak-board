@@ -86,7 +86,7 @@ grant execute on function public.join_group (text) to authenticated;
 -- ---------------------------------------------------------------------------
 
 alter table public.groups
-  add constraint groups_name_length check (char_length(btrim(name)) between 1 and 80);
+  add constraint groups_name_length check (char_length(btrim(name, E' \t\r\n')) between 1 and 80);
 
 -- Only new groups get 12 characters; existing codes stay valid.
 alter table public.groups
