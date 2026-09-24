@@ -81,6 +81,7 @@ Jedna nowa migracja domykająca #1–#8 z review oraz odświeżony `src/types.ts
   - `public.join_group(p_join_code text) returns uuid` — `security definer`, `set search_path = ''`; znajduje `groups.id` po `join_code` (dokładne porównanie), przy braku dopasowania `raise exception 'invalid join code' using errcode = 'P0002'`; wstawia `(group_id, (select auth.uid()))` do `group_members`; zwraca `group_id`. Naruszenie `UNIQUE(user_id)` (użytkownik już w grupie) propaguje się jako `23505`. `revoke execute ... from public, anon`, `grant execute ... to authenticated`.
 - `groups`:
   - `check (char_length(btrim(name)) between 1 and 80)` (nazwa `groups_name_length`).
+  - **Addendum (po `/10x-impl-review` fazy 1, F1):** zaimplementowany warunek to `char_length(btrim(name, E' \t\r\n')) between 1 and 80` — domyślny `btrim` obcina tylko spacje i przepuszczał nazwy z samych tabulatorów/nowych linii. Zob. `reviews/impl-review-phase-1.md`, commit `a548bdb`.
   - Domyślny `join_code`: `substr(replace(gen_random_uuid()::text, '-', ''), 1, 12)`; istniejące wiersze bez zmian.
   - Uprawnienia kolumnowe: INSERT tylko `(owner_id, name)`, UPDATE tylko `(name)` (patrz Critical Implementation Details).
 - Polityki (wszystkie `to authenticated`, `auth.uid()` zawsze jako `(select auth.uid())`):
