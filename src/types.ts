@@ -86,10 +86,8 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      is_group_member: {
-        Args: { p_group_id: string; p_user_id: string };
-        Returns: boolean;
-      };
+      is_group_member: { Args: { p_group_id: string }; Returns: boolean };
+      join_group: { Args: { p_join_code: string }; Returns: string };
     };
     Enums: {
       [_ in never]: never;
