@@ -223,10 +223,10 @@ N/A — brak test runnera w repo poza lint/build/smoke; logika RLS jest w SQL i 
 
 #### Automated
 
-- [x] 2.1 Skrypt scenariuszy przechodzi na pełnym schemacie (kod wyjścia 0)
-- [x] 2.2 Skrypt kończy się kodem ≠ 0 po odtworzeniu starej polityki INSERT na `group_members` (celowana mutacja), a po `db reset` przechodzi z kodem 0
-- [x] 2.3 README jest sformatowane (`npx prettier --check README.md`)
+- [x] 2.1 Skrypt scenariuszy przechodzi na pełnym schemacie (kod wyjścia 0) — a2d9553
+- [x] 2.2 Skrypt kończy się kodem ≠ 0 po odtworzeniu starej polityki INSERT na `group_members` (celowana mutacja), a po `db reset` przechodzi z kodem 0 — a2d9553
+- [x] 2.3 README jest sformatowane (`npx prettier --check README.md`) — a2d9553
 
 #### Manual
 
-- [x] 2.4 Każdy z punktów #1–#8 z review ma co najmniej jedną asercję w skrypcie, a wynik wypisuje linie PASS
+- [x] 2.4 Każdy z punktów #1–#8 z review ma co najmniej jedną asercję w skrypcie, a wynik wypisuje linie PASS — a2d9553
