@@ -365,6 +365,15 @@ Brak danych do migracji. Zmiana wyglądu `Button` (pigułka, zielony `primary`) 
 - Kontrakt punktu wejścia: `src/middleware.ts:4-22`, `src/pages/api/auth/signin.ts:4-20`, `src/pages/auth/signin.astro:5-14`
 - Bramka smoke: `scripts/smoke.mjs`
 
+## Addendum (po fazie 1, 2026-09-25)
+
+Zmiany poza planem, wykonane na wyraźną prośbę użytkownika i zapisane w commicie fazy 1 (`ccffaf4`):
+
+- `src/components/Welcome.astro:21` — usunięto `bg-red-600` z hero landingu. To zmienia wykluczenie z „What We're NOT Doing" („Czerwone hero (`Welcome.astro:21`) też"): czerwone tło znika, reszta `Welcome.astro` pozostaje na literałach cosmic.
+- `context/foundation/lessons.md` — nowy plik z regułą „Write commit messages in English only" (dotyczy wszystkich commitów tej zmiany).
+
+Źródło: `context/changes/ui-styles-audit/reviews/impl-review-phase-1.md` (F1).
+
 ## Progress
 
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles. See `references/progress-format.md`.
@@ -373,31 +382,31 @@ Brak danych do migracji. Zmiana wyglądu `Button` (pigułka, zielony `primary`) 
 
 #### Automated
 
-- [x] 1.1 Build przechodzi z nowym `global.css` i zależnościami: `npm run build`
-- [x] 1.2 Lint przechodzi: `npm run lint`
-- [x] 1.3 Źródło wartości jest w repo: `test -f context/changes/ui-styles-audit/tokens-source/preset-b7Br7G9Kq.global.css`
-- [x] 1.4 `--background` nie jest już czerwone: `grep -n -- '--background: oklch(1 0 0)' src/styles/global.css`
-- [x] 1.5 `bg-cosmic` zachowane: `grep -n 'utility bg-cosmic' src/styles/global.css`
+- [x] 1.1 Build przechodzi z nowym `global.css` i zależnościami: `npm run build` — ccffaf4
+- [x] 1.2 Lint przechodzi: `npm run lint` — ccffaf4
+- [x] 1.3 Źródło wartości jest w repo: `test -f context/changes/ui-styles-audit/tokens-source/preset-b7Br7G9Kq.global.css` — ccffaf4
+- [x] 1.4 `--background` nie jest już czerwone: `grep -n -- '--background: oklch(1 0 0)' src/styles/global.css` — ccffaf4
+- [x] 1.5 `bg-cosmic` zachowane: `grep -n 'utility bg-cosmic' src/styles/global.css` — ccffaf4
 
 #### Manual
 
-- [x] 1.6 Zrzuty „przed" (desktop i mobile) istnieją i przedstawiają dotychczasowy signin
-- [x] 1.7 Landing `/`, `/dashboard` i `/auth/signup` renderują się poprawnie po zmianie tokenów
-- [x] 1.8 Font Outfit ładuje się (Network/Computed w DevTools)
+- [x] 1.6 Zrzuty „przed" (desktop i mobile) istnieją i przedstawiają dotychczasowy signin — ccffaf4
+- [x] 1.7 Landing `/`, `/dashboard` i `/auth/signup` renderują się poprawnie po zmianie tokenów — ccffaf4
+- [x] 1.8 Font Outfit ładuje się (Network/Computed w DevTools) — ccffaf4
 
 ### Phase 2: Komponenty maia w repo
 
 #### Automated
 
-- [ ] 2.1 Wszystkie 5 plików istnieje: `ls src/components/ui/{input,label,card,alert,button}.tsx`
-- [ ] 2.2 Brak importów z pakietu `cn`: `! grep -rn 'from "cn"' src`
-- [ ] 2.3 Brak martwej zależności: `! grep -rn '@radix-ui/react-slot' src package.json`
-- [ ] 2.4 Build i lint przechodzą: `npm run build && npm run lint`
+- [x] 2.1 Wszystkie 5 plików istnieje: `ls src/components/ui/{input,label,card,alert,button}.tsx`
+- [x] 2.2 Brak importów z pakietu `cn`: `! grep -rn 'from "cn"' src`
+- [x] 2.3 Brak martwej zależności: `! grep -rn '@radix-ui/react-slot' src package.json`
+- [x] 2.4 Build i lint przechodzą: `npm run build && npm run lint`
 
 #### Manual
 
-- [ ] 2.5 `git diff --stat` pokazuje zmiany wyłącznie w `src/components/ui/`, `package.json` i `package-lock.json`
-- [ ] 2.6 `SubmitButton` nadal się kompiluje i przycisk renderuje się w stylu maia
+- [x] 2.5 `git diff --stat` pokazuje zmiany wyłącznie w `src/components/ui/`, `package.json` i `package-lock.json`
+- [x] 2.6 `SubmitButton` nadal się kompiluje i przycisk renderuje się w stylu maia
 
 ### Phase 3: Widok signin, komponenty auth i wrapper signup
 
