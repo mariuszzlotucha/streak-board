@@ -46,6 +46,7 @@ Grono znajomych korzystało wcześniej ze wspólnego arkusza Google, w którym r
 | S-02 | task-create-and-manage     | utworzyć task w grupie; jako twórca edytować/usunąć swój task            | S-01           | FR-004, FR-005                           | proposed |
 | S-03 | task-join-and-leave        | dołączyć do tasku innego członka i wypisać się z niego                   | S-02           | FR-006, FR-007                           | proposed |
 | S-04 | checkoff-and-leaderboard   | odznaczyć task jako wykonany i od razu zobaczyć tablicę wyników grupy    | S-03           | FR-008, FR-009, US-01, Business Logic    | proposed |
+| S-05 | release-automation-and-auth-hardening | (release) migracje i wydanie produkcyjne są zautomatyzowane, a rejestracja na produkcji działa niezawodnie | S-01 | — (operacyjne; deployment-plan.md Phase 5) | proposed |
 
 ## Baseline
 
@@ -125,6 +126,32 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Risk:** To jest gwiazda przewodnia — jeśli odznaczenie nie jest odczuwalnie natychmiastowe (guardrail) albo tablica wyników nie działa poprawnie, cała hipoteza produktu pozostaje niepotwierdzona mimo ukończenia reszty mapy drogowej.
 - **Status:** proposed
 
+### S-05: Automatyzacja wydań i utwardzenie rejestracji na produkcji
+
+- **Outcome:** (release) migracje Supabase i wydanie aplikacji na produkcję przechodzą w przewidywalnej, zautomatyzowanej kolejności (najpierw schemat, potem kod), a rejestracja nowego użytkownika na produkcji działa bez ręcznych obejść: e-maile potwierdzające wychodzą z własnego SMTP, link potwierdzający loguje użytkownika przez `/auth/callback`, a dokumentacja mówi prawdę o tym, jak wdrażamy.
+- **Change ID:** release-automation-and-auth-hardening
+- **PRD refs:** — (zmiana operacyjna, bez FR; źródło: `context/changes/deployment/deployment-plan.md` Phase 5 „Discovered issues” i lekcje w `context/foundation/lessons.md`)
+- **Prerequisites:** S-01 (aplikacja z migracjami działa na produkcji). Brak zależności technicznych od S-02–S-04; ułożony jako ostatni z decyzji użytkownika (2026-09-25), planować po domknięciu M-1 albo wcześniej, jeśli limit e-maili zablokuje testy.
+- **Parallel with:** S-02, S-03, S-04
+- **Blockers:** —
+- **Unknowns:**
+  - Jak uporządkować kolejność „migracja → deploy”, skoro Workers Builds wdraża `master` automatycznie: (a) job GitHub Actions z `supabase db push` uruchamiany przed deployem i wyłączenie Workers Builds na rzecz deployu z Actions, (b) zostawić Workers Builds i wymusić kolejność ręcznie/checkiem, (c) Supabase Branching (plan Pro) — Owner: user. Block: no — rozstrzyga `/10x-plan`.
+  - Wybór dostawcy własnego SMTP (np. Resend) i domeny nadawcy — Owner: user. Block: no.
+- **Odkryte problemy (wejście do tego wycinka):**
+  1. **Workers Builds wdraża `master` automatycznie** — przeczy zapisom „deploy tylko ręczny” w README, deployment-plan.md i roadmapie; kod wymagający nowego schematu może pójść na produkcję przed migracją.
+  2. **Wymóg Site URL w Supabase** — potwierdzenia e-mail linkują do Site URL projektu (domyślnie `http://localhost:3000`); `site_url` z `supabase/config.toml` dotyczy tylko lokalnego stosu i nie jest wypychane przez `db push`. Ustawiane ręcznie w Dashboard → Authentication → URL Configuration (Site URL + Redirect URLs `…/**`).
+  3. **Limit wysyłki e-maili** — wbudowany SMTP Supabase ma bardzo niski limit; powtarzane rejestracje dają `over_email_send_rate_limit` („Too many attempts. Please try again later.”), a usunięcie użytkownika nie zeruje licznika.
+  4. **Jednorazowe linki potwierdzające** — drugie kliknięcie lub skaner e-mail kończy się `otp_expired`; aplikacja nie ma `/auth/callback`, a `signup.ts` nie ustawia `emailRedirectTo`, więc po potwierdzeniu użytkownik ląduje na `/` niezalogowany.
+  5. **Decyzja o ręcznych migracjach (2026-09-25)** — na razie `supabase db push` uruchamia użytkownik ręcznie; ten wycinek ją przegląda (opcje w Unknowns).
+- **Zakres (zadania):**
+  - Zautomatyzować migracje i wydanie produkcyjne w ustalonej kolejności (patrz Unknowns), łącznie z krokiem „production release” z lekcji w `lessons.md`.
+  - Własny SMTP dla e-maili auth w Supabase (Authentication → SMTP Settings).
+  - `emailRedirectTo` w `signup.ts` + trasa `/auth/callback` wymieniająca kod na sesję (`exchangeCodeForSession`) i przekierowująca do `/dashboard`.
+  - Poprawić zapis „deploy tylko ręczny” w `README.md` (Deployment), we wstępie `deployment-plan.md` i w Baseline/Parked tej roadmapy tak, by opisywał Workers Builds i wybrany przepływ wydań.
+  - Udokumentować wymóg Site URL / Redirect URLs jako krok konfiguracji środowiska produkcyjnego.
+- **Risk:** Automatyzacja `db push` na bazie produkcyjnej bez bramki (np. środowisko `production` z ręczną akceptacją) może zastosować błędną migrację bez nadzoru; zmiana wyzwalacza deployu (Workers Builds → Actions) może na chwilę zostawić produkcję bez wdrożeń.
+- **Status:** proposed
+
 ## Backlog Handoff
 
 | Roadmap ID | Change ID                 | Suggested issue title                                          | Ready for `/10x-plan` | Notes                              |
@@ -134,6 +161,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-02       | task-create-and-manage     | Tworzenie i zarządzanie taskiem w grupie                           | no                      | Czeka na S-01                        |
 | S-03       | task-join-and-leave        | Dołączanie/wypisywanie się z tasku                                 | no                      | Czeka na S-02                        |
 | S-04       | checkoff-and-leaderboard   | Odznaczenie tasku + tablica wyników (streak)                       | no                      | Czeka na S-03; gwiazda przewodnia    |
+| S-05       | release-automation-and-auth-hardening | Automatyczne migracje i wydania, własny SMTP, `/auth/callback`, poprawka dokumentacji deployu | yes | Bez zależności technicznych od S-02–S-04; ostatni z decyzji użytkownika. Run `/10x-plan release-automation-and-auth-hardening` (po `/10x-new`) |
 
 ## Open Roadmap Questions
 
@@ -147,7 +175,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Działanie offline** — Why parked: PRD §Non-Goals; aplikacja wymaga połączenia z internetem na MVP.
 - **Powiadomienia/przypomnienia o niewykonanym tasku** — Why parked: PRD §Success Criteria Secondary; poza pierwszym widocznym przepływem.
 - **Historia/statystyki długoterminowe (wykresy streaków w czasie)** — Why parked: PRD §Success Criteria Secondary.
-- **Automatyczny deploy na merge (CI/CD)** — Why parked: `context/changes/deployment/deployment-plan.md` jawnie wyklucza to z zakresu; deploy pozostaje manualny (`wrangler deploy`) na MVP.
+- ~~**Automatyczny deploy na merge (CI/CD)**~~ — Unparked 2026-09-25: Workers Builds i tak wdraża `master`, a automatyzacja migracji trafiła do S-05 (`release-automation-and-auth-hardening`).
 - **Domena własna / środowisko staging** — Why parked: `context/foundation/infrastructure.md` i deployment-plan.md — poza zakresem.
 - **Observability (logowanie strukturalne, error tracking)** — Why parked: żaden FR must-have tego nie wymaga przy obecnej skali (grono znajomych); rozważyć ponownie, jeśli grupa urośnie (per Risk Register w infrastructure.md).
 
