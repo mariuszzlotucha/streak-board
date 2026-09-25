@@ -4,8 +4,11 @@ import SignInForm from "@/components/auth/SignInForm";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { resolveSignInError } from "@/lib/auth-errors";
+import { takeRememberedEmail } from "@/lib/auth-email";
 
 const error = resolveSignInError(Astro.url.searchParams.get("error"));
+// Always consumed so the cookie never outlives one page view; only shown next to an error.
+const rememberedEmail = takeRememberedEmail(Astro.cookies);
 ---
 
 <Layout title="Sign in">
@@ -15,7 +18,7 @@ const error = resolveSignInError(Astro.url.searchParams.get("error"));
         <h1 class="font-heading text-center text-2xl font-semibold">Sign in</h1>
       </CardHeader>
       <CardContent>
-        <SignInForm serverError={error} client:load />
+        <SignInForm serverError={error} defaultEmail={error ? rememberedEmail : ""} client:load />
       </CardContent>
       <CardFooter className="justify-center text-sm text-muted-foreground">
         Don't have an account?

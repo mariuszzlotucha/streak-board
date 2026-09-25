@@ -5,16 +5,16 @@ import { PasswordToggle } from "@/components/auth/PasswordToggle";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { ServerError } from "@/components/auth/ServerError";
 import { useFormSubmitting } from "@/components/hooks/useFormSubmitting";
-
 import { MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH } from "@/lib/auth-rules";
 
 interface Props {
   serverError?: string | null;
   serverFieldErrors?: { email?: string; password?: string };
+  defaultEmail?: string;
 }
 
-export default function SignUpForm({ serverError, serverFieldErrors }: Props) {
-  const [email, setEmail] = useState("");
+export default function SignUpForm({ serverError, serverFieldErrors, defaultEmail }: Props) {
+  const [email, setEmail] = useState(defaultEmail ?? "");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);

@@ -8,10 +8,11 @@ import { useFormSubmitting } from "@/components/hooks/useFormSubmitting";
 
 interface Props {
   serverError?: string | null;
+  defaultEmail?: string;
 }
 
-export default function SignInForm({ serverError }: Props) {
-  const [email, setEmail] = useState("");
+export default function SignInForm({ serverError, defaultEmail }: Props) {
+  const [email, setEmail] = useState(defaultEmail ?? "");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});

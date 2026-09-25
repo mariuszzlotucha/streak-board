@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@/lib/supabase";
 import { toSignInErrorCode } from "@/lib/auth-errors";
+import { rememberEmail } from "@/lib/auth-email";
 
 export const POST: APIRoute = async (context) => {
   try {
@@ -10,11 +11,13 @@ export const POST: APIRoute = async (context) => {
 
     const supabase = createClient(context.request.headers, context.cookies);
     if (!supabase) {
+      rememberEmail(context.cookies, email);
       return context.redirect("/auth/signin?error=not_configured");
     }
     const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
+      rememberEmail(context.cookies, email);
       return context.redirect(`/auth/signin?error=${toSignInErrorCode(error)}`);
     }
 
