@@ -35,45 +35,36 @@ Node.js v22.14.0 (`.nvmrc`). Local Supabase/env-var setup, deployment, and CI jo
 
 <!-- BEGIN @przeprogramowani/10x-cli -->
 
-## Zestaw narzędzi AI 10xDevs — Moduł 2, Lekcja 3
+## Zestaw narzędzi AI 10xDevs — Moduł 2, Lekcja 5 (interfejs 10xDevs 4.0)
 
-Przejrzyj kod wygenerowany przez AI przed scaleniem, korzystając z **łańcucha przeglądu implementacji**:
+Traktuj zmianę wizualną jako **zmianę 10x z kontraktem systemu projektowego**, a nie rozmowę „zrób to ładnie”:
 
 ```
-/10x-implement -> /10x-impl-review -> triage -> (/10x-lesson | fix | skip | disagree)
+/10x-new -> audit+reference research -> plan (tokens then one view) -> implement -> screenshot gate -> /10x-impl-review
 ```
-
-`/10x-impl-review` jest głównym tematem lekcji. Przegląd jest bramką jakości, a nie poleceniem naprawienia każdego znaleziska.
 
 ### Router zadań — od czego zacząć
 
 | Umiejętność | Użyj jej, gdy |
 | --- | --- |
-| **Przegląd kodu (główny temat lekcji)** | |
-| `/10x-impl-review <change-id>` | Zaimplementowano kod i chcesz przeprowadzić ustrukturyzowany przegląd przed scaleniem. Umiejętność sprawdza zgodność z planem, dyscyplinę zakresu, bezpieczeństwo i jakość, architekturę, spójność wzorców oraz kryteria sukcesu, a następnie przedstawia ustalenia do selekcji. |
-| **Wynik powtarzającej się lekcji** | |
-| `/10x-lesson` | Ustalenie ujawnia powtarzającą się regułę projektu lub wzorzec błędów agenta. Zapisz je w `context/foundation/lessons.md` zamiast traktować je jako jednorazową notatkę. |
+| `/10x-ui` | Widok już się renderuje i wymaga audytu oraz ulepszenia: motyw, zmiana stylu, „ładniejszy interfejs”, tokeny, poprawki wizualne — w aplikacji kursowej lub dowolnym innym stacku. Nie do budowania widoku od podstaw. |
+| `/10x-research` | Zlokalizuj źródło wartości i współdzielone komponenty tego repozytorium, zmapuj, które widoki je odczytują, i wybierz nazwany motyw — nie moodboard. Wynikiem jest lista zarzutów (plik, linia, wpływ na użytkownika). |
+| `/10x-plan` / `/10x-implement` | Ten sam łańcuch co we wcześniejszych lekcjach M2; payloadem jest UI. |
+| `/10x-impl-review` | Przed mergem; nie pomijaj ustaleń wizualnych jako kosmetycznych. |
 
-### Dyscyplina selekcji
+### Kontrakt
 
-- Dotkliwość określa, jak poważne jest ustalenie. Wpływ określa, jak duże znaczenie ma teraz decyzja.
-- Prawidłowe wyniki: napraw teraz, napraw inaczej, pomiń, zaakceptuj jako ryzyko, zapisz jako powtarzającą się regułę (`/10x-lesson`), nie zgódź się.
-- Naprawiaj krytyczne ustalenia. Nie poświęcaj godzin na obserwacje o niskim wpływie tylko dlatego, że agent je znalazł.
-- Świadome pomijanie ustaleń o niskim wpływie jest prawidłowym wynikiem przeglądu, a nie zaniedbaniem.
-- Jeśli nie zgadzasz się z ustaleniem, zapisz dlaczego. Błędne rozumowanie agenta również jest sygnałem.
+- Dwie części, niezależnie od stacku: semantyczne tokeny w jednym źródle oraz importowalne komponenty znajdujące się w repozytorium. Tailwind v4 `@theme` + shadcn to sposób, w jaki realizuje je aplikacja kursowa; przed zaproponowaniem wartości przeczytaj implementację tego repozytorium.
+- Wartości zaczerpnięte z zewnątrz trafiają do repozytorium wraz z linią wskazującą źródło. Nie do historii czatu.
+- Jeden widok + globalne tokeny. Nie rebranding całego MVP. Nie worktree/`/goal`.
+- Trzy kategorie zarzutów: brakujące tokeny, brakujący współdzielony komponent, przypadkowa architektura.
+- Bramka wizualna: kitchen sink renderujący każdy stan, ze zrzutami ekranu; podłącz go do testu screenshotowego tylko wtedy, gdy repozytorium już taki ma. Nie aktualizuj bezrefleksyjnie baseline’ów.
+- Brak systemu projektowego w repozytorium? Zaproponowanie go jest dozwolone — oznaczone jako dodanie zależności, ograniczone do tego, czego wymaga zmiana, i zawsze przegrywające z systemem, który już istnieje.
+- Modele: kieruj według fazy, nie dostawcy. Najsilniejszy dostępny model do audytu, planu i przeglądu; tańszy poziom roboczy do wdrażania zarzutów w pętli; eskaluj tylko wtedy, gdy ten sam zarzut przetrwa dwie rundy. Działa każdy model obsługujący wizję, a żaden pojedynczy model — w tym Fable 5.1 — nie jest wymagany.
 
-### Granice przeglądu
+### Granice lekcji
 
-- Ta lekcja dotyczy przeglądu zaimplementowanego kodu. Nie tworzy planu, nie wykonuje nowych faz ani nie uczy przeglądu CI.
-- Strategia testowania i bramki jakości zostaną wprowadzone w Module 3.
-- Nie używaj `/10x-contract` jako wyniku selekcji w tej lekcji.
-
-### Ścieżki używane przez tę lekcję
-
-- `context/changes/<change-id>/plan.md` — oczekiwany kontrakt implementacji
-- `context/changes/<change-id>/reviews/` — wynik przeglądu
-- `context/foundation/lessons.md` — powtarzające się lekcje
-
-Umiejętności nie mogą zapisywać do `context/archive/`. Zarchiwizowane zmiany są niezmienne; jeśli rozwiązana ścieżka docelowa zaczyna się od `context/archive/`, przerwij z komunikatem: "Ta zmiana jest zarchiwizowana. Zamiast tego otwórz nową zmianę za pomocą `/10x-new`."
+- Nie ucz ponownie Exa/Context7, worktree’ów ani testowania screenshotowego jako kursu testowania.
+- Nie inicjalizuj drugiego systemu projektowego w repozytorium, które już go ma — w tym `shadcn init` w starterze kursowym.
 
 <!-- END @przeprogramowani/10x-cli -->
