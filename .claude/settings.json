@@ -14,7 +14,9 @@
       "Bash(git stash *)",
       "Read",
       "Edit",
-      "Write"
+      "Write",
+      "Bash(curl http://localhost:*)",
+      "Bash(curl -s http://localhost:*)"
     ],
     "ask": [
       "Bash(curl *)",
