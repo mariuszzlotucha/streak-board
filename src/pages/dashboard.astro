@@ -109,6 +109,20 @@ const showMembers = group !== null && !loadFailed;
                   {member.user_id === user?.id && (
                     <span class="rounded-full border px-2 py-0.5 text-xs font-medium text-muted-foreground">You</span>
                   )}
+                  {isOwner && group && member.user_id !== user.id && (
+                    <div class="ml-auto">
+                      <ConfirmAction
+                        client:load
+                        action="/api/groups/remove-member"
+                        fields={{ user_id: member.user_id }}
+                        triggerLabel="Remove"
+                        triggerAriaLabel={`Remove ${member.email ?? "this member"} from the group`}
+                        title="Remove this member?"
+                        description={`${member.email ?? "This member"} will lose access to ${group.name}. They can rejoin later with the invite link.`}
+                        confirmLabel="Remove member"
+                      />
+                    </div>
+                  )}
                 </li>
               ))}
             </ul>
@@ -125,6 +139,29 @@ const showMembers = group !== null && !loadFailed;
           </CardHeader>
           <CardContent>
             <RenameGroupForm client:load name={group.name} />
+          </CardContent>
+        </Card>
+      )}
+
+      {group && isOwner && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <h2 class="font-heading text-xl font-semibold">Delete group</h2>
+            </CardTitle>
+            <CardDescription>
+              Permanently delete this group. Every member loses it and the invite link stops working.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ConfirmAction
+              client:load
+              action="/api/groups/delete"
+              triggerLabel="Delete group"
+              title="Delete this group?"
+              description={`${group.name} will be deleted permanently and all of its members will lose it. This cannot be undone.`}
+              confirmLabel="Delete group"
+            />
           </CardContent>
         </Card>
       )}
