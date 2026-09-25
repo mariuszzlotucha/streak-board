@@ -412,33 +412,33 @@ Zmiany poza planem, wykonane na wyraźną prośbę użytkownika i zapisane w com
 
 #### Automated
 
-- [x] 3.1 Brak klas palety i white/black w zmienianych plikach (grep z planu zwraca puste)
-- [x] 3.2 Brak `useFormStatus`: `! grep -rn 'useFormStatus' src`
-- [x] 3.3 Lint i build przechodzą: `npm run lint && npm run build`
+- [x] 3.1 Brak klas palety i white/black w zmienianych plikach (grep z planu zwraca puste) — 143e995
+- [x] 3.2 Brak `useFormStatus`: `! grep -rn 'useFormStatus' src` — 143e995
+- [x] 3.3 Lint i build przechodzą: `npm run lint && npm run build` — 143e995
 
 #### Manual
 
-- [x] 3.4 `/auth/signin` i `/auth/signup` wyglądają spójnie (desktop i ~390 px)
-- [x] 3.5 Klawisz Tab pokazuje widoczny focus na polach, przełączniku hasła, przycisku i linku
-- [x] 3.6 Długie hasło nie wchodzi pod ikonę oka
-- [x] 3.7 Puste pola + submit: komunikaty przy polach, `aria-invalid` obecne w DevTools
-- [x] 3.8 Przy wolnej sieci przycisk pokazuje „Signing in…" i jest nieaktywny
-- [x] 3.9 Powrót przyciskiem „Wstecz" po nieudanym logowaniu nie zostawia przycisku w stanie „Signing in…"
+- [x] 3.4 `/auth/signin` i `/auth/signup` wyglądają spójnie (desktop i ~390 px) — 143e995
+- [x] 3.5 Klawisz Tab pokazuje widoczny focus na polach, przełączniku hasła, przycisku i linku — 143e995
+- [x] 3.6 Długie hasło nie wchodzi pod ikonę oka — 143e995
+- [x] 3.7 Puste pola + submit: komunikaty przy polach, `aria-invalid` obecne w DevTools — 143e995
+- [x] 3.8 Przy wolnej sieci przycisk pokazuje „Signing in…" i jest nieaktywny — 143e995
+- [x] 3.9 Powrót przyciskiem „Wstecz" po nieudanym logowaniu nie zostawia przycisku w stanie „Signing in…" — 143e995
 
 ### Phase 4: Punkt wejścia (C3)
 
 #### Automated
 
-- [ ] 4.1 Lint i build przechodzą: `npm run lint && npm run build`
-- [ ] 4.2 Smoke przechodzi na działającym dev serwerze z lokalnym Supabase: `npm run smoke`
-- [ ] 4.3 Surowy `error.message` nie trafia już do URL: `! grep -n 'error.message' src/pages/api/auth/signin.ts`
+- [x] 4.1 Lint i build przechodzą: `npm run lint && npm run build`
+- [x] 4.2 Smoke przechodzi na działającym dev serwerze z lokalnym Supabase: `npm run smoke`
+- [x] 4.3 Surowy `error.message` nie trafia już do URL: `! grep -n 'error.message' src/pages/api/auth/signin.ts`
 
 #### Manual
 
-- [ ] 4.4 `?error=cokolwiek` nie pokazuje komunikatu; `?error=invalid_credentials` pokazuje stały komunikat
-- [ ] 4.5 Złe hasło pokazuje stały komunikat w `Alert`
-- [ ] 4.6 Zalogowany wchodzący na `/auth/signin` i `/auth/signup` ląduje na `/dashboard`; `/auth/confirm-email` nadal dostępne
-- [ ] 4.7 Po zalogowaniu użytkownik ląduje na `/dashboard`
+- [x] 4.4 `?error=cokolwiek` nie pokazuje komunikatu; `?error=invalid_credentials` pokazuje stały komunikat
+- [x] 4.5 Złe hasło pokazuje stały komunikat w `Alert`
+- [x] 4.6 Zalogowany wchodzący na `/auth/signin` i `/auth/signup` ląduje na `/dashboard`; `/auth/confirm-email` nadal dostępne
+- [x] 4.7 Po zalogowaniu użytkownik ląduje na `/dashboard`
 
 ### Phase 5: Kitchen sink i bramka wizualna
 

@@ -3,8 +3,9 @@ import Layout from "@/layouts/Layout.astro";
 import SignInForm from "@/components/auth/SignInForm";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
+import { resolveSignInError } from "@/lib/auth-errors";
 
-const error = Astro.url.searchParams.get("error");
+const error = resolveSignInError(Astro.url.searchParams.get("error"));
 ---
 
 <Layout title="Sign in">
