@@ -1,7 +1,7 @@
 ---
 change_id: ui-styles-audit
 title: Audyt konfiguracji stylów i użycia klas kolorów
-status: implementing
+status: impl_reviewed
 created: 2026-09-25
 updated: 2026-09-25
 archived_at: null

@@ -374,6 +374,14 @@ Zmiany poza planem, wykonane na wyraźną prośbę użytkownika i zapisane w com
 
 Źródło: `context/changes/ui-styles-audit/reviews/impl-review-phase-1.md` (F1).
 
+## Addendum (po fazie 5, 2026-09-25)
+
+Zmiany względem treści planu, wykonane po przeglądzie `reviews/impl-review.md`:
+
+- Faza 3 §1–2: linki „Sign up" / „Sign in" w `.astro` używają `<a class:list={buttonVariants({ variant: "link", size: "sm" })}>`, a nie `Button variant="link" asChild` — Astro przekazuje dzieci komponentu React jako statyczny HTML, więc `asChild` nie działa spoza Reacta (F7).
+- Faza 4 §2: endpoint `api/auth/signin.ts` opakowany w `try/catch` → `?error=unknown` (F3); `useFormSubmitting` dodatkowo resetuje stan po 15 s (F4).
+- Faza 5 §1: kitchen sink używa statycznego importu (potrzebnego do hydratacji), więc chunk `SignInStates` trafia do `dist`, ale nic go nie referuje; trasa zwraca 404 w buildzie (F5).
+
 ## Progress
 
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles. See `references/progress-format.md`.
@@ -429,29 +437,29 @@ Zmiany poza planem, wykonane na wyraźną prośbę użytkownika i zapisane w com
 
 #### Automated
 
-- [x] 4.1 Lint i build przechodzą: `npm run lint && npm run build`
-- [x] 4.2 Smoke przechodzi na działającym dev serwerze z lokalnym Supabase: `npm run smoke`
-- [x] 4.3 Surowy `error.message` nie trafia już do URL: `! grep -n 'error.message' src/pages/api/auth/signin.ts`
+- [x] 4.1 Lint i build przechodzą: `npm run lint && npm run build` — 8382d57
+- [x] 4.2 Smoke przechodzi na działającym dev serwerze z lokalnym Supabase: `npm run smoke` — 8382d57
+- [x] 4.3 Surowy `error.message` nie trafia już do URL: `! grep -n 'error.message' src/pages/api/auth/signin.ts` — 8382d57
 
 #### Manual
 
-- [x] 4.4 `?error=cokolwiek` nie pokazuje komunikatu; `?error=invalid_credentials` pokazuje stały komunikat
-- [x] 4.5 Złe hasło pokazuje stały komunikat w `Alert`
-- [x] 4.6 Zalogowany wchodzący na `/auth/signin` i `/auth/signup` ląduje na `/dashboard`; `/auth/confirm-email` nadal dostępne
-- [x] 4.7 Po zalogowaniu użytkownik ląduje na `/dashboard`
+- [x] 4.4 `?error=cokolwiek` nie pokazuje komunikatu; `?error=invalid_credentials` pokazuje stały komunikat — 8382d57
+- [x] 4.5 Złe hasło pokazuje stały komunikat w `Alert` — 8382d57
+- [x] 4.6 Zalogowany wchodzący na `/auth/signin` i `/auth/signup` ląduje na `/dashboard`; `/auth/confirm-email` nadal dostępne — 8382d57
+- [x] 4.7 Po zalogowaniu użytkownik ląduje na `/dashboard` — 8382d57
 
 ### Phase 5: Kitchen sink i bramka wizualna
 
 #### Automated
 
-- [ ] 5.1 Lint, build i smoke przechodzą: `npm run lint && npm run build && npm run smoke`
-- [ ] 5.2 Kitchen sink zwraca 404 w buildzie produkcyjnym (`npm run preview` + `curl`)
-- [ ] 5.3 Zrzuty „po" istnieją: `ls context/changes/ui-styles-audit/screenshots/after-*.png`
+- [x] 5.1 Lint, build i smoke przechodzą: `npm run lint && npm run build && npm run smoke`
+- [x] 5.2 Kitchen sink zwraca 404 w buildzie produkcyjnym (`npm run preview` + `curl`)
+- [x] 5.3 Zrzuty „po" istnieją: `ls context/changes/ui-styles-audit/screenshots/after-*.png`
 
 #### Manual
 
-- [ ] 5.4 Wszystkie 6 stanów widoczne naraz na kitchen sink (desktop i ~390 px), bez poziomego scrolla
-- [ ] 5.5 Hover i focus (Tab) działają na polach, przełączniku, przycisku i linku
-- [ ] 5.6 Kontrast tekstu ≥ 4.5:1 wg DevTools; różnice względem „przed" są zamierzone
-- [ ] 5.7 `/10x-impl-review` uruchomione; ustalenia UI przeprowadzone przez triage wg wpływu na użytkownika
-- [ ] 5.8 `charges.md` zawiera status każdego zarzutu
+- [x] 5.4 Wszystkie 6 stanów widoczne naraz na kitchen sink (desktop i ~390 px), bez poziomego scrolla
+- [x] 5.5 Hover i focus (Tab) działają na polach, przełączniku, przycisku i linku
+- [x] 5.6 Kontrast tekstu ≥ 4.5:1 wg DevTools; różnice względem „przed" są zamierzone
+- [x] 5.7 `/10x-impl-review` uruchomione; ustalenia UI przeprowadzone przez triage wg wpływu na użytkownika
+- [x] 5.8 `charges.md` zawiera status każdego zarzutu

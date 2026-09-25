@@ -28,6 +28,8 @@ export default function SignInForm({ serverError }: Props) {
       next.password = "Password is required";
     }
     setErrors(next);
+    const firstInvalid = Object.keys(next)[0];
+    if (firstInvalid) document.getElementById(firstInvalid)?.focus();
     return Object.keys(next).length === 0;
   }
 

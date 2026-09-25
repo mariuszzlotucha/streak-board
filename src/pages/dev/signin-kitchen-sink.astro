@@ -1,0 +1,18 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import SignInStates from "@/components/dev/SignInStates";
+
+// Dev-only visual gate: in a production build the route answers 404 with an empty body.
+// The client chunk is still emitted to dist (static import needed for hydration) but nothing references it.
+const isDev = import.meta.env.DEV;
+if (!isDev) Astro.response.status = 404;
+---
+
+{isDev && (
+  <Layout title="Sign-in kitchen sink">
+    <div class="bg-muted min-h-screen p-4 md:p-8">
+      <h1 class="font-heading mb-6 text-2xl font-semibold">Sign-in kitchen sink</h1>
+      <SignInStates client:load />
+    </div>
+  </Layout>
+)}

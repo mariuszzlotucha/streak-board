@@ -43,6 +43,8 @@ export default function SignUpForm({ serverError }: Props) {
     }
 
     setErrors(next);
+    const firstInvalid = Object.keys(next)[0];
+    if (firstInvalid) document.getElementById(firstInvalid)?.focus();
     return Object.keys(next).length === 0;
   }
 

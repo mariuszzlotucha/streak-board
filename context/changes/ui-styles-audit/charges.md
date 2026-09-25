@@ -45,6 +45,17 @@ Sprawdzone: z linku, po błędzie, dla zalogowanego.
 - **Bramka wizualna:** `CLAUDE.md` — brak runnera testów poza `npm run smoke`, więc bramka = strona kitchen sink + screenshoty. Strona nie może trafić na produkcję Cloudflare Workers jako publiczna trasa (np. tylko `import.meta.env.DEV` albo poza `src/pages`).
 - **`--background` czerwone** wpływa globalnie (`body`); po zmianie sprawdzić Welcome/dashboard.
 
+## Status po implementacji (fazy 1–5)
+
+| Zarzut | Status | Uzasadnienie / dowód |
+| --- | --- | --- |
+| C1 — brakujące tokeny | załatwiony | `global.css` z tokenami presetu `b7Br7G9Kq`; widok, `FormField`, `ServerError`, `PasswordToggle`, `SubmitButton` czytają role semantyczne (grep bez klas palety w `signin.astro`, `signup.astro`, `src/components/auth`); `--background` białe. Zrzuty `screenshots/after-*.png`. |
+| C2 — brakujące komponenty | załatwiony | `Card`, `Input`, `Label`, `Alert`, `Button` z `radix-maia` w `src/components/ui/`; `SubmitButton` bez nadpisań koloru; brak własnych prymitywów. Etykieta: `radix-ui` zamiast dodatkowego `@radix-ui/react-label`. |
+| C3 — punkt wejścia | załatwiony (pkt 1–2), odroczony (pkt 3) | Guard `AUTH_ROUTES` w `middleware.ts`, redirect po logowaniu na `/dashboard`, `?error=` mapowane na stałe kody (`src/lib/auth-errors.ts`); pokryte przez `npm run smoke`. Pkt 3 (zachowanie e-maila po błędnym logowaniu) odroczony: wymaga decyzji o miejscu przechowania. `signup` bez mapowania `?error=` — odroczone. |
+| C4 — stany i a11y | załatwiony | `aria-invalid`/`aria-describedby`, `role="alert"` z `Alert`, `pr-10` chroni przed przełącznikiem hasła, jawny `pending` (reset w `pageshow`), focus z tokenu `--ring`. Kitchen sink (`/dev/signin-kitchen-sink`, tylko dev): 6 stanów; zrzuty desktop, mobile i focus. |
+
+Nadal odroczone: sekcja poniżej.
+
 ## Odroczone (widoczne, nie usunięte)
 
 - `Banner.astro:28-40` — 9 literałów hex dla wariantów info/warning/error; renderuje się nad każdym widokiem (`Layout.astro`), gdy brakuje konfiguracji. Powód: osobny komponent layoutu; wymaga tokenów `--success/--warning/--info`.

@@ -31,6 +31,7 @@ export function FormField({
   endContent,
 }: FormFieldProps) {
   const errorId = `${id}-error`;
+  const hintId = `${id}-hint`;
 
   return (
     <div>
@@ -51,19 +52,19 @@ export function FormField({
           }}
           placeholder={placeholder}
           aria-invalid={error ? "true" : undefined}
-          aria-describedby={error ? errorId : undefined}
+          aria-describedby={error ? errorId : hint ? hintId : undefined}
           className="pr-10 pl-9"
         />
         {endContent}
       </div>
       {error ? (
-        <p id={errorId} className="text-destructive mt-1 flex items-center gap-1 text-xs">
+        <p id={errorId} role="alert" className="text-destructive mt-1 flex items-center gap-1 text-xs">
           <CircleAlert className="size-3" />
           {error}
         </p>
-      ) : (
-        hint
-      )}
+      ) : hint ? (
+        <div id={hintId}>{hint}</div>
+      ) : null}
     </div>
   );
 }
