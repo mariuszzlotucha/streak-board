@@ -42,7 +42,7 @@ Grono znajomych korzystało wcześniej ze wspólnego arkusza Google, w którym r
 | ID   | Change ID                 | Outcome (user can …)                                                  | Prerequisites | PRD refs                              | Status   |
 | ---- | -------------------------- | ------------------------------------------------------------------------ | -------------- | ---------------------------------------- | -------- |
 | F-01 | group-schema-and-rls       | (foundation) schemat grup/członkostwa + RLS wg guardrail widoczności     | —              | Access Control, Guardrail                | done |
-| S-01 | group-create-join-manage   | założyć/dołączyć do grupy przez link/kod; jako twórca zarządzać grupą     | F-01           | FR-001, FR-002, FR-003                   | in-progress |
+| S-01 | group-create-join-manage   | założyć/dołączyć do grupy przez link/kod; jako twórca zarządzać grupą     | F-01           | FR-001, FR-002, FR-003                   | done |
 | S-02 | task-create-and-manage     | utworzyć task w grupie; jako twórca edytować/usunąć swój task            | S-01           | FR-004, FR-005                           | proposed |
 | S-03 | task-join-and-leave        | dołączyć do tasku innego członka i wypisać się z niego                   | S-02           | FR-006, FR-007                           | proposed |
 | S-04 | checkoff-and-leaderboard   | odznaczyć task jako wykonany i od razu zobaczyć tablicę wyników grupy    | S-03           | FR-008, FR-009, US-01, Business Logic    | proposed |
@@ -86,7 +86,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** To pierwsza jednostka nadrzędna, pod którą zagnieżdża się wszystko dalej — dobry podział uprawnień twórca/członek tutaj oszczędza przeróbek w S-02/S-03.
-- **Status:** in-progress
+- **Status:** done
 
 ### S-02: Tworzenie i zarządzanie taskiem
 
@@ -158,3 +158,4 @@ Foundations below assume these are present and do NOT re-scaffold them.
 ## Done
 
 - **F-01: (foundation) w bazie Supabase istnieją tabele grup i członkostwa (`groups`, `group_members`) wraz z politykami RLS wymuszającymi guardrail „widoczność tylko dla własnej grupy”.** — Archived 2026-09-25 → `context/archive/2026-09-25-group-schema-and-rls/`. Lesson: —.
+- **S-01: użytkownik może założyć grupę, dołączyć do istniejącej grupy przez link/kod, a jako jej twórca — usunąć grupę lub usunąć z niej członka.** — Archived 2026-09-25 → `context/archive/2026-09-25-group-create-join-manage/`. Lesson: —.
