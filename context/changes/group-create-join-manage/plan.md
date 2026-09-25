@@ -454,18 +454,18 @@ One new additive migration (two functions, no table changes), so no data migrati
 
 #### Automated
 
-- [ ] 3.1 Linting passes: `npm run lint`
-- [ ] 3.2 Type check passes: `npx astro check`
-- [ ] 3.3 Build passes: `npm run build`
-- [ ] 3.4 Smoke passes including the member view, rename and leave steps: `npm run smoke`
+- [x] 3.1 Linting passes: `npm run lint` — c5fd44b
+- [x] 3.2 Type check passes: `npx astro check` — c5fd44b
+- [x] 3.3 Build passes: `npm run build` — c5fd44b
+- [x] 3.4 Smoke passes including the member view, rename and leave steps: `npm run smoke` — c5fd44b
 
 #### Manual
 
-- [ ] 3.5 The invite link copies to the clipboard in the browser and the button confirms it
-- [ ] 3.6 The member list shows emails with Owner and You markers
-- [ ] 3.7 The leave dialog keeps the group on Cancel/Esc and leaves it on Confirm
-- [ ] 3.8 The owner sees rename and no leave button; renaming to an empty or 81-character name shows an error
-- [ ] 3.9 The group view is usable at 375 px width
+- [x] 3.5 The invite link copies to the clipboard in the browser and the button confirms it — c5fd44b
+- [x] 3.6 The member list shows emails with Owner and You markers — c5fd44b
+- [x] 3.7 The leave dialog keeps the group on Cancel/Esc and leaves it on Confirm — c5fd44b
+- [x] 3.8 The owner sees rename and no leave button; renaming to an empty or 81-character name shows an error — c5fd44b
+- [x] 3.9 The group view is usable at 375 px width — c5fd44b
 
 ### Phase 4: Owner actions — remove member and delete group
 

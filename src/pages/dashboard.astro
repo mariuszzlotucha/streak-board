@@ -2,19 +2,23 @@
 import Layout from "@/layouts/Layout.astro";
 import CreateGroupForm from "@/components/groups/CreateGroupForm";
 import JoinGroupForm from "@/components/groups/JoinGroupForm";
+import CopyInviteLink from "@/components/groups/CopyInviteLink";
+import ConfirmAction from "@/components/groups/ConfirmAction";
+import RenameGroupForm from "@/components/groups/RenameGroupForm";
 import { CircleAlert } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase";
 import { groupErrorMessage, resolveGroupError } from "@/lib/group-errors";
-import { getMyGroup, previewGroup, type MyGroup } from "@/lib/groups";
+import { getMyGroup, listGroupMembers, previewGroup, type GroupMember, type MyGroup } from "@/lib/groups";
 import { clearJoinCode, peekJoinCode } from "@/lib/join-code";
 
 const { user } = Astro.locals;
 
 let error = resolveGroupError(Astro.url.searchParams.get("error"));
 let group: MyGroup | null = null;
+let members: GroupMember[] = [];
 let pendingCode: string | null = null;
 let pendingGroupName: string | null = null;
 let loadFailed = false;
@@ -23,6 +27,9 @@ try {
   const supabase = createClient(Astro.request.headers, Astro.cookies);
   if (supabase) {
     group = await getMyGroup(supabase);
+    if (group) {
+      members = await listGroupMembers(supabase, group.id);
+    }
     const code = peekJoinCode(Astro.cookies);
     if (code) {
       if (group) {
@@ -49,8 +56,11 @@ try {
 }
 
 const inviteLink = group ? `${Astro.url.origin}/join/${group.join_code}` : null;
+const isOwner = group !== null && group.owner_id === user?.id;
 // After a failed load we cannot tell whether the user is in a group, so do not offer to create or join one.
 const showGroupForms = !group && !loadFailed;
+// The member list comes from the same load: after a failure show no list rather than "0 members".
+const showMembers = group !== null && !loadFailed;
 ---
 
 <Layout title="Dashboard">
@@ -73,7 +83,69 @@ const showGroupForms = !group && !loadFailed;
           </CardHeader>
           <CardContent className="space-y-2">
             <p class="text-sm text-muted-foreground">Share this invite link to add people to your group.</p>
-            <code class="block rounded-lg bg-muted px-3 py-2 text-sm break-all">{inviteLink}</code>
+            <CopyInviteLink client:load url={inviteLink} />
+          </CardContent>
+        </Card>
+      )}
+
+      {showMembers && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <h2 class="font-heading text-xl font-semibold">Members</h2>
+            </CardTitle>
+            <CardDescription>{`${members.length} ${members.length === 1 ? "member" : "members"}`}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ul class="divide-y">
+              {members.map((member) => (
+                <li class="flex flex-wrap items-center gap-x-2 gap-y-1 py-2 first:pt-0 last:pb-0">
+                  <span class="min-w-0 text-sm break-all">{member.email ?? "Unknown member"}</span>
+                  {member.is_owner && (
+                    <span class="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+                      Owner
+                    </span>
+                  )}
+                  {member.user_id === user?.id && (
+                    <span class="rounded-full border px-2 py-0.5 text-xs font-medium text-muted-foreground">You</span>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
+
+      {group && isOwner && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <h2 class="font-heading text-xl font-semibold">Rename group</h2>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <RenameGroupForm client:load name={group.name} />
+          </CardContent>
+        </Card>
+      )}
+
+      {group && !isOwner && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <h2 class="font-heading text-xl font-semibold">Leave group</h2>
+            </CardTitle>
+            <CardDescription>You will lose access to this group. You can rejoin with the invite link.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ConfirmAction
+              client:load
+              action="/api/groups/leave"
+              triggerLabel="Leave group"
+              title="Leave this group?"
+              description={`You will no longer be a member of ${group.name}. You can rejoin later with the invite link.`}
+              confirmLabel="Leave group"
+            />
           </CardContent>
         </Card>
       )}
