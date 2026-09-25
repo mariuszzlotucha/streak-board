@@ -452,14 +452,14 @@ Zmiany względem treści planu, wykonane po przeglądzie `reviews/impl-review.md
 
 #### Automated
 
-- [x] 5.1 Lint, build i smoke przechodzą: `npm run lint && npm run build && npm run smoke`
-- [x] 5.2 Kitchen sink zwraca 404 w buildzie produkcyjnym (`npm run preview` + `curl`)
-- [x] 5.3 Zrzuty „po" istnieją: `ls context/changes/ui-styles-audit/screenshots/after-*.png`
+- [x] 5.1 Lint, build i smoke przechodzą: `npm run lint && npm run build && npm run smoke` — 451bb85
+- [x] 5.2 Kitchen sink zwraca 404 w buildzie produkcyjnym (`npm run preview` + `curl`) — 451bb85
+- [x] 5.3 Zrzuty „po" istnieją: `ls context/changes/ui-styles-audit/screenshots/after-*.png` — 451bb85
 
 #### Manual
 
-- [x] 5.4 Wszystkie 6 stanów widoczne naraz na kitchen sink (desktop i ~390 px), bez poziomego scrolla
-- [x] 5.5 Hover i focus (Tab) działają na polach, przełączniku, przycisku i linku
-- [x] 5.6 Kontrast tekstu ≥ 4.5:1 wg DevTools; różnice względem „przed" są zamierzone
-- [x] 5.7 `/10x-impl-review` uruchomione; ustalenia UI przeprowadzone przez triage wg wpływu na użytkownika
-- [x] 5.8 `charges.md` zawiera status każdego zarzutu
+- [x] 5.4 Wszystkie 6 stanów widoczne naraz na kitchen sink (desktop i ~390 px), bez poziomego scrolla — 451bb85
+- [x] 5.5 Hover i focus (Tab) działają na polach, przełączniku, przycisku i linku — 451bb85
+- [x] 5.6 Kontrast tekstu ≥ 4.5:1 wg DevTools; różnice względem „przed" są zamierzone — 451bb85
+- [x] 5.7 `/10x-impl-review` uruchomione; ustalenia UI przeprowadzone przez triage wg wpływu na użytkownika — 451bb85
+- [x] 5.8 `charges.md` zawiera status każdego zarzutu — 451bb85
