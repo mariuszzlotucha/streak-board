@@ -7,17 +7,22 @@ const BASE_URL = process.env.BASE_URL ?? "http://localhost:4321";
 const stamp = Date.now();
 const email = `smoke-${stamp}@example.com`;
 const emailB = `smoke-b-${stamp}@example.com`;
+const emailC = `smoke-c-${stamp}@example.com`;
 const password = "Smoke-Test-Passw0rd!";
 const groupName = `Smoke Group ${stamp}`;
 // Deliberately not containing groupName, so "the old name is gone" can be asserted with a plain substring check.
 const renamedGroupName = `Renamed Crew ${stamp}`;
-// User A's session and user B's session are independent cookie jars.
+// User A's session and the sessions of users B and C are independent cookie jars.
 const jarA = new Map();
 const jarB = new Map();
+const jarC = new Map();
+// An Origin that is not the app's own (CSRF check).
+const FOREIGN_ORIGIN = "http://evil.example";
 // Read from A's dashboard at run time and used by the later invite steps.
 let joinCode;
-// Read from the owner's dashboard at run time: the id A's remove control submits for user B.
+// Read from the owner's dashboard at run time: the ids A's remove controls submit for users B and C.
 let memberIdB;
+let memberIdC;
 
 function cookieHeader(jar) {
   return [...jar.entries()].map(([k, v]) => `${k}=${v}`).join("; ");
@@ -87,6 +92,31 @@ function rowWithRemoveControl(memberEmail) {
   );
 }
 
+// A member row whose remove control is the confirmation island: the form and, after it, the dialog trigger.
+function rowWithConfirmedRemoveControl(memberEmail) {
+  return new RegExp(
+    `<li[^>]*>(?:(?!</li>)[\\s\\S])*${escapeRegExp(memberEmail)}(?:(?!</li>)[\\s\\S])*action="/api/groups/remove-member"(?:(?!</li>)[\\s\\S])*aria-haspopup="dialog"`,
+  );
+}
+
+// The id the remove control in the row of the given member submits (the island's serialised props do not contain this markup).
+function removeTargetInRow(body, memberEmail) {
+  const row = new RegExp(
+    `<li[^>]*>(?:(?!</li>)[\\s\\S])*${escapeRegExp(memberEmail)}(?:(?!</li>)[\\s\\S])*name="user_id"[^>]*value="([0-9a-f-]{36})"`,
+  );
+  return body.match(row)?.[1];
+}
+
+// A destructive control must go through the confirmation dialog: Radix renders its trigger with aria-haspopup="dialog"
+// (the dialog itself is not server-rendered), which a plain <form><button type="submit"> would lack.
+function dialogTrigger(label) {
+  return new RegExp(`<button[^>]*aria-haspopup="dialog"[^>]*>\\s*${escapeRegExp(label)}\\s*<`);
+}
+
+// The server-rendered destructive forms hold hidden fields only; a submit button inside one would skip the confirmation.
+const SUBMIT_IN_DESTRUCTIVE_FORM =
+  /<form[^>]*action="\/api\/groups\/(?:delete|remove-member)"[^>]*>(?:(?!<\/form>)[\s\S])*type="submit"/;
+
 // The id a signed-in session belongs to, read from the Supabase auth cookie in the jar (`base64-` plus base64url JSON,
 // split into numbered chunks when large). The remove-member steps need real ids to prove who may remove whom.
 function sessionUserId(jar) {
@@ -109,8 +139,6 @@ function sessionUserId(jar) {
 }
 
 const NO_ERROR_ALERT = 'role="alert"';
-// The hidden field a rendered remove control submits; the island's serialised props do not contain this markup.
-const REMOVE_TARGET = /<input[^>]*name="user_id"[^>]*value="([0-9a-f-]{36})"/;
 // Only the rendered read-only input carries this label; the invite URL also sits in the island's serialised props.
 const INVITE_INPUT = 'aria-label="Invite link"';
 
@@ -183,7 +211,7 @@ const steps = [
   [
     // An empty name has no side effect if the Origin check were ever off (it would answer 302 invalid_name).
     "group create from a foreign origin is rejected",
-    () => request("/api/groups/create", { method: "POST", form: { name: "  " }, origin: "http://evil.example" }),
+    () => request("/api/groups/create", { method: "POST", form: { name: "  " }, origin: FOREIGN_ORIGIN }),
     { status: 403 },
   ],
   [
@@ -368,14 +396,37 @@ const steps = [
     },
   ],
   [
-    "owner dashboard offers to remove the other member and to delete the group",
+    // A third member: with a single non-owner, "removes exactly the target" cannot be told from "removes every
+    // non-owner". With email confirmation disabled a successful signup already leaves a session in the jar.
+    "user C signs up",
+    () => request("/api/auth/signup", { method: "POST", form: { email: emailC, password }, jar: jarC }),
+    { status: 302, location: "/auth/confirm-email" },
+  ],
+  [
+    "user C joins the group with the invite code",
+    () => request("/api/groups/join", { method: "POST", form: { code: joinCode }, jar: jarC }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "dashboard shows the group to user C after joining",
+    () => request("/dashboard", { jar: jarC }),
+    {
+      status: 200,
+      bodyIncludes: "3 members",
+      bodyMatches: [groupHeading(renamedGroupName), memberRow(email, "Owner"), memberRow(emailC, "You")],
+      bodyExcludes: ["Create a group", NO_ERROR_ALERT],
+    },
+  ],
+  [
+    "owner dashboard offers to remove the other members and to delete the group",
     async () => {
       const result = await request("/dashboard");
-      memberIdB = result.body.match(REMOVE_TARGET)?.[1];
-      // The control has to submit user B's real id, or the removal steps below would prove nothing.
-      if (!memberIdB || memberIdB !== sessionUserId(jarB)) {
+      memberIdB = removeTargetInRow(result.body, emailB);
+      memberIdC = removeTargetInRow(result.body, emailC);
+      // Each control has to submit its member's real id, or the removal steps below would prove nothing.
+      if (!memberIdB || memberIdB !== sessionUserId(jarB) || !memberIdC || memberIdC !== sessionUserId(jarC)) {
         console.log(
-          "FAIL  the owner's remove control does not carry user B's id; later remove-member steps cannot run",
+          "FAIL  the owner's remove controls do not carry the ids of users B and C; later remove-member steps cannot run",
         );
         process.exit(1);
       }
@@ -383,14 +434,16 @@ const steps = [
     },
     {
       status: 200,
-      bodyIncludes: "2 members",
+      bodyIncludes: "3 members",
       bodyMatches: [
         groupHeading(renamedGroupName),
-        // The control sits on B's row and not on the owner's own row.
-        rowWithRemoveControl(emailB),
+        // Each control sits on its member's row and opens the confirmation dialog; the owner's own row has none.
+        rowWithConfirmedRemoveControl(emailB),
+        rowWithConfirmedRemoveControl(emailC),
         formPostingTo("/api/groups/delete"),
+        dialogTrigger("Delete group"),
       ],
-      bodyNotMatches: [rowWithRemoveControl(email)],
+      bodyNotMatches: [rowWithRemoveControl(email), SUBMIT_IN_DESTRUCTIVE_FORM],
       bodyExcludes: NO_ERROR_ALERT,
     },
   ],
@@ -411,6 +464,12 @@ const steps = [
     { status: 302, locationExact: "/dashboard?error=forbidden" },
   ],
   [
+    // A fellow member is no owner either: the refusal is not only for the owner as the target.
+    "remove-member of a fellow member by a non-owner is rejected",
+    () => request("/api/groups/remove-member", { method: "POST", form: { user_id: memberIdC }, jar: jarB }),
+    { status: 302, locationExact: "/dashboard?error=forbidden" },
+  ],
+  [
     "remove-member of oneself is refused",
     () => request("/api/groups/remove-member", { method: "POST", form: { user_id: sessionUserId(jarB) }, jar: jarB }),
     { status: 302, locationExact: "/dashboard?error=forbidden" },
@@ -427,6 +486,17 @@ const steps = [
     { status: 302, locationExact: "/dashboard?error=forbidden" },
   ],
   [
+    // Postgres reads a hyphenless uuid as the same id: it must never delete the caller's own row through this route.
+    "remove-member of oneself without hyphens is refused",
+    () =>
+      request("/api/groups/remove-member", {
+        method: "POST",
+        form: { user_id: sessionUserId(jarB).replaceAll("-", "") },
+        jar: jarB,
+      }),
+    { status: 302, locationExact: "/dashboard?error=forbidden" },
+  ],
+  [
     // Without validation PostgREST would answer 22P02 and the page would say "Something went wrong" instead.
     "remove-member rejects a malformed user id",
     () => request("/api/groups/remove-member", { method: "POST", form: { user_id: "not-a-uuid" } }),
@@ -438,11 +508,36 @@ const steps = [
     { status: 302, locationExact: "/dashboard?error=forbidden" },
   ],
   [
-    "group and both members are intact after the rejected requests",
+    // As a non-owner B could not remove anyone even if the Origin check were off (it would answer 302 forbidden).
+    "remove-member from a foreign origin is rejected",
+    () =>
+      request("/api/groups/remove-member", {
+        method: "POST",
+        form: { user_id: memberIdC },
+        jar: jarB,
+        origin: FOREIGN_ORIGIN,
+      }),
+    { status: 403 },
+  ],
+  [
+    "delete from a foreign origin is rejected",
+    () => request("/api/groups/delete", { method: "POST", form: {}, jar: jarB, origin: FOREIGN_ORIGIN }),
+    { status: 403 },
+  ],
+  [
+    // Safe methods skip the Origin check and SameSite=Lax cookies travel on cross-site top-level GETs, so a GET handler
+    // on a destructive route would be a CSRF hole.
+    "remove-member does not answer GET",
+    () => request("/api/groups/remove-member", { jar: jarB }),
+    { status: 404 },
+  ],
+  ["delete does not answer GET", () => request("/api/groups/delete", { jar: jarB }), { status: 404 }],
+  [
+    "group and all three members are intact after the rejected requests",
     () => request("/dashboard", { jar: jarB }),
     {
       status: 200,
-      bodyIncludes: "2 members",
+      bodyIncludes: ["3 members", emailC],
       bodyMatches: [groupHeading(renamedGroupName), memberRow(email, "Owner"), memberRow(emailB, "You")],
       bodyExcludes: ["Create a group", NO_ERROR_ALERT],
     },
@@ -462,15 +557,32 @@ const steps = [
     },
   ],
   [
-    "owner dashboard lists only the owner after the removal",
+    "owner dashboard lists the owner and user C after removing user B",
     () => request("/dashboard"),
     {
       status: 200,
-      bodyIncludes: "1 member",
-      bodyMatches: [groupHeading(renamedGroupName), memberRow(email, "Owner")],
-      bodyNotMatches: [formPostingTo("/api/groups/remove-member")],
+      bodyIncludes: "2 members",
+      bodyMatches: [groupHeading(renamedGroupName), memberRow(email, "Owner"), rowWithConfirmedRemoveControl(emailC)],
+      bodyNotMatches: [rowWithRemoveControl(emailB)],
       bodyExcludes: [emailB, NO_ERROR_ALERT],
     },
+  ],
+  [
+    // Removing B has to remove exactly B.
+    "user C still has the group after user B was removed",
+    () => request("/dashboard", { jar: jarC }),
+    {
+      status: 200,
+      bodyIncludes: "2 members",
+      bodyMatches: [groupHeading(renamedGroupName), memberRow(email, "Owner"), memberRow(emailC, "You")],
+      bodyExcludes: [emailB, "Create a group", NO_ERROR_ALERT],
+    },
+  ],
+  [
+    // A double click or a stale page: the target is gone already, which is not the owner's mistake.
+    "removing an already removed member is not an error",
+    () => request("/api/groups/remove-member", { method: "POST", form: { user_id: memberIdB } }),
+    { status: 302, locationExact: "/dashboard" },
   ],
   [
     "user B joins again with the same code after being removed",
@@ -510,6 +622,15 @@ const steps = [
     },
   ],
   [
+    "former member C sees the create form after the group was deleted",
+    () => request("/dashboard", { jar: jarC }),
+    {
+      status: 200,
+      bodyIncludes: ["Create a group", "Join a group"],
+      bodyExcludes: ["Your group", renamedGroupName, "/join/", NO_ERROR_ALERT],
+    },
+  ],
+  [
     "the deleted group's invite code is no longer valid",
     () => request("/api/groups/join", { method: "POST", form: { code: joinCode }, jar: jarB }),
     { status: 302, locationExact: "/dashboard?error=invalid_code" },
@@ -517,6 +638,11 @@ const steps = [
   [
     "deleting again after the group is gone is not an error",
     () => request("/api/groups/delete", { method: "POST" }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "removing a member after the group is gone is not an error",
+    () => request("/api/groups/remove-member", { method: "POST", form: { user_id: memberIdB } }),
     { status: 302, locationExact: "/dashboard" },
   ],
   ["signin page redirects signed-in user", () => request("/auth/signin"), { status: 302, location: "/dashboard" }],

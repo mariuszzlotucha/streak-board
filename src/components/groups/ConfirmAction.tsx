@@ -63,7 +63,7 @@ export default function ConfirmAction({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{title}</AlertDialogTitle>
-            <AlertDialogDescription className="break-words">{description}</AlertDialogDescription>
+            <AlertDialogDescription className="wrap-anywhere">{description}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={submitting}>Cancel</AlertDialogCancel>

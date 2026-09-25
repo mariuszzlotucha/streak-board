@@ -29,22 +29,28 @@ export const POST: APIRoute = async (context) => {
     // The group comes from the caller's own membership, never from the request.
     const group = await getMyGroup(supabase);
     if (!group) {
-      return context.redirect("/dashboard?error=forbidden");
+      // No group left (deleted in another tab): a stale submit ends where the user wanted to be, not on a
+      // "not allowed" alert.
+      return context.redirect("/dashboard");
     }
 
     // Only the owner may delete another member's row. RLS turns "not the owner", "not a member of this group" and
-    // "the owner's own row" into an empty result, not an error.
+    // "the owner's own row" into an empty result, not an error. The neq is a second guard for the caller's own row
+    // (see the string comparison above): Postgres compares the uuids, whatever spelling of the id arrived.
     const { data, error } = await supabase
       .from("group_members")
       .delete()
       .eq("group_id", group.id)
       .eq("user_id", userId)
+      .neq("user_id", user.id)
       .select("id");
     if (error) {
       return context.redirect(`/dashboard?error=${toGroupErrorCode(error)}`);
     }
     if (data.length === 0) {
-      return context.redirect("/dashboard?error=forbidden");
+      // For the owner (whose own id was refused above) nothing to delete means the target already left or was
+      // removed: a double click or a stale page. Anyone else was refused by RLS.
+      return context.redirect(group.owner_id === user.id ? "/dashboard" : "/dashboard?error=forbidden");
     }
 
     return context.redirect("/dashboard");

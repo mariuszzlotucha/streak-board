@@ -112,7 +112,7 @@ npx supabase stop
 
 The local Studio UI is available at `http://localhost:54323`.
 
-No database tables or migrations are required — this project uses Supabase Auth's built-in `auth.users` table only.
+The database schema (groups, members, row-level security and helper functions) lives in `supabase/migrations/`. A fresh `npx supabase start` applies it; after pulling new migrations run `npx supabase db reset` (it wipes local data) to re-apply them all.
 
 ### Using a cloud Supabase project instead
 
@@ -127,6 +127,8 @@ If you prefer to use a hosted Supabase project, add these variables to your `.en
 SUPABASE_URL=https://<project-ref>.supabase.co
 SUPABASE_KEY=<anon-key>
 ```
+
+The group features need the same schema in the hosted project: run `npx supabase link --project-ref <project-ref>` once, then `npx supabase db push`.
 
 ### Email confirmation in local development
 
@@ -203,7 +205,7 @@ npx wrangler rollback [version-id]   # reverts to the given version, or the prio
 
 ## Smoke test
 
-`scripts/smoke.mjs` is a dependency-free Node script that walks the auth flow (sign-up, sign-in, protected page, sign-out) and the group flow over HTTP. The group part uses two signed-up users with separate sessions: create, invite link, join, member view, rename, leave, remove member and delete group, including the rejected attempts (a member trying owner actions, malformed input). Run it against the dev server or the production preview after dependency upgrades:
+`scripts/smoke.mjs` is a dependency-free Node script that walks the auth flow (sign-up, sign-in, protected page, sign-out) and the group flow over HTTP. The group part uses three signed-up users (an owner and two members) with separate sessions: create, invite link, join, member view, rename, leave, remove member and delete group, including the rejected attempts (a member trying owner actions, malformed input, foreign-origin and GET requests). Run it against the dev server or the production preview after dependency upgrades:
 
 ```bash
 npm run dev            # or: npm run build && npm run preview

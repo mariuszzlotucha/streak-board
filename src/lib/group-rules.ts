@@ -36,8 +36,10 @@ export function normalizeJoinCode(input: unknown): string | null {
 }
 
 /**
- * A canonical UUID (a user id) in lowercase, or null. Lowercasing keeps comparisons with `auth.users` ids exact;
- * anything else would reach PostgREST as a malformed uuid and fail with 22P02 instead of a clean rejection.
+ * A canonical, hyphenated UUID (a user id) in lowercase, or null. Lowercasing keeps string comparisons with
+ * `auth.users` ids exact, and accepting only this spelling keeps them meaningful: Postgres also reads braced and
+ * hyphenless uuids, which a string comparison would not recognise as the same id, and answers a malformed value
+ * with 22P02 instead of a clean rejection.
  */
 export function normalizeUuid(input: unknown): string | null {
   if (typeof input !== "string" || !UUID_PATTERN.test(input)) return null;
