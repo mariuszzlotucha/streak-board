@@ -24,12 +24,12 @@
 - **Applies to**: research, plan, plan-review, implement
 
 
-## <Title — to be filled in>
+## Smoke steps must assert outcomes, not just the absence of errors
 
 - **Context**: scripts/smoke.mjs:20-28 (and the join/create steps) — smoke steps added for a new feature, in particular anything involving cookies set or cleared by the server.
 - **Problem**: The smoke test can pass without proving the core outcomes: `storeCookies` deletes only on `Max-Age=0`, but Astro's `cookies.delete` sends `Expires=1970` with value `deleted`, so cleared cookies stay in the jar and no step asserts they were cleared; no step checks the post-join dashboard state; the preview step checks only that the group name appears in the body, which an error banner would also satisfy; no foreign-Origin (403) or anonymous-path check; a missing regex match silently becomes "undefined".
-- **Rule**: <to be filled in by you>
-- **Applies to**: <to be filled in by you>
+- **Rule**: Every new smoke step must assert the outcome it exists for: the page state after the action, that a server-cleared cookie is really gone from the jar (treat a past `Expires` as deletion, not only `Max-Age=0`), and that a boundary rejects what it should (for example a foreign-Origin POST answers 403). A body check that a valid-looking error page would also satisfy is not enough; fail fast when a value later steps depend on is missing.
+- **Applies to**: implement, impl-review, plan
 
 ## Always show the link to the current PR
 
