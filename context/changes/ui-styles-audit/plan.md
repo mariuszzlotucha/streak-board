@@ -398,32 +398,32 @@ Zmiany poza planem, wykonane na wyraźną prośbę użytkownika i zapisane w com
 
 #### Automated
 
-- [x] 2.1 Wszystkie 5 plików istnieje: `ls src/components/ui/{input,label,card,alert,button}.tsx`
-- [x] 2.2 Brak importów z pakietu `cn`: `! grep -rn 'from "cn"' src`
-- [x] 2.3 Brak martwej zależności: `! grep -rn '@radix-ui/react-slot' src package.json`
-- [x] 2.4 Build i lint przechodzą: `npm run build && npm run lint`
+- [x] 2.1 Wszystkie 5 plików istnieje: `ls src/components/ui/{input,label,card,alert,button}.tsx` — 140656c
+- [x] 2.2 Brak importów z pakietu `cn`: `! grep -rn 'from "cn"' src` — 140656c
+- [x] 2.3 Brak martwej zależności: `! grep -rn '@radix-ui/react-slot' src package.json` — 140656c
+- [x] 2.4 Build i lint przechodzą: `npm run build && npm run lint` — 140656c
 
 #### Manual
 
-- [x] 2.5 `git diff --stat` pokazuje zmiany wyłącznie w `src/components/ui/`, `package.json` i `package-lock.json`
-- [x] 2.6 `SubmitButton` nadal się kompiluje i przycisk renderuje się w stylu maia
+- [x] 2.5 `git diff --stat` pokazuje zmiany wyłącznie w `src/components/ui/`, `package.json` i `package-lock.json` — 140656c
+- [x] 2.6 `SubmitButton` nadal się kompiluje i przycisk renderuje się w stylu maia — 140656c
 
 ### Phase 3: Widok signin, komponenty auth i wrapper signup
 
 #### Automated
 
-- [ ] 3.1 Brak klas palety i white/black w zmienianych plikach (grep z planu zwraca puste)
-- [ ] 3.2 Brak `useFormStatus`: `! grep -rn 'useFormStatus' src`
-- [ ] 3.3 Lint i build przechodzą: `npm run lint && npm run build`
+- [x] 3.1 Brak klas palety i white/black w zmienianych plikach (grep z planu zwraca puste)
+- [x] 3.2 Brak `useFormStatus`: `! grep -rn 'useFormStatus' src`
+- [x] 3.3 Lint i build przechodzą: `npm run lint && npm run build`
 
 #### Manual
 
-- [ ] 3.4 `/auth/signin` i `/auth/signup` wyglądają spójnie (desktop i ~390 px)
-- [ ] 3.5 Klawisz Tab pokazuje widoczny focus na polach, przełączniku hasła, przycisku i linku
-- [ ] 3.6 Długie hasło nie wchodzi pod ikonę oka
-- [ ] 3.7 Puste pola + submit: komunikaty przy polach, `aria-invalid` obecne w DevTools
-- [ ] 3.8 Przy wolnej sieci przycisk pokazuje „Signing in…" i jest nieaktywny
-- [ ] 3.9 Powrót przyciskiem „Wstecz" po nieudanym logowaniu nie zostawia przycisku w stanie „Signing in…"
+- [x] 3.4 `/auth/signin` i `/auth/signup` wyglądają spójnie (desktop i ~390 px)
+- [x] 3.5 Klawisz Tab pokazuje widoczny focus na polach, przełączniku hasła, przycisku i linku
+- [x] 3.6 Długie hasło nie wchodzi pod ikonę oka
+- [x] 3.7 Puste pola + submit: komunikaty przy polach, `aria-invalid` obecne w DevTools
+- [x] 3.8 Przy wolnej sieci przycisk pokazuje „Signing in…" i jest nieaktywny
+- [x] 3.9 Powrót przyciskiem „Wstecz" po nieudanym logowaniu nie zostawia przycisku w stanie „Signing in…"
 
 ### Phase 4: Punkt wejścia (C3)
 
