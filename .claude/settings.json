@@ -19,7 +19,6 @@
       "Bash(curl -s http://localhost:*)"
     ],
     "ask": [
-      "Bash(curl *)",
       "Bash(wget *)",
       "Bash(git push *)",
       "Bash(git push)"
