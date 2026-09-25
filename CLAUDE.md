@@ -35,36 +35,48 @@ Node.js v22.14.0 (`.nvmrc`). Local Supabase/env-var setup, deployment, and CI jo
 
 <!-- BEGIN @przeprogramowani/10x-cli -->
 
-## Zestaw narzędzi AI 10xDevs — Moduł 2, Lekcja 5 (interfejs 10xDevs 4.0)
+## Zestaw narzędzi AI 10xDevs — Moduł 2, Lekcja 5
 
-Traktuj zmianę wizualną jako **zmianę 10x z kontraktem systemu projektowego**, a nie rozmowę „zrób to ładnie”:
+Rozszerz cykl pojedynczej zmiany na pracę równoległą za pomocą **worktrees, delegowania ukierunkowanego na cel i orkiestracji wielu sesji**:
 
 ```
-/10x-new -> audit+reference research -> plan (tokens then one view) -> implement -> screenshot gate -> /10x-impl-review
+worktree per change -> /goal or claude -p -> PR -> review -> merge
 ```
+
+Lekcja koncentruje się na bezpiecznej przepustowości: izolowanych kontekstach, wyborze właściwego trybu wykonania oraz ograniczaniu równoległości do możliwości przeglądu.
 
 ### Router zadań — od czego zacząć
 
-| Umiejętność | Użyj jej, gdy |
+| Umiejętność | Użyj, gdy |
 | --- | --- |
-| `/10x-ui` | Widok już się renderuje i wymaga audytu oraz ulepszenia: motyw, zmiana stylu, „ładniejszy interfejs”, tokeny, poprawki wizualne — w aplikacji kursowej lub dowolnym innym stacku. Nie do budowania widoku od podstaw. |
-| `/10x-research` | Zlokalizuj źródło wartości i współdzielone komponenty tego repozytorium, zmapuj, które widoki je odczytują, i wybierz nazwany motyw — nie moodboard. Wynikiem jest lista zarzutów (plik, linia, wpływ na użytkownika). |
-| `/10x-plan` / `/10x-implement` | Ten sam łańcuch co we wcześniejszych lekcjach M2; payloadem jest UI. |
-| `/10x-impl-review` | Przed mergem; nie pomijaj ustaleń wizualnych jako kosmetycznych. |
+| **Izolacja kodu** | |
+| `git worktree add` | Potrzebujesz osobnego katalogu roboczego dla równoległej zmiany. Jedna zmiana na worktree, jeden świeży kontekst agenta na worktree. |
+| **Złożone zmiany** | |
+| `/10x-implement <change-id> phase <n>` | Zmiana ma wiele faz, wymaga ręcznych bramek lub korzysta z interaktywnego podejmowania decyzji podczas wykonania. |
+| **Proste zmiany** | |
+| `/goal` | Masz jasne, ograniczone zadanie i chcesz delegowania ukierunkowanego na cel. Agent pracuje autonomicznie w kierunku określonego celu z warunkiem zatrzymania. |
+| `claude -p` | Chcesz bezobsługowego wykonania dobrze zdefiniowanego zadania. Pętla Ralph Wiggum (uruchom, sprawdź, ponów próbę) jest uniwersalnym autonomicznym wzorcem. |
+| **Orkiestracja wielu sesji** | |
+| Superset / Conductor / Antigravity / VS Code Agent View | Uruchamiasz równolegle wiele sesji agentów i potrzebujesz wglądu, koordynacji lub zarządzania sesjami między nimi. |
 
-### Kontrakt
+### Zasady pracy równoległej
 
-- Dwie części, niezależnie od stacku: semantyczne tokeny w jednym źródle oraz importowalne komponenty znajdujące się w repozytorium. Tailwind v4 `@theme` + shadcn to sposób, w jaki realizuje je aplikacja kursowa; przed zaproponowaniem wartości przeczytaj implementację tego repozytorium.
-- Wartości zaczerpnięte z zewnątrz trafiają do repozytorium wraz z linią wskazującą źródło. Nie do historii czatu.
-- Jeden widok + globalne tokeny. Nie rebranding całego MVP. Nie worktree/`/goal`.
-- Trzy kategorie zarzutów: brakujące tokeny, brakujący współdzielony komponent, przypadkowa architektura.
-- Bramka wizualna: kitchen sink renderujący każdy stan, ze zrzutami ekranu; podłącz go do testu screenshotowego tylko wtedy, gdy repozytorium już taki ma. Nie aktualizuj bezrefleksyjnie baseline’ów.
-- Brak systemu projektowego w repozytorium? Zaproponowanie go jest dozwolone — oznaczone jako dodanie zależności, ograniczone do tego, czego wymaga zmiana, i zawsze przegrywające z systemem, który już istnieje.
-- Modele: kieruj według fazy, nie dostawcy. Najsilniejszy dostępny model do audytu, planu i przeglądu; tańszy poziom roboczy do wdrażania zarzutów w pętli; eskaluj tylko wtedy, gdy ten sam zarzut przetrwa dwie rundy. Działa każdy model obsługujący wizję, a żaden pojedynczy model — w tym Fable 5.1 — nie jest wymagany.
+- Jedna zmiana na worktree lub izolowaną przestrzeń roboczą. Jeden świeży kontekst agenta na zmianę.
+- Wybieraj interaktywne `/10x-implement` dla złożonych zmian, a `/goal` lub `claude -p` dla prostych.
+- Równoległość jest ograniczona przez możliwości przeglądu. Więcej agentów bez przeglądu oznacza więcej nieprzejrzanego kodu, a nie większą przepustowość.
+- Problem z jakością wynikający z szybszego dostarczania jest celowy — stanowi przejście do bramek testowych w Module 3.
 
 ### Granice lekcji
 
-- Nie ucz ponownie Exa/Context7, worktree’ów ani testowania screenshotowego jako kursu testowania.
-- Nie inicjalizuj drugiego systemu projektowego w repozytorium, które już go ma — w tym `shadcn init` w starterze kursowym.
+- Nie omawiaj ponownie interaktywnych `/10x-implement` ani `/10x-impl-review`; to Lekcje 2 i 3.
+- Nie wprowadzaj tutaj strategii testowania. Problem z jakością jest motywacją dla Modułu 3.
+- Worktrees są mechanizmem izolacji, a nie tematem pełnego samouczka git.
+
+### Ścieżki używane przez tę lekcję
+
+- `context/changes/<change-id>/` - folder aktywnej zmiany
+- `context/changes/<change-id>/plan.md` - dane wejściowe implementacji dla dowolnego trybu wykonania
+
+Umiejętności nie mogą zapisywać do `context/archive/`. Zarchiwizowane zmiany są niezmienne; jeśli rozstrzygnięta ścieżka docelowa zaczyna się od `context/archive/`, przerwij z komunikatem: „This change is archived. Open a new change with `/10x-new` instead.”
 
 <!-- END @przeprogramowani/10x-cli -->
