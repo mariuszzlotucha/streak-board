@@ -3,8 +3,14 @@ import Layout from "@/layouts/Layout.astro";
 import SignUpForm from "@/components/auth/SignUpForm";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
+import { resolveSignUpError } from "@/lib/auth-errors";
+import { takeRememberedEmail } from "@/lib/auth-email";
 
-const error = Astro.url.searchParams.get("error");
+const error = resolveSignUpError(Astro.url.searchParams.get("error"));
+// Always consumed so the cookie never outlives one page view; only shown next to an error.
+const rememberedEmail = takeRememberedEmail(Astro.cookies);
+const serverError = error && !error.field ? error.message : null;
+const serverFieldErrors = error?.field ? { [error.field]: error.message } : {};
 ---
 
 <Layout title="Sign up">
@@ -14,7 +20,12 @@ const error = Astro.url.searchParams.get("error");
         <h1 class="font-heading text-center text-2xl font-semibold">Sign up</h1>
       </CardHeader>
       <CardContent>
-        <SignUpForm serverError={error} client:load />
+        <SignUpForm
+          serverError={serverError}
+          serverFieldErrors={serverFieldErrors}
+          defaultEmail={error ? rememberedEmail : ""}
+          client:load
+        />
       </CardContent>
       <CardFooter className="justify-center text-sm text-muted-foreground">
         Already have an account?
