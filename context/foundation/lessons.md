@@ -37,3 +37,17 @@
 - **Problem**: The PR is mentioned only by number (for example "PR #4") or not at all, so the user has to look it up on GitHub before reviewing or merging it.
 - **Rule**: Whenever a phase or review has an open PR, include its full URL (the output of `gh pr create`, or `gh pr view --json url -q .url` for an existing one) in the message; when several PRs are relevant, list each URL with its phase.
 - **Applies to**: implement, impl-review, archive
+
+## End every planning session with the full list of commands the user has to run
+
+- **Context**: The end of `/10x-frame`, `/10x-research`, `/10x-plan` and `/10x-plan-review` (and `/10x-new`), when the skill hands the change over to the next step.
+- **Problem**: The closing message names only the next skill, so the user has to reconstruct the remaining steps (commit and push of the planning artifacts, checkout of `master`, the first phase branch, manual setup such as `supabase link`) from the lessons and the plan, and misses one.
+- **Rule**: Finish every planning session with one ordered, copy-pasteable list of every command the user still has to run before and for the next step: the git commands that commit and push the planning artifacts on `master` (with the English commit message), the branch creation for the next phase, any CLI or dashboard action the plan requires the user to do by hand (never one that needs credentials in the chat), and the next slash command with the change ID. Mark shell commands the user should run in the session with the `!` prefix, and say which of them Claude runs itself on request.
+- **Applies to**: frame, research, plan, plan-review
+
+## Close every slice with a production deploy and a production Supabase migration
+
+- **Context**: Finishing any roadmap slice (`S-NN`) that reaches production: the last phase of `/10x-plan`, the end of `/10x-implement`, and `/10x-archive`. Deploys are a manual step and `supabase/` is not linked to the hosted project by default.
+- **Problem**: A slice is archived as `done` while its migrations exist only in the local stack and its code is live (or not) without the matching schema. Signed-in users on production then get an error instead of the feature (S-01: the group tables were never confirmed on the hosted project), and nobody knows which environment is behind.
+- **Rule**: Every slice plan ends with a closing step "production release": (1) `npx supabase migration list` and `npx supabase db push --dry-run` against the linked hosted project, then `npx supabase db push`, done before the code that needs the schema goes live; (2) build and deploy the Worker (`npm run build && npx wrangler deploy`, or confirm that the Cloudflare build of `master` has finished); (3) a manual check of the slice's main flow on the production URL; (4) a note of the date, the applied migrations and the result in `context/changes/deployment/deployment-plan.md`. `/10x-archive` warns when this step is unchecked in `## Progress`. The user runs the credentialed commands (`supabase login`/`link`, `db push`, `wrangler secret put`) with the `!` prefix, never through pasted secrets; Claude prepares the command list, and reads the dry-run and the result.
+- **Applies to**: plan, implement, archive
