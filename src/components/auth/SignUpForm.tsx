@@ -6,19 +6,22 @@ import { SubmitButton } from "@/components/auth/SubmitButton";
 import { ServerError } from "@/components/auth/ServerError";
 import { useFormSubmitting } from "@/components/hooks/useFormSubmitting";
 
-const MIN_PASSWORD_LENGTH = 6;
+import { MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH } from "@/lib/auth-rules";
 
 interface Props {
   serverError?: string | null;
+  serverFieldErrors?: { email?: string; password?: string };
 }
 
-export default function SignUpForm({ serverError }: Props) {
+export default function SignUpForm({ serverError, serverFieldErrors }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string; confirmPassword?: string }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string; confirmPassword?: string }>({
+    ...serverFieldErrors,
+  });
   const [submitting, setSubmitting] = useFormSubmitting();
 
   function validate() {
@@ -34,6 +37,8 @@ export default function SignUpForm({ serverError }: Props) {
       next.password = "Password is required";
     } else if (password.length < MIN_PASSWORD_LENGTH) {
       next.password = `Password must be at least ${MIN_PASSWORD_LENGTH} characters`;
+    } else if (password.length > MAX_PASSWORD_LENGTH) {
+      next.password = `Password must be at most ${MAX_PASSWORD_LENGTH} characters`;
     }
 
     if (!confirmPassword) {
