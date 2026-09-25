@@ -88,6 +88,16 @@ export type Database = {
     Functions: {
       is_group_member: { Args: { p_group_id: string }; Returns: boolean };
       join_group: { Args: { p_join_code: string }; Returns: string };
+      list_group_members: {
+        Args: { p_group_id: string };
+        Returns: {
+          email: string;
+          is_owner: boolean;
+          joined_at: string;
+          user_id: string;
+        }[];
+      };
+      preview_group: { Args: { p_join_code: string }; Returns: string };
     };
     Enums: {
       [_ in never]: never;

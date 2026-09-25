@@ -151,7 +151,7 @@ Route protection is handled in `src/middleware.ts`. Add paths to the `PROTECTED_
 
 ### RLS scenario checks
 
-`supabase/checks/rls-scenarios.sql` asserts the row-level security rules of `groups` and `group_members` (visibility, joining via `join_group`, leaving, column privileges) and exits non-zero on the first regression. Run it after every migration that touches group RLS, with the local stack running:
+`supabase/checks/rls-scenarios.sql` asserts the row-level security rules of `groups` and `group_members` (visibility, joining via `join_group`, leaving, column privileges, and the `list_group_members` / `preview_group` helper functions) and exits non-zero on the first regression. Run it after every migration that touches group RLS, with the local stack running:
 
 ```bash
 docker exec -i supabase_db_10x-astro-starter psql -U postgres -d postgres -X -v ON_ERROR_STOP=1 < supabase/checks/rls-scenarios.sql
