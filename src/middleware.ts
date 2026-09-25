@@ -1,7 +1,7 @@
 import { defineMiddleware } from "astro:middleware";
 import { createClient } from "@/lib/supabase";
 
-const PROTECTED_ROUTES = ["/dashboard"];
+const PROTECTED_ROUTES = ["/dashboard", "/api/groups"];
 const AUTH_ROUTES = ["/auth/signin", "/auth/signup"];
 
 export const onRequest = defineMiddleware(async (context, next) => {
@@ -16,7 +16,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
     context.locals.user = null;
   }
 
-  if (PROTECTED_ROUTES.some((route) => context.url.pathname.startsWith(route))) {
+  const { pathname: requestPath } = context.url;
+  if (PROTECTED_ROUTES.some((route) => requestPath === route || requestPath.startsWith(`${route}/`))) {
     if (!context.locals.user) {
       return context.redirect("/auth/signin");
     }
