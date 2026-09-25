@@ -1,27 +1,138 @@
 ---
 import Layout from "@/layouts/Layout.astro";
+import CreateGroupForm from "@/components/groups/CreateGroupForm";
+import JoinGroupForm from "@/components/groups/JoinGroupForm";
+import { CircleAlert } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { createClient } from "@/lib/supabase";
+import { groupErrorMessage, resolveGroupError } from "@/lib/group-errors";
+import { getMyGroup, previewGroup, type MyGroup } from "@/lib/groups";
+import { clearJoinCode, peekJoinCode } from "@/lib/join-code";
 
 const { user } = Astro.locals;
+
+let error = resolveGroupError(Astro.url.searchParams.get("error"));
+let group: MyGroup | null = null;
+let pendingCode: string | null = null;
+let pendingGroupName: string | null = null;
+
+try {
+  const supabase = createClient(Astro.request.headers, Astro.cookies);
+  if (supabase) {
+    group = await getMyGroup(supabase);
+    const code = peekJoinCode(Astro.cookies);
+    if (code) {
+      if (group) {
+        // Already in a group: the pending invite cannot be used.
+        clearJoinCode(Astro.cookies);
+        error = groupErrorMessage("already_in_group");
+      } else {
+        const name = await previewGroup(supabase, code);
+        if (name === null) {
+          clearJoinCode(Astro.cookies);
+          error = groupErrorMessage("invalid_code");
+        } else {
+          pendingCode = code;
+          pendingGroupName = name;
+        }
+      }
+    }
+  }
+} catch (loadError) {
+  // eslint-disable-next-line no-console -- server-side log; the user only sees the fixed message
+  console.error("Loading the dashboard failed", loadError);
+  error = groupErrorMessage("unknown");
+}
+
+const inviteLink = group ? `${Astro.url.origin}/join/${group.join_code}` : null;
 ---
 
 <Layout title="Dashboard">
-  <div class="bg-cosmic flex min-h-screen items-center justify-center p-4">
-    <div class="rounded-2xl border border-white/10 bg-white/10 p-8 text-center text-white backdrop-blur-xl">
-      <h1 class="mb-4 bg-gradient-to-r from-blue-200 to-purple-200 bg-clip-text text-3xl font-bold text-transparent">
-        Dashboard
-      </h1>
-      <p class="text-blue-100/80">
-        Welcome, <span class="font-semibold text-white">{user?.email}</span>
-      </p>
-      <p class="mt-2 text-sm text-blue-100/50">This page is only for authenticated users.</p>
-      <form method="POST" action="/api/auth/signout" class="mt-6">
-        <button
-          type="submit"
-          class="rounded-lg border border-white/20 bg-white/10 px-4 py-2 text-sm transition-colors hover:bg-white/20"
-        >
-          Sign out
-        </button>
-      </form>
+  <div class="flex min-h-screen items-center justify-center bg-muted p-4">
+    <div class="w-full max-w-md space-y-4">
+      {error && (
+        <Alert variant="destructive">
+          <CircleAlert />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      {group && inviteLink && (
+        <Card>
+          <CardHeader>
+            <CardDescription>Your group</CardDescription>
+            <CardTitle>
+              <h1 class="font-heading text-2xl font-semibold break-words">{group.name}</h1>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <p class="text-sm text-muted-foreground">Share this invite link to add people to your group.</p>
+            <code class="block rounded-lg bg-muted px-3 py-2 text-sm break-all">{inviteLink}</code>
+          </CardContent>
+        </Card>
+      )}
+
+      {!group && pendingCode && pendingGroupName !== null && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <h2 class="font-heading text-xl font-semibold break-words">Join {pendingGroupName}?</h2>
+            </CardTitle>
+            <CardDescription>You were invited with a link. Confirm to become a member.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form method="POST" action="/api/groups/join">
+              <input type="hidden" name="code" value={pendingCode} />
+              <Button type="submit" className="w-full">
+                Join group
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {!group && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <h1 class="font-heading text-xl font-semibold">Create a group</h1>
+            </CardTitle>
+            <CardDescription>Start a group and invite others with a link.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <CreateGroupForm client:load />
+          </CardContent>
+        </Card>
+      )}
+
+      {!group && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <h2 class="font-heading text-xl font-semibold">Join a group</h2>
+            </CardTitle>
+            <CardDescription>Have an invite? Paste the link or code.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <JoinGroupForm client:load />
+          </CardContent>
+        </Card>
+      )}
+
+      <Card size="sm">
+        <CardContent className="flex flex-wrap items-center justify-between gap-3">
+          <p class="text-sm text-muted-foreground">
+            Signed in as <span class="font-semibold text-foreground break-all">{user?.email}</span>
+          </p>
+          <form method="POST" action="/api/auth/signout">
+            <Button type="submit" variant="outline" size="sm">
+              Sign out
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   </div>
 </Layout>

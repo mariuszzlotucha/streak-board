@@ -438,17 +438,17 @@ One new additive migration (two functions, no table changes), so no data migrati
 
 #### Automated
 
-- [ ] 2.1 Linting passes: `npm run lint`
-- [ ] 2.2 Type check passes with the typed client: `npx astro check`
-- [ ] 2.3 Build passes: `npm run build`
-- [ ] 2.4 Smoke passes including the new create/join steps (built preview + local Supabase): `npm run smoke`
+- [x] 2.1 Linting passes: `npm run lint`
+- [x] 2.2 Type check passes with the typed client: `npx astro check`
+- [x] 2.3 Build passes: `npm run build`
+- [x] 2.4 Smoke passes including the new create/join steps (built preview + local Supabase): `npm run smoke`
 
 #### Manual
 
-- [ ] 2.5 A signed-in user without a group creates a group in the browser and sees its name and invite link on `/dashboard`
-- [ ] 2.6 A second account opens the invite link while signed out, signs in, sees the "Join <name>?" card and joins
-- [ ] 2.7 An unknown or malformed code (via link and via the manual field) shows a readable error and leaves no stale join card
-- [ ] 2.8 `/dashboard` is usable at 375 px width
+- [x] 2.5 A signed-in user without a group creates a group in the browser and sees its name and invite link on `/dashboard`
+- [x] 2.6 A second account opens the invite link while signed out, signs in, sees the "Join <name>?" card and joins
+- [x] 2.7 An unknown or malformed code (via link and via the manual field) shows a readable error and leaves no stale join card
+- [x] 2.8 `/dashboard` is usable at 375 px width
 
 ### Phase 3: Group view, invite link, leave and rename
 
