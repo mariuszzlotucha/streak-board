@@ -424,15 +424,15 @@ One new additive migration (two functions, no table changes), so no data migrati
 
 #### Automated
 
-- [x] 1.1 Local database resets and applies all migrations: `npx supabase db reset`
-- [x] 1.2 RLS scenarios pass, including the new sections: `docker exec -i supabase_db_10x-astro-starter psql -U postgres -d postgres -X -v ON_ERROR_STOP=1 < supabase/checks/rls-scenarios.sql`
-- [x] 1.3 Generated types contain both functions: `grep -E "list_group_members|preview_group" src/types.ts`
-- [x] 1.4 Type check passes: `npx astro check`
-- [x] 1.5 Linting passes: `npm run lint`
+- [x] 1.1 Local database resets and applies all migrations: `npx supabase db reset` — b70e11d
+- [x] 1.2 RLS scenarios pass, including the new sections: `docker exec -i supabase_db_10x-astro-starter psql -U postgres -d postgres -X -v ON_ERROR_STOP=1 < supabase/checks/rls-scenarios.sql` — b70e11d
+- [x] 1.3 Generated types contain both functions: `grep -E "list_group_members|preview_group" src/types.ts` — b70e11d
+- [x] 1.4 Type check passes: `npx astro check` — b70e11d
+- [x] 1.5 Linting passes: `npm run lint` — b70e11d
 
 #### Manual
 
-- [x] 1.6 Migration SQL reviewed: both functions are SECURITY DEFINER with `search_path = ''` and executable by `authenticated` only
+- [x] 1.6 Migration SQL reviewed: both functions are SECURITY DEFINER with `search_path = ''` and executable by `authenticated` only — b70e11d
 
 ### Phase 2: Create a group and join it (link and code)
 
