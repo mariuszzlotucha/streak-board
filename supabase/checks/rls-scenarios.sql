@@ -1,4 +1,4 @@
--- RLS scenario checks for groups / group_members (F-01 + group-rls-hardening).
+-- RLS scenario checks for groups / group_members (F-01 + group-rls-hardening + S-01 helper functions).
 --
 -- Run against the LOCAL Supabase database only:
 --   docker exec -i supabase_db_10x-astro-starter psql -U postgres -d postgres -X -v ON_ERROR_STOP=1 < supabase/checks/rls-scenarios.sql
@@ -410,6 +410,115 @@ begin
   perform rls_check.as_user(a);
   perform rls_check.new_group(a);
   perform rls_check.expect_value(format('select count(*) from public.group_members where user_id = %L', a), '1', 'after deleting the group, the owner can create a new one');
+
+  perform rls_check.as_postgres();
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- S-01: list_group_members (member-only, emails, owner flag)
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  a uuid; c uuid; ga uuid; code_a text;
+begin
+  a := rls_check.mk_user(); c := rls_check.mk_user();
+
+  perform rls_check.as_user(a);
+  ga := rls_check.new_group(a);
+  code_a := rls_check.code_of(ga);
+  perform rls_check.as_user(c);
+  perform rls_check.expect_value(format('select public.join_group(%L)', code_a), ga::text, 'S-01 members setup: C joined group A');
+
+  -- Everything in this file shares one transaction, so both joined_at values are equal. Move the owner's an hour later so
+  -- the owner-first ordering is the only thing that can put the owner ahead of C.
+  perform rls_check.as_postgres();
+  update public.group_members set joined_at = joined_at + interval '1 hour' where user_id = a;
+
+  -- The owner sees both members: owner first, correct is_owner flags, emails present.
+  perform rls_check.as_user(a);
+  perform rls_check.expect_value(format('select count(*) from public.list_group_members(%L)', ga), '2', 'S-01 the owner sees both members');
+  perform rls_check.expect_value(format('select string_agg(user_id::text, %L) from public.list_group_members(%L)', ',', ga), a::text || ',' || c::text, 'S-01 the owner is listed first, then members by joined_at');
+  perform rls_check.expect_value(format('select is_owner::text from public.list_group_members(%L) where user_id = %L', ga, a), 'true', 'S-01 is_owner is true for the owner');
+  perform rls_check.expect_value(format('select is_owner::text from public.list_group_members(%L) where user_id = %L', ga, c), 'false', 'S-01 is_owner is false for a member');
+  perform rls_check.expect_value(format('select count(*) from public.list_group_members(%L) where email is not null', ga), '2', 'S-01 every listed member has an email');
+  perform rls_check.expect_value(format('select email from public.list_group_members(%L) where user_id = %L', ga, c), c::text || '@rls-check.invalid', 'S-01 the email comes from auth.users');
+
+  -- A regular member sees the same list.
+  perform rls_check.as_user(c);
+  perform rls_check.expect_value(format('select count(*) from public.list_group_members(%L)', ga), '2', 'S-01 a member sees both members');
+
+  perform rls_check.as_postgres();
+end;
+$$;
+
+do $$
+declare
+  a uuid; d uuid; ga uuid;
+begin
+  a := rls_check.mk_user(); d := rls_check.mk_user();
+
+  perform rls_check.as_user(a);
+  ga := rls_check.new_group(a);
+
+  -- D belongs to no group at all, so the only possible cause of an empty list is that D is not a member of A's group.
+  perform rls_check.as_user(d);
+  perform rls_check.expect_value(format('select count(*) from public.list_group_members(%L)', ga), '0', 'S-01 a non-member gets no members');
+
+  perform rls_check.as_postgres();
+end;
+$$;
+
+do $$
+declare
+  a uuid; b uuid; ga uuid; gb uuid;
+begin
+  a := rls_check.mk_user(); b := rls_check.mk_user();
+
+  perform rls_check.as_user(a);
+  ga := rls_check.new_group(a);
+  perform rls_check.as_user(b);
+  gb := rls_check.new_group(b);
+
+  -- B is a member of another group: still nothing for group A, and B's own group is listed normally.
+  perform rls_check.expect_value(format('select count(*) from public.list_group_members(%L)', ga), '0', 'S-01 a member of another group gets no members of this group');
+  perform rls_check.expect_value(format('select count(*) from public.list_group_members(%L)', gb), '1', 'S-01 a member still sees their own group');
+
+  perform rls_check.as_postgres();
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- S-01: preview_group (name by exact code, NULL otherwise) and anon denial on both functions
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  a uuid; d uuid; ga uuid; code_a text;
+begin
+  a := rls_check.mk_user(); d := rls_check.mk_user();
+
+  perform rls_check.as_user(a);
+  ga := rls_check.new_group(a);
+  code_a := rls_check.code_of(ga);
+
+  -- D is not in the group and cannot read it directly; the preview is the only path to the name.
+  perform rls_check.as_user(d);
+  perform rls_check.expect_value(format('select count(*) from public.groups where id = %L', ga), '0', 'S-01 setup: a non-member cannot read the group directly');
+  perform rls_check.expect_value(format('select public.preview_group(%L)', code_a), 'rls-check group', 'S-01 preview_group returns the name for the right code');
+  perform rls_check.expect_value($q$select public.preview_group('ffffffffffff')$q$, null, 'S-01 preview_group returns NULL for an unknown code');
+  perform rls_check.expect_value($q$select public.preview_group('')$q$, null, 'S-01 preview_group returns NULL for an empty code');
+
+  perform rls_check.as_anon();
+  perform rls_check.expect_error('42501', format('select public.preview_group(%L)', code_a), 'S-01 anon cannot call preview_group');
+  perform rls_check.expect_error('42501', format('select * from public.list_group_members(%L)', ga), 'S-01 anon cannot call list_group_members');
+
+  -- After the group is deleted its code previews as NULL.
+  perform rls_check.as_user(a);
+  perform rls_check.expect_rows(format('delete from public.groups where id = %L', ga), 1, 'S-01 setup: the owner deleted the group');
+  perform rls_check.as_user(d);
+  perform rls_check.expect_value(format('select public.preview_group(%L)', code_a), null, 'S-01 preview_group returns NULL after the group is deleted');
 
   perform rls_check.as_postgres();
 end;
