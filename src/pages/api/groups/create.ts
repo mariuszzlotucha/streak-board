@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@/lib/supabase";
 import { toGroupErrorCode } from "@/lib/group-errors";
-import { normalizeGroupName } from "@/lib/groups";
+import { normalizeGroupName } from "@/lib/group-rules";
 import { clearJoinCode } from "@/lib/join-code";
 
 export const prerender = false;

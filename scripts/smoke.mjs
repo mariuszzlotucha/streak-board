@@ -21,25 +21,30 @@ function storeCookies(response, jar) {
   for (const raw of response.headers.getSetCookie()) {
     const [pair, ...attrs] = raw.split(";");
     const [name, ...rest] = pair.split("=");
-    const expired = attrs.some((a) => /max-age=0/i.test(a.trim()));
+    // Astro's cookies.delete() sends `Expires=<1970>` without Max-Age, so a past Expires also means deletion.
+    const expired = attrs.some((a) => {
+      const attr = a.trim();
+      return /^max-age=0$/i.test(attr) || (/^expires=/i.test(attr) && Date.parse(attr.slice(8)) < Date.now());
+    });
     if (expired) jar.delete(name.trim());
     else jar.set(name.trim(), rest.join("="));
   }
 }
 
-// `jar` selects the session (default: user A). `cookie` replaces the jar's cookies for this request.
-async function request(path, { method = "GET", form, cookie, jar = jarA } = {}) {
+// `jar` selects the session (default: user A). `cookie` replaces the jar's cookies for this request and
+// keeps the response's Set-Cookie out of the jar. `origin` overrides the Origin header (CSRF check).
+async function request(path, { method = "GET", form, cookie, jar = jarA, origin = BASE_URL } = {}) {
   const response = await fetch(BASE_URL + path, {
     method,
     redirect: "manual",
     headers: {
       Cookie: cookie ?? cookieHeader(jar),
-      Origin: BASE_URL,
+      Origin: origin,
       ...(form ? { "Content-Type": "application/x-www-form-urlencoded" } : {}),
     },
     body: form ? new URLSearchParams(form).toString() : undefined,
   });
-  storeCookies(response, jar);
+  if (cookie === undefined) storeCookies(response, jar);
   return {
     status: response.status,
     location: response.headers.get("location") ?? "",
@@ -115,6 +120,12 @@ const steps = [
     { status: 302, location: "/auth/signin" },
   ],
   [
+    // An empty name has no side effect if the Origin check were ever off (it would answer 302 invalid_name).
+    "group create from a foreign origin is rejected",
+    () => request("/api/groups/create", { method: "POST", form: { name: "  " }, origin: "http://evil.example" }),
+    { status: 403 },
+  ],
+  [
     "group create rejects an empty name",
     () => request("/api/groups/create", { method: "POST", form: { name: "  " } }),
     { status: 302, location: "/dashboard?error=invalid_name" },
@@ -122,13 +133,17 @@ const steps = [
   [
     "group create succeeds",
     () => request("/api/groups/create", { method: "POST", form: { name: groupName } }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard", setCookie: "join_code=deleted" },
   ],
   [
     "dashboard shows the group and its invite link",
     async () => {
       const result = await request("/dashboard");
       joinCode = result.body.match(/\/join\/([0-9a-f]+)/)?.[1];
+      if (!joinCode) {
+        console.log("FAIL  invite code not found in the group owner's dashboard; later invite steps cannot run");
+        process.exit(1);
+      }
       return result;
     },
     { status: 200, bodyIncludes: [groupName, "/join/"] },
@@ -156,7 +171,9 @@ const steps = [
   [
     "dashboard previews the pending invite for user B",
     () => request("/dashboard", { jar: jarB }),
-    { status: 200, bodyIncludes: groupName },
+    // The confirm button proves the join card rendered (the name alone would also appear next to an error);
+    // a non-member must not see the invite link.
+    { status: 200, bodyIncludes: [groupName, "Join group"], bodyExcludes: "/join/" },
   ],
   [
     "join rejects a malformed code",
@@ -171,12 +188,21 @@ const steps = [
   [
     "join with the invite code succeeds",
     () => request("/api/groups/join", { method: "POST", form: { code: joinCode }, jar: jarB }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard", setCookie: "join_code=deleted" },
+  ],
+  [
+    "dashboard shows the group to user B after joining",
+    () => request("/dashboard", { jar: jarB }),
+    {
+      status: 200,
+      bodyIncludes: ["Your group", groupName, "/join/"],
+      bodyExcludes: ["Join group", "Create a group"],
+    },
   ],
   [
     "joining again is rejected",
     () => request("/api/groups/join", { method: "POST", form: { code: joinCode }, jar: jarB }),
-    { status: 302, location: "/dashboard?error=already_in_group" },
+    { status: 302, location: "/dashboard?error=already_in_group", setCookie: "join_code=deleted" },
   ],
   ["signin page redirects signed-in user", () => request("/auth/signin"), { status: 302, location: "/dashboard" }],
   ["signup page redirects signed-in user", () => request("/auth/signup"), { status: 302, location: "/dashboard" }],
@@ -193,7 +219,7 @@ for (const [name, run, expected] of steps) {
     (expected.locationExact === undefined || actual.location === expected.locationExact) &&
     (expected.setCookie === undefined || actual.setCookies.some((c) => c.includes(expected.setCookie))) &&
     [expected.bodyIncludes ?? []].flat().every((text) => actual.body.includes(text)) &&
-    (expected.bodyExcludes === undefined || !actual.body.includes(expected.bodyExcludes));
+    [expected.bodyExcludes ?? []].flat().every((text) => !actual.body.includes(text));
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}  -> ${actual.status} ${actual.location}`);
   if (!ok) {
     failed++;
@@ -201,7 +227,7 @@ for (const [name, run, expected] of steps) {
       `      expected ${expected.status} ${expected.locationExact ?? expected.location ?? ""}` +
         (expected.setCookie ? ` Set-Cookie including "${expected.setCookie}"` : "") +
         (expected.bodyIncludes ? ` body includes ${JSON.stringify(expected.bodyIncludes)}` : "") +
-        (expected.bodyExcludes ? ` body excludes "${expected.bodyExcludes}"` : ""),
+        (expected.bodyExcludes ? ` body excludes ${JSON.stringify(expected.bodyExcludes)}` : ""),
     );
   }
 }

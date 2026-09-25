@@ -17,6 +17,7 @@ let error = resolveGroupError(Astro.url.searchParams.get("error"));
 let group: MyGroup | null = null;
 let pendingCode: string | null = null;
 let pendingGroupName: string | null = null;
+let loadFailed = false;
 
 try {
   const supabase = createClient(Astro.request.headers, Astro.cookies);
@@ -44,9 +45,12 @@ try {
   // eslint-disable-next-line no-console -- server-side log; the user only sees the fixed message
   console.error("Loading the dashboard failed", loadError);
   error = groupErrorMessage("unknown");
+  loadFailed = true;
 }
 
 const inviteLink = group ? `${Astro.url.origin}/join/${group.join_code}` : null;
+// After a failed load we cannot tell whether the user is in a group, so do not offer to create or join one.
+const showGroupForms = !group && !loadFailed;
 ---
 
 <Layout title="Dashboard">
@@ -93,7 +97,7 @@ const inviteLink = group ? `${Astro.url.origin}/join/${group.join_code}` : null;
         </Card>
       )}
 
-      {!group && (
+      {showGroupForms && (
         <Card>
           <CardHeader>
             <CardTitle>
@@ -107,7 +111,7 @@ const inviteLink = group ? `${Astro.url.origin}/join/${group.join_code}` : null;
         </Card>
       )}
 
-      {!group && (
+      {showGroupForms && (
         <Card>
           <CardHeader>
             <CardTitle>

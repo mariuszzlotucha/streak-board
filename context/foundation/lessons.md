@@ -22,3 +22,11 @@
 - **Problem**: These skills commit nothing, so their artifacts stay uncommitted and get swept into the first phase branch and PR, mixing planning documents with code (the same failure as review F2 of group-rls-hardening), or are lost from `master` if the phase is abandoned.
 - **Rule**: Run the planning skills on `master` (after `git pull --ff-only`), then commit all resulting artifacts to `master` with an English message and push it before starting `/10x-implement` phase 1, so every phase branch is cut from a `master` that already contains the plan.
 - **Applies to**: research, plan, plan-review, implement
+
+
+## <Title — to be filled in>
+
+- **Context**: scripts/smoke.mjs:20-28 (and the join/create steps) — smoke steps added for a new feature, in particular anything involving cookies set or cleared by the server.
+- **Problem**: The smoke test can pass without proving the core outcomes: `storeCookies` deletes only on `Max-Age=0`, but Astro's `cookies.delete` sends `Expires=1970` with value `deleted`, so cleared cookies stay in the jar and no step asserts they were cleared; no step checks the post-join dashboard state; the preview step checks only that the group name appears in the body, which an error banner would also satisfy; no foreign-Origin (403) or anonymous-path check; a missing regex match silently becomes "undefined".
+- **Rule**: <to be filled in by you>
+- **Applies to**: <to be filled in by you>

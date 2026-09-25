@@ -3,7 +3,7 @@ import { KeyRound, LogIn } from "lucide-react";
 import { FormField } from "@/components/auth/FormField";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { useFormSubmitting } from "@/components/hooks/useFormSubmitting";
-import { normalizeJoinCode } from "@/lib/join-code";
+import { normalizeJoinCode } from "@/lib/group-rules";
 
 export default function JoinGroupForm() {
   const [code, setCode] = useState("");

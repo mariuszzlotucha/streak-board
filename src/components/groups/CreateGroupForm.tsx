@@ -3,7 +3,7 @@ import { Plus, Users } from "lucide-react";
 import { FormField } from "@/components/auth/FormField";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { useFormSubmitting } from "@/components/hooks/useFormSubmitting";
-import { MAX_GROUP_NAME_LENGTH, normalizeGroupName } from "@/lib/groups";
+import { MAX_GROUP_NAME_LENGTH, normalizeGroupName, trimGroupName } from "@/lib/group-rules";
 
 export default function CreateGroupForm() {
   const [name, setName] = useState("");
@@ -12,7 +12,7 @@ export default function CreateGroupForm() {
 
   function validate() {
     let next: string | undefined;
-    if (!name.trim()) {
+    if (!trimGroupName(name)) {
       next = "Group name is required";
     } else if (!normalizeGroupName(name)) {
       // Counted in code points, like the server and the database; a maxLength attribute would count UTF-16 units.
