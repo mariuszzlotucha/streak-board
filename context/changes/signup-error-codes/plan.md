@@ -257,15 +257,15 @@ Brak zmian schematu ani danych. W projekcie Supabase z włączonymi potwierdzeni
 
 #### Automated
 
-- [x] 2.1 Lint passes: `npm run lint`
-- [x] 2.2 Type check passes: `npx astro check`
-- [x] 2.3 Build passes: `npm run build`
-- [x] 2.4 Smoke passes, including the cookie and prefill steps: `BASE_URL=http://localhost:4321 npm run smoke`
-- [x] 2.5 Successful redirects do not set the cookie: `grep -n "rememberEmail" src/pages/api/auth/signin.ts src/pages/api/auth/signup.ts` shows calls only before error redirects (checked in review of the diff)
+- [x] 2.1 Lint passes: `npm run lint` — 62df4b3
+- [x] 2.2 Type check passes: `npx astro check` — 62df4b3
+- [x] 2.3 Build passes: `npm run build` — 62df4b3
+- [x] 2.4 Smoke passes, including the cookie and prefill steps: `BASE_URL=http://localhost:4321 npm run smoke` — 62df4b3
+- [x] 2.5 Successful redirects do not set the cookie: `grep -n "rememberEmail" src/pages/api/auth/signin.ts src/pages/api/auth/signup.ts` shows calls only before error redirects (checked in review of the diff) — 62df4b3
 
 #### Manual
 
-- [x] 2.6 After a wrong password the sign-in page shows the error and the Email field is filled, while the Password field is empty
-- [x] 2.7 After signing up with an already registered email the Email field is filled and the message is under it
-- [x] 2.8 In browser DevTools the `auth_email` cookie is HttpOnly with Path `/auth` and disappears after the error page loads; reloading the page leaves the Email field empty
-- [x] 2.9 A successful sign-in or sign-up leaves no `auth_email` cookie
+- [x] 2.6 After a wrong password the sign-in page shows the error and the Email field is filled, while the Password field is empty — 62df4b3
+- [x] 2.7 After signing up with an already registered email the Email field is filled and the message is under it — 62df4b3
+- [x] 2.8 In browser DevTools the `auth_email` cookie is HttpOnly with Path `/auth` and disappears after the error page loads; reloading the page leaves the Email field empty — 62df4b3
+- [x] 2.9 A successful sign-in or sign-up leaves no `auth_email` cookie — 62df4b3
