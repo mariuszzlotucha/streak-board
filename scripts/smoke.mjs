@@ -1,6 +1,8 @@
 // Smoke test: proves the built app, the Cloudflare adapter and the Supabase auth flow still work together.
 // Zero dependencies on purpose. Run against a live server: BASE_URL=http://localhost:4321 node scripts/smoke.mjs
 
+import { Buffer } from "node:buffer";
+
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:4321";
 const stamp = Date.now();
 const email = `smoke-${stamp}@example.com`;
@@ -14,6 +16,8 @@ const jarA = new Map();
 const jarB = new Map();
 // Read from A's dashboard at run time and used by the later invite steps.
 let joinCode;
+// Read from the owner's dashboard at run time: the id A's remove control submits for user B.
+let memberIdB;
 
 function cookieHeader(jar) {
   return [...jar.entries()].map(([k, v]) => `${k}=${v}`).join("; ");
@@ -76,7 +80,37 @@ function formPostingTo(route) {
   return new RegExp(`<form[^>]*action="${escapeRegExp(route)}"`);
 }
 
+// A member row (<li>) that contains the given email and, after it, a form posting to the remove-member route.
+function rowWithRemoveControl(memberEmail) {
+  return new RegExp(
+    `<li[^>]*>(?:(?!</li>)[\\s\\S])*${escapeRegExp(memberEmail)}(?:(?!</li>)[\\s\\S])*action="/api/groups/remove-member"`,
+  );
+}
+
+// The id a signed-in session belongs to, read from the Supabase auth cookie in the jar (`base64-` plus base64url JSON,
+// split into numbered chunks when large). The remove-member steps need real ids to prove who may remove whom.
+function sessionUserId(jar) {
+  const value = [...jar.entries()]
+    .filter(([name]) => /^sb-.+-auth-token(\.\d+)?$/.test(name))
+    .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
+    .map(([, chunk]) => chunk)
+    .join("");
+  let id;
+  try {
+    id = JSON.parse(Buffer.from(value.replace(/^base64-/, ""), "base64url").toString("utf8")).user?.id;
+  } catch {
+    id = undefined;
+  }
+  if (typeof id !== "string") {
+    console.log("FAIL  session user id not found in the cookie jar; later remove-member steps cannot run");
+    process.exit(1);
+  }
+  return id;
+}
+
 const NO_ERROR_ALERT = 'role="alert"';
+// The hidden field a rendered remove control submits; the island's serialised props do not contain this markup.
+const REMOVE_TARGET = /<input[^>]*name="user_id"[^>]*value="([0-9a-f-]{36})"/;
 // Only the rendered read-only input carries this label; the invite URL also sits in the island's serialised props.
 const INVITE_INPUT = 'aria-label="Invite link"';
 
@@ -332,6 +366,158 @@ const steps = [
       bodyMatches: [groupHeading(renamedGroupName), memberRow(email, "Owner"), memberRow(emailB, "You")],
       bodyExcludes: ["Create a group", NO_ERROR_ALERT],
     },
+  ],
+  [
+    "owner dashboard offers to remove the other member and to delete the group",
+    async () => {
+      const result = await request("/dashboard");
+      memberIdB = result.body.match(REMOVE_TARGET)?.[1];
+      // The control has to submit user B's real id, or the removal steps below would prove nothing.
+      if (!memberIdB || memberIdB !== sessionUserId(jarB)) {
+        console.log(
+          "FAIL  the owner's remove control does not carry user B's id; later remove-member steps cannot run",
+        );
+        process.exit(1);
+      }
+      return result;
+    },
+    {
+      status: 200,
+      bodyIncludes: "2 members",
+      bodyMatches: [
+        groupHeading(renamedGroupName),
+        // The control sits on B's row and not on the owner's own row.
+        rowWithRemoveControl(emailB),
+        formPostingTo("/api/groups/delete"),
+      ],
+      bodyNotMatches: [rowWithRemoveControl(email)],
+      bodyExcludes: NO_ERROR_ALERT,
+    },
+  ],
+  [
+    "member dashboard offers no remove or delete controls",
+    () => request("/dashboard", { jar: jarB }),
+    {
+      status: 200,
+      // The leave control proves the member view rendered; the owner-only forms must be absent, not just unlabelled.
+      bodyMatches: [formPostingTo("/api/groups/leave")],
+      bodyNotMatches: [formPostingTo("/api/groups/remove-member"), formPostingTo("/api/groups/delete")],
+      bodyExcludes: ["Delete group", NO_ERROR_ALERT],
+    },
+  ],
+  [
+    "remove-member by a non-owner is rejected",
+    () => request("/api/groups/remove-member", { method: "POST", form: { user_id: sessionUserId(jarA) }, jar: jarB }),
+    { status: 302, locationExact: "/dashboard?error=forbidden" },
+  ],
+  [
+    "remove-member of oneself is refused",
+    () => request("/api/groups/remove-member", { method: "POST", form: { user_id: sessionUserId(jarB) }, jar: jarB }),
+    { status: 302, locationExact: "/dashboard?error=forbidden" },
+  ],
+  [
+    // The self check must not be case-sensitive: the policy for leaving would accept the upper-case spelling.
+    "remove-member of oneself in upper case is refused too",
+    () =>
+      request("/api/groups/remove-member", {
+        method: "POST",
+        form: { user_id: sessionUserId(jarB).toUpperCase() },
+        jar: jarB,
+      }),
+    { status: 302, locationExact: "/dashboard?error=forbidden" },
+  ],
+  [
+    // Without validation PostgREST would answer 22P02 and the page would say "Something went wrong" instead.
+    "remove-member rejects a malformed user id",
+    () => request("/api/groups/remove-member", { method: "POST", form: { user_id: "not-a-uuid" } }),
+    { status: 302, locationExact: "/dashboard?error=forbidden" },
+  ],
+  [
+    "delete by a non-owner is rejected",
+    () => request("/api/groups/delete", { method: "POST", jar: jarB }),
+    { status: 302, locationExact: "/dashboard?error=forbidden" },
+  ],
+  [
+    "group and both members are intact after the rejected requests",
+    () => request("/dashboard", { jar: jarB }),
+    {
+      status: 200,
+      bodyIncludes: "2 members",
+      bodyMatches: [groupHeading(renamedGroupName), memberRow(email, "Owner"), memberRow(emailB, "You")],
+      bodyExcludes: ["Create a group", NO_ERROR_ALERT],
+    },
+  ],
+  [
+    "remove-member by the owner succeeds",
+    () => request("/api/groups/remove-member", { method: "POST", form: { user_id: memberIdB } }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "removed user B sees the create form",
+    () => request("/dashboard", { jar: jarB }),
+    {
+      status: 200,
+      bodyIncludes: ["Create a group", "Join a group"],
+      bodyExcludes: ["Your group", renamedGroupName, "/join/", NO_ERROR_ALERT],
+    },
+  ],
+  [
+    "owner dashboard lists only the owner after the removal",
+    () => request("/dashboard"),
+    {
+      status: 200,
+      bodyIncludes: "1 member",
+      bodyMatches: [groupHeading(renamedGroupName), memberRow(email, "Owner")],
+      bodyNotMatches: [formPostingTo("/api/groups/remove-member")],
+      bodyExcludes: [emailB, NO_ERROR_ALERT],
+    },
+  ],
+  [
+    "user B joins again with the same code after being removed",
+    () => request("/api/groups/join", { method: "POST", form: { code: joinCode }, jar: jarB }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "dashboard shows the group to user B after being re-added",
+    () => request("/dashboard", { jar: jarB }),
+    {
+      status: 200,
+      bodyMatches: [groupHeading(renamedGroupName), memberRow(email, "Owner"), memberRow(emailB, "You")],
+      bodyExcludes: ["Create a group", NO_ERROR_ALERT],
+    },
+  ],
+  [
+    "delete by the owner succeeds",
+    () => request("/api/groups/delete", { method: "POST" }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "owner dashboard shows the create form after deleting the group",
+    () => request("/dashboard"),
+    {
+      status: 200,
+      bodyIncludes: ["Create a group", "Join a group"],
+      bodyExcludes: ["Your group", renamedGroupName, "/join/", "Delete group", NO_ERROR_ALERT],
+    },
+  ],
+  [
+    "former member B sees the create form after the group was deleted",
+    () => request("/dashboard", { jar: jarB }),
+    {
+      status: 200,
+      bodyIncludes: ["Create a group", "Join a group"],
+      bodyExcludes: ["Your group", renamedGroupName, "/join/", NO_ERROR_ALERT],
+    },
+  ],
+  [
+    "the deleted group's invite code is no longer valid",
+    () => request("/api/groups/join", { method: "POST", form: { code: joinCode }, jar: jarB }),
+    { status: 302, locationExact: "/dashboard?error=invalid_code" },
+  ],
+  [
+    "deleting again after the group is gone is not an error",
+    () => request("/api/groups/delete", { method: "POST" }),
+    { status: 302, locationExact: "/dashboard" },
   ],
   ["signin page redirects signed-in user", () => request("/auth/signin"), { status: 302, location: "/dashboard" }],
   ["signup page redirects signed-in user", () => request("/auth/signup"), { status: 302, location: "/dashboard" }],

@@ -55,7 +55,7 @@ npm run dev
 - `npm run lint` - Run ESLint with type-checked rules
 - `npm run lint:fix` - Auto-fix ESLint issues
 - `npm run format` - Run Prettier
-- `npm run smoke` - Smoke test the auth flow against a running server (`BASE_URL`, defaults to `http://localhost:4321`)
+- `npm run smoke` - Smoke test the auth and group flows against a running server (`BASE_URL`, defaults to `http://localhost:4321`)
 
 ## Project Structure
 
@@ -140,14 +140,28 @@ Users can then sign in immediately after sign-up without clicking a confirmation
 
 ### Auth routes
 
-| Route                 | Description                                                             |
-| --------------------- | ----------------------------------------------------------------------- |
-| `/auth/signin`        | Email/password sign-in form                                             |
-| `/auth/signup`        | Email/password sign-up form                                             |
-| `/auth/confirm-email` | Post-signup "check your inbox" page                                     |
-| `/dashboard`          | Example protected page (redirects to `/auth/signin` if unauthenticated) |
+| Route                 | Description                                                          |
+| --------------------- | -------------------------------------------------------------------- |
+| `/auth/signin`        | Email/password sign-in form                                          |
+| `/auth/signup`        | Email/password sign-up form                                          |
+| `/auth/confirm-email` | Post-signup "check your inbox" page                                  |
+| `/dashboard`          | Protected group hub (redirects to `/auth/signin` if unauthenticated) |
 
 Route protection is handled in `src/middleware.ts`. Add paths to the `PROTECTED_ROUTES` array there to require authentication.
+
+### Group routes
+
+| Route                            | Description                                                                               |
+| -------------------------------- | ----------------------------------------------------------------------------------------- |
+| `/join/<code>`                   | Public invite link: remembers the code in a short-lived cookie, redirects to `/dashboard` |
+| `POST /api/groups/create`        | Create a group (field `name`); the caller becomes its owner                               |
+| `POST /api/groups/join`          | Join with an invite code or a pasted invite link (field `code`)                           |
+| `POST /api/groups/rename`        | Owner: rename the group (field `name`)                                                    |
+| `POST /api/groups/leave`         | Member: leave the group (the owner leaves only by deleting it)                            |
+| `POST /api/groups/remove-member` | Owner: remove another member (field `user_id`)                                            |
+| `POST /api/groups/delete`        | Owner: delete the group; every membership goes with it                                    |
+
+`/api/groups/*` follows the same `PROTECTED_ROUTES` rule as `/dashboard`: an unauthenticated request is redirected to `/auth/signin`. `/join/<code>` is the exception on purpose, so an invited visitor is sent through sign-in by the protected dashboard. Every group endpoint redirects back to `/dashboard`, adding `?error=<code>` on failure. Who may do what is decided by Postgres row-level security (see [RLS scenario checks](#rls-scenario-checks)); the app only forwards the signed-in user's session.
 
 ### RLS scenario checks
 
@@ -189,14 +203,14 @@ npx wrangler rollback [version-id]   # reverts to the given version, or the prio
 
 ## Smoke test
 
-`scripts/smoke.mjs` is a dependency-free Node script that walks the whole auth flow (sign-up, sign-in, protected page, sign-out) over HTTP. Run it against the dev server or the production preview after dependency upgrades:
+`scripts/smoke.mjs` is a dependency-free Node script that walks the auth flow (sign-up, sign-in, protected page, sign-out) and the group flow over HTTP. The group part uses two signed-up users with separate sessions: create, invite link, join, member view, rename, leave, remove member and delete group, including the rejected attempts (a member trying owner actions, malformed input). Run it against the dev server or the production preview after dependency upgrades:
 
 ```bash
 npm run dev            # or: npm run build && npm run preview
 BASE_URL=http://localhost:4321 npm run smoke
 ```
 
-It needs a reachable Supabase instance (local or cloud) with email confirmation disabled.
+It needs a reachable Supabase instance (local or cloud) with email confirmation disabled and the group migrations from `supabase/migrations/` applied.
 
 > **Note:** this script exists primarily to guard the development of the starter itself — it is a fast sanity check that dependency upgrades did not break the build, the Cloudflare adapter or the Supabase auth flow. It is **not** a substitute for a real test suite. Once you build your own product on top of this starter, add proper tests (unit, integration, end-to-end) suited to your application.
 

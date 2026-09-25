@@ -17,6 +17,8 @@ interface ConfirmActionProps {
   action: string;
   fields?: Record<string, string>;
   triggerLabel: string;
+  /** Distinguishes repeated triggers (one "Remove" per member) for assistive technology; must contain `triggerLabel`. */
+  triggerAriaLabel?: string;
   title: string;
   description: string;
   confirmLabel: string;
@@ -32,6 +34,7 @@ export default function ConfirmAction({
   action,
   fields = {},
   triggerLabel,
+  triggerAriaLabel,
   title,
   description,
   confirmLabel,
@@ -53,7 +56,7 @@ export default function ConfirmAction({
       </form>
       <AlertDialog>
         <AlertDialogTrigger asChild>
-          <Button type="button" variant={variant} size="sm">
+          <Button type="button" variant={variant} size="sm" aria-label={triggerAriaLabel}>
             {triggerLabel}
           </Button>
         </AlertDialogTrigger>

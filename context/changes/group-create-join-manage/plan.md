@@ -471,14 +471,14 @@ One new additive migration (two functions, no table changes), so no data migrati
 
 #### Automated
 
-- [ ] 4.1 Linting passes: `npm run lint`
-- [ ] 4.2 Type check passes: `npx astro check`
-- [ ] 4.3 Build passes: `npm run build`
-- [ ] 4.4 Smoke passes including authorization, remove-member and delete-group steps: `npm run smoke`
+- [x] 4.1 Linting passes: `npm run lint`
+- [x] 4.2 Type check passes: `npx astro check`
+- [x] 4.3 Build passes: `npm run build`
+- [x] 4.4 Smoke passes including authorization, remove-member and delete-group steps: `npm run smoke`
 
 #### Manual
 
-- [ ] 4.5 The owner removes a member through the dialog and the removed user's next page load shows no group
-- [ ] 4.6 The owner deletes the group through the dialog and every former member loses it
-- [ ] 4.7 A non-owner sees no remove or delete controls
-- [ ] 4.8 The owner controls are usable at 375 px width
+- [x] 4.5 The owner removes a member through the dialog and the removed user's next page load shows no group
+- [x] 4.6 The owner deletes the group through the dialog and every former member loses it
+- [x] 4.7 A non-owner sees no remove or delete controls
+- [x] 4.8 The owner controls are usable at 375 px width

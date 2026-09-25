@@ -4,6 +4,7 @@
 export const MAX_GROUP_NAME_LENGTH = 80;
 
 const JOIN_CODE_PATTERN = /^[0-9a-f]{1,64}$/;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** Trims the same characters as the DB CHECK on groups.name: space, tab, CR, LF (not NBSP or other Unicode spaces). */
 export function trimGroupName(input: string): string {
@@ -32,4 +33,13 @@ export function normalizeJoinCode(input: unknown): string | null {
   const lastSegment = withoutQuery.split("/").filter(Boolean).at(-1);
   if (!lastSegment || !JOIN_CODE_PATTERN.test(lastSegment)) return null;
   return lastSegment;
+}
+
+/**
+ * A canonical UUID (a user id) in lowercase, or null. Lowercasing keeps comparisons with `auth.users` ids exact;
+ * anything else would reach PostgREST as a malformed uuid and fail with 22P02 instead of a clean rejection.
+ */
+export function normalizeUuid(input: unknown): string | null {
+  if (typeof input !== "string" || !UUID_PATTERN.test(input)) return null;
+  return input.toLowerCase();
 }
