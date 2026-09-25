@@ -30,3 +30,10 @@
 - **Problem**: The smoke test can pass without proving the core outcomes: `storeCookies` deletes only on `Max-Age=0`, but Astro's `cookies.delete` sends `Expires=1970` with value `deleted`, so cleared cookies stay in the jar and no step asserts they were cleared; no step checks the post-join dashboard state; the preview step checks only that the group name appears in the body, which an error banner would also satisfy; no foreign-Origin (403) or anonymous-path check; a missing regex match silently becomes "undefined".
 - **Rule**: <to be filled in by you>
 - **Applies to**: <to be filled in by you>
+
+## Always show the link to the current PR
+
+- **Context**: Every message that reports the state of a phase or review that has a pull request: after `gh pr create`, after pushing more commits to it, when asking how to proceed after a phase, and when starting or finishing a review of it.
+- **Problem**: The PR is mentioned only by number (for example "PR #4") or not at all, so the user has to look it up on GitHub before reviewing or merging it.
+- **Rule**: Whenever a phase or review has an open PR, include its full URL (the output of `gh pr create`, or `gh pr view --json url -q .url` for an existing one) in the message; when several PRs are relevant, list each URL with its phase.
+- **Applies to**: implement, impl-review, archive
