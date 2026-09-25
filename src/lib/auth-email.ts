@@ -25,5 +25,6 @@ export function rememberEmail(cookies: AstroCookies, email: unknown): void {
 export function takeRememberedEmail(cookies: AstroCookies): string {
   const value = cookies.get(AUTH_EMAIL_COOKIE)?.value ?? "";
   cookies.delete(AUTH_EMAIL_COOKIE, { path: COOKIE_PATH });
-  return value;
+  // Same bound as rememberEmail: a forged oversized cookie is dropped instead of prefilled.
+  return value.length > MAX_EMAIL_LENGTH ? "" : value;
 }
