@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@/lib/supabase";
 import { toGroupErrorCode } from "@/lib/group-errors";
+import { getMyGroup } from "@/lib/groups";
 
 export const prerender = false;
 
@@ -23,7 +24,10 @@ export const POST: APIRoute = async (context) => {
       return context.redirect(`/dashboard?error=${toGroupErrorCode(error)}`);
     }
     if (data.length === 0) {
-      return context.redirect("/dashboard?error=forbidden");
+      // Nothing was deleted: the caller is the owner (still in their group), or they had already left (a stale
+      // second submit), which is the outcome they asked for.
+      const group = await getMyGroup(supabase);
+      return context.redirect(group ? "/dashboard?error=forbidden" : "/dashboard");
     }
 
     return context.redirect("/dashboard");

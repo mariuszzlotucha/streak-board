@@ -59,6 +59,8 @@ const inviteLink = group ? `${Astro.url.origin}/join/${group.join_code}` : null;
 const isOwner = group !== null && group.owner_id === user?.id;
 // After a failed load we cannot tell whether the user is in a group, so do not offer to create or join one.
 const showGroupForms = !group && !loadFailed;
+// The member list comes from the same load: after a failure show no list rather than "0 members".
+const showMembers = group !== null && !loadFailed;
 ---
 
 <Layout title="Dashboard">
@@ -86,15 +88,13 @@ const showGroupForms = !group && !loadFailed;
         </Card>
       )}
 
-      {group && (
+      {showMembers && (
         <Card>
           <CardHeader>
             <CardTitle>
               <h2 class="font-heading text-xl font-semibold">Members</h2>
             </CardTitle>
-            <CardDescription>
-              {members.length} {members.length === 1 ? "member" : "members"}
-            </CardDescription>
+            <CardDescription>{`${members.length} ${members.length === 1 ? "member" : "members"}`}</CardDescription>
           </CardHeader>
           <CardContent>
             <ul class="divide-y">

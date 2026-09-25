@@ -71,7 +71,14 @@ function memberRow(memberEmail, marker) {
   );
 }
 
+// The form the component rendered posts to `route` (the card heading and the serialised island props would not match).
+function formPostingTo(route) {
+  return new RegExp(`<form[^>]*action="${escapeRegExp(route)}"`);
+}
+
 const NO_ERROR_ALERT = 'role="alert"';
+// Only the rendered read-only input carries this label; the invite URL also sits in the island's serialised props.
+const INVITE_INPUT = 'aria-label="Invite link"';
 
 const steps = [
   ["home renders", () => request("/"), { status: 200 }],
@@ -229,8 +236,17 @@ const steps = [
     () => request("/dashboard", { jar: jarB }),
     {
       status: 200,
-      bodyIncludes: [email, emailB, "Leave group"],
-      bodyMatches: [memberRow(email, "Owner"), memberRow(emailB, "You"), groupHeading(groupName)],
+      // The count is one string ("2 members"): Astro drops the space between two adjacent expressions.
+      bodyIncludes: [email, emailB, INVITE_INPUT, "2 members"],
+      bodyMatches: [
+        memberRow(email, "Owner"),
+        memberRow(emailB, "You"),
+        groupHeading(groupName),
+        // The leave control itself, not just its card heading.
+        formPostingTo("/api/groups/leave"),
+      ],
+      // The markers sit on the right rows only.
+      bodyNotMatches: [memberRow(email, "You"), memberRow(emailB, "Owner")],
       // A member sees no owner controls and no error alert.
       bodyExcludes: ["Rename group", NO_ERROR_ALERT],
     },
@@ -260,8 +276,17 @@ const steps = [
     () => request("/dashboard"),
     {
       status: 200,
-      bodyIncludes: [email, emailB, "Rename group"],
-      bodyMatches: [groupHeading(renamedGroupName), memberRow(email, "Owner"), memberRow(email, "You")],
+      bodyIncludes: [email, emailB, INVITE_INPUT],
+      bodyMatches: [
+        groupHeading(renamedGroupName),
+        memberRow(email, "Owner"),
+        memberRow(email, "You"),
+        // The rename form itself (posting the `name` field), not just its card heading.
+        formPostingTo("/api/groups/rename"),
+        /<input[^>]*name="name"/,
+      ],
+      // B is neither the owner nor the current user.
+      bodyNotMatches: [memberRow(emailB, "You"), memberRow(emailB, "Owner")],
       bodyExcludes: [groupName, "Leave group", NO_ERROR_ALERT],
     },
   ],
@@ -288,6 +313,11 @@ const steps = [
       bodyIncludes: ["Create a group", "Join a group"],
       bodyExcludes: ["Your group", renamedGroupName, "/join/", NO_ERROR_ALERT],
     },
+  ],
+  [
+    "leaving again after having left is not an error",
+    () => request("/api/groups/leave", { method: "POST", jar: jarB }),
+    { status: 302, locationExact: "/dashboard" },
   ],
   [
     "user B joins again with the same code",
@@ -319,6 +349,7 @@ for (const [name, run, expected] of steps) {
     (expected.setCookie === undefined || actual.setCookies.some((c) => c.includes(expected.setCookie))) &&
     [expected.bodyIncludes ?? []].flat().every((text) => actual.body.includes(text)) &&
     [expected.bodyMatches ?? []].flat().every((pattern) => pattern.test(actual.body)) &&
+    [expected.bodyNotMatches ?? []].flat().every((pattern) => !pattern.test(actual.body)) &&
     [expected.bodyExcludes ?? []].flat().every((text) => !actual.body.includes(text));
   console.log(`${ok ? "PASS" : "FAIL"}  ${name}  -> ${actual.status} ${actual.location}`);
   if (!ok) {
@@ -328,6 +359,7 @@ for (const [name, run, expected] of steps) {
         (expected.setCookie ? ` Set-Cookie including "${expected.setCookie}"` : "") +
         (expected.bodyIncludes ? ` body includes ${JSON.stringify(expected.bodyIncludes)}` : "") +
         (expected.bodyMatches ? ` body matches ${expected.bodyMatches.join(" and ")}` : "") +
+        (expected.bodyNotMatches ? ` body does not match ${expected.bodyNotMatches.join(" or ")}` : "") +
         (expected.bodyExcludes ? ` body excludes ${JSON.stringify(expected.bodyExcludes)}` : ""),
     );
   }

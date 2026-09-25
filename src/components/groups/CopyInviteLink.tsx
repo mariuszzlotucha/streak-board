@@ -5,6 +5,12 @@ import { Input } from "@/components/ui/input";
 
 const COPIED_RESET_MS = 2000;
 
+const STATUS_TEXT = {
+  idle: "",
+  copied: "Link copied",
+  manual: "Press Ctrl+C (or long-press) to copy the selected link.",
+} as const;
+
 interface CopyInviteLinkProps {
   url: string;
 }
@@ -14,7 +20,8 @@ export default function CopyInviteLink({ url }: CopyInviteLinkProps) {
   const [status, setStatus] = useState<"idle" | "copied" | "manual">("idle");
 
   useEffect(() => {
-    if (status === "idle") return;
+    // Only the "Copied" confirmation is transient; the manual-copy hint stays until the next click.
+    if (status !== "copied") return;
     const timer = window.setTimeout(() => {
       setStatus("idle");
     }, COPIED_RESET_MS);
@@ -57,7 +64,7 @@ export default function CopyInviteLink({ url }: CopyInviteLinkProps) {
         </Button>
       </div>
       <p role="status" className="text-muted-foreground min-h-4 text-xs">
-        {status === "manual" ? "Press Ctrl+C (or long-press) to copy the selected link." : ""}
+        {STATUS_TEXT[status]}
       </p>
     </div>
   );
