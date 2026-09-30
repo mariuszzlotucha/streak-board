@@ -296,18 +296,18 @@ None: no schema, data or application change; nothing to deploy to production. Lo
 
 #### Automated
 
-- [ ] 1.1 Foundation test passes with the local stack running
-- [ ] 1.2 Unreachable stack fails loudly with a `supabase start` hint
-- [ ] 1.3 Non-local URL is refused
-- [ ] 1.4 Linting passes
-- [ ] 1.5 Type checking passes
-- [ ] 1.6 Build still passes
+- [x] 1.1 Foundation test passes with the local stack running
+- [x] 1.2 Unreachable stack fails loudly with a `supabase start` hint
+- [x] 1.3 Non-local URL is refused
+- [x] 1.4 Linting passes
+- [x] 1.5 Type checking passes
+- [x] 1.6 Build still passes
 
 #### Manual
 
-- [ ] 1.7 No leftover test users or groups after a run
-- [ ] 1.8 Two consecutive runs both pass on the same database
-- [ ] 1.9 Rate-limit headroom noted
+- [x] 1.7 No leftover test users or groups after a run
+- [x] 1.8 Two consecutive runs both pass on the same database
+- [x] 1.9 Rate-limit headroom noted
 
 ### Phase 2: Cross-group data isolation (risk #2)
 
