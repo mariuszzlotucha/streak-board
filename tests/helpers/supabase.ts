@@ -102,6 +102,17 @@ export async function adminTask(taskId: string) {
   return data;
 }
 
+// Returns the raw PostgREST result so tests can assert both successes and error codes. joined_at comes from the default.
+export async function joinTaskAs(user: TestUser, taskId: string) {
+  return user.client.from("task_participants").insert({ task_id: taskId, user_id: user.id });
+}
+
+export async function adminParticipants(taskId: string): Promise<string[]> {
+  const { data, error } = await adminClient().from("task_participants").select("user_id").eq("task_id", taskId);
+  if (error) throw new Error(`adminParticipants failed: ${error.message}`);
+  return data.map((row) => row.user_id).sort();
+}
+
 export async function cleanupGroups(): Promise<void> {
   const ids = createdGroupIds.splice(0);
   if (ids.length === 0) return;

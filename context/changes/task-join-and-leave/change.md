@@ -1,7 +1,7 @@
 ---
 change_id: task-join-and-leave
 title: Task join and leave
-status: plan_reviewed
+status: impl_reviewed
 created: 2026-10-01
 updated: 2026-10-01
 archived_at: null
