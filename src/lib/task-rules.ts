@@ -31,3 +31,14 @@ export function normalizeTaskTitle(input: unknown): string | null {
 export function normalizeRecurrence(input: unknown): TaskRecurrence | null {
   return TASK_RECURRENCES.find((kind) => kind === input) ?? null;
 }
+
+/** Participation rows grouped by task id, keeping the row order within each task. Pure: no server imports. */
+export function groupParticipantsByTask(rows: readonly { task_id: string; user_id: string }[]): Map<string, string[]> {
+  const byTask = new Map<string, string[]>();
+  for (const { task_id, user_id } of rows) {
+    const users = byTask.get(task_id);
+    if (users) users.push(user_id);
+    else byTask.set(task_id, [user_id]);
+  }
+  return byTask;
+}

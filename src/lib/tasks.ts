@@ -40,3 +40,19 @@ export async function listGroupTasks(supabase: Supabase, groupId: string): Promi
     return { ...row, recurrence };
   });
 }
+
+export interface TaskParticipant {
+  task_id: string;
+  user_id: string;
+}
+
+/** Participation rows visible to the caller (RLS limits them to tasks of the caller's group). Throws on a Supabase error. */
+export async function listTaskParticipants(supabase: Supabase): Promise<TaskParticipant[]> {
+  const { data, error } = await supabase
+    .from("task_participants")
+    .select("task_id, user_id")
+    .order("joined_at", { ascending: true })
+    .order("user_id", { ascending: true });
+  if (error) throw error;
+  return data;
+}
