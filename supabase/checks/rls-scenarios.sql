@@ -555,7 +555,7 @@ begin
   perform rls_check.as_user(x);
   perform rls_check.expect_value(format('select count(*) from public.tasks where group_id = %L', ga), '0', 'S-02 a user without a group sees no task');
   perform rls_check.as_anon();
-  perform rls_check.expect_value('select count(*) from public.tasks', '0', 'S-02 anon sees no tasks (no policy)');
+  perform rls_check.expect_error('42501', 'select count(*) from public.tasks', 'S-02 anon has no privileges on tasks');
 
   -- Inserts: non-member and foreign created_by are denied, anon too.
   perform rls_check.as_user(b);

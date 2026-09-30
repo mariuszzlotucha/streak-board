@@ -27,11 +27,14 @@ create table public.tasks (
 );
 
 create index tasks_group_id_idx on public.tasks (group_id);
+create index tasks_created_by_idx on public.tasks (created_by);
 
 -- ---------------------------------------------------------------------------
 -- privileges
 -- ---------------------------------------------------------------------------
 
+-- anon never touches tasks; RLS would block it anyway, this is defence in depth.
+revoke all on public.tasks from anon;
 revoke insert, update on public.tasks from authenticated;
 grant insert (group_id, created_by, title, recurrence) on public.tasks to authenticated;
 grant update (title) on public.tasks to authenticated;

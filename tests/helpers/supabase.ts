@@ -82,22 +82,13 @@ export async function createTaskAs(
   title: string,
   recurrence: string,
 ): Promise<string> {
-  // The id comes from the column default (the grants do not allow sending it), so read it back.
-  const { error } = await user.client
+  // The id comes from the column default (the grants do not allow sending it); RETURNING reads it back.
+  const { data, error } = await user.client
     .from("tasks")
-    .insert({ group_id: groupId, created_by: user.id, title, recurrence });
-  if (error) throw new Error(`createTaskAs: insert failed: ${error.message}`);
-
-  const { data, error: selectError } = await user.client
-    .from("tasks")
+    .insert({ group_id: groupId, created_by: user.id, title, recurrence })
     .select("id")
-    .eq("group_id", groupId)
-    .eq("created_by", user.id)
-    .eq("title", title)
-    .order("created_at", { ascending: false })
-    .limit(1)
     .single();
-  if (selectError) throw new Error(`createTaskAs: read-back failed: ${selectError.message}`);
+  if (error) throw new Error(`createTaskAs: insert failed: ${error.message}`);
   return data.id;
 }
 
