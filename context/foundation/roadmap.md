@@ -44,7 +44,7 @@ Grono znajomych korzystało wcześniej ze wspólnego arkusza Google, w którym r
 | F-01 | group-schema-and-rls                  | (foundation) schemat grup/członkostwa + RLS wg guardrail widoczności                                       | —             | Access Control, Guardrail                  | done        |
 | S-01 | group-create-join-manage              | założyć/dołączyć do grupy przez link/kod; jako twórca zarządzać grupą                                      | F-01          | FR-001, FR-002, FR-003                     | done        |
 | S-02 | task-create-and-manage                | utworzyć task w grupie; jako twórca edytować/usunąć swój task                                              | S-01          | FR-004, FR-005                             | done |
-| S-03 | task-join-and-leave                   | dołączyć do tasku innego członka i wypisać się z niego                                                     | S-02          | FR-006, FR-007                             | planning    |
+| S-03 | task-join-and-leave                   | dołączyć do tasku innego członka i wypisać się z niego                                                     | S-02          | FR-006, FR-007                             | in-progress |
 | S-04 | checkoff-and-leaderboard              | odznaczyć task jako wykonany i od razu zobaczyć tablicę wyników grupy                                      | S-03          | FR-008, FR-009, US-01, Business Logic      | proposed    |
 | S-05 | release-automation-and-auth-hardening | (release) migracje i wydanie produkcyjne są zautomatyzowane, a rejestracja na produkcji działa niezawodnie | S-01          | — (operacyjne; deployment-plan.md Phase 5) | done |
 
@@ -111,7 +111,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:** —
 - **Risk:** Wypisanie się w trakcie trwającego streaka rodzi pytanie UX (co dzieje się z dotychczasowym streakiem) — wystarczająco małe, żeby rozstrzygnąć je w `/10x-plan`, nie tutaj.
-- **Status:** planning
+- **Status:** in-progress
 
 ### S-04: Odznaczenie tasku i tablica wyników
 

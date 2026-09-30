@@ -278,15 +278,15 @@ Additive migration; the backfill enrols creators of existing tasks so existing t
 
 #### Automated
 
-- [ ] 1.1 Migration applies cleanly on a fresh local stack: `npx supabase db reset`
-- [ ] 1.2 Generated types contain the new table and the project builds: `grep -q task_participants src/types.ts && npm run build`
-- [ ] 1.3 SQL RLS scenarios pass: `npm run test:rls`
-- [ ] 1.4 Integration tests pass: `npm test`
-- [ ] 1.5 Linting passes: `npm run lint`
+- [x] 1.1 Migration applies cleanly on a fresh local stack: `npx supabase db reset`
+- [x] 1.2 Generated types contain the new table and the project builds: `grep -q task_participants src/types.ts && npm run build`
+- [x] 1.3 SQL RLS scenarios pass: `npm run test:rls`
+- [x] 1.4 Integration tests pass: `npm test`
+- [x] 1.5 Linting passes: `npm run lint`
 
 #### Manual
 
-- [ ] 1.6 Backfill works on existing data: reset to `20260930120000` (`npx supabase db reset --version 20260930120000`), insert two tasks by two different creators, run `npx supabase migration up`, and confirm both creators are participants of their own task.
+- [x] 1.6 Backfill works on existing data: reset to `20260930120000` (`npx supabase db reset --version 20260930120000`), insert two tasks by two different creators, run `npx supabase migration up`, and confirm both creators are participants of their own task.
 
 ### Phase 2: Server layer — participant loading and join/leave routes
 

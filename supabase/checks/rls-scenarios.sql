@@ -1,4 +1,4 @@
--- RLS scenario checks for groups / group_members / tasks (F-01 + group-rls-hardening + S-01 helper functions + S-02 tasks).
+-- RLS scenario checks for groups / group_members / tasks / task_participants (F-01 + group-rls-hardening + S-01 helper functions + S-02 tasks + S-03 participation).
 --
 -- Run against the LOCAL Supabase database only:
 --   docker exec -i supabase_db_10x-astro-starter psql -U postgres -d postgres -X -v ON_ERROR_STOP=1 < supabase/checks/rls-scenarios.sql
@@ -311,12 +311,12 @@ do $$
 begin
   perform rls_check.expect_value(
     $q$select count(*) from pg_policies
-       where schemaname = 'public' and tablename in ('groups', 'group_members', 'tasks')
+       where schemaname = 'public' and tablename in ('groups', 'group_members', 'tasks', 'task_participants')
          and regexp_replace(coalesce(qual, '') || ' ' || coalesce(with_check, ''), '\( SELECT auth\.uid\(\) AS uid\)', '', 'g') ~ 'auth\.uid\(\)'$q$,
     '0', '#6 no policy uses a bare auth.uid()');
   perform rls_check.expect_value(
     $q$select (count(*) > 0)::text from pg_policies
-       where schemaname = 'public' and tablename in ('groups', 'group_members', 'tasks')
+       where schemaname = 'public' and tablename in ('groups', 'group_members', 'tasks', 'task_participants')
          and coalesce(qual, '') || ' ' || coalesce(with_check, '') ~ '\( SELECT auth\.uid\(\) AS uid\)'$q$,
     'true', '#6 policies do use (select auth.uid())');
 end;
@@ -612,6 +612,133 @@ begin
   perform rls_check.expect_value(format('select count(*) from public.tasks where id = %L', t), '1', 'S-02 setup: the orphaned task still exists before its creator is deleted');
   delete from auth.users where id = m;
   perform rls_check.expect_value(format('select count(*) from public.tasks where id = %L', t), '0', 'S-02 deleting the creator''s account cascades to their tasks');
+
+  perform rls_check.as_postgres();
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- S-03: task_participants (creator auto-enrolment, join / leave, visibility, grants)
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  a uuid; c uuid; m uuid; b uuid; x uuid; ga uuid; gb uuid; code_a text; t uuid; tb uuid;
+begin
+  a := rls_check.mk_user(); c := rls_check.mk_user(); m := rls_check.mk_user(); b := rls_check.mk_user(); x := rls_check.mk_user();
+
+  perform rls_check.as_user(a);
+  ga := rls_check.new_group(a);
+  code_a := rls_check.code_of(ga);
+  perform rls_check.as_user(c);
+  perform rls_check.expect_value(format('select public.join_group(%L)', code_a), ga::text, 'S-03 setup: C joined group A');
+  perform rls_check.as_user(m);
+  perform rls_check.expect_value(format('select public.join_group(%L)', code_a), ga::text, 'S-03 setup: M joined group A');
+  perform rls_check.as_user(b);
+  gb := rls_check.new_group(b);
+
+  -- The creator is enrolled by the trigger on the plain client insert (no participant row is sent).
+  perform rls_check.as_user(c);
+  perform rls_check.expect_rows(format('insert into public.tasks (group_id, created_by, title, recurrence) values (%L, %L, %L, %L)', ga, c, 'Water the plants', 'daily'), 1, 'S-03 setup: C created a task');
+  select id into t from public.tasks where group_id = ga;
+  perform rls_check.expect_value(format('select string_agg(user_id::text, %L) from public.task_participants where task_id = %L', ',', t), c::text, 'S-03 the creator is auto-enrolled on task insert');
+
+  -- A member joins another member's task; duplicates and forged user_id are rejected.
+  perform rls_check.as_user(m);
+  perform rls_check.expect_rows(format('insert into public.task_participants (task_id, user_id) values (%L, %L)', t, m), 1, 'S-03 a member joins another member''s task');
+  perform rls_check.expect_error('23505', format('insert into public.task_participants (task_id, user_id) values (%L, %L)', t, m), 'S-03 joining the same task twice -> 23505');
+  perform rls_check.expect_error('42501', format('insert into public.task_participants (task_id, user_id) values (%L, %L)', t, a), 'S-03 a member cannot enrol another user');
+  perform rls_check.expect_error('42501', format('insert into public.task_participants (task_id, user_id, joined_at) values (%L, %L, now())', t, a), 'S-03 joined_at cannot be sent (column grant)');
+
+  -- Reads: every member sees all participants of the group's tasks; outsiders and anon see nothing.
+  perform rls_check.expect_value(format('select count(*) from public.task_participants where task_id = %L', t), '2', 'S-03 a member reads all participants of the task');
+  perform rls_check.as_user(a);
+  perform rls_check.expect_value(format('select count(*) from public.task_participants where task_id = %L', t), '2', 'S-03 the group owner reads all participants of the task');
+  perform rls_check.as_user(b);
+  perform rls_check.expect_value(format('select count(*) from public.task_participants where task_id = %L', t), '0', 'S-03 a member of another group sees no participants');
+  perform rls_check.expect_error('42501', format('insert into public.task_participants (task_id, user_id) values (%L, %L)', t, b), 'S-03 a member of another group cannot join the task');
+  perform rls_check.as_user(x);
+  perform rls_check.expect_value(format('select count(*) from public.task_participants where task_id = %L', t), '0', 'S-03 a user without a group sees no participants');
+  perform rls_check.expect_error('42501', format('insert into public.task_participants (task_id, user_id) values (%L, %L)', t, x), 'S-03 a user without a group cannot join the task');
+  perform rls_check.as_anon();
+  perform rls_check.expect_error('42501', 'select count(*) from public.task_participants', 'S-03 anon cannot read participants');
+  perform rls_check.expect_error('42501', format('insert into public.task_participants (task_id, user_id) values (%L, %L)', t, a), 'S-03 anon cannot join a task');
+
+  -- Leave: only the caller's own row; someone else's row is untouched (0 rows).
+  perform rls_check.as_user(a);
+  perform rls_check.expect_rows(format('delete from public.task_participants where task_id = %L and user_id = %L', t, m), 0, 'S-03 a member cannot remove another user''s participation (even the group owner)');
+  perform rls_check.as_user(b);
+  perform rls_check.expect_rows(format('delete from public.task_participants where task_id = %L', t), 0, 'S-03 an outsider cannot remove participants');
+  perform rls_check.as_user(m);
+  perform rls_check.expect_rows(format('delete from public.task_participants where task_id = %L and user_id = %L', t, c), 0, 'S-03 M cannot remove the creator''s participation');
+  perform rls_check.expect_rows(format('delete from public.task_participants where task_id = %L', t), 1, 'S-03 a member leaves the task (deletes only the own row)');
+  perform rls_check.expect_value(format('select string_agg(user_id::text, %L) from public.task_participants where task_id = %L', ',', t), c::text, 'S-03 the creator is still enrolled after M left');
+  perform rls_check.as_user(c);
+  perform rls_check.expect_rows(format('delete from public.task_participants where task_id = %L and user_id = %L', t, c), 1, 'S-03 the creator can leave their own task');
+  perform rls_check.expect_value(format('select count(*) from public.tasks where id = %L', t), '1', 'S-03 the task remains after the creator left it');
+
+  -- Grants: no UPDATE, no TRUNCATE.
+  perform rls_check.as_user(m);
+  perform rls_check.expect_rows(format('insert into public.task_participants (task_id, user_id) values (%L, %L)', t, m), 1, 'S-03 setup: M joined again');
+  perform rls_check.expect_error('42501', format('update public.task_participants set user_id = %L where task_id = %L', a, t), 'S-03 UPDATE of user_id is denied');
+  perform rls_check.expect_error('42501', format('update public.task_participants set joined_at = now() where task_id = %L', t), 'S-03 UPDATE of joined_at is denied');
+  perform rls_check.expect_error('42501', 'truncate public.task_participants', 'S-03 TRUNCATE is denied');
+
+  -- Deleting a task cascades to its participants.
+  perform rls_check.as_user(c);
+  perform rls_check.expect_rows(format('delete from public.tasks where id = %L', t), 1, 'S-03 the creator deletes the task');
+  perform rls_check.as_postgres();
+  perform rls_check.expect_value(format('select count(*) from public.task_participants where task_id = %L', t), '0', 'S-03 deleting a task cascades to its participants');
+
+  perform rls_check.as_postgres();
+end;
+$$;
+
+-- Leaving the group and being removed by the owner both clear the user's participation in that group's tasks only.
+do $$
+declare
+  a uuid; c uuid; m uuid; ga uuid; code_a text; t uuid; t2 uuid;
+begin
+  a := rls_check.mk_user(); c := rls_check.mk_user(); m := rls_check.mk_user();
+
+  perform rls_check.as_user(a);
+  ga := rls_check.new_group(a);
+  code_a := rls_check.code_of(ga);
+  perform rls_check.as_user(c);
+  perform rls_check.expect_value(format('select public.join_group(%L)', code_a), ga::text, 'S-03 cleanup setup: C joined group A');
+  perform rls_check.as_user(m);
+  perform rls_check.expect_value(format('select public.join_group(%L)', code_a), ga::text, 'S-03 cleanup setup: M joined group A');
+
+  perform rls_check.as_user(a);
+  perform rls_check.expect_rows(format('insert into public.tasks (group_id, created_by, title, recurrence) values (%L, %L, %L, %L)', ga, a, 'Task one', 'once'), 1, 'S-03 cleanup setup: A created task one');
+  select id into t from public.tasks where group_id = ga and title = 'Task one';
+  perform rls_check.expect_rows(format('insert into public.tasks (group_id, created_by, title, recurrence) values (%L, %L, %L, %L)', ga, a, 'Task two', 'once'), 1, 'S-03 cleanup setup: A created task two');
+  select id into t2 from public.tasks where group_id = ga and title = 'Task two';
+
+  perform rls_check.as_user(c);
+  perform rls_check.expect_rows(format('insert into public.task_participants (task_id, user_id) select id, %L from public.tasks where group_id = %L', c, ga), 2, 'S-03 cleanup setup: C joined both tasks');
+  perform rls_check.as_user(m);
+  perform rls_check.expect_rows(format('insert into public.task_participants (task_id, user_id) select id, %L from public.tasks where group_id = %L', m, ga), 2, 'S-03 cleanup setup: M joined both tasks');
+
+  -- C leaves the group on their own.
+  perform rls_check.as_user(c);
+  perform rls_check.expect_rows(format('delete from public.group_members where user_id = %L', c), 1, 'S-03 C leaves the group');
+  perform rls_check.as_postgres();
+  perform rls_check.expect_value(format('select count(*) from public.task_participants where user_id = %L', c), '0', 'S-03 leaving the group clears the user''s task participation');
+  perform rls_check.expect_value(format('select count(*) from public.task_participants where user_id = %L', m), '2', 'S-03 other members'' participation is untouched by C leaving');
+  perform rls_check.expect_value(format('select count(*) from public.task_participants where user_id = %L', a), '2', 'S-03 the creator''s participation is untouched by C leaving');
+
+  -- The owner removes M.
+  perform rls_check.as_user(a);
+  perform rls_check.expect_rows(format('delete from public.group_members where user_id = %L', m), 1, 'S-03 the owner removes M');
+  perform rls_check.as_postgres();
+  perform rls_check.expect_value(format('select count(*) from public.task_participants where user_id = %L', m), '0', 'S-03 being removed by the owner clears the user''s task participation');
+
+  -- Deleting the group cascades tasks and participants; the group_members cleanup trigger tolerates it.
+  perform rls_check.as_user(a);
+  perform rls_check.expect_rows(format('delete from public.groups where id = %L', ga), 1, 'S-03 the owner deletes the group');
+  perform rls_check.as_postgres();
+  perform rls_check.expect_value(format('select count(*) from public.task_participants where task_id in (%L, %L)', t, t2), '0', 'S-03 deleting the group cascades to participants');
 
   perform rls_check.as_postgres();
 end;

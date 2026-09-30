@@ -81,6 +81,32 @@ export type Database = {
         };
         Relationships: [];
       };
+      task_participants: {
+        Row: {
+          joined_at: string;
+          task_id: string;
+          user_id: string;
+        };
+        Insert: {
+          joined_at?: string;
+          task_id: string;
+          user_id: string;
+        };
+        Update: {
+          joined_at?: string;
+          task_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "task_participants_task_id_fkey";
+            columns: ["task_id"];
+            isOneToOne: false;
+            referencedRelation: "tasks";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       tasks: {
         Row: {
           created_at: string;
