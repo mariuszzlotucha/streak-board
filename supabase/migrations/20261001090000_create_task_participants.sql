@@ -11,6 +11,11 @@
 --   - SELECT and INSERT are scoped by "the task is visible to the caller" (the tasks SELECT policy applies inside the
 --     policy subquery, so visibility means current group membership). DELETE is limited to the caller's own rows.
 --   - Client writes are limited by column grants: INSERT of task_id, user_id (joined_at defaults to now()); no UPDATE.
+--   - Known, accepted race: a join that commits at the same moment the user leaves (or is removed from) the group can
+--     leave a participation row for a non-member, because the cleanup trigger cannot see the uncommitted row and the
+--     insert policy has no lock on the membership. The ex-member cannot delete it (the select policy hides it). The
+--     window is milliseconds in small groups; if it ever matters, add a BEFORE INSERT trigger taking a share lock on the
+--     membership row or clean up with the service role.
 
 -- ---------------------------------------------------------------------------
 -- table
@@ -109,10 +114,15 @@ create trigger group_members_remove_task_participation
   execute function public.remove_member_task_participation();
 
 -- ---------------------------------------------------------------------------
--- backfill (last): existing tasks get their creator as participant
+-- backfill (last): existing tasks get their creator as participant (only while the creator is still a group member;
+-- a creator who left keeps the task but is not a participant)
 -- ---------------------------------------------------------------------------
 
 insert into public.task_participants (task_id, user_id)
-select id, created_by
-from public.tasks
+select t.id, t.created_by
+from public.tasks t
+where exists (
+  select 1 from public.group_members gm
+  where gm.group_id = t.group_id and gm.user_id = t.created_by
+)
 on conflict do nothing;

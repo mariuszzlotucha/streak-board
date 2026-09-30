@@ -319,6 +319,12 @@ begin
        where schemaname = 'public' and tablename in ('groups', 'group_members', 'tasks', 'task_participants')
          and coalesce(qual, '') || ' ' || coalesce(with_check, '') ~ '\( SELECT auth\.uid\(\) AS uid\)'$q$,
     'true', '#6 policies do use (select auth.uid())');
+  perform rls_check.expect_value(
+    $q$select count(*) from pg_policies
+       where schemaname = 'public' and tablename = 'task_participants'
+         and policyname in ('task_participants_insert_self', 'task_participants_delete_self')
+         and coalesce(qual, '') || ' ' || coalesce(with_check, '') ~ '\( SELECT auth\.uid\(\) AS uid\)'$q$,
+    '2', '#6 the task_participants insert and delete policies use (select auth.uid())');
 end;
 $$;
 
@@ -723,6 +729,9 @@ begin
   -- C leaves the group on their own.
   perform rls_check.as_user(c);
   perform rls_check.expect_rows(format('delete from public.group_members where user_id = %L', c), 1, 'S-03 C leaves the group');
+  -- As an ex-member (no group any more) C sees nothing and cannot join again.
+  perform rls_check.expect_value(format('select count(*) from public.task_participants where task_id = %L', t), '0', 'S-03 an ex-member reads no participants');
+  perform rls_check.expect_error('42501', format('insert into public.task_participants (task_id, user_id) values (%L, %L)', t, c), 'S-03 an ex-member cannot join a task of the former group');
   perform rls_check.as_postgres();
   perform rls_check.expect_value(format('select count(*) from public.task_participants where user_id = %L', c), '0', 'S-03 leaving the group clears the user''s task participation');
   perform rls_check.expect_value(format('select count(*) from public.task_participants where user_id = %L', m), '2', 'S-03 other members'' participation is untouched by C leaving');

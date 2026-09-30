@@ -198,6 +198,40 @@ describe("task participation", () => {
     });
   });
 
+  describe("after leaving the group", () => {
+    it("an ex-member reads no participants and cannot join a task of the former group (42501)", async () => {
+      await joinTaskAs(m, taskId);
+      const { error: leaveError } = await m.client.from("group_members").delete().eq("user_id", m.id);
+      expect(leaveError).toBeNull();
+
+      const { data, error } = await m.client.from("task_participants").select("user_id").eq("task_id", taskId);
+      expect(error).toBeNull();
+      expect(data).toEqual([]);
+
+      const { error: joinError } = await joinTaskAs(m, taskId);
+      expect(joinError?.code).toBe(PERMISSION_DENIED);
+      expect(await adminParticipants(taskId)).toEqual([c.id]);
+    });
+
+    it("a removed member cannot delete rows and is not re-enrolled when they return", async () => {
+      await joinTaskAs(m, taskId);
+      await a.client.from("group_members").delete().eq("user_id", m.id);
+
+      const { data, error } = await m.client.from("task_participants").delete().eq("task_id", taskId).select("user_id");
+      expect(error).toBeNull();
+      expect(data).toEqual([]);
+
+      await joinGroupAs(m, ga.joinCode);
+      expect(await adminParticipants(taskId)).toEqual([c.id]);
+    });
+
+    it("the creator who left and returned is not silently re-enrolled", async () => {
+      await c.client.from("group_members").delete().eq("user_id", c.id);
+      await joinGroupAs(c, ga.joinCode);
+      expect(await adminParticipants(taskId)).toEqual([]);
+    });
+  });
+
   describe("cascades", () => {
     it("deleting the task removes its participants", async () => {
       await joinTaskAs(m, taskId);
