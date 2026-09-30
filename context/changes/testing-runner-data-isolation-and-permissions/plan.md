@@ -346,7 +346,7 @@ None: no schema, data or application change; nothing to deploy to production. Lo
 - [x] 4.2 SQL scenarios pass locally — d89373e
 - [x] 4.3 Linting passes — d89373e
 - [x] 4.4 Workflow YAML is valid and lists the new job — d89373e
-- [ ] 4.5 The `integration` job is green on the phase PR
+- [x] 4.5 The `integration` job is green on the phase PR — d89373e
 
 #### Manual
 
