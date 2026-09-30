@@ -56,6 +56,8 @@ npm run dev
 - `npm run lint:fix` - Auto-fix ESLint issues
 - `npm run format` - Run Prettier
 - `npm run smoke` - Smoke test the auth and group flows against a running server (`BASE_URL`, defaults to `http://localhost:4321`)
+- `npm test` - Run the Vitest integration tests against the local Supabase stack
+- `npm run test:rls` - Run the SQL RLS scenario checks against the local database
 
 ## Project Structure
 
@@ -177,7 +179,7 @@ It only works against the local database (the container name comes from `project
 
 ## Deployment
 
-This project deploys to [Cloudflare Workers](https://workers.cloudflare.com/). Deploys are a deliberate, manual action — there is no CI job that deploys on push/merge; `.github/workflows/ci.yml` only lints, type-checks, builds, and runs the smoke test.
+This project deploys to [Cloudflare Workers](https://workers.cloudflare.com/). Deploys are a deliberate, manual action — there is no CI job that deploys on push/merge; `.github/workflows/ci.yml` only lints, type-checks, builds, and runs the smoke and integration tests.
 
 1. Set `SUPABASE_URL` and `SUPABASE_KEY` as Worker secrets (one-time, or whenever they change):
 
@@ -216,12 +218,26 @@ It needs a reachable Supabase instance (local or cloud) with email confirmation 
 
 > **Note:** this script exists primarily to guard the development of the starter itself — it is a fast sanity check that dependency upgrades did not break the build, the Cloudflare adapter or the Supabase auth flow. It is **not** a substitute for a real test suite. Once you build your own product on top of this starter, add proper tests (unit, integration, end-to-end) suited to your application.
 
+## Tests
+
+Integration tests (Vitest, `tests/integration/`) exercise row-level security and creator-only permissions through real Supabase clients: two or more users in different groups, each denial paired with a positive control, and state re-read via the service-role client.
+
+Prerequisite: the local stack must be running (`npx supabase start`, see [Supabase Configuration](#supabase-configuration)). No `.env` is needed; the global setup reads the URL and keys from `supabase status -o env`.
+
+```bash
+npm test            # Vitest integration suite
+npm run test:rls    # SQL scenarios (supabase/checks/rls-scenarios.sql) via docker exec
+```
+
+Safety guard: the suite refuses to run unless the Supabase URL host is `127.0.0.1` or `localhost`. Test users use a dedicated email prefix and are removed after the run (leftovers from crashed runs are swept on the next one).
+
 ## CI
 
-GitHub Actions runs two jobs on every push and PR to `master`:
+GitHub Actions runs three jobs on every push and PR to `master`:
 
 - **ci** — lint, `astro check` and build. Configure `SUPABASE_URL` and `SUPABASE_KEY` as repository secrets for the build step.
 - **smoke** — starts a local Supabase via the Supabase CLI, builds, serves the production preview on the Cloudflare runtime and runs `npm run smoke` against it. No secrets required.
+- **integration** — starts a local Supabase, then runs `npm test` and the SQL scenarios in `supabase/checks/rls-scenarios.sql`. No secrets required.
 
 ## License
 

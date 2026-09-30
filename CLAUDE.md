@@ -26,9 +26,9 @@ Astro 7 SSR app (`output: "server"` in `astro.config.mjs`) with React 19 islands
 
 ## Commands
 
-`npm run {dev,build,preview,lint,lint:fix,format,smoke}` — see `@README.md` (Available Scripts, Smoke test) for what each does and when to run it.
+`npm run {dev,build,preview,lint,lint:fix,format,smoke,test,test:rls}` — see `@README.md` (Available Scripts, Smoke test) for what each does and when to run it.
 
-Pre-commit hooks (husky + lint-staged) run `eslint --fix` on `*.{ts,tsx,astro}` and `prettier --write` on `*.{json,css,md}`. No test runner beyond `npm run smoke` plus lint/build.
+Pre-commit hooks (husky + lint-staged) run `eslint --fix` on `*.{ts,tsx,astro}` and `prettier --write` on `*.{json,css,md}`. Tests: `npm test` (Vitest integration tests against the local Supabase stack; needs `supabase start`) and `npm run test:rls` (SQL RLS scenarios via `docker exec`); see `@README.md` (Tests).
 
 ## Environment
 

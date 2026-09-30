@@ -6,7 +6,7 @@
 >
 > Refresh: re-run `/10x-test-plan --refresh` when stale (see §8).
 >
-> Last updated: 2026-09-30 (Phase 1 change opened)
+> Last updated: 2026-09-30 (Phase 1 shipped: runner, integration tests, CI gate)
 
 ## 1. Strategy
 
@@ -76,7 +76,7 @@ orchestrator updates Status as artifacts appear on disk.
 
 | # | Phase name | Goal (one line) | Risks covered | Test types | Status | Change folder |
 |---|------------|-----------------|---------------|------------|--------|---------------|
-| 1 | Runner + data isolation and permissions | Zainicjować runner i lokalną bazę; udowodnić, że obca grupa nie czyta ani nie zmienia danych, a nie-twórca nie zarządza grupą | #2, #3 | integration (RLS + API) | change opened | context/changes/testing-runner-data-isolation-and-permissions/ |
+| 1 | Runner + data isolation and permissions | Zainicjować runner i lokalną bazę; udowodnić, że obca grupa nie czyta ani nie zmienia danych, a nie-twórca nie zarządza grupą | #2, #3 | integration (RLS + API) | shipped | context/changes/testing-runner-data-isolation-and-permissions/ |
 | 2 | Release ordering gate | Udowodnić, że niezgodny schemat i kod są wykrywane przed produkcją | #1 | CI check, extended smoke | not started | — |
 | 3 | Auth boundaries and input validation | Rejestracja i błędy zachowują się poprawnie; API odrzuca obcy Origin i złe dane | #5, #6 | integration, smoke, unit (validation) | not started | — |
 | 4 | Streak rule | Udowodnić poprawność reguły streaka na granicach dnia i tygodnia (po S-04 i decyzji o wartości spadku) | #4 | unit (pure function) | not started | — |
@@ -97,8 +97,8 @@ manifestach i konfiguracji oraz narzędziach dostępnych w bieżącej sesji.
 |-------|------|---------|-------|
 | lint + build | ESLint + `astro build` | per `package.json` | Działa lokalnie i w CI; pre-commit: husky + lint-staged |
 | HTTP smoke | `npm run smoke` (`scripts/smoke.mjs`) | n/a | Jedyny test zachowania; reguła z `lessons.md`: asercje skutków, nie braku błędów |
-| unit + integration | none yet — see Phase 1 | — | Wybór runnera należy do badania etapu 1 (Astro + Vite, TypeScript) |
-| integration DB | lokalny stos Supabase (`supabase/`) | per CLI | Do testów RLS i uprawnień; do potwierdzenia w badaniu etapu 1 |
+| unit + integration | Vitest | 5.0.3 (checked: 2026-09-30) | `npm test`; testy w `tests/integration/`, globalny setup w `tests/setup/global-setup.ts` |
+| integration DB | lokalny stos Supabase (`supabase/`) | per CLI (checked: 2026-09-30) | Potwierdzone w etapie 1: testy RLS i uprawnień; dodatkowo `npm run test:rls` (scenariusze SQL) |
 | e2e | none — not planned | — | Nie uzasadnione przez koszt × sygnał; wróć do tematu po etapach 1–3 |
 
 **Stack grounding tools (current session):**
@@ -107,8 +107,8 @@ manifestach i konfiguracji oraz narzędziach dostępnych w bieżącej sesji.
 - Runtime/browser: Playwright MCP — not available in current session; not used; checked: 2026-09-30
 - Provider/platform: brak MCP dla GitHub, Cloudflare i Supabase; dostępne CLI `gh`, `supabase`, `wrangler` (istotne dla bramek CI etapu 2); checked: 2026-09-30
 
-Baza testów: **none** (brak konfiguracji runnera; jedyne pliki `*.test.*`
-należą do narzędzi skilli w `.claude/`, nie do aplikacji).
+Baza testów: **Vitest + integracja z lokalnym Supabase** (`tests/`), od etapu 1.
+Pliki `*.test.*` w `.claude/` należą do narzędzi skilli, nie do aplikacji.
 
 ## 5. Quality Gates
 
@@ -120,7 +120,7 @@ danego etapu; wcześniej ma status `planned`.
 |------|-------|-----------|---------|
 | lint + build | local + CI | required (wired) | dryf składni i typów |
 | smoke | local + CI | required (wired) | zepsute podstawowe przepływy HTTP |
-| unit + integration (RLS, uprawnienia) | local + CI | required after §3 Phase 1 | wyciek między grupami, brak kontroli własności |
+| unit + integration (RLS, uprawnienia) | local + CI (job `integration`) | required (wired) | wyciek między grupami, brak kontroli własności |
 | migration/code consistency check | CI on PR | required after §3 Phase 2 | kod wymagający schematu, którego produkcja nie ma |
 | extended smoke (Origin, walidacja, auth) | local + CI | required after §3 Phase 3 | przyjęcie obcego Origin i złych danych, regresje auth |
 | unit (streak rule) | local + CI | required after §3 Phase 4 | błędna reguła streaka na granicach okresów |
@@ -136,7 +136,11 @@ wdrożeniu odpowiedniego etapu; wcześniej brzmi „TBD — see §3 Phase N."
 
 ### 6.2 Adding an integration test
 
-- TBD — see §3 Phase 1 (wzorzec: dwóch użytkowników z różnych grup, odmowa dostępu do cudzych danych i brak zmiany stanu).
+- Wzorzec (etap 1): dwóch lub więcej użytkowników z różnych grup, odmowa dostępu do cudzych danych i brak zmiany stanu. Przykład: `tests/integration/group-isolation.test.ts`.
+- Użytkowników tworzy `createTestUser()` z `tests/helpers/supabase.ts` (admin `createUser` + logowanie kluczem anon, więc zapytania idą przez RLS). Grupę zakłada `createGroupAs(user, name)`, dołącza `joinGroupAs(user, code)`. Sprzątanie robią hooki `afterEach`/`afterAll` z helpera.
+- Każda odmowa ma parę: pozytywną kontrolę (członek widzi swoją grupę) w tym samym pliku, inaczej „0 wierszy" może znaczyć zepsuty test, a nie działające RLS.
+- Oczekiwania wynikają z PRD (Access Control, FR-003), nie z polityk w migracjach (problem wyroczni).
+- Reguła: po każdej odmowie asertuj liczbę dotkniętych wierszy (`.select()` po `update`/`delete` zwraca `[]`) i odczytaj stan ponownie przez `adminClient()` (omija RLS), np. `adminGroupA()` i `adminMemberIdsOfA()`.
 
 ### 6.3 Adding an e2e test
 
@@ -144,7 +148,10 @@ wdrożeniu odpowiedniego etapu; wcześniej brzmi „TBD — see §3 Phase N."
 
 ### 6.4 Adding a test for a new API endpoint
 
-- TBD — see §3 Phase 1 (odmowa dla roli nie-twórca i nie-członek) i Phase 3 (obcy Origin, złe dane).
+- Etap 1 (uprawnienia): odmowa dla roli członek i nie-członek, wzorzec w `tests/integration/group-permissions.test.ts`. Trzy role (twórca, członek, obcy) wykonują tę samą operację; twórca ma pozytywną kontrolę, pozostali dostają odmowę.
+- Każda odmowa kończy się `expectGaUntouched()`: odczyt nazwy, właściciela, kodu i członków przez `adminClient()`, a nie samą asercją kodu statusu lub braku błędu.
+- Operacje idą bezpośrednio przez klienta użytkownika (`from("groups").update/delete`, `rpc`), czyli tą samą granicą RLS, którą egzekwują endpointy `/api/groups/*`.
+- TBD — see §3 Phase 3 (obcy Origin, złe dane).
 
 ### 6.5 Adding a test for a schema or migration change
 
@@ -154,6 +161,12 @@ wdrożeniu odpowiedniego etapu; wcześniej brzmi „TBD — see §3 Phase N."
 
 (Opcjonalnie. Po każdym etapie `/10x-implement` dopisuje 2–3 linie o tym, co
 zaskoczyło.)
+
+**Etap 1 (runner + izolacja + uprawnienia):**
+
+- Odrzucone `UPDATE`/`DELETE` przez RLS nie zwracają błędu, tylko 0 wierszy; naruszenie uprawnień do kolumn daje SQLSTATE `42501`. Dlatego asertuj liczbę wierszy i stan z `adminClient()`.
+- Kolejność sprzątania: najpierw grupy, potem użytkownicy (`ON DELETE RESTRICT` na właścicielu). Jeden użytkownik może mieć jedną grupę, więc grupy są per test (`beforeEach`), a użytkownicy per plik (`beforeAll`).
+- Sprawdzenie mutacyjne: osłabić politykę (`alter policy ...`), uruchomić `npm test` i zobaczyć czerwony wynik, potem przywrócić schemat przez `npx supabase db reset`.
 
 ## 7. What We Deliberately Don't Test
 
@@ -166,8 +179,8 @@ respektować, dopóki nie zmieni się założenie.
 
 ## 8. Freshness Ledger
 
-- Strategy (§1–§5) last reviewed: 2026-09-30
-- Stack versions last verified: 2026-09-30
+- Strategy (§1–§5) last reviewed: 2026-09-30 (etap 1 wdrożony)
+- Stack versions last verified: 2026-09-30 (Vitest 5.0.3, lokalny Supabase)
 - AI-native tool references last verified: 2026-09-30 (brak narzędzi AI-native w planie)
 
 Refresh (`/10x-test-plan --refresh`) when:
