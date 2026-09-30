@@ -68,6 +68,12 @@ export async function joinGroupAs(user: TestUser, code: string): Promise<string>
   return data;
 }
 
+export async function adminMemberIds(groupId: string): Promise<string[]> {
+  const { data, error } = await adminClient().from("group_members").select("user_id").eq("group_id", groupId);
+  if (error) throw new Error(`adminMemberIds failed: ${error.message}`);
+  return data.map((row) => row.user_id).sort();
+}
+
 export async function cleanupGroups(): Promise<void> {
   const ids = createdGroupIds.splice(0);
   if (ids.length === 0) return;

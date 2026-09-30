@@ -1,6 +1,7 @@
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
   adminClient,
+  adminMemberIds,
   anonClient,
   createGroupAs,
   createTestUser,
@@ -44,11 +45,7 @@ describe("cross-group data isolation", () => {
     return data;
   }
 
-  async function adminMemberIdsOfA() {
-    const { data, error } = await adminClient().from("group_members").select("user_id").eq("group_id", ga.id);
-    expect(error).toBeNull();
-    return (data ?? []).map((row) => row.user_id).sort();
-  }
+  const adminMemberIdsOfA = () => adminMemberIds(ga.id);
 
   describe("positive controls: members see their own group", () => {
     it("owner A and member A2 read GA and its members", async () => {

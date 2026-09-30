@@ -85,8 +85,15 @@ async function sweepLeftovers(config: StackConfig): Promise<void> {
     if (data.users.length < perPage) break;
   }
   if (leftovers.length === 0) return;
-  const { error: groupsError } = await admin.from("groups").delete().in("owner_id", leftovers);
-  if (groupsError) throw groupsError;
+  // Chunked: a long `in (...)` list would overflow the PostgREST URL limit after many crashed runs.
+  const chunkSize = 100;
+  for (let i = 0; i < leftovers.length; i += chunkSize) {
+    const { error: groupsError } = await admin
+      .from("groups")
+      .delete()
+      .in("owner_id", leftovers.slice(i, i + chunkSize));
+    if (groupsError) throw groupsError;
+  }
   for (const id of leftovers) {
     const { error } = await admin.auth.admin.deleteUser(id);
     if (error) throw error;
