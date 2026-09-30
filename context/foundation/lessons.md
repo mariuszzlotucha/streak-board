@@ -94,3 +94,10 @@
 - **Problem**: `/10x-plan-review` was labelled "optional" in command plans and could be skipped, so a plan went to implementation unreviewed and the user had to ask for it again.
 - **Rule**: Always list `/10x-plan-review <change-id>` and `/10x-impl-review <change-id>` as regular numbered steps, never as optional, and do not mark either with "(optional)" or offer to skip it. A change is not ready for `/10x-implement` or `/10x-tdd` until its plan review has run, and not ready for `/10x-archive` until the full-plan impl review has run. `/10x-archive` warns when `reviews/plan-review.md` or `reviews/impl-review.md` is missing.
 - **Applies to**: frame, new, research, plan, plan-review, implement, tdd, impl-review, archive
+
+## Run /10x-impl-review after every phase and ship it in the phase PR
+
+- **Context**: The end of every implementation phase (`/10x-implement`, `/10x-tdd`), after the green gates and manual confirmation and before the phase PR is merged; covers the phase-scoped review report `context/changes/<change-id>/reviews/impl-review-phase-N.md` and the fixes from its triage.
+- **Problem**: The review ran only once, after the last phase, so findings in early phases surfaced late, after their PRs were merged and released, and the report and its fixes ended up outside the phase that caused them (or were skipped).
+- **Rule**: After every phase, run `/10x-impl-review <change-id> phase N` on the phase branch before merging; treat it as a mandatory step of the phase, not an optional one. Triage its findings, commit the review report, the fixes and the `change.md` status change on the same phase branch, and push them to the open phase PR so the PR shows the review result. Merge only after the review is triaged. The full-plan `/10x-impl-review <change-id>` after the last phase stays mandatory as well (see "Review skill commands are mandatory, not optional").
+- **Applies to**: implement, tdd, impl-review
