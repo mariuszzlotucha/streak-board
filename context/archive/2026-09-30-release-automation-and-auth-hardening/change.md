@@ -1,10 +1,10 @@
 ---
 change_id: release-automation-and-auth-hardening
 title: Release automation and auth hardening
-status: impl_reviewed
+status: archived
 created: 2026-09-30
 updated: 2026-09-30
-archived_at: null
+archived_at: 2026-09-30T21:12:24Z
 ---
 
 ## Notes
