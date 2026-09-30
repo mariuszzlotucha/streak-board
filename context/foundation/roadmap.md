@@ -39,14 +39,14 @@ Grono znajomych korzystało wcześniej ze wspólnego arkusza Google, w którym r
 
 ## At a glance
 
-| ID   | Change ID                 | Outcome (user can …)                                                  | Prerequisites | PRD refs                              | Status   |
-| ---- | -------------------------- | ------------------------------------------------------------------------ | -------------- | ---------------------------------------- | -------- |
-| F-01 | group-schema-and-rls       | (foundation) schemat grup/członkostwa + RLS wg guardrail widoczności     | —              | Access Control, Guardrail                | done |
-| S-01 | group-create-join-manage   | założyć/dołączyć do grupy przez link/kod; jako twórca zarządzać grupą     | F-01           | FR-001, FR-002, FR-003                   | done |
-| S-02 | task-create-and-manage     | utworzyć task w grupie; jako twórca edytować/usunąć swój task            | S-01           | FR-004, FR-005                           | proposed |
-| S-03 | task-join-and-leave        | dołączyć do tasku innego członka i wypisać się z niego                   | S-02           | FR-006, FR-007                           | proposed |
-| S-04 | checkoff-and-leaderboard   | odznaczyć task jako wykonany i od razu zobaczyć tablicę wyników grupy    | S-03           | FR-008, FR-009, US-01, Business Logic    | proposed |
-| S-05 | release-automation-and-auth-hardening | (release) migracje i wydanie produkcyjne są zautomatyzowane, a rejestracja na produkcji działa niezawodnie | S-01 | — (operacyjne; deployment-plan.md Phase 5) | in-progress |
+| ID   | Change ID                             | Outcome (user can …)                                                                                       | Prerequisites | PRD refs                                   | Status      |
+| ---- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------------ | ----------- |
+| F-01 | group-schema-and-rls                  | (foundation) schemat grup/członkostwa + RLS wg guardrail widoczności                                       | —             | Access Control, Guardrail                  | done        |
+| S-01 | group-create-join-manage              | założyć/dołączyć do grupy przez link/kod; jako twórca zarządzać grupą                                      | F-01          | FR-001, FR-002, FR-003                     | done        |
+| S-02 | task-create-and-manage                | utworzyć task w grupie; jako twórca edytować/usunąć swój task                                              | S-01          | FR-004, FR-005                             | proposed    |
+| S-03 | task-join-and-leave                   | dołączyć do tasku innego członka i wypisać się z niego                                                     | S-02          | FR-006, FR-007                             | proposed    |
+| S-04 | checkoff-and-leaderboard              | odznaczyć task jako wykonany i od razu zobaczyć tablicę wyników grupy                                      | S-03          | FR-008, FR-009, US-01, Business Logic      | proposed    |
+| S-05 | release-automation-and-auth-hardening | (release) migracje i wydanie produkcyjne są zautomatyzowane, a rejestracja na produkcji działa niezawodnie | S-01          | — (operacyjne; deployment-plan.md Phase 5) | in-progress |
 
 ## Baseline
 
@@ -57,7 +57,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Backend / API:** partial — konwencja Astro API routes działa dla auth (`src/pages/api/auth/*.ts`); brak endpointów domenowych.
 - **Data:** absent — klient Supabase podłączony (`src/lib/supabase.ts`), ale brak migracji/tabel/seed danych (`supabase/migrations/` nie istnieje).
 - **Auth:** partial — logowanie email/hasło + middleware sesji działa (`src/middleware.ts`, chroni `/dashboard`), ale brak modelu grup/ról/RLS.
-- **Deploy / infra:** present — aplikacja już wdrożona na Cloudflare Workers (`https://10x-astro-starter.mariusz-zlotucha.workers.dev`), CI (lint/build/smoke) działa, deploy pozostaje manualny (`wrangler deploy`).
+- **Deploy / infra:** present — aplikacja już wdrożona na Cloudflare Workers (`https://10x-astro-starter.mariusz-zlotucha.workers.dev`), CI (lint/build/smoke/integration) działa, a release na produkcję (migracje `supabase db push`, potem `wrangler deploy`) idzie przez zatwierdzane zadanie `release` w GitHub Actions.
 - **Observability:** absent — brak logowania strukturalnego, error trackingu, korelacji requestów.
 
 ## Foundations
@@ -154,14 +154,14 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ## Backlog Handoff
 
-| Roadmap ID | Change ID                 | Suggested issue title                                          | Ready for `/10x-plan` | Notes                              |
-| ---------- | -------------------------- | ------------------------------------------------------------------ | ----------------------- | ------------------------------------ |
-| F-01       | group-schema-and-rls       | Schemat danych grup/członkostwa + RLS per-grupa                    | yes                     | Run `/10x-plan group-schema-and-rls` |
-| S-01       | group-create-join-manage   | Założenie grupy, dołączanie przez link/kod, zarządzanie grupą      | no                      | Czeka na F-01                        |
-| S-02       | task-create-and-manage     | Tworzenie i zarządzanie taskiem w grupie                           | no                      | Czeka na S-01                        |
-| S-03       | task-join-and-leave        | Dołączanie/wypisywanie się z tasku                                 | no                      | Czeka na S-02                        |
-| S-04       | checkoff-and-leaderboard   | Odznaczenie tasku + tablica wyników (streak)                       | no                      | Czeka na S-03; gwiazda przewodnia    |
-| S-05       | release-automation-and-auth-hardening | Automatyczne migracje i wydania, własny SMTP, `/auth/callback`, poprawka dokumentacji deployu | yes | Bez zależności technicznych od S-02–S-04; ostatni z decyzji użytkownika. Run `/10x-plan release-automation-and-auth-hardening` (po `/10x-new`) |
+| Roadmap ID | Change ID                             | Suggested issue title                                                                         | Ready for `/10x-plan` | Notes                                                                                                                                          |
+| ---------- | ------------------------------------- | --------------------------------------------------------------------------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| F-01       | group-schema-and-rls                  | Schemat danych grup/członkostwa + RLS per-grupa                                               | yes                   | Run `/10x-plan group-schema-and-rls`                                                                                                           |
+| S-01       | group-create-join-manage              | Założenie grupy, dołączanie przez link/kod, zarządzanie grupą                                 | no                    | Czeka na F-01                                                                                                                                  |
+| S-02       | task-create-and-manage                | Tworzenie i zarządzanie taskiem w grupie                                                      | no                    | Czeka na S-01                                                                                                                                  |
+| S-03       | task-join-and-leave                   | Dołączanie/wypisywanie się z tasku                                                            | no                    | Czeka na S-02                                                                                                                                  |
+| S-04       | checkoff-and-leaderboard              | Odznaczenie tasku + tablica wyników (streak)                                                  | no                    | Czeka na S-03; gwiazda przewodnia                                                                                                              |
+| S-05       | release-automation-and-auth-hardening | Automatyczne migracje i wydania, własny SMTP, `/auth/callback`, poprawka dokumentacji deployu | yes                   | Bez zależności technicznych od S-02–S-04; ostatni z decyzji użytkownika. Run `/10x-plan release-automation-and-auth-hardening` (po `/10x-new`) |
 
 ## Open Roadmap Questions
 

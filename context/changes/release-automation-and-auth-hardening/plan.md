@@ -298,13 +298,13 @@ No schema change in this slice. Rule for future slices: migrations must be backw
 
 #### Automated
 
-- [ ] 3.1 Formatting passes: `npx prettier --check` on the changed docs
-- [ ] 3.2 Stale wording gone: `grep -n "three jobs" README.md` returns nothing
+- [x] 3.1 Formatting passes: `npx prettier --check` on the changed docs
+- [x] 3.2 Stale wording gone: `grep -n "three jobs" README.md` returns nothing
 
 #### Manual
 
-- [ ] 3.3 README Deployment section matches the Phase 2 workflow and lists the Site URL / SMTP settings
-- [ ] 3.4 Deployment plan and roadmap no longer claim deploys are manual; lessons file has the new entry and the two superseded annotations
+- [x] 3.3 README Deployment section matches the Phase 2 workflow and lists the Site URL / SMTP settings
+- [x] 3.4 Deployment plan and roadmap no longer claim deploys are manual; lessons file has the new entry and the two superseded annotations
 
 ### Phase 4: Production cutover
 

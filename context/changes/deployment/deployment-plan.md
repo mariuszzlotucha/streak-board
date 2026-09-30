@@ -8,7 +8,7 @@ last_updated: 2026-09-25
 
 # Cloudflare Workers Deployment Plan
 
-Deployment runbook for streak-board, derived from `context/foundation/infrastructure.md`'s platform research. Covers **manual CLI deployment only** — GitHub Actions / deploy-on-merge automation is explicitly out of scope for this plan.
+Deployment runbook for streak-board, derived from `context/foundation/infrastructure.md`'s platform research. Phases 0-5 cover the manual CLI deployment. Since change `release-automation-and-auth-hardening`, production deploys run through the gated `release` job in `.github/workflows/ci.yml` (approval in the GitHub `production` environment, then `supabase db push`, then `wrangler deploy`); see `README.md` (Deployment) for the current flow. The manual `wrangler deploy` remains valid as a fallback.
 
 This file is a living checklist, not a one-time research artifact — update the checkboxes and "Discovered issues" as phases complete or new edge cases surface.
 
@@ -34,6 +34,7 @@ The infra doc's risk register flagged a "dual session-store trap": the Cloudflar
 - The correct fix location is **top-level** `session: false` in `defineConfig({...})` (`astro.config.mjs`), sibling of `adapter` — **not** an option passed into `cloudflare({...})`, which has no `session` field (only `sessionKVBindingName`, `imageService`, `imagesBindingName`, `prerenderEnvironment`, `experimental`). The infra doc's original phrasing pointed at the wrong location.
 
 **Change applied** (`astro.config.mjs`, currently uncommitted):
+
 ```js
 adapter: cloudflare(),
 // Supabase cookies (src/lib/supabase.ts) are the single session source of truth —
@@ -42,10 +43,12 @@ session: false,
 ```
 
 **Verification performed:**
+
 - [x] `npx astro build` — build log no longer prints `Enabling sessions with Cloudflare KV with the "SESSION" KV binding.`
 - [x] `grep -r kv_namespaces dist/` — `dist/server/wrangler.json` now shows `"kv_namespaces":[]`.
 
 **Remaining:**
+
 - [x] Commit `astro.config.mjs` — done, commit `760f4fa`.
 - [ ] If a future feature genuinely needs Astro's session API (flash messages, CSRF nonces) alongside Supabase auth, don't silently flip this back — re-open the decision explicitly and log it via `/10x-lesson`.
 
@@ -66,11 +69,13 @@ session: false,
 ### Blocking issue: account has no `workers.dev` subdomain registered
 
 Attempted `npx wrangler deploy` on 2026-09-18 and hit:
+
 ```
 ✘ [ERROR] Wrangler could not automatically register "10x-astro-starter" as your workers.dev
   subdomain because the name is unavailable. Register a different subdomain at
   https://dash.cloudflare.com/cef23e668d98bfbd15b2253f243c5556/workers/onboarding.
 ```
+
 This account has never had a `workers.dev` subdomain claimed. This is a **one-time, account-level, human decision** (you're picking a public, permanent subdomain prefix — e.g. `<something>.workers.dev` — that every Worker on the account will be reachable under) and there's no CLI command for it in this wrangler version (`wrangler --help` lists no `subdomain` command).
 
 **Resolved 2026-09-18:** instead of the account-level onboarding link, the subdomain was registered per-Worker via the dashboard's **Domains** tab for `10x-astro-starter` (Workers & Pages → 10x-astro-starter → Domains → toggled on `10x-astro-starter.mariusz-zlotucha.workers.dev`). Verified reachable: `curl https://10x-astro-starter.mariusz-zlotucha.workers.dev/` → `HTTP 500` (expected — only the empty stub Worker from `wrangler secret put` is live, not the real app; the 500 confirms the URL itself now resolves instead of erroring on "subdomain unavailable").
@@ -82,9 +87,11 @@ This account has never had a `workers.dev` subdomain claimed. This is a **one-ti
 **Phase 2 complete.** Live app: `https://10x-astro-starter.mariusz-zlotucha.workers.dev`
 
 Still outstanding from this phase (not yet done — needs a real, non-local Supabase project to fully verify):
+
 - [ ] Full browser sign-up/sign-in/check-off smoke test against the live URL (only route-level HTTP checks done so far, not actual Supabase auth flow).
 
 **Other edge cases / extra support steps for this phase:**
+
 - **`astro:env/server` resolves to `undefined` in production** (real upstream issue, withastro/astro#16790, open as of Sept 2026): if `wrangler tail` shows `createClient` returning `null` (sign-in silently no-ops) even though `wrangler secret list` shows both secrets set, the workaround is to read the Worker's native `env` directly instead of trusting `astro:env/server` — import `env` from `cloudflare:workers` inside `src/lib/supabase.ts`'s Cloudflare code path as a fallback. Only apply this if the tail/browser check actually shows the failure — don't patch preemptively.
 - **KV namespace still gets auto-provisioned despite `session: false`**: re-run `npx wrangler kv namespace list` right after the first deploy. If a `SESSION`-named namespace appears anyway, Phase 1's build-log check was a false negative — stop, don't proceed to Phase 3, and re-verify the `session: false` placement.
 - **Wrong Supabase project secrets**: this MVP has no staging environment, so a fat-fingered `wrangler secret put` points production traffic at the wrong (or local) Supabase project with nothing to catch it first. Treat the sign-in smoke check as mandatory before calling this phase done.
@@ -94,9 +101,10 @@ Still outstanding from this phase (not yet done — needs a real, non-local Supa
 **Status: ✅ Done (2026-09-18)**
 
 Used two already-live, visually distinct deploys (ad hoc background-color changes) as the drill's before/after instead of a synthetic change:
+
 - [x] `npx wrangler deployments list` — reviewed full deployment history, identified current (`609006fb`, hero-section red) and prior (`62719a11`, global-background red only) version IDs.
 - [x] `npx wrangler rollback 62719a11-...` — succeeded (non-interactive prompts auto-answered: default rollback message, confirmed "yes" to deploy to 100% of traffic).
-- [x] Confirmed rollback effect via curl: hero-section `bg-red-600` class gone from HTML, global `--background` CSS var still red (matches the rolled-back-to version exactly) — proves rollback restores the *exact* prior version, not just "some" prior state.
+- [x] Confirmed rollback effect via curl: hero-section `bg-red-600` class gone from HTML, global `--background` CSS var still red (matches the rolled-back-to version exactly) — proves rollback restores the _exact_ prior version, not just "some" prior state.
 - [x] Redeployed current working-tree state (`npm run build && npx wrangler deploy`) to restore the hero-section change — confirmed `bg-red-600` back in the live HTML.
 
 Turns "rollback works in theory" into a proven, once-rehearsed step before you need it under pressure. **Note:** `wrangler rollback` prompts interactively (rollback message, confirm-to-100%) — in a non-interactive/scripted context it falls back to defaults ("Rollback" message, "yes" to confirm) rather than failing, which is convenient but means a scripted rollback can't be silently declined — know this before wiring it into anything automated.
@@ -141,7 +149,7 @@ Turns "rollback works in theory" into a proven, once-rehearsed step before you n
 
 ## Out of scope
 
-- **GitHub Actions / deploy-on-merge automation** — explicitly excluded.
+- **GitHub Actions / deploy-on-merge automation** — originally excluded from this plan; now delivered by change `release-automation-and-auth-hardening` (gated `release` job in `.github/workflows/ci.yml`, Workers Builds disabled).
 - Custom domain binding — deferred, default `workers.dev` subdomain for now.
 - Staging environment / `[env.staging]` in `wrangler.jsonc` — deferred, single production environment for this MVP.
 - Docker, multi-region/HA/DR — out of scope per `infrastructure.md`.
