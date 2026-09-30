@@ -76,8 +76,8 @@ describe("task isolation between groups", () => {
       expect(await adminTask(taskId)).not.toBeNull();
 
       const { data, error } = await anonClient().from("tasks").select("id");
-      expect(error?.code ?? null).toSatisfy((code: string | null) => code === null || code === RLS_VIOLATION);
-      expect(data ?? []).toEqual([]);
+      expect(error?.code).toBe(RLS_VIOLATION);
+      expect(data).toBeNull();
     });
   });
 
@@ -114,7 +114,7 @@ describe("task isolation between groups", () => {
       const { error } = await anonClient()
         .from("tasks")
         .insert({ group_id: ga.id, created_by: a.id, title: "Anon task", recurrence: "once" });
-      expect(error).not.toBeNull();
+      expect(error?.code).toBe(RLS_VIOLATION);
 
       const { data } = await a.client.from("tasks").select("id").eq("title", "Anon task");
       expect(data).toEqual([]);
