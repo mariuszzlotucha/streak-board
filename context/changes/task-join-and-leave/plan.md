@@ -292,9 +292,9 @@ Additive migration; the backfill enrols creators of existing tasks so existing t
 
 #### Automated
 
-- [ ] 2.1 Unit tests pass (including the new grouping tests): `npm test`
-- [ ] 2.2 Linting passes: `npm run lint`
-- [ ] 2.3 Project builds with the new routes: `npm run build`
+- [x] 2.1 Unit tests pass (including the new grouping tests): `npm test` — fc56371
+- [x] 2.2 Linting passes: `npm run lint` — fc56371
+- [x] 2.3 Project builds with the new routes: `npm run build` — fc56371
 
 ### Phase 3: Dashboard UI and smoke coverage
 
