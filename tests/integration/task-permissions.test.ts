@@ -156,6 +156,11 @@ describe("creator-only task permissions", () => {
       expect(del).toEqual([]);
       await expectTaskUntouched();
 
+      const { error: insertError } = await c.client
+        .from("tasks")
+        .insert({ group_id: ga.id, created_by: c.id, title: "Left but still writing", recurrence: "once" });
+      expect(insertError?.code).toBe(PERMISSION_DENIED);
+
       const { data: seen, error: seenError } = await m.client.from("tasks").select("id").eq("id", taskId);
       expect(seenError).toBeNull();
       expect(seen).toEqual([{ id: taskId }]);
