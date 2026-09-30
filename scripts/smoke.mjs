@@ -235,6 +235,41 @@ const steps = [
     () => request("/api/groups/create", { method: "POST", form: { name: groupName } }),
     { status: 302, locationExact: "/dashboard", setCookie: "join_code=deleted" },
   ],
+  ...["create", "update", "delete"].flatMap((action) => [
+    [
+      `anonymous task ${action} redirects to signin`,
+      () => request(`/api/tasks/${action}`, { method: "POST", form: { title: "Water plants" }, jar: jarB }),
+      { status: 302, location: "/auth/signin" },
+    ],
+    [
+      // The bodies are invalid, so nothing changes even if the Origin check were off.
+      `task ${action} from a foreign origin is rejected`,
+      () => request(`/api/tasks/${action}`, { method: "POST", form: {}, origin: FOREIGN_ORIGIN }),
+      { status: 403 },
+    ],
+  ]),
+  [
+    "task create rejects an empty title",
+    () => request("/api/tasks/create", { method: "POST", form: { title: "  ", recurrence: "once" } }),
+    { status: 302, locationExact: "/dashboard?error=invalid_title" },
+  ],
+  [
+    "task create rejects an unknown recurrence",
+    () => request("/api/tasks/create", { method: "POST", form: { title: "Water plants", recurrence: "monthly" } }),
+    { status: 302, locationExact: "/dashboard?error=invalid_recurrence" },
+  ],
+  [
+    "task update rejects a malformed task id",
+    () => request("/api/tasks/update", { method: "POST", form: { task_id: "not-a-uuid", title: "Renamed" } }),
+    { status: 302, locationExact: "/dashboard?error=forbidden" },
+  ],
+  [
+    "task delete rejects a malformed task id",
+    () => request("/api/tasks/delete", { method: "POST", form: { task_id: "not-a-uuid" } }),
+    { status: 302, locationExact: "/dashboard?error=forbidden" },
+  ],
+  ["task update does not answer GET", () => request("/api/tasks/update"), { status: 404 }],
+  ["task delete does not answer GET", () => request("/api/tasks/delete"), { status: 404 }],
   [
     "dashboard shows the group and its invite link",
     async () => {

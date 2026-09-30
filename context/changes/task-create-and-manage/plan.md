@@ -368,16 +368,16 @@ The migration only adds a table and its policies, so it is backward compatible w
 
 #### Automated
 
-- [ ] 2.1 Validator unit tests pass (the local Supabase stack must be running, vitest's global setup reads its status): `npm test -- tests/unit/task-rules.test.ts`
-- [ ] 2.2 Lint and types pass: `npm run lint && npx astro check`
-- [ ] 2.3 Build passes: `npm run build`
-- [ ] 2.4 Smoke passes with the boundary steps against the built preview (CI `smoke` job): `npm run smoke`
-- [ ] 2.5 Route protection is in place: `grep -n '"/api/tasks"' src/middleware.ts`
+- [x] 2.1 Validator unit tests pass (the local Supabase stack must be running, vitest's global setup reads its status): `npm test -- tests/unit/task-rules.test.ts` — 02ca08b
+- [x] 2.2 Lint and types pass: `npm run lint && npx astro check` — 02ca08b
+- [x] 2.3 Build passes: `npm run build` — 02ca08b
+- [x] 2.4 Smoke passes with the boundary steps against the built preview (CI `smoke` job): `npm run smoke` — 02ca08b
+- [x] 2.5 Route protection is in place: `grep -n '"/api/tasks"' src/middleware.ts` — 02ca08b
 
 #### Manual
 
-- [ ] 2.6 Signed in as a group member, posting a valid title and recurrence to `/api/tasks/create` adds a row, visible in the local Supabase Studio
-- [ ] 2.7 Posting as a signed-in user without a group answers `?error=forbidden` and creates nothing
+- [x] 2.6 Signed in as a group member, posting a valid title and recurrence to `/api/tasks/create` adds a row, visible in the local Supabase Studio — 02ca08b
+- [x] 2.7 Posting as a signed-in user without a group answers `?error=forbidden` and creates nothing — 02ca08b
 
 ### Phase 3: Dashboard UI and smoke outcomes
 
