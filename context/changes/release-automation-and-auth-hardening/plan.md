@@ -291,8 +291,8 @@ No schema change in this slice. Rule for future slices: migrations must be backw
 
 #### Manual
 
-- [ ] 2.5 Reviewer confirms the step order and that `environment: production` is set on the job
-- [ ] 2.6 The `production` environment exists with a required reviewer and all secrets/variables before this phase's PR is merged
+- [x] 2.5 Reviewer confirms the step order and that `environment: production` is set on the job — 3e7dd07
+- [x] 2.6 The `production` environment exists with a required reviewer and all secrets/variables before this phase's PR is merged — 3e7dd07
 
 ### Phase 3: Documentation and lessons
 
