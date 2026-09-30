@@ -5,6 +5,8 @@ import JoinGroupForm from "@/components/groups/JoinGroupForm";
 import CopyInviteLink from "@/components/groups/CopyInviteLink";
 import ConfirmAction from "@/components/groups/ConfirmAction";
 import RenameGroupForm from "@/components/groups/RenameGroupForm";
+import CreateTaskForm from "@/components/tasks/CreateTaskForm";
+import EditTaskForm from "@/components/tasks/EditTaskForm";
 import { CircleAlert } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -13,12 +15,16 @@ import { createClient } from "@/lib/supabase";
 import { groupErrorMessage, resolveGroupError } from "@/lib/group-errors";
 import { getMyGroup, listGroupMembers, previewGroup, type GroupMember, type MyGroup } from "@/lib/groups";
 import { clearJoinCode, peekJoinCode } from "@/lib/join-code";
+import { resolveTaskError } from "@/lib/task-errors";
+import { listGroupTasks, type GroupTask } from "@/lib/tasks";
 
 const { user } = Astro.locals;
 
-let error = resolveGroupError(Astro.url.searchParams.get("error"));
+const errorParam = Astro.url.searchParams.get("error");
+let error = resolveGroupError(errorParam) ?? resolveTaskError(errorParam);
 let group: MyGroup | null = null;
 let members: GroupMember[] = [];
+let tasks: GroupTask[] = [];
 let pendingCode: string | null = null;
 let pendingGroupName: string | null = null;
 let loadFailed = false;
@@ -29,6 +35,7 @@ try {
     group = await getMyGroup(supabase);
     if (group) {
       members = await listGroupMembers(supabase, group.id);
+      tasks = await listGroupTasks(supabase, group.id);
     }
     const code = peekJoinCode(Astro.cookies);
     if (code) {
@@ -61,6 +68,9 @@ const isOwner = group !== null && group.owner_id === user?.id;
 const showGroupForms = !group && !loadFailed;
 // The member list comes from the same load: after a failure show no list rather than "0 members".
 const showMembers = group !== null && !loadFailed;
+// Same for the tasks: a failed load shows no Tasks card rather than an empty list.
+const showTasks = group !== null && !loadFailed;
+const RECURRENCE_LABELS = { once: "Once", daily: "Daily", weekly: "Weekly" } as const;
 ---
 
 <Layout title="Dashboard">
@@ -126,6 +136,55 @@ const showMembers = group !== null && !loadFailed;
                 </li>
               ))}
             </ul>
+          </CardContent>
+        </Card>
+      )}
+
+      {showTasks && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <h2 class="font-heading text-xl font-semibold">Tasks</h2>
+            </CardTitle>
+            <CardDescription>{`${tasks.length} ${tasks.length === 1 ? "task" : "tasks"}`}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {tasks.length === 0 ? (
+              <p class="text-sm text-muted-foreground">No tasks yet. Create the first one below.</p>
+            ) : (
+              <ul class="divide-y">
+                {tasks.map((task) => (
+                  <li class="flex flex-wrap items-center gap-x-2 gap-y-2 py-2 first:pt-0 last:pb-0">
+                    {task.created_by === user?.id ? (
+                      <>
+                        <EditTaskForm client:load taskId={task.id} title={task.title} />
+                        <span class="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+                          {RECURRENCE_LABELS[task.recurrence]}
+                        </span>
+                        <ConfirmAction
+                          client:load
+                          action="/api/tasks/delete"
+                          fields={{ task_id: task.id }}
+                          triggerLabel="Delete"
+                          triggerAriaLabel={`Delete ${task.title}`}
+                          title="Delete this task?"
+                          description={`${task.title} will be deleted permanently. This cannot be undone.`}
+                          confirmLabel="Delete task"
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <span class="min-w-0 flex-1 text-sm break-words">{task.title}</span>
+                        <span class="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+                          {RECURRENCE_LABELS[task.recurrence]}
+                        </span>
+                      </>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+            <CreateTaskForm client:load />
           </CardContent>
         </Card>
       )}

@@ -24,3 +24,19 @@ export async function getTask(supabase: Supabase, taskId: string): Promise<Group
   if (!recurrence) throw new Error(`Task ${data.id} has an unknown recurrence`);
   return { ...data, recurrence };
 }
+
+/** Tasks of the caller's group, oldest first (RLS limits the select to it). Throws on a Supabase error. */
+export async function listGroupTasks(supabase: Supabase, groupId: string): Promise<GroupTask[]> {
+  const { data, error } = await supabase
+    .from("tasks")
+    .select("id, title, recurrence, created_by")
+    .eq("group_id", groupId)
+    .order("created_at", { ascending: true })
+    .order("id", { ascending: true });
+  if (error) throw error;
+  return data.map((row) => {
+    const recurrence = normalizeRecurrence(row.recurrence);
+    if (!recurrence) throw new Error(`Task ${row.id} has an unknown recurrence`);
+    return { ...row, recurrence };
+  });
+}
