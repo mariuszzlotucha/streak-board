@@ -158,10 +158,8 @@ describe("cross-group data isolation", () => {
     });
 
     it("B cannot insert itself into GA's group_members (42501); C can join GA only via its join code (control)", async () => {
-      const { data, error } = await b.client
-        .from("group_members")
-        .insert({ group_id: ga.id, user_id: b.id })
-        .select("user_id");
+      // No .select(): asking for the row back would need SELECT visibility and could mask the INSERT policy.
+      const { data, error } = await b.client.from("group_members").insert({ group_id: ga.id, user_id: b.id });
       expect(error?.code).toBe(RLS_VIOLATION);
       expect(data).toBeNull();
       expect(await adminMemberIdsOfA()).toEqual([a.id, a2.id].sort());
@@ -173,7 +171,8 @@ describe("cross-group data isolation", () => {
     });
 
     it("C (no group) cannot create a group owned by A (42501); creating its own group works (control)", async () => {
-      const { data, error } = await c.client.from("groups").insert({ name: "Forged", owner_id: a.id }).select("id");
+      // No .select(): RETURNING needs SELECT visibility, which C lacks, and would fail even if the INSERT policy were open.
+      const { data, error } = await c.client.from("groups").insert({ name: "Forged", owner_id: a.id });
       expect(error?.code).toBe(RLS_VIOLATION);
       expect(data).toBeNull();
 
