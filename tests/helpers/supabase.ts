@@ -74,6 +74,34 @@ export async function adminMemberIds(groupId: string): Promise<string[]> {
   return data.map((row) => row.user_id).sort();
 }
 
+// Tasks are not tracked: they disappear through the group_id cascade in cleanupGroups and the created_by cascade in
+// cleanupUsers.
+export async function createTaskAs(
+  user: TestUser,
+  groupId: string,
+  title: string,
+  recurrence: string,
+): Promise<string> {
+  // The id comes from the column default (the grants do not allow sending it); RETURNING reads it back.
+  const { data, error } = await user.client
+    .from("tasks")
+    .insert({ group_id: groupId, created_by: user.id, title, recurrence })
+    .select("id")
+    .single();
+  if (error) throw new Error(`createTaskAs: insert failed: ${error.message}`);
+  return data.id;
+}
+
+export async function adminTask(taskId: string) {
+  const { data, error } = await adminClient()
+    .from("tasks")
+    .select("id, group_id, created_by, title, recurrence")
+    .eq("id", taskId)
+    .maybeSingle();
+  if (error) throw new Error(`adminTask failed: ${error.message}`);
+  return data;
+}
+
 export async function cleanupGroups(): Promise<void> {
   const ids = createdGroupIds.splice(0);
   if (ids.length === 0) return;

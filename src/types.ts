@@ -81,6 +81,41 @@ export type Database = {
         };
         Relationships: [];
       };
+      tasks: {
+        Row: {
+          created_at: string;
+          created_by: string;
+          group_id: string;
+          id: string;
+          recurrence: string;
+          title: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by: string;
+          group_id: string;
+          id?: string;
+          recurrence: string;
+          title: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string;
+          group_id?: string;
+          id?: string;
+          recurrence?: string;
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tasks_group_id_fkey";
+            columns: ["group_id"];
+            isOneToOne: false;
+            referencedRelation: "groups";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
