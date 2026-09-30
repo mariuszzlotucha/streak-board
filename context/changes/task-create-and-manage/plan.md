@@ -383,17 +383,17 @@ The migration only adds a table and its policies, so it is backward compatible w
 
 #### Automated
 
-- [ ] 3.1 Lint and types pass: `npm run lint && npx astro check`
-- [ ] 3.2 Build passes: `npm run build`
-- [ ] 3.3 Integration and unit tests pass: `npm test`
-- [ ] 3.4 Smoke passes with the full task outcome steps against the built preview (CI `smoke` job): `npm run smoke`
+- [x] 3.1 Lint and types pass: `npm run lint && npx astro check` — a90910b
+- [x] 3.2 Build passes: `npm run build` — a90910b
+- [x] 3.3 Integration and unit tests pass: `npm test` — a90910b
+- [x] 3.4 Smoke passes with the full task outcome steps against the built preview (CI `smoke` job): `npm run smoke` — a90910b
 
 #### Manual
 
-- [ ] 3.5 At 375 px width the Tasks card is fully usable: create, edit and delete a task without horizontal scrolling
-- [ ] 3.6 Only the creator sees Edit and Delete on a task; another member sees the task without controls
-- [ ] 3.7 A user without a group sees no Tasks card, and an invalid title shows the fixed error message in the alert
-- [ ] 3.8 Deleting a task asks for confirmation in a dialog and cancelling changes nothing
+- [x] 3.5 At 375 px width the Tasks card is fully usable: create, edit and delete a task without horizontal scrolling — a90910b
+- [x] 3.6 Only the creator sees Edit and Delete on a task; another member sees the task without controls — a90910b
+- [x] 3.7 A user without a group sees no Tasks card, and an invalid title shows the fixed error message in the alert — a90910b
+- [x] 3.8 Deleting a task asks for confirmation in a dialog and cancelling changes nothing — a90910b
 
 ### Phase 4: Docs and production check
 

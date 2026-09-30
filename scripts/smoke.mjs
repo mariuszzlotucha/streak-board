@@ -12,6 +12,9 @@ const password = "Smoke-Test-Passw0rd!";
 const groupName = `Smoke Group ${stamp}`;
 // Deliberately not containing groupName, so "the old name is gone" can be asserted with a plain substring check.
 const renamedGroupName = `Renamed Crew ${stamp}`;
+// Unique titles: the renamed one does not contain the old one, so "the old title is gone" is a plain substring check.
+const taskTitle = `Smoke Task ${stamp}`;
+const renamedTaskTitle = `Edited Chore ${stamp}`;
 // User A's session and the sessions of users B and C are independent cookie jars.
 const jarA = new Map();
 const jarB = new Map();
@@ -23,6 +26,8 @@ let joinCode;
 // Read from the owner's dashboard at run time: the ids A's remove controls submit for users B and C.
 let memberIdB;
 let memberIdC;
+// Read from A's rendered delete form: the id of the task A creates.
+let taskId;
 
 function cookieHeader(jar) {
   return [...jar.entries()].map(([k, v]) => `${k}=${v}`).join("; ");
@@ -115,7 +120,35 @@ function dialogTrigger(label) {
 
 // The server-rendered destructive forms hold hidden fields only; a submit button inside one would skip the confirmation.
 const SUBMIT_IN_DESTRUCTIVE_FORM =
-  /<form[^>]*action="\/api\/groups\/(?:delete|remove-member)"[^>]*>(?:(?!<\/form>)[\s\S])*type="submit"/;
+  /<form[^>]*action="\/api\/(?:groups\/(?:delete|remove-member)|tasks\/delete)"[^>]*>(?:(?!<\/form>)[\s\S])*type="submit"/;
+
+// The Tasks card heading (an error alert or another card would not match).
+const TASKS_HEADING = /<h2[^>]*>\s*Tasks\s*<\/h2>/;
+
+// A task row (<li>) holding the title followed by the recurrence badge.
+function taskRowWithBadge(title, badge) {
+  return new RegExp(`<li[^>]*>(?:(?!</li>)[\\s\\S])*${escapeRegExp(title)}(?:(?!</li>)[\\s\\S])*>\\s*${badge}\\s*<`);
+}
+
+// The edit control the island rendered for the task (its button carries the title in the aria-label).
+function editControl(title) {
+  return new RegExp(`<button[^>]*aria-label="Edit ${escapeRegExp(title)}"`);
+}
+
+// A task row whose delete control is the confirmation island: the form and, after it, the dialog trigger.
+function taskRowWithConfirmedDelete(title) {
+  return new RegExp(
+    `<li[^>]*>(?:(?!</li>)[\\s\\S])*${escapeRegExp(title)}(?:(?!</li>)[\\s\\S])*action="/api/tasks/delete"(?:(?!</li>)[\\s\\S])*aria-haspopup="dialog"`,
+  );
+}
+
+// The id the delete control in the row of the given task submits.
+function deleteTargetInRow(body, title) {
+  const row = new RegExp(
+    `<li[^>]*>(?:(?!</li>)[\\s\\S])*${escapeRegExp(title)}(?:(?!</li>)[\\s\\S])*action="/api/tasks/delete"(?:(?!</li>)[\\s\\S])*name="task_id"[^>]*value="([0-9a-f-]{36})"`,
+  );
+  return body.match(row)?.[1];
+}
 
 // The id a signed-in session belongs to, read from the Supabase auth cookie in the jar (`base64-` plus base64url JSON,
 // split into numbered chunks when large). The remove-member steps need real ids to prove who may remove whom.
@@ -645,6 +678,127 @@ const steps = [
     },
   ],
   [
+    "task create by the creator succeeds",
+    () => request("/api/tasks/create", { method: "POST", form: { title: taskTitle, recurrence: "daily" } }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "creator dashboard shows the task with edit and confirmed delete controls",
+    async () => {
+      const result = await request("/dashboard");
+      taskId = deleteTargetInRow(result.body, taskTitle);
+      if (!taskId) {
+        console.log("FAIL  task id not found in the creator's delete form; later task steps cannot run");
+        process.exit(1);
+      }
+      return result;
+    },
+    {
+      status: 200,
+      bodyIncludes: taskTitle,
+      bodyMatches: [
+        TASKS_HEADING,
+        taskRowWithBadge(taskTitle, "Daily"),
+        editControl(taskTitle),
+        taskRowWithConfirmedDelete(taskTitle),
+        formPostingTo("/api/tasks/create"),
+      ],
+      bodyNotMatches: SUBMIT_IN_DESTRUCTIVE_FORM,
+      bodyExcludes: NO_ERROR_ALERT,
+    },
+  ],
+  [
+    "member dashboard shows the task without edit and delete controls",
+    () => request("/dashboard", { jar: jarB }),
+    {
+      status: 200,
+      bodyIncludes: taskTitle,
+      bodyMatches: [TASKS_HEADING, taskRowWithBadge(taskTitle, "Daily")],
+      // The update form is never server-rendered (it appears only after a click), so editControl is the guard.
+      bodyNotMatches: [editControl(taskTitle), formPostingTo("/api/tasks/delete")],
+      bodyExcludes: NO_ERROR_ALERT,
+    },
+  ],
+  [
+    "task update by a non-creator is rejected",
+    () =>
+      request("/api/tasks/update", { method: "POST", form: { task_id: taskId, title: renamedTaskTitle }, jar: jarB }),
+    { status: 302, locationExact: "/dashboard?error=forbidden" },
+  ],
+  [
+    "task delete by a non-creator is rejected",
+    () => request("/api/tasks/delete", { method: "POST", form: { task_id: taskId }, jar: jarB }),
+    { status: 302, locationExact: "/dashboard?error=forbidden" },
+  ],
+  [
+    // The creator's own session and a real id: only the Origin check stands between the request and the change.
+    "task update from a foreign origin is rejected",
+    () =>
+      request("/api/tasks/update", {
+        method: "POST",
+        form: { task_id: taskId, title: renamedTaskTitle },
+        origin: FOREIGN_ORIGIN,
+      }),
+    { status: 403 },
+  ],
+  [
+    "task delete from a foreign origin is rejected",
+    () => request("/api/tasks/delete", { method: "POST", form: { task_id: taskId }, origin: FOREIGN_ORIGIN }),
+    { status: 403 },
+  ],
+  [
+    "task is intact after the rejected requests",
+    () => request("/dashboard"),
+    {
+      status: 200,
+      bodyIncludes: taskTitle,
+      bodyMatches: [taskRowWithBadge(taskTitle, "Daily"), taskRowWithConfirmedDelete(taskTitle)],
+      bodyExcludes: [renamedTaskTitle, NO_ERROR_ALERT],
+    },
+  ],
+  [
+    // The posted recurrence must be ignored: the endpoint only ever updates the title.
+    "task update by the creator succeeds",
+    () =>
+      request("/api/tasks/update", {
+        method: "POST",
+        form: { task_id: taskId, title: renamedTaskTitle, recurrence: "weekly" },
+      }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "member dashboard shows the new title and the unchanged recurrence",
+    () => request("/dashboard", { jar: jarB }),
+    {
+      status: 200,
+      bodyIncludes: renamedTaskTitle,
+      bodyMatches: [taskRowWithBadge(renamedTaskTitle, "Daily")],
+      bodyNotMatches: taskRowWithBadge(renamedTaskTitle, "Weekly"),
+      bodyExcludes: [taskTitle, NO_ERROR_ALERT],
+    },
+  ],
+  [
+    "task delete by the creator succeeds",
+    () => request("/api/tasks/delete", { method: "POST", form: { task_id: taskId } }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "deleted task is gone from the member dashboard",
+    () => request("/dashboard", { jar: jarB }),
+    {
+      status: 200,
+      // The Tasks card still renders (with its empty prompt), so the missing title is not an empty page.
+      bodyIncludes: "No tasks yet",
+      bodyMatches: TASKS_HEADING,
+      bodyExcludes: [renamedTaskTitle, taskTitle, NO_ERROR_ALERT],
+    },
+  ],
+  [
+    "deleting the task again is a quiet redirect",
+    () => request("/api/tasks/delete", { method: "POST", form: { task_id: taskId } }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
     "delete by the owner succeeds",
     () => request("/api/groups/delete", { method: "POST" }),
     { status: 302, locationExact: "/dashboard" },
@@ -664,6 +818,7 @@ const steps = [
     {
       status: 200,
       bodyIncludes: ["Create a group", "Join a group"],
+      bodyNotMatches: TASKS_HEADING,
       bodyExcludes: ["Your group", renamedGroupName, "/join/", NO_ERROR_ALERT],
     },
   ],
@@ -673,6 +828,7 @@ const steps = [
     {
       status: 200,
       bodyIncludes: ["Create a group", "Join a group"],
+      bodyNotMatches: TASKS_HEADING,
       bodyExcludes: ["Your group", renamedGroupName, "/join/", NO_ERROR_ALERT],
     },
   ],
