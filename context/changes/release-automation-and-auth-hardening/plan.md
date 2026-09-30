@@ -310,14 +310,14 @@ No schema change in this slice. Rule for future slices: migrations must be backw
 
 #### Automated
 
-- [x] 4.1 Production callback is live: `/auth/callback` answers 302 to `/auth/signin?error=link_expired`
-- [x] 4.2 Production routes: `/` and `/auth/signin` answer 200, `/dashboard` answers 302
-- [x] 4.3 Migrations in sync (user runs): `npx supabase migration list`
-- [x] 4.4 No stray KV namespace (user runs): `npx wrangler kv namespace list` returns `[]`
+- [x] 4.1 Production callback is live: `/auth/callback` answers 302 to `/auth/signin?error=link_expired` — 5bcd8b3
+- [x] 4.2 Production routes: `/` and `/auth/signin` answer 200, `/dashboard` answers 302 — 5bcd8b3
+- [x] 4.3 Migrations in sync (user runs): `npx supabase migration list` — 5bcd8b3
+- [x] 4.4 No stray KV namespace (user runs): `npx wrangler kv namespace list` returns `[]` — 5bcd8b3
 
 #### Manual
 
-- [x] 4.5 The first `release` run waited for approval in the `production` environment, then went green
+- [x] 4.5 The first `release` run waited for approval in the `production` environment, then went green — 5bcd8b3
 - [ ] 4.6 After disabling Workers Builds, a push to `master` no longer starts a Cloudflare build
 - [ ] 4.7 A new production sign-up delivers the confirmation e-mail from the custom domain
 - [ ] 4.8 Clicking the link lands on `/dashboard` signed in; a second click in a signed-out or private window lands on `/auth/signin` with the expired-link message
