@@ -4,6 +4,8 @@
 
 A modern, opinionated starter template for building fast, accessible web applications.
 
+**Production:** <https://10x-astro-starter.mariusz-zlotucha.workers.dev> today. The product domain is **`streakboard.app`** (Cloudflare Registrar, DNS in Cloudflare): it already sends the auth e-mail, and the app itself will move to it in a separate change (custom domain binding, Supabase Site URL and Redirect URLs).
+
 ## Tech Stack
 
 - [Astro](https://astro.build/) v7 - Modern web framework with server-first rendering
@@ -207,7 +209,7 @@ npx wrangler rollback [version-id]   # reverts to the given version, or the prio
 
 ### Auth e-mail sender domain
 
-Confirmation e-mails are sent through Resend SMTP (configured in the Supabase Dashboard under Authentication → SMTP Settings, not in this repo) from the domain `streakboard.app` (Cloudflare Registrar, DNS in Cloudflare). Resend sends from the subdomain `mail.streakboard.app`, with the sender `noreply@mail.streakboard.app`. The app itself stays on its `workers.dev` URL.
+Confirmation e-mails are sent through Resend SMTP (configured in the Supabase Dashboard under Authentication → SMTP Settings, not in this repo) from the domain `streakboard.app` (Cloudflare Registrar, DNS in Cloudflare). Resend sends from the subdomain `mail.streakboard.app`, with the sender `noreply@mail.streakboard.app`. Until the custom domain binding is done the app itself stays on its `workers.dev` URL; the target production address is `https://streakboard.app`.
 
 ## Smoke test
 
