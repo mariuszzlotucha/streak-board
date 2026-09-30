@@ -46,7 +46,14 @@ export interface TaskParticipant {
   user_id: string;
 }
 
-/** Participation rows visible to the caller (RLS limits them to tasks of the caller's group). Throws on a Supabase error. */
+/** PostgREST `max_rows` (supabase/config.toml): a response this long may have been truncated. */
+const POSTGREST_MAX_ROWS = 1000;
+
+/**
+ * Participation rows visible to the caller (RLS limits them to tasks of the caller's group), in join order
+ * (`user_id` breaks ties) so participants render in a stable order with the creator, enrolled at task insert, first.
+ * Throws on a Supabase error, or when the result may have been cut off by the row cap.
+ */
 export async function listTaskParticipants(supabase: Supabase): Promise<TaskParticipant[]> {
   const { data, error } = await supabase
     .from("task_participants")
@@ -54,5 +61,15 @@ export async function listTaskParticipants(supabase: Supabase): Promise<TaskPart
     .order("joined_at", { ascending: true })
     .order("user_id", { ascending: true });
   if (error) throw error;
+  if (data.length >= POSTGREST_MAX_ROWS) {
+    throw new Error("Task participants may be truncated by the PostgREST row cap");
+  }
   return data;
+}
+
+/** Whether RLS lets the caller see the task (false for another group or a deleted task). Throws on a Supabase error. */
+export async function taskExists(supabase: Supabase, taskId: string): Promise<boolean> {
+  const { data, error } = await supabase.from("tasks").select("id").eq("id", taskId).maybeSingle();
+  if (error) throw error;
+  return data !== null;
 }

@@ -2,7 +2,7 @@ import type { APIRoute } from "astro";
 import { createClient } from "@/lib/supabase";
 import { normalizeUuid } from "@/lib/group-rules";
 import { toTaskErrorCode } from "@/lib/task-errors";
-import { getTask } from "@/lib/tasks";
+import { taskExists } from "@/lib/tasks";
 
 export const prerender = false;
 
@@ -25,7 +25,8 @@ export const POST: APIRoute = async (context) => {
     }
 
     // Not visible to the caller (already deleted, other group): a stale submit ends quietly on the dashboard.
-    if (!(await getTask(supabase, taskId))) {
+    // Without this check the insert policy would answer 42501, which maps to a loud `forbidden` banner.
+    if (!(await taskExists(supabase, taskId))) {
       return context.redirect("/dashboard");
     }
 
