@@ -167,11 +167,19 @@ Route protection is handled in `src/middleware.ts`. Add paths to the `PROTECTED_
 | `POST /api/groups/remove-member` | Owner: remove another member (field `user_id`)                                            |
 | `POST /api/groups/delete`        | Owner: delete the group; every membership goes with it                                    |
 
-`/api/groups/*` follows the same `PROTECTED_ROUTES` rule as `/dashboard`: an unauthenticated request is redirected to `/auth/signin`. `/join/<code>` is the exception on purpose, so an invited visitor is sent through sign-in by the protected dashboard. Every group endpoint redirects back to `/dashboard`, adding `?error=<code>` on failure. Who may do what is decided by Postgres row-level security (see [RLS scenario checks](#rls-scenario-checks)); the app only forwards the signed-in user's session.
+### Task routes
+
+| Route                    | Description                                                                            |
+| ------------------------ | -------------------------------------------------------------------------------------- |
+| `POST /api/tasks/create` | Member: create a task in their group (fields `title`, `recurrence`: once/daily/weekly) |
+| `POST /api/tasks/update` | Creator: change the title of a task (fields `task_id`, `title`)                        |
+| `POST /api/tasks/delete` | Creator: delete a task (field `task_id`)                                               |
+
+`/api/groups/*` and `/api/tasks/*` follow the same `PROTECTED_ROUTES` rule as `/dashboard`: an unauthenticated request is redirected to `/auth/signin`. `/join/<code>` is the exception on purpose, so an invited visitor is sent through sign-in by the protected dashboard. Every group and task endpoint redirects back to `/dashboard`, adding `?error=<code>` on failure. Who may do what is decided by Postgres row-level security (see [RLS scenario checks](#rls-scenario-checks)); the app only forwards the signed-in user's session.
 
 ### RLS scenario checks
 
-`supabase/checks/rls-scenarios.sql` asserts the row-level security rules of `groups` and `group_members` (visibility, joining via `join_group`, leaving, column privileges, and the `list_group_members` / `preview_group` helper functions) and exits non-zero on the first regression. Run it after every migration that touches group RLS, with the local stack running:
+`supabase/checks/rls-scenarios.sql` asserts the row-level security rules of `groups`, `group_members` and `tasks` (visibility, joining via `join_group`, leaving, column privileges, and the `list_group_members` / `preview_group` helper functions) and exits non-zero on the first regression. Run it after every migration that touches group RLS, with the local stack running:
 
 ```bash
 docker exec -i supabase_db_10x-astro-starter psql -U postgres -d postgres -X -v ON_ERROR_STOP=1 < supabase/checks/rls-scenarios.sql

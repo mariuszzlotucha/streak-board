@@ -399,8 +399,8 @@ The migration only adds a table and its policies, so it is backward compatible w
 
 #### Automated
 
-- [ ] 4.1 Formatting passes on the changed docs: `npx prettier --check README.md CLAUDE.md AGENTS.md`
-- [ ] 4.2 Stale wording gone: `! grep -n "consists of .groups. and .group_members. plus" CLAUDE.md AGENTS.md`
+- [x] 4.1 Formatting passes on the changed docs: `npx prettier --check README.md CLAUDE.md AGENTS.md`
+- [x] 4.2 Stale wording gone: `! grep -n "consists of .groups. and .group_members. plus" CLAUDE.md AGENTS.md`
 
 #### Manual
 
