@@ -353,16 +353,16 @@ The migration only adds a table and its policies, so it is backward compatible w
 
 #### Automated
 
-- [x] 1.1 Migration applies cleanly on a fresh local database: `npx supabase db reset`
-- [x] 1.2 Generated types contain the `tasks` table: `npx supabase gen types typescript --local | grep -c "tasks:"`
-- [x] 1.3 Task isolation and permission tests pass: `npm test`
-- [x] 1.4 SQL RLS scenarios pass: `npm run test:rls`
-- [x] 1.5 Lint and types pass: `npm run lint && npx astro check`
+- [x] 1.1 Migration applies cleanly on a fresh local database: `npx supabase db reset` — 7e97a84
+- [x] 1.2 Generated types contain the `tasks` table: `npx supabase gen types typescript --local | grep -c "tasks:"` — 7e97a84
+- [x] 1.3 Task isolation and permission tests pass: `npm test` — 7e97a84
+- [x] 1.4 SQL RLS scenarios pass: `npm run test:rls` — 7e97a84
+- [x] 1.5 Lint and types pass: `npm run lint && npx astro check` — 7e97a84
 
 #### Manual
 
-- [x] 1.6 Mutation check: weaken `tasks_update_by_creator` with `alter policy` in the local database, see `npm test` fail on the permission test, then restore with `npx supabase db reset`
-- [x] 1.7 The new policies and the column grants read correctly against the PRD access model (creator manages own task, all members read)
+- [x] 1.6 Mutation check: weaken `tasks_update_by_creator` with `alter policy` in the local database, see `npm test` fail on the permission test, then restore with `npx supabase db reset` — 7e97a84
+- [x] 1.7 The new policies and the column grants read correctly against the PRD access model (creator manages own task, all members read) — 7e97a84
 
 ### Phase 2: Rules, errors and endpoints
 
