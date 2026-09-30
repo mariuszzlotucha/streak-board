@@ -404,6 +404,6 @@ The migration only adds a table and its policies, so it is backward compatible w
 
 #### Manual
 
-- [ ] 4.3 For each phase PR, the `release` run was approved in the `production` environment after checking `supabase/migrations/` in the merge commit (phase 1 ships the migration), and every `release` job finished green
-- [ ] 4.4 On the production URL, a signed-in group member creates, renames and deletes a task; a second member sees it without controls; `/dashboard` still answers 302 when signed out
-- [ ] 4.5 `deployment-plan.md` records the date, the applied migration and the production result
+- [x] 4.3 For each phase PR, the `release` run was approved in the `production` environment after checking `supabase/migrations/` in the merge commit (phase 1 ships the migration), and every `release` job finished green
+- [x] 4.4 On the production URL, a signed-in group member creates, renames and deletes a task; a second member sees it without controls; `/dashboard` still answers 302 when signed out
+- [x] 4.5 `deployment-plan.md` records the date, the applied migration and the production result
