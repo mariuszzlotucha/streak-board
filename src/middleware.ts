@@ -1,7 +1,7 @@
 import { defineMiddleware } from "astro:middleware";
 import { createClient } from "@/lib/supabase";
 
-const PROTECTED_ROUTES = ["/dashboard", "/api/groups"];
+const PROTECTED_ROUTES = ["/dashboard", "/api/groups", "/api/tasks"];
 const AUTH_ROUTES = ["/auth/signin", "/auth/signup"];
 
 export const onRequest = defineMiddleware(async (context, next) => {
