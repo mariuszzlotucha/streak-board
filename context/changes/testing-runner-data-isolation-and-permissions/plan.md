@@ -328,15 +328,15 @@ None: no schema, data or application change; nothing to deploy to production. Lo
 
 #### Automated
 
-- [ ] 3.1 Permission tests pass
-- [ ] 3.2 Full suite passes
-- [ ] 3.3 Linting passes
-- [ ] 3.4 Type checking passes
+- [x] 3.1 Permission tests pass
+- [x] 3.2 Full suite passes
+- [x] 3.3 Linting passes
+- [x] 3.4 Type checking passes
 
 #### Manual
 
-- [ ] 3.5 Mutation check turns the remove-member test red and restores green
-- [ ] 3.6 Every denial test has a paired owner-allowed control and asserts state
+- [x] 3.5 Mutation check turns the remove-member test red and restores green
+- [x] 3.6 Every denial test has a paired owner-allowed control and asserts state
 
 ### Phase 4: CI gate and documentation
 
