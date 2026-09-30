@@ -313,16 +313,16 @@ None: no schema, data or application change; nothing to deploy to production. Lo
 
 #### Automated
 
-- [ ] 2.1 Isolation tests pass
-- [ ] 2.2 Full suite passes
-- [ ] 2.3 Linting passes
-- [ ] 2.4 Type checking passes
+- [x] 2.1 Isolation tests pass — cdd949c
+- [x] 2.2 Full suite passes — cdd949c
+- [x] 2.3 Linting passes — cdd949c
+- [x] 2.4 Type checking passes — cdd949c
 
 #### Manual
 
-- [ ] 2.5 Mutation check turns the isolation tests red and restores green
-- [ ] 2.6 Expectations trace to PRD Access Control / FR-003
-- [ ] 2.7 Every denial test has a paired positive control
+- [x] 2.5 Mutation check turns the isolation tests red and restores green — cdd949c
+- [x] 2.6 Expectations trace to PRD Access Control / FR-003 — cdd949c
+- [x] 2.7 Every denial test has a paired positive control — cdd949c
 
 ### Phase 3: Creator-only permissions (risk #3)
 
