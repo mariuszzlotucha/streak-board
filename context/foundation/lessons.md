@@ -101,3 +101,10 @@
 - **Problem**: The review ran only once, after the last phase, so findings in early phases surfaced late, after their PRs were merged and released, and the report and its fixes ended up outside the phase that caused them (or were skipped).
 - **Rule**: After every phase, run `/10x-impl-review <change-id> phase N` on the phase branch before merging; treat it as a mandatory step of the phase, not an optional one. Triage its findings, commit the review report, the fixes and the `change.md` status change on the same phase branch, and push them to the open phase PR so the PR shows the review result. Merge only after the review is triaged. The full-plan `/10x-impl-review <change-id>` after the last phase stays mandatory as well (see "Review skill commands are mandatory, not optional").
 - **Applies to**: implement, tdd, impl-review
+
+## Push the phase branch and open its PR only after the phase impl review is triaged
+
+- **Context**: The end of every implementation phase (`/10x-implement`, `/10x-tdd`): the order of phase commit, `/10x-impl-review <change-id> phase N`, `git push` and `gh pr create`. Refines "Run /10x-impl-review after every phase and ship it in the phase PR", which had the PR opened first and the review pushed to it afterwards.
+- **Problem**: Pushing the branch and opening the PR before the review means the PR first shows unreviewed code, CI runs on it, and the review report and fixes arrive as extra commits on an already-published branch.
+- **Rule**: After the phase commit and SHA write-back, keep the branch local. Run `/10x-impl-review <change-id> phase N`, triage its findings, and commit the review report, the fixes and the `change.md` status change on the same branch. Only then `git push` the branch and open the PR with `gh pr create`, so its first version already contains the reviewed phase. Never push the branch or open the PR before the review is triaged.
+- **Applies to**: implement, tdd, impl-review
