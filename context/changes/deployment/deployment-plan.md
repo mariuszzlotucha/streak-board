@@ -136,9 +136,18 @@ Turns "rollback works in theory" into a proven, once-rehearsed step before you n
 
 **Follow-ups (not scheduled):**
 
-- [ ] Custom SMTP for production auth e-mails.
-- [ ] Optional change: `emailRedirectTo` + `/auth/callback` route that exchanges the code for a session.
-- [ ] Reconcile "deploy is manual" wording in `README.md` (Deployment) and this file's intro with Workers Builds.
+- [x] Custom SMTP for production auth e-mails (Resend, sender `noreply@mail.streakboard.app`), confirmed by a production sign-up on 2026-09-30.
+- [x] Optional change: `emailRedirectTo` + `/auth/callback` route that exchanges the code for a session (live on production since 2026-09-30, see Phase 6).
+- [x] Reconcile "deploy is manual" wording in `README.md` (Deployment) and this file's intro with Workers Builds (PR #19).
+
+## Phase 6 — Automated release (change `release-automation-and-auth-hardening`)
+
+**Status: done except one check (2026-09-30)** — only confirming that a push to `master` starts no Cloudflare build is still open.
+
+- [x] First `release` run (started by the merge of PR #19 to `master`) waited for approval in the `production` environment and finished green: migrations linked and listed, `db push` applied **no migrations** (none in this change), Worker built and deployed, live URL check passed.
+- [x] Production checks after the release: `/auth/callback` answers 302 to `/auth/signin?error=link_expired`; `/` and `/auth/signin` answer 200; `/dashboard` answers 302. `npx supabase migration list` shows all three local versions also remote; `npx wrangler kv namespace list` returns `[]`.
+- [x] Workers Builds disconnected in the Cloudflare dashboard (2026-09-30); the Actions `release` job is the single deploy path. Still to confirm: a later push to `master` starts no Cloudflare build.
+- [x] Custom SMTP (Resend) configured, and a production sign-up delivers the e-mail from `mail.streakboard.app`; the link lands on `/dashboard` signed in, a second click in a private window shows the expired-link message.
 
 ## Verification checklist (end-to-end, once unblocked)
 
