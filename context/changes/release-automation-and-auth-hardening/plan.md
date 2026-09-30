@@ -261,15 +261,15 @@ No schema change in this slice. Rule for future slices: migrations must be backw
 
 #### Automated
 
-- [ ] 1.1 Lint and types pass: `npm run lint && npx astro check`
-- [ ] 1.2 Build passes: `npm run build`
-- [ ] 1.3 Integration tests including the callback test pass (local Supabase running): `npm test`
-- [ ] 1.4 Smoke passes with the new callback steps: `npm run smoke` against the built preview (CI `smoke` job)
+- [x] 1.1 Lint and types pass: `npm run lint && npx astro check`
+- [x] 1.2 Build passes: `npm run build`
+- [x] 1.3 Integration tests including the callback test pass (local Supabase running): `npm test`
+- [x] 1.4 Smoke passes with the new callback steps: `npm run smoke` against the built preview (CI `smoke` job)
 
 #### Manual
 
-- [ ] 1.5 Opening `/auth/callback` in a browser without a code lands on `/auth/signin` showing the expired-link message
-- [ ] 1.6 Local sign-up still redirects to `/auth/confirm-email` and works as before
+- [x] 1.5 Opening `/auth/callback` in a browser without a code lands on `/auth/signin` showing the expired-link message
+- [x] 1.6 Local sign-up still redirects to `/auth/confirm-email` and works as before
 
 ### Phase 2: Release workflow
 
