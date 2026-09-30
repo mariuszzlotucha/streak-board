@@ -342,14 +342,14 @@ None: no schema, data or application change; nothing to deploy to production. Lo
 
 #### Automated
 
-- [ ] 4.1 Suite passes locally
-- [ ] 4.2 SQL scenarios pass locally
-- [ ] 4.3 Linting passes
-- [ ] 4.4 Workflow YAML is valid and lists the new job
+- [x] 4.1 Suite passes locally
+- [x] 4.2 SQL scenarios pass locally
+- [x] 4.3 Linting passes
+- [x] 4.4 Workflow YAML is valid and lists the new job
 - [ ] 4.5 The `integration` job is green on the phase PR
 
 #### Manual
 
-- [ ] 4.6 A deliberately broken policy turns the integration gate red
-- [ ] 4.7 test-plan cookbook sections read correctly
-- [ ] 4.8 `integration` is a required status check for `master`
+- [x] 4.6 A deliberately broken policy turns the integration gate red
+- [x] 4.7 test-plan cookbook sections read correctly
+- [x] 4.8 `integration` is a required status check for `master`
