@@ -1,7 +1,7 @@
 ---
 change_id: testing-runner-data-isolation-and-permissions
 title: Test rollout Phase 1 — runner, data isolation and permissions
-status: planned
+status: plan_reviewed
 created: 2026-09-30
 updated: 2026-09-30
 archived_at: null

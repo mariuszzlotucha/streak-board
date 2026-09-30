@@ -22,7 +22,7 @@ Isolation and ownership already live in Postgres (RLS, column grants, `SECURITY 
 | Test layer | supabase-js as two or more real users | Hits the enforcement point (PostgREST + JWT) cheaply, without booting Astro. | Plan |
 | Runner | Vitest 5, plain config (no `getViteConfig`) | Peer range includes installed Vite 8; tests need neither Astro virtual modules nor the Cloudflare adapter. | Research / Plan |
 | `rls-scenarios.sql` | Keep unchanged, run in CI | Avoids duplicating ~40 scenarios and losing the subtle ones (initplan, column grants). | Plan |
-| Test data | Unique users per file, cleanup via service role | Repeatable on one database; groups deleted before users because of `ON DELETE RESTRICT`. | Plan |
+| Test data | Users per file, groups per test, cleanup via service role | Independent destructive tests; group delete cascades memberships and frees users; groups go before users (`ON DELETE RESTRICT`). | Plan / Review |
 | Extra coverage | Anonymous client denied on tables and RPCs | Closes the unauthenticated PostgREST path that SQL checks do not touch. | Plan |
 | CI | New `integration` job, `npm test` fails loudly when the stack is down | Satisfies the "required after Phase 1" gate with no silent green. | Plan |
 | Safety | Setup refuses any non-local URL | Service-role key must never reach the hosted project. | Plan |
@@ -51,8 +51,9 @@ Global setup resolves URL and keys from env or `supabase status -o env`, validat
 
 ## Open Risks & Assumptions
 
-- Vitest 5 Node engine range versus `.nvmrc` 22.14.0 is unchecked; Phase 1 verifies it.
-- `[auth.rate_limit]` values were not read; sign-ins per file are kept small and checked in Phase 1.
+- Vitest 5.0.3 engines (`^22.12 || ^24 || >=26`) fit `.nvmrc` 22.14.0 and local Node 24.21.0.
+- `sign_in_sign_ups = 30` per 5 minutes per IP; sign-ins are once per file (about 4-5), and watch-mode reruns can still exceed it.
+- The `integration` job blocks merges only after the user marks it required in `master` branch protection (Phase 4 manual step).
 - Mutation checks use `supabase db reset` locally, which wipes local dev data.
 - No roadmap item carries this change ID, so the roadmap is untouched.
 

@@ -48,7 +48,8 @@ Vitest with a plain `vitest.config.ts` (no `getViteConfig`): integration tests t
 - **Safety guard**: the helpers use the service-role key to create/delete users and groups. The global setup must refuse any `API_URL` whose host is not `127.0.0.1` or `localhost`, so tests can never touch the hosted project.
 - **Cleanup order**: delete groups (service role) before deleting users, because of `ON DELETE RESTRICT` on `groups.owner_id`; deleting a group cascades its memberships.
 - **Oracle**: expected outcomes come from `context/foundation/prd.md` Access Control and FR-003, not from reading the policies; read those sections before writing scenarios.
-- **Rate limits**: create users with `auth.admin.createUser` (service role, `email_confirm: true`) and sign each in once per test file; sign-in still counts toward `[auth.rate_limit]` (`supabase/config.toml:180`, values not yet checked — confirm in Phase 1).
+- **Rate limits**: `[auth.rate_limit] sign_in_sign_ups = 30` per 5 minutes per IP (`supabase/config.toml:190`). Create users with `auth.admin.createUser` (service role, `email_confirm: true`) and sign each in once per test file, never per test.
+- **Group lifecycle**: users live per test file, groups live per test. Each test builds its own group (owner creates, members join via `join_group`) and an `afterEach` deletes it through the admin client; deleting a group cascades its memberships, which frees the members (one group per user) for the next test. Destructive scenarios therefore never depend on test order.
 
 ## Phase 1: Runner and integration-test foundation
 
@@ -64,7 +65,7 @@ Install Vitest, add `npm test`, and build the shared setup and helpers, proven b
 
 **Intent**: Add Vitest as a devDependency and a `test` script; configure it for Node-environment integration tests under `tests/integration/`, with the `@/*` alias resolved via `tsconfig` paths and a global setup file.
 
-**Contract**: `npm test` runs `vitest run`; config has no Astro/Cloudflare plugins; `include: ["tests/**/*.test.ts"]`; `globalSetup` points to the setup file below; generous per-test timeout suited to network calls. Check the Vitest 5 Node engine range against `.nvmrc` (22.14.0) and local Node 24; if it demands a newer Node, stop and raise it.
+**Contract**: `npm test` runs `vitest run`; config has no Astro/Cloudflare plugins; `include: ["tests/**/*.test.ts"]`; `globalSetup` points to the setup file below; generous per-test timeout suited to network calls. Vitest 5.0.3 declares engines `^22.12.0 || ^24.0.0 || >=26.0.0`, which fits `.nvmrc` (22.14.0) and local Node 24.21.0; re-check the range if a newer patch is installed.
 
 #### 2. Global setup and stack resolution
 
@@ -72,7 +73,7 @@ Install Vitest, add `npm test`, and build the shared setup and helpers, proven b
 
 **Intent**: Resolve the local Supabase URL, anon key and service-role key once per run, validate that they are local, and fail loudly with a `supabase start` hint when the stack is unreachable.
 
-**Contract**: sources, in order: env `TEST_SUPABASE_URL` / `TEST_SUPABASE_ANON_KEY` / `TEST_SUPABASE_SERVICE_ROLE_KEY` (all three or none), else output of `npx supabase status -o env` (`API_URL`, `ANON_KEY`, `SERVICE_ROLE_KEY`). Throws when the host is not `127.0.0.1`/`localhost`, and when a health call to the API fails, with a message containing `supabase start`. Exposes the values to test files via Vitest `provide`/`inject` (or env), not via committed files.
+**Contract**: sources, in order: env `TEST_SUPABASE_URL` / `TEST_SUPABASE_ANON_KEY` / `TEST_SUPABASE_SERVICE_ROLE_KEY` (all three or none), else output of `npx supabase status -o env` (`API_URL`, `ANON_KEY`, `SERVICE_ROLE_KEY`). Throws when the host is not `127.0.0.1`/`localhost`, and when a health call to the API fails, with a message containing `supabase start`. Exposes the values to test files via Vitest `provide`/`inject` (or env), not via committed files. Its teardown sweeps leftover users whose e-mail carries the test prefix (deleting their groups first), so a crashed file cannot accumulate rows.
 
 #### 3. Test helpers
 
@@ -80,7 +81,7 @@ Install Vitest, add `npm test`, and build the shared setup and helpers, proven b
 
 **Intent**: One place to build admin and per-user clients and to create, sign in and clean up disposable users and groups.
 
-**Contract**: `createTestUser()` returns `{ id, email, client }` (fresh unique email, `auth.admin.createUser` with `email_confirm: true`, then `signInWithPassword` on an anon-key client); `anonClient()` with no session; `adminClient()` (service role); `createGroupAs(user, name)` uses the user client (`insert({name, owner_id})` then reads back id and `join_code` through the user's own SELECT); `joinGroupAs(user, code)` uses RPC `join_group`; a cleanup registry that, in `afterAll`, deletes registered groups and then users via the admin client. Helpers throw on unexpected errors so a broken setup can never look like a passing denial.
+**Contract**: `createTestUser()` returns `{ id, email, client }` (fresh unique email with a fixed test prefix, `auth.admin.createUser` with `email_confirm: true`, then `signInWithPassword` on an anon-key client created with `persistSession: false` and `autoRefreshToken: false` so no timers keep the process alive); `anonClient()` with no session (same options); `adminClient()` (service role); `createGroupAs(user, name)` uses the user client (`insert({name, owner_id})` then reads back id and `join_code` through the user's own SELECT); `joinGroupAs(user, code)` uses RPC `join_group`. Cleanup registry: groups created in a test are deleted in `afterEach` via the admin client; users created in a file are deleted in `afterAll`, groups before users. Helpers throw on unexpected errors so a broken setup can never look like a passing denial.
 
 #### 4. Foundation test
 
@@ -113,7 +114,7 @@ Install Vitest, add `npm test`, and build the shared setup and helpers, proven b
 
 - After `npm test`, Studio (or `docker exec … psql`) shows no leftover test users or groups
 - Two consecutive `npm test` runs both pass on the same database
-- Rate-limit headroom noted: `[auth.rate_limit]` values read and recorded in the phase note
+- Rate-limit headroom noted: `sign_in_sign_ups = 30` per 5 minutes and the sign-ins per file recorded in the phase note
 
 **Implementation Note**: After completing this phase and all automated verification passes, pause here for manual confirmation from the human that the manual testing was successful before proceeding to the next phase. Phase blocks use plain bullets — the corresponding `- [ ]` checkboxes for these items live in the `## Progress` section at the bottom of the plan.
 
@@ -140,7 +141,7 @@ Prove that a user outside group A, and an anonymous client, cannot read or chang
 - B and C call `list_group_members(GA)` and get an empty set (no emails leak).
 - B `update` of GA's `name` and `delete` of GA affect 0 rows; GA and its name are unchanged afterwards.
 - B `insert` into `group_members` with GA's id fails (42501) and B is not a member afterwards.
-- B `insert` into `groups` with `owner_id = A` fails (42501).
+- C (no group) `insert` into `groups` with `owner_id = A` fails (42501); use C so the failure can only come from RLS, not from the one-group-per-user constraint.
 - Anonymous client: `select` on `groups`/`group_members` returns no data; `insert` into `groups` fails; RPCs `join_group`, `list_group_members`, `preview_group` are rejected (no successful result).
 
 ### Success Criteria:
@@ -176,7 +177,7 @@ Prove that only the group creator can rename or delete the group and remove memb
 
 **Intent**: Scenarios with owner A, members M and M2, and outsider X (no group), including the owner-allowed control cases.
 
-**Contract**: each denial asserts 0 affected rows (or the SQLSTATE) and re-reads state through the admin client. Scenarios:
+**Contract**: each test builds its own group and is cleaned up in `afterEach` (see Critical Implementation Details); each denial asserts 0 affected rows (or the SQLSTATE) and re-reads state through the admin client. Scenarios:
 - Owner control: A renames GA (name changes), removes M2 (row gone), and deletes GA at the end (memberships cascade).
 - M `update` of GA's `name` affects 0 rows; X does too; name unchanged.
 - M `delete` of GA affects 0 rows; GA and all memberships still exist.
@@ -242,13 +243,14 @@ Make the tests a required gate: a new CI job, `rls-scenarios.sql` in CI, and upd
 - Suite passes locally: `npm test`
 - SQL scenarios pass locally: `npm run test:rls`
 - Linting passes: `npm run lint`
-- Workflow YAML is valid and lists the new job: `gh workflow view ci.yml` (or `npx prettier --check .github/workflows/ci.yml`)
+- Workflow YAML is valid and lists the new job: `npx prettier --check .github/workflows/ci.yml`
 - The `integration` job is green on the phase PR (check with `gh pr checks`)
 
 #### Manual Verification:
 
 - Deliberately breaking a policy on a throwaway branch turns the `integration` job red (or the local mutation check from Phases 2–3 is accepted as equivalent)
 - `test-plan.md` cookbook sections read correctly to someone adding a new test
+- `integration` is confirmed or set as a required status check for `master` in GitHub branch protection (done by the user in GitHub settings)
 
 **Implementation Note**: After completing this phase and all automated verification passes, pause here for manual confirmation from the human that the manual testing was successful before proceeding.
 
@@ -350,3 +352,4 @@ None: no schema, data or application change; nothing to deploy to production. Lo
 
 - [ ] 4.6 A deliberately broken policy turns the integration gate red
 - [ ] 4.7 test-plan cookbook sections read correctly
+- [ ] 4.8 `integration` is a required status check for `master`
