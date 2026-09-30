@@ -319,6 +319,6 @@ No schema change in this slice. Rule for future slices: migrations must be backw
 
 - [x] 4.5 The first `release` run waited for approval in the `production` environment, then went green — 5bcd8b3
 - [ ] 4.6 After disabling Workers Builds, a push to `master` no longer starts a Cloudflare build
-- [ ] 4.7 A new production sign-up delivers the confirmation e-mail from the custom domain
-- [ ] 4.8 Clicking the link lands on `/dashboard` signed in; a second click in a signed-out or private window lands on `/auth/signin` with the expired-link message
-- [ ] 4.9 `deployment-plan.md` records the release and the three follow-ups are ticked
+- [x] 4.7 A new production sign-up delivers the confirmation e-mail from the custom domain
+- [x] 4.8 Clicking the link lands on `/dashboard` signed in; a second click in a signed-out or private window lands on `/auth/signin` with the expired-link message
+- [x] 4.9 `deployment-plan.md` records the release and the three follow-ups are ticked
