@@ -113,7 +113,15 @@ Add the gated release job so schema and code ship together in the right order.
 
 **Contract**: new job `release` with `needs: [ci, smoke, integration]`, `if: github.event_name == 'push' && github.ref == 'refs/heads/master'`, `environment: production` (required reviewer = approval gate), `concurrency: { group: release, cancel-in-progress: false }`. Steps in order: checkout, setup-node 22 with npm cache, `supabase/setup-cli`, `npm ci`, `supabase link --project-ref ${{ vars.SUPABASE_PROJECT_REF }}`, `supabase migration list`, `supabase db push --yes` (the gate is the environment approval, not the CLI prompt), `npm run build`, `npx wrangler deploy`, then an outcome check that fails the job unless `${{ vars.PRODUCTION_URL }}/` answers exactly 200 and `/dashboard` answers exactly 302 with a `location` ending in `/auth/signin` (compare `curl -w '%{http_code}'` output; plain `curl -f` would pass on a wrong 200). Environment secrets: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`, `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `SUPABASE_URL`, `SUPABASE_KEY` (build-time). Nothing in `ci`/`smoke`/`integration` changes; the release job is skipped on pull requests.
 
-#### 2. Production environment (manual prerequisite, before merging this phase)
+#### 2. Pin the Supabase CLI version (added after a CI incident)
+
+**File**: `.github/workflows/ci.yml`
+
+**Intent**: `supabase/setup-cli@v1` with `version: latest` asks the GitHub API for the newest release; when that call hits the rate limit the step fails (`Failed to resolve latest Supabase CLI release: rate limit exceeded`), the CLI is not installed and the `if: always()` cleanup `supabase stop --no-backup` then fails with `command not found` (exit 127). This broke the `smoke` job on the `master` push of PR #17 (run 36767500347) although the code was fine. The release job would be hit the same way, and a release must be reproducible.
+
+**Contract**: replace `version: latest` with one pinned version in every `supabase/setup-cli` step (`smoke`, `integration`, and the new `release` job), so they all use the same CLI. The local CLI is 2.117.0, a sensible default to pin. Do not change the cleanup steps: their `command not found` is only a symptom.
+
+#### 3. Production environment (manual prerequisite, before merging this phase)
 
 **Intent**: The approval gate must exist before the job does: a job that references a missing `production` environment makes GitHub create it without protection rules, so the first run on `master` would go ahead unapproved.
 
@@ -126,6 +134,7 @@ Add the gated release job so schema and code ship together in the right order.
 - Workflow lints: `actionlint .github/workflows/ci.yml` (or a YAML parse if `actionlint` is unavailable)
 - The four privileged secret names appear only inside the `release` job: `grep -n "SUPABASE_ACCESS_TOKEN\|SUPABASE_DB_PASSWORD\|CLOUDFLARE_API_TOKEN\|CLOUDFLARE_ACCOUNT_ID" .github/workflows/ci.yml` matches only lines within that job's line range
 - On the phase PR, `ci`, `smoke` and `integration` are green and `release` does not run
+- No floating CLI version remains: `grep -n "version: latest" .github/workflows/ci.yml` returns nothing
 
 #### Manual Verification:
 
@@ -275,14 +284,15 @@ No schema change in this slice. Rule for future slices: migrations must be backw
 
 #### Automated
 
-- [ ] 2.1 Workflow lints: `actionlint .github/workflows/ci.yml` (or a YAML parse if `actionlint` is unavailable)
-- [ ] 2.2 The four privileged secret names appear only inside the `release` job
-- [ ] 2.3 On the phase PR, `ci`, `smoke` and `integration` are green and `release` does not run
+- [x] 2.1 Workflow lints: `actionlint .github/workflows/ci.yml` (or a YAML parse if `actionlint` is unavailable) — 3e7dd07
+- [x] 2.2 The four privileged secret names appear only inside the `release` job — 3e7dd07
+- [x] 2.3 On the phase PR, `ci`, `smoke` and `integration` are green and `release` does not run — 3e7dd07
+- [x] 2.4 No floating CLI version remains: `grep -n "version: latest" .github/workflows/ci.yml` returns nothing — 3e7dd07
 
 #### Manual
 
-- [ ] 2.4 Reviewer confirms the step order and that `environment: production` is set on the job
-- [ ] 2.5 The `production` environment exists with a required reviewer and all secrets/variables before this phase's PR is merged
+- [x] 2.5 Reviewer confirms the step order and that `environment: production` is set on the job — 3e7dd07
+- [x] 2.6 The `production` environment exists with a required reviewer and all secrets/variables before this phase's PR is merged — 3e7dd07
 
 ### Phase 3: Documentation and lessons
 
