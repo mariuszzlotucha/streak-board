@@ -284,10 +284,10 @@ No schema change in this slice. Rule for future slices: migrations must be backw
 
 #### Automated
 
-- [x] 2.1 Workflow lints: `actionlint .github/workflows/ci.yml` (or a YAML parse if `actionlint` is unavailable)
+- [x] 2.1 Workflow lints: `actionlint .github/workflows/ci.yml` (or a YAML parse if `actionlint` is unavailable) — 3e7dd07
 - [x] 2.2 The four privileged secret names appear only inside the `release` job
 - [ ] 2.3 On the phase PR, `ci`, `smoke` and `integration` are green and `release` does not run
-- [x] 2.4 No floating CLI version remains: `grep -n "version: latest" .github/workflows/ci.yml` returns nothing
+- [x] 2.4 No floating CLI version remains: `grep -n "version: latest" .github/workflows/ci.yml` returns nothing — 3e7dd07
 
 #### Manual
 
