@@ -46,7 +46,7 @@ Grono znajomych korzystało wcześniej ze wspólnego arkusza Google, w którym r
 | S-02 | task-create-and-manage                | utworzyć task w grupie; jako twórca edytować/usunąć swój task                                              | S-01          | FR-004, FR-005                             | proposed    |
 | S-03 | task-join-and-leave                   | dołączyć do tasku innego członka i wypisać się z niego                                                     | S-02          | FR-006, FR-007                             | proposed    |
 | S-04 | checkoff-and-leaderboard              | odznaczyć task jako wykonany i od razu zobaczyć tablicę wyników grupy                                      | S-03          | FR-008, FR-009, US-01, Business Logic      | proposed    |
-| S-05 | release-automation-and-auth-hardening | (release) migracje i wydanie produkcyjne są zautomatyzowane, a rejestracja na produkcji działa niezawodnie | S-01          | — (operacyjne; deployment-plan.md Phase 5) | in-progress |
+| S-05 | release-automation-and-auth-hardening | (release) migracje i wydanie produkcyjne są zautomatyzowane, a rejestracja na produkcji działa niezawodnie | S-01          | — (operacyjne; deployment-plan.md Phase 5) | done |
 
 ## Baseline
 
@@ -150,7 +150,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
   - Poprawić zapis „deploy tylko ręczny” w `README.md` (Deployment), we wstępie `deployment-plan.md` i w Baseline/Parked tej roadmapy tak, by opisywał Workers Builds i wybrany przepływ wydań.
   - Udokumentować wymóg Site URL / Redirect URLs jako krok konfiguracji środowiska produkcyjnego.
 - **Risk:** Automatyzacja `db push` na bazie produkcyjnej bez bramki (np. środowisko `production` z ręczną akceptacją) może zastosować błędną migrację bez nadzoru; zmiana wyzwalacza deployu (Workers Builds → Actions) może na chwilę zostawić produkcję bez wdrożeń.
-- **Status:** in-progress
+- **Status:** done
 
 ## Backlog Handoff
 
@@ -187,3 +187,4 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 - **F-01: (foundation) w bazie Supabase istnieją tabele grup i członkostwa (`groups`, `group_members`) wraz z politykami RLS wymuszającymi guardrail „widoczność tylko dla własnej grupy”.** — Archived 2026-09-25 → `context/archive/2026-09-25-group-schema-and-rls/`. Lesson: —.
 - **S-01: użytkownik może założyć grupę, dołączyć do istniejącej grupy przez link/kod, a jako jej twórca — usunąć grupę lub usunąć z niej członka.** — Archived 2026-09-25 → `context/archive/2026-09-25-group-create-join-manage/`. Lesson: —.
+- **S-05: (release) migracje Supabase i wydanie aplikacji na produkcję przechodzą w przewidywalnej, zautomatyzowanej kolejności (najpierw schemat, potem kod), a rejestracja nowego użytkownika na produkcji działa bez ręcznych obejść: e-maile potwierdzające wychodzą z własnego SMTP, link potwierdzający loguje użytkownika przez `/auth/callback`, a dokumentacja mówi prawdę o tym, jak wdrażamy.** — Archived 2026-09-30 → `context/archive/2026-09-30-release-automation-and-auth-hardening/`. Lesson: —.
