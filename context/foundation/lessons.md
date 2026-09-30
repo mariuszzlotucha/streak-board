@@ -108,3 +108,10 @@
 - **Problem**: Pushing the branch and opening the PR before the review means the PR first shows unreviewed code, CI runs on it, and the review report and fixes arrive as extra commits on an already-published branch.
 - **Rule**: After the phase commit and SHA write-back, keep the branch local. Run `/10x-impl-review <change-id> phase N`, triage its findings, and commit the review report, the fixes and the `change.md` status change on the same branch. Only then `git push` the branch and open the PR with `gh pr create`, so its first version already contains the reviewed phase. Never push the branch or open the PR before the review is triaged.
 - **Applies to**: implement, tdd, impl-review
+
+## Run each 10x skill at its assigned model effort
+
+- **Context**: Starting any 10x skill: `/10x-research`, `/10x-plan`, `/10x-plan-review`, `/10x-implement` (and `/10x-tdd`), `/10x-archive`; applies to the session that runs the skill and to subagents it spawns.
+- **Problem**: Every skill ran at whatever model and effort the session happened to use, so planning and research (where a wrong assumption is expensive) got the same depth as mechanical archiving, and archiving spent a large model on a rote move-and-commit step.
+- **Rule**: Run `/10x-research`, `/10x-plan` and `/10x-plan-review` at max reasoning effort; run `/10x-implement` (and `/10x-tdd`) at high effort; run `/10x-archive` on the Haiku model (`claude-haiku-4-5-20251001`). Before starting one of these skills, check the current model and effort and tell the user to switch (`/model`, `/effort`) when they do not match; do not silently continue at a different level. Subagents spawned by a skill inherit the same assignment unless the user says otherwise.
+- **Applies to**: research, plan, plan-review, implement, tdd, archive
