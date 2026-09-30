@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
   adminClient,
+  adminMemberIds,
   createGroupAs,
   createTestUser,
   joinGroupAs,
@@ -43,11 +44,7 @@ describe("creator-only group permissions", () => {
     return data;
   }
 
-  async function adminMemberIdsOfA() {
-    const { data, error } = await adminClient().from("group_members").select("user_id").eq("group_id", ga.id);
-    expect(error).toBeNull();
-    return (data ?? []).map((row) => row.user_id).sort();
-  }
+  const adminMemberIdsOfA = () => adminMemberIds(ga.id);
 
   const allMembers = () => [a.id, m.id, m2.id].sort();
 
