@@ -9,4 +9,4 @@ archived_at: null
 
 ## Notes
 
-<!-- Free-form notes for this change: links, ad-hoc context, decisions that don't belong in research/frame/plan. -->
+- Sender domain for auth e-mail: `streakboard.app` (Cloudflare Registrar, DNS in Cloudflare), registered 2026-09-30. Resend sends from the subdomain `mail.streakboard.app`; the app stays on `workers.dev` for now; moving the app itself to `streakboard.app` is a separate, later change (custom domain, `PRODUCTION_URL`, Supabase Site URL and Redirect URLs). Not a secret.

@@ -194,7 +194,7 @@ Configure SMTP and Site URL, confirm the first gated release, switch off Workers
 
 **Intent**: Stop depending on the built-in SMTP limit and make links target the production app.
 
-**Contract**: verify a sender domain in Resend (SPF/DKIM DNS records), then Supabase Dashboard → Authentication → SMTP Settings with Resend SMTP credentials; confirm Site URL and Redirect URLs (`https://10x-astro-starter.mariusz-zlotucha.workers.dev/**`).
+**Contract**: verify the sender domain in Resend (SPF/DKIM DNS records). The domain is `streakboard.app` (bought at Cloudflare Registrar, DNS managed in Cloudflare); the plan is to send from the subdomain `mail.streakboard.app` with sender `noreply@mail.streakboard.app`. The app itself stays on `workers.dev`. Then Supabase Dashboard → Authentication → SMTP Settings with Resend SMTP credentials; confirm Site URL and Redirect URLs (`https://10x-astro-starter.mariusz-zlotucha.workers.dev/**`).
 
 #### 2. First release and Workers Builds switch-off
 
