@@ -14,7 +14,9 @@ export const POST: APIRoute = async (context) => {
       rememberEmail(context.cookies, email);
       return context.redirect("/auth/signup?error=not_configured");
     }
-    const { error } = await supabase.auth.signUp({ email, password });
+    // The confirmation link returns to this app (must be in the project's Redirect URLs allow-list).
+    const emailRedirectTo = `${new URL(context.request.url).origin}/auth/callback`;
+    const { error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo } });
 
     if (error) {
       rememberEmail(context.cookies, email);

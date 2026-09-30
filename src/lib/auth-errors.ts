@@ -1,11 +1,12 @@
 import { MIN_PASSWORD_LENGTH } from "@/lib/auth-rules";
 
 export type SignInErrorCode =
-  "invalid_credentials" | "email_not_confirmed" | "rate_limited" | "not_configured" | "unknown";
+  "invalid_credentials" | "email_not_confirmed" | "link_expired" | "rate_limited" | "not_configured" | "unknown";
 
 const SIGN_IN_ERROR_MESSAGES: Record<SignInErrorCode, string> = {
   invalid_credentials: "Invalid email or password.",
   email_not_confirmed: "Please confirm your email address before signing in.",
+  link_expired: "This confirmation link has expired or was already used. If your email is confirmed, sign in.",
   rate_limited: "Too many attempts. Please try again later.",
   not_configured: "Sign-in is not available right now.",
   unknown: "Something went wrong. Please try again.",

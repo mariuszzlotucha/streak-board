@@ -158,6 +158,17 @@ const steps = [
     { status: 200, bodyIncludes: "already exists" },
   ],
   [
+    // A GET is exempt from the Origin check, so the confirmation link works from a mail client.
+    "confirmation callback without a code ends on signin with link_expired",
+    () => request("/auth/callback"),
+    { status: 302, locationExact: "/auth/signin?error=link_expired" },
+  ],
+  [
+    "signin page shows the expired-link message",
+    () => request("/auth/signin?error=link_expired"),
+    { status: 200, bodyIncludes: "expired or was already used" },
+  ],
+  [
     "signup creates account",
     () => request("/api/auth/signup", { method: "POST", form: { email, password } }),
     { status: 302, location: "/auth/confirm-email" },
