@@ -1,4 +1,5 @@
 import { readFileSync, readdirSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { MAX_TASK_TITLE_LENGTH, TASK_RECURRENCES, normalizeRecurrence, normalizeTaskTitle } from "@/lib/task-rules";
 
@@ -43,7 +44,7 @@ describe("normalizeRecurrence", () => {
   });
 
   it("matches the values allowed by the database CHECK", () => {
-    const dir = "supabase/migrations";
+    const dir = fileURLToPath(new URL("../../supabase/migrations", import.meta.url));
     const file = readdirSync(dir).find((name) => name.endsWith("_create_tasks.sql"));
     expect(file).toBeDefined();
     const sql = readFileSync(`${dir}/${file}`, "utf8");

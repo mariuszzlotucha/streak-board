@@ -1,5 +1,5 @@
 import type { createClient } from "@/lib/supabase";
-import type { TaskRecurrence } from "@/lib/task-rules";
+import { normalizeRecurrence, type TaskRecurrence } from "@/lib/task-rules";
 
 type Supabase = NonNullable<ReturnType<typeof createClient>>;
 
@@ -18,6 +18,9 @@ export async function getTask(supabase: Supabase, taskId: string): Promise<Group
     .eq("id", taskId)
     .maybeSingle();
   if (error) throw error;
+  if (!data) return null;
   // The column is plain text in the generated types; the CHECK limits it to the recurrence kinds.
-  return data as GroupTask | null;
+  const recurrence = normalizeRecurrence(data.recurrence);
+  if (!recurrence) throw new Error(`Task ${data.id} has an unknown recurrence`);
+  return { ...data, recurrence };
 }
