@@ -80,3 +80,17 @@
 - **Problem**: The old manual release rules told the agent to hand the user `db push` and `wrangler deploy` commands. Following them now would bypass the gated workflow, race it, or deploy code without the approval gate, and a slice can still be archived as `done` without anyone having looked at production.
 - **Rule**: A slice is closed by (1) merging its PR to `master`, (2) approving the `release` run in the `production` environment on GitHub after checking `supabase/migrations/` in the merge commit for new migrations (a failed release is fixed by re-running the failed jobs), and (3) a manual check of the slice's main flow on the production URL. Note the date, the applied migrations and the result in `context/changes/deployment/deployment-plan.md`. Do not propose manual `db push` or `wrangler deploy` chains as the normal path. Migrations must stay backward compatible with the currently deployed code; code rolls back with `npx wrangler rollback`, schema does not.
 - **Applies to**: plan, implement, impl-review, archive
+
+## Skills run the git and gh commands themselves
+
+- **Context**: Every 10x skill that produces or changes files or commits for a change: `/10x-new`, `/10x-research`, `/10x-plan`, `/10x-plan-review`, `/10x-implement`, `/10x-tdd`, `/10x-impl-review` and `/10x-archive`, and every message that lists the commands for a slice.
+- **Problem**: The branch, commit, push and `gh pr create` steps are left to the user, or shown as separate `git ...` lines between the slash commands, so the command plan is long and the user has to run (or forget) git steps that the skill can do itself.
+- **Rule**: The skill fires the git and `gh` commands itself as part of its own run: checkout and pull `master`, create the branch named by the branch rules, stage by explicit path, commit in English, push, open the PR with `gh pr create` and show its full URL, and, after the user has merged, pull `master` and delete the merged branches. The skill asks the user only to merge the PR and to approve the `production` release. A command plan for a slice lists the slash commands and the user's own actions (merge, approve, production check) only; it does not list `git` or `gh` lines as steps the user runs.
+- **Applies to**: new, research, plan, plan-review, implement, tdd, impl-review, archive
+
+## Review skill commands are mandatory, not optional
+
+- **Context**: Any command plan, workflow or next-steps list for a slice or change, and the end of `/10x-plan` and `/10x-implement`: the steps `/10x-plan-review` (after `/10x-plan`) and `/10x-impl-review` (after the last phase).
+- **Problem**: `/10x-plan-review` was labelled "optional" in command plans and could be skipped, so a plan went to implementation unreviewed and the user had to ask for it again.
+- **Rule**: Always list `/10x-plan-review <change-id>` and `/10x-impl-review <change-id>` as regular numbered steps, never as optional, and do not mark either with "(optional)" or offer to skip it. A change is not ready for `/10x-implement` or `/10x-tdd` until its plan review has run, and not ready for `/10x-archive` until the full-plan impl review has run. `/10x-archive` warns when `reviews/plan-review.md` or `reviews/impl-review.md` is missing.
+- **Applies to**: frame, new, research, plan, plan-review, implement, tdd, impl-review, archive
