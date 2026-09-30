@@ -36,48 +36,13 @@ Node.js v22.14.0 (`.nvmrc`). Local Supabase/env-var setup, deployment, and CI jo
 
 <!-- BEGIN @przeprogramowani/10x-cli -->
 
-## Zestaw narzędzi AI 10xDevs — Moduł 2, Lekcja 5
+## Zestaw narzędzi AI 10xDevs — Moduł 2, Lekcja 5 (10xDevs 4.0 UI)
 
-Rozszerz cykl pojedynczej zmiany na pracę równoległą za pomocą **worktrees, delegowania ukierunkowanego na cel i orkiestracji wielu sesji**:
+**W przypadku pracy nad UI w widoku, który już się renderuje, użyj `/10x-ui`.** Przeprowadza ono zmianę wizualną przez ten sam łańcuch co każdą inną zmianę (`/10x-new` → `/10x-research` →
+`/10x-plan` → `/10x-implement` → `/10x-impl-review`) i obejmuje zasady:
+kiedy rozpocząć pracę i którego widoku dotyczy, audyt pod kątem opłat, kontrakt systemu projektowego w formie, w jakiej realizuje go to repozytorium, stany komponentów, bramkę zrzutu ekranu oraz regułę, która utrzymuje kolejnego agenta przy kontrakcie. W jego `references/` znajduje się lista kontrolna jakości.
 
-```
-worktree per change -> /goal or claude -p -> PR -> review -> merge
-```
-
-Lekcja koncentruje się na bezpiecznej przepustowości: izolowanych kontekstach, wyborze właściwego trybu wykonania oraz ograniczaniu równoległości do możliwości przeglądu.
-
-### Router zadań — od czego zacząć
-
-| Umiejętność | Użyj, gdy |
-| --- | --- |
-| **Izolacja kodu** | |
-| `git worktree add` | Potrzebujesz osobnego katalogu roboczego dla równoległej zmiany. Jedna zmiana na worktree, jeden świeży kontekst agenta na worktree. |
-| **Złożone zmiany** | |
-| `/10x-implement <change-id> phase <n>` | Zmiana ma wiele faz, wymaga ręcznych bramek lub korzysta z interaktywnego podejmowania decyzji podczas wykonania. |
-| **Proste zmiany** | |
-| `/goal` | Masz jasne, ograniczone zadanie i chcesz delegowania ukierunkowanego na cel. Agent pracuje autonomicznie w kierunku określonego celu z warunkiem zatrzymania. |
-| `claude -p` | Chcesz bezobsługowego wykonania dobrze zdefiniowanego zadania. Pętla Ralph Wiggum (uruchom, sprawdź, ponów próbę) jest uniwersalnym autonomicznym wzorcem. |
-| **Orkiestracja wielu sesji** | |
-| Superset / Conductor / Antigravity / VS Code Agent View | Uruchamiasz równolegle wiele sesji agentów i potrzebujesz wglądu, koordynacji lub zarządzania sesjami między nimi. |
-
-### Zasady pracy równoległej
-
-- Jedna zmiana na worktree lub izolowaną przestrzeń roboczą. Jeden świeży kontekst agenta na zmianę.
-- Wybieraj interaktywne `/10x-implement` dla złożonych zmian, a `/goal` lub `claude -p` dla prostych.
-- Równoległość jest ograniczona przez możliwości przeglądu. Więcej agentów bez przeglądu oznacza więcej nieprzejrzanego kodu, a nie większą przepustowość.
-- Problem z jakością wynikający z szybszego dostarczania jest celowy — stanowi przejście do bramek testowych w Module 3.
-
-### Granice lekcji
-
-- Nie omawiaj ponownie interaktywnych `/10x-implement` ani `/10x-impl-review`; to Lekcje 2 i 3.
-- Nie wprowadzaj tutaj strategii testowania. Problem z jakością jest motywacją dla Modułu 3.
-- Worktrees są mechanizmem izolacji, a nie tematem pełnego samouczka git.
-
-### Ścieżki używane przez tę lekcję
-
-- `context/changes/<change-id>/` - folder aktywnej zmiany
-- `context/changes/<change-id>/plan.md` - dane wejściowe implementacji dla dowolnego trybu wykonania
-
-Umiejętności nie mogą zapisywać do `context/archive/`. Zarchiwizowane zmiany są niezmienne; jeśli rozstrzygnięta ścieżka docelowa zaczyna się od `context/archive/`, przerwij z komunikatem: „This change is archived. Open a new change with `/10x-new` instead.”
+Tworzenie widoku po raz pierwszy nie jest zadaniem dla `/10x-ui` — zbuduj go poprzez
+zwykły łańcuch, a następnie wróć do niego z `/10x-ui`.
 
 <!-- END @przeprogramowani/10x-cli -->
