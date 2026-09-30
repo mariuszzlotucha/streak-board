@@ -142,11 +142,11 @@ Turns "rollback works in theory" into a proven, once-rehearsed step before you n
 
 ## Phase 6 — Automated release (change `release-automation-and-auth-hardening`)
 
-**Status: done except one check (2026-09-30)** — only confirming that a push to `master` starts no Cloudflare build is still open.
+**Status: ✅ Done (2026-09-30)**
 
 - [x] First `release` run (started by the merge of PR #19 to `master`) waited for approval in the `production` environment and finished green: migrations linked and listed, `db push` applied **no migrations** (none in this change), Worker built and deployed, live URL check passed.
 - [x] Production checks after the release: `/auth/callback` answers 302 to `/auth/signin?error=link_expired`; `/` and `/auth/signin` answer 200; `/dashboard` answers 302. `npx supabase migration list` shows all three local versions also remote; `npx wrangler kv namespace list` returns `[]`.
-- [x] Workers Builds disconnected in the Cloudflare dashboard (2026-09-30); the Actions `release` job is the single deploy path. Still to confirm: a later push to `master` starts no Cloudflare build.
+- [x] Workers Builds disconnected in the Cloudflare dashboard (2026-09-30); the Actions `release` job is the single deploy path. Confirmed on the merge of PR #20: no Cloudflare build ran.
 - [x] Custom SMTP (Resend) configured, and a production sign-up delivers the e-mail from `mail.streakboard.app`; the link lands on `/dashboard` signed in, a second click in a private window shows the expired-link message.
 
 ## Verification checklist (end-to-end, once unblocked)
