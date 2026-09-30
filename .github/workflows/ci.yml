@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [master]
 
+permissions:
+  contents: read
+
 jobs:
   ci:
     runs-on: ubuntu-latest
@@ -104,16 +107,17 @@ jobs:
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      # Build before touching the schema, so a build failure cannot leave the database ahead of the code.
+      - run: npm run build
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
       # The approval in the `production` environment is the gate, so the CLI prompt is skipped.
       - name: Apply pending migrations
         run: supabase db push --yes
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-      - run: npm run build
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
       - name: Deploy Worker
         run: npx wrangler deploy
         env:
@@ -137,4 +141,10 @@ jobs:
           case "$location" in
             */auth/signin) ;;
             *) echo "Expected /dashboard to redirect to /auth/signin, got $location"; exit 1 ;;
+          esac
+          read -r code location < <(curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' "$base/auth/callback")
+          [ "$code" = "302" ] || { echo "Expected 302 from $base/auth/callback, got $code"; exit 1; }
+          case "$location" in
+            */auth/signin?error=link_expired) ;;
+            *) echo "Expected /auth/callback to redirect to /auth/signin?error=link_expired, got $location"; exit 1 ;;
           esac
