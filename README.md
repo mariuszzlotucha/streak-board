@@ -181,16 +181,42 @@ It only works against the local database (the container name comes from `project
 
 ## Deployment
 
-This project deploys to [Cloudflare Workers](https://workers.cloudflare.com/). Deploys are a deliberate, manual action — there is no CI job that deploys on push/merge; `.github/workflows/ci.yml` only lints, type-checks, builds, and runs the smoke and integration tests.
+This project deploys to [Cloudflare Workers](https://workers.cloudflare.com/) through a gated GitHub Actions release: a merge to `master` runs CI, and the `release` job in `.github/workflows/ci.yml` then applies pending Supabase migrations and deploys the Worker after a human approval. Workers Builds (Cloudflare's own build of `master`) is disabled, so this is the single deploy path.
 
-1. Set `SUPABASE_URL` and `SUPABASE_KEY` as Worker secrets (one-time, or whenever they change):
+### Release
+
+1. Merge the PR to `master`. The `ci`, `smoke` and `integration` jobs run first.
+2. When all three pass, the `release` job waits for approval in the GitHub `production` environment (Actions run page → **Review deployments**). **Before approving, check `supabase/migrations/` in the merge commit**: the approval comes before the job prints `supabase migration list`, so this is the moment to see which migrations will reach production.
+3. After approval the job runs in this order: link the hosted Supabase project, `supabase migration list`, `supabase db push --yes` (schema first), `npm run build`, `npx wrangler deploy`, and finally checks the live URL (`/` must answer 200, `/dashboard` must answer 302 to `/auth/signin`).
+4. If a release fails, fix the cause and re-run the failed jobs from the Actions run page: `db push` is idempotent and skips migrations that are already applied.
+
+The `release` job runs only on pushes to `master` (never on pull requests), and releases are serialised (`concurrency: release`), so two pushes cannot interleave migrations.
+
+Required configuration of the GitHub `production` environment (Settings → Environments → `production`, with the owner as required reviewer; enter credentialed values in the GitHub UI, never in chat):
+
+| Type     | Name                    | Purpose                                                |
+| -------- | ----------------------- | ------------------------------------------------------ |
+| Secret   | `SUPABASE_ACCESS_TOKEN` | Supabase CLI login for `link` and `db push`            |
+| Secret   | `SUPABASE_DB_PASSWORD`  | Database password for `db push`                        |
+| Secret   | `CLOUDFLARE_API_TOKEN`  | `wrangler deploy`                                      |
+| Secret   | `CLOUDFLARE_ACCOUNT_ID` | `wrangler deploy`                                      |
+| Secret   | `SUPABASE_URL`          | Build-time value of the `npm run build` step           |
+| Secret   | `SUPABASE_KEY`          | Build-time value of the `npm run build` step           |
+| Variable | `SUPABASE_PROJECT_REF`  | Hosted project ref used by `supabase link`             |
+| Variable | `PRODUCTION_URL`        | Base URL for the post-deploy check (no trailing slash) |
+
+The Worker's runtime secrets (`SUPABASE_URL`, `SUPABASE_KEY`) are set once on the Worker itself (or whenever they change):
 
 ```bash
 npx wrangler secret put SUPABASE_URL
 npx wrangler secret put SUPABASE_KEY
 ```
 
-2. Build and deploy:
+**Migrations must be backward compatible.** The schema ships before the code and a code rollback does not roll the schema back, so every migration has to work with the code version that is currently deployed (add columns and tables first, remove or rename in a later release). There are no automated down-migrations.
+
+### Manual deploy (fallback)
+
+Only needed if Actions is unavailable. Run migrations first if any are pending (`npx supabase db push`), then:
 
 ```bash
 npm run build && npx wrangler deploy
@@ -205,11 +231,19 @@ npx wrangler deployments list   # see deployment history and version IDs
 npx wrangler rollback [version-id]   # reverts to the given version, or the prior one if omitted
 ```
 
-`wrangler rollback` prompts for a message and a confirmation; both fall back to sane defaults in a non-interactive shell. Rollback only affects the Worker's code/version — it does not touch Supabase (managed separately) or any bound resources.
+`wrangler rollback` prompts for a message and a confirmation; both fall back to sane defaults in a non-interactive shell. Rollback only affects the Worker's code/version — it does not touch Supabase (migrations are not rolled back, see the backward-compatibility rule above) or any bound resources.
 
 ### Auth e-mail sender domain
 
 Confirmation e-mails are sent through Resend SMTP (configured in the Supabase Dashboard under Authentication → SMTP Settings, not in this repo) from the domain `streakboard.app` (Cloudflare Registrar, DNS in Cloudflare). Resend sends from the subdomain `mail.streakboard.app`, with the sender `noreply@mail.streakboard.app`. Until the custom domain binding is done the app itself stays on its `workers.dev` URL; the target production address is `https://streakboard.app`.
+
+### Production auth settings
+
+These settings live only in the Supabase Dashboard of the hosted project. `supabase/config.toml` configures just the local stack and `supabase db push` does not push it, so nothing in the repo sets them and they must be checked by hand after changing the production URL:
+
+- **Site URL** (Authentication → URL Configuration): the production address, currently `https://10x-astro-starter.mariusz-zlotucha.workers.dev`. Without it confirmation links point to the default `http://localhost:3000`.
+- **Redirect URLs** (same page): `https://<prod>/**` for the production address. Sign-up sends `emailRedirectTo` = `<origin>/auth/callback`; if it is missing from this allow-list Supabase silently falls back to the Site URL and the user is not signed in after confirming.
+- **Custom SMTP** (Authentication → SMTP Settings): Resend credentials for the sender domain above. The built-in Supabase SMTP has a low rate limit (`over_email_send_rate_limit`).
 
 ## Smoke test
 
@@ -239,11 +273,12 @@ Safety guard: the suite refuses to run unless the Supabase URL host is `127.0.0.
 
 ## CI
 
-GitHub Actions runs three jobs on every push and PR to `master`:
+GitHub Actions runs four jobs: `ci`, `smoke` and `integration` on every push and PR to `master`, and `release` only after a push to `master`:
 
 - **ci** — lint, `astro check` and build. Configure `SUPABASE_URL` and `SUPABASE_KEY` as repository secrets for the build step.
 - **smoke** — starts a local Supabase via the Supabase CLI, builds, serves the production preview on the Cloudflare runtime and runs `npm run smoke` against it. No secrets required.
 - **integration** — starts a local Supabase, then runs `npm test` and the SQL scenarios in `supabase/checks/rls-scenarios.sql`. No secrets required.
+- **release** — runs only on pushes to `master`, after `ci`, `smoke` and `integration` pass and a reviewer approves the `production` environment: `supabase db push`, then `wrangler deploy`, then a check of the live URL. See [Deployment](#deployment).
 
 ## License
 
