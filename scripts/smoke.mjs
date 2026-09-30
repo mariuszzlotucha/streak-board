@@ -714,7 +714,8 @@ const steps = [
       status: 200,
       bodyIncludes: taskTitle,
       bodyMatches: [TASKS_HEADING, taskRowWithBadge(taskTitle, "Daily")],
-      bodyNotMatches: [editControl(taskTitle), formPostingTo("/api/tasks/delete"), formPostingTo("/api/tasks/update")],
+      // The update form is never server-rendered (it appears only after a click), so editControl is the guard.
+      bodyNotMatches: [editControl(taskTitle), formPostingTo("/api/tasks/delete")],
       bodyExcludes: NO_ERROR_ALERT,
     },
   ],

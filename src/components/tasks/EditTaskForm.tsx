@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ListPlus, Pencil } from "lucide-react";
 import { FormField } from "@/components/auth/FormField";
 import { SubmitButton } from "@/components/auth/SubmitButton";
@@ -17,6 +17,15 @@ export default function EditTaskForm({ taskId, title: currentTitle }: EditTaskFo
   const [error, setError] = useState<string | undefined>();
   const [submitting, setSubmitting] = useFormSubmitting();
   const fieldId = `task-title-${taskId}`;
+  const editButtonRef = useRef<HTMLButtonElement>(null);
+  const hasToggled = useRef(false);
+
+  // Switching views unmounts the focused control: move focus to the title field, or back to Edit after Cancel.
+  useEffect(() => {
+    if (!hasToggled.current) return;
+    if (editing) document.getElementById(fieldId)?.focus();
+    else editButtonRef.current?.focus();
+  }, [editing, fieldId]);
 
   function validate() {
     let next: string | undefined;
@@ -39,10 +48,15 @@ export default function EditTaskForm({ taskId, title: currentTitle }: EditTaskFo
     setSubmitting(true);
   }
 
+  function toggleEditing(next: boolean) {
+    hasToggled.current = true;
+    setEditing(next);
+  }
+
   function cancel() {
     setTitle(currentTitle);
     setError(undefined);
-    setEditing(false);
+    toggleEditing(false);
   }
 
   if (!editing) {
@@ -54,9 +68,10 @@ export default function EditTaskForm({ taskId, title: currentTitle }: EditTaskFo
           variant="outline"
           size="sm"
           className="ml-auto"
+          ref={editButtonRef}
           aria-label={`Edit ${currentTitle}`}
           onClick={() => {
-            setEditing(true);
+            toggleEditing(true);
           }}
         >
           Edit

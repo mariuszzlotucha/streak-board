@@ -16,6 +16,7 @@ import { groupErrorMessage, resolveGroupError } from "@/lib/group-errors";
 import { getMyGroup, listGroupMembers, previewGroup, type GroupMember, type MyGroup } from "@/lib/groups";
 import { clearJoinCode, peekJoinCode } from "@/lib/join-code";
 import { resolveTaskError } from "@/lib/task-errors";
+import { RECURRENCE_LABELS } from "@/lib/task-rules";
 import { listGroupTasks, type GroupTask } from "@/lib/tasks";
 
 const { user } = Astro.locals;
@@ -28,6 +29,7 @@ let tasks: GroupTask[] = [];
 let pendingCode: string | null = null;
 let pendingGroupName: string | null = null;
 let loadFailed = false;
+let tasksFailed = false;
 
 try {
   const supabase = createClient(Astro.request.headers, Astro.cookies);
@@ -35,7 +37,13 @@ try {
     group = await getMyGroup(supabase);
     if (group) {
       members = await listGroupMembers(supabase, group.id);
-      tasks = await listGroupTasks(supabase, group.id);
+      try {
+        tasks = await listGroupTasks(supabase, group.id);
+      } catch (taskLoadError) {
+        // eslint-disable-next-line no-console -- server-side log; the user only sees the fixed message
+        console.error("Loading the tasks failed", taskLoadError);
+        tasksFailed = true;
+      }
     }
     const code = peekJoinCode(Astro.cookies);
     if (code) {
@@ -68,9 +76,9 @@ const isOwner = group !== null && group.owner_id === user?.id;
 const showGroupForms = !group && !loadFailed;
 // The member list comes from the same load: after a failure show no list rather than "0 members".
 const showMembers = group !== null && !loadFailed;
-// Same for the tasks: a failed load shows no Tasks card rather than an empty list.
-const showTasks = group !== null && !loadFailed;
-const RECURRENCE_LABELS = { once: "Once", daily: "Daily", weekly: "Weekly" } as const;
+// A failed task load hides only the Tasks card (not an empty list); members, rename and delete still render.
+const showTasks = group !== null && !loadFailed && !tasksFailed;
+if (tasksFailed && !error) error = groupErrorMessage("unknown");
 ---
 
 <Layout title="Dashboard">

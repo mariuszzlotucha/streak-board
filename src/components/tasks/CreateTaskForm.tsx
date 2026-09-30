@@ -4,13 +4,7 @@ import { FormField } from "@/components/auth/FormField";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { useFormSubmitting } from "@/components/hooks/useFormSubmitting";
 import { Label } from "@/components/ui/label";
-import { MAX_TASK_TITLE_LENGTH, normalizeTaskTitle, TASK_RECURRENCES } from "@/lib/task-rules";
-
-const RECURRENCE_LABELS: Record<(typeof TASK_RECURRENCES)[number], string> = {
-  once: "Once",
-  daily: "Daily",
-  weekly: "Weekly",
-};
+import { MAX_TASK_TITLE_LENGTH, normalizeTaskTitle, RECURRENCE_LABELS, TASK_RECURRENCES } from "@/lib/task-rules";
 
 export default function CreateTaskForm() {
   const [title, setTitle] = useState("");

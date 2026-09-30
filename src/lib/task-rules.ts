@@ -9,6 +9,12 @@ export const TASK_RECURRENCES = ["once", "daily", "weekly"] as const;
 
 export type TaskRecurrence = (typeof TASK_RECURRENCES)[number];
 
+export const RECURRENCE_LABELS: Record<TaskRecurrence, string> = {
+  once: "Once",
+  daily: "Daily",
+  weekly: "Weekly",
+};
+
 /**
  * Trims like the DB CHECK on tasks.title (same characters as the group name) and counts code points, like Postgres
  * char_length. Returns null unless the trimmed title is 1-80 characters.
