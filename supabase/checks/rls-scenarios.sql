@@ -1,4 +1,4 @@
--- RLS scenario checks for groups / group_members (F-01 + group-rls-hardening + S-01 helper functions).
+-- RLS scenario checks for groups / group_members / tasks (F-01 + group-rls-hardening + S-01 helper functions + S-02 tasks).
 --
 -- Run against the LOCAL Supabase database only:
 --   docker exec -i supabase_db_10x-astro-starter psql -U postgres -d postgres -X -v ON_ERROR_STOP=1 < supabase/checks/rls-scenarios.sql
@@ -311,12 +311,12 @@ do $$
 begin
   perform rls_check.expect_value(
     $q$select count(*) from pg_policies
-       where schemaname = 'public' and tablename in ('groups', 'group_members')
+       where schemaname = 'public' and tablename in ('groups', 'group_members', 'tasks')
          and regexp_replace(coalesce(qual, '') || ' ' || coalesce(with_check, ''), '\( SELECT auth\.uid\(\) AS uid\)', '', 'g') ~ 'auth\.uid\(\)'$q$,
     '0', '#6 no policy uses a bare auth.uid()');
   perform rls_check.expect_value(
     $q$select (count(*) > 0)::text from pg_policies
-       where schemaname = 'public' and tablename in ('groups', 'group_members')
+       where schemaname = 'public' and tablename in ('groups', 'group_members', 'tasks')
          and coalesce(qual, '') || ' ' || coalesce(with_check, '') ~ '\( SELECT auth\.uid\(\) AS uid\)'$q$,
     'true', '#6 policies do use (select auth.uid())');
 end;
@@ -519,6 +519,99 @@ begin
   perform rls_check.expect_rows(format('delete from public.groups where id = %L', ga), 1, 'S-01 setup: the owner deleted the group');
   perform rls_check.as_user(d);
   perform rls_check.expect_value(format('select public.preview_group(%L)', code_a), null, 'S-01 preview_group returns NULL after the group is deleted');
+
+  perform rls_check.as_postgres();
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- S-02: tasks (member read, creator-only manage, grants, CHECKs, cascades)
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  a uuid; m uuid; x uuid; b uuid; ga uuid; gb uuid; code_a text; t uuid; tb uuid;
+begin
+  a := rls_check.mk_user(); m := rls_check.mk_user(); x := rls_check.mk_user(); b := rls_check.mk_user();
+
+  perform rls_check.as_user(a);
+  ga := rls_check.new_group(a);
+  code_a := rls_check.code_of(ga);
+  perform rls_check.as_user(m);
+  perform rls_check.expect_value(format('select public.join_group(%L)', code_a), ga::text, 'S-02 setup: M joined group A');
+  perform rls_check.as_user(b);
+  gb := rls_check.new_group(b);
+
+  -- A member creates a task; the client only sends group_id, created_by, title, recurrence.
+  perform rls_check.as_user(m);
+  perform rls_check.expect_rows(format('insert into public.tasks (group_id, created_by, title, recurrence) values (%L, %L, %L, %L)', ga, m, 'Water the plants', 'daily'), 1, 'S-02 a member can create a task in their group');
+  select id into t from public.tasks where group_id = ga;
+
+  -- Reads: members yes, outsiders and anon no.
+  perform rls_check.as_user(a);
+  perform rls_check.expect_value(format('select count(*) from public.tasks where group_id = %L', ga), '1', 'S-02 another member reads the group''s task');
+  perform rls_check.as_user(b);
+  perform rls_check.expect_value(format('select count(*) from public.tasks where group_id = %L', ga), '0', 'S-02 a member of another group sees no task of this group');
+  perform rls_check.as_user(x);
+  perform rls_check.expect_value(format('select count(*) from public.tasks where group_id = %L', ga), '0', 'S-02 a user without a group sees no task');
+  perform rls_check.as_anon();
+  perform rls_check.expect_value('select count(*) from public.tasks', '0', 'S-02 anon sees no tasks (no policy)');
+
+  -- Inserts: non-member and foreign created_by are denied, anon too.
+  perform rls_check.as_user(b);
+  perform rls_check.expect_error('42501', format('insert into public.tasks (group_id, created_by, title, recurrence) values (%L, %L, %L, %L)', ga, b, 'Intruder', 'once'), 'S-02 a non-member cannot create a task in the group');
+  perform rls_check.as_user(x);
+  perform rls_check.expect_error('42501', format('insert into public.tasks (group_id, created_by, title, recurrence) values (%L, %L, %L, %L)', ga, x, 'Intruder', 'once'), 'S-02 a user without a group cannot create a task');
+  perform rls_check.as_user(a);
+  perform rls_check.expect_error('42501', format('insert into public.tasks (group_id, created_by, title, recurrence) values (%L, %L, %L, %L)', ga, m, 'Forged', 'once'), 'S-02 a task cannot be created in another user''s name');
+  perform rls_check.as_anon();
+  perform rls_check.expect_error('42501', format('insert into public.tasks (group_id, created_by, title, recurrence) values (%L, %L, %L, %L)', ga, a, 'Anon', 'once'), 'S-02 anon cannot create a task');
+
+  -- Update / delete: only the creator; everyone else affects 0 rows.
+  perform rls_check.as_user(a);
+  perform rls_check.expect_rows(format('update public.tasks set title = %L where id = %L', 'Hijacked', t), 0, 'S-02 a non-creator member (even the group owner) cannot retitle');
+  perform rls_check.expect_rows(format('delete from public.tasks where id = %L', t), 0, 'S-02 a non-creator member (even the group owner) cannot delete');
+  perform rls_check.as_user(x);
+  perform rls_check.expect_rows(format('update public.tasks set title = %L where id = %L', 'Hijacked', t), 0, 'S-02 an outsider cannot retitle');
+  perform rls_check.expect_rows(format('delete from public.tasks where id = %L', t), 0, 'S-02 an outsider cannot delete');
+
+  -- Grants: only title is updatable; CHECKs hold.
+  perform rls_check.as_user(m);
+  perform rls_check.expect_error('42501', format('update public.tasks set recurrence = %L where id = %L', 'weekly', t), 'S-02 UPDATE of recurrence is denied');
+  perform rls_check.expect_error('42501', format('update public.tasks set group_id = %L where id = %L', gb, t), 'S-02 UPDATE of group_id is denied');
+  perform rls_check.expect_error('42501', format('update public.tasks set created_by = %L where id = %L', a, t), 'S-02 UPDATE of created_by is denied');
+  perform rls_check.expect_error('42501', format('update public.tasks set id = gen_random_uuid() where id = %L', t), 'S-02 UPDATE of id is denied');
+  perform rls_check.expect_error('23514', format('update public.tasks set title = %L where id = %L', '', t), 'S-02 UPDATE title to empty is rejected by the CHECK');
+  perform rls_check.expect_error('23514', format('insert into public.tasks (group_id, created_by, title, recurrence) values (%L, %L, %L, %L)', ga, m, repeat('x', 81), 'once'), 'S-02 a title longer than 80 characters is rejected');
+  perform rls_check.expect_error('23514', format('insert into public.tasks (group_id, created_by, title, recurrence) values (%L, %L, %L, %L)', ga, m, E'\t\n ', 'once'), 'S-02 a whitespace-only title is rejected');
+  perform rls_check.expect_error('23514', format('insert into public.tasks (group_id, created_by, title, recurrence) values (%L, %L, %L, %L)', ga, m, 'Ok', 'monthly'), 'S-02 a recurrence outside once/daily/weekly is rejected');
+  perform rls_check.expect_rows(format('insert into public.tasks (group_id, created_by, title, recurrence) values (%L, %L, %L, %L)', ga, m, repeat('x', 80), 'weekly'), 1, 'S-02 an 80-character title with recurrence weekly is accepted');
+
+  -- The creator retitles and deletes.
+  perform rls_check.expect_rows(format('update public.tasks set title = %L where id = %L', 'Renamed', t), 1, 'S-02 the creator can retitle');
+  perform rls_check.expect_rows(format('delete from public.tasks where id = %L', t), 1, 'S-02 the creator can delete');
+
+  -- A creator who is no longer a member manages nothing (policies check current membership).
+  perform rls_check.expect_rows(format('insert into public.tasks (group_id, created_by, title, recurrence) values (%L, %L, %L, %L)', ga, m, 'Left behind', 'once'), 1, 'S-02 setup: M created another task');
+  perform rls_check.as_postgres();
+  select id into t from public.tasks where group_id = ga and title = 'Left behind';
+  delete from public.group_members where user_id = m;
+  perform rls_check.as_user(m);
+  perform rls_check.expect_rows(format('update public.tasks set title = %L where id = %L', 'Sneaky', t), 0, 'S-02 a creator who left the group cannot retitle');
+  perform rls_check.expect_rows(format('delete from public.tasks where id = %L', t), 0, 'S-02 a creator who left the group cannot delete');
+  perform rls_check.as_user(a);
+  perform rls_check.expect_value(format('select count(*) from public.tasks where id = %L', t), '1', 'S-02 the task stays visible to the group after its creator left');
+
+  -- Cascade on user delete (M is not a group owner, so the owner_id restrict does not apply).
+  perform rls_check.as_user(b);
+  perform rls_check.expect_rows(format('insert into public.tasks (group_id, created_by, title, recurrence) values (%L, %L, %L, %L)', gb, b, 'B task', 'once'), 1, 'S-02 setup: B created a task in group B');
+  perform rls_check.as_postgres();
+  select id into tb from public.tasks where group_id = gb;
+  delete from public.groups where id = gb;
+  perform rls_check.expect_value(format('select count(*) from public.tasks where id = %L', tb), '0', 'S-02 deleting the group cascades to its tasks');
+  perform rls_check.expect_value(format('select count(*) from public.tasks where id = %L', t), '1', 'S-02 setup: the orphaned task still exists before its creator is deleted');
+  delete from auth.users where id = m;
+  perform rls_check.expect_value(format('select count(*) from public.tasks where id = %L', t), '0', 'S-02 deleting the creator''s account cascades to their tasks');
 
   perform rls_check.as_postgres();
 end;
