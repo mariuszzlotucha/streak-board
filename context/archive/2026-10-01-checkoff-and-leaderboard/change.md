@@ -1,10 +1,10 @@
 ---
 change_id: checkoff-and-leaderboard
 title: Checkoff and leaderboard
-status: implemented
+status: archived
 created: 2026-10-01
 updated: 2026-10-01
-archived_at: null
+archived_at: 2026-10-01T20:12:19Z
 ---
 
 ## Notes

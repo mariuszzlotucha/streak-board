@@ -45,7 +45,7 @@ Grono znajomych korzystało wcześniej ze wspólnego arkusza Google, w którym r
 | S-01 | group-create-join-manage              | założyć/dołączyć do grupy przez link/kod; jako twórca zarządzać grupą                                      | F-01          | FR-001, FR-002, FR-003                     | done        |
 | S-02 | task-create-and-manage                | utworzyć task w grupie; jako twórca edytować/usunąć swój task                                              | S-01          | FR-004, FR-005                             | done |
 | S-03 | task-join-and-leave                   | dołączyć do tasku innego członka i wypisać się z niego                                                     | S-02          | FR-006, FR-007                             | done        |
-| S-04 | checkoff-and-leaderboard              | odznaczyć task jako wykonany i od razu zobaczyć tablicę wyników grupy                                      | S-03          | FR-008, FR-009, US-01, Business Logic      | in-progress |
+| S-04 | checkoff-and-leaderboard              | odznaczyć task jako wykonany i od razu zobaczyć tablicę wyników grupy                                      | S-03          | FR-008, FR-009, US-01, Business Logic      | done |
 | S-05 | release-automation-and-auth-hardening | (release) migracje i wydanie produkcyjne są zautomatyzowane, a rejestracja na produkcji działa niezawodnie | S-01          | — (operacyjne; deployment-plan.md Phase 5) | done |
 
 ## Baseline
@@ -124,7 +124,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Unknowns:**
   - Dokładna wartość, o jaką spada streak za pominięty dzień/okres (PRD: „wartość mniejsza niż jego pełny stan”, bez konkretnej liczby) — Owner: user. Block: no — `/10x-plan` może przyjąć rozsądną wartość domyślną; PRD celowo nie wymaga konfigurowalności na MVP.
 - **Risk:** To jest gwiazda przewodnia — jeśli odznaczenie nie jest odczuwalnie natychmiastowe (guardrail) albo tablica wyników nie działa poprawnie, cała hipoteza produktu pozostaje niepotwierdzona mimo ukończenia reszty mapy drogowej.
-- **Status:** in-progress
+- **Status:** done
 
 ### S-05: Automatyzacja wydań i utwardzenie rejestracji na produkcji
 
@@ -190,3 +190,4 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **S-05: (release) migracje Supabase i wydanie aplikacji na produkcję przechodzą w przewidywalnej, zautomatyzowanej kolejności (najpierw schemat, potem kod), a rejestracja nowego użytkownika na produkcji działa bez ręcznych obejść: e-maile potwierdzające wychodzą z własnego SMTP, link potwierdzający loguje użytkownika przez `/auth/callback`, a dokumentacja mówi prawdę o tym, jak wdrażamy.** — Archived 2026-09-30 → `context/archive/2026-09-30-release-automation-and-auth-hardening/`. Lesson: —.
 - **S-02: użytkownik może utworzyć task w swojej grupie (jednorazowy lub powtarzalny: dziennie/tygodniowo), a jako jego twórca — edytować go lub usunąć.** — Archived 2026-10-01 → `context/archive/2026-09-30-task-create-and-manage/`. Lesson: —.
 - **S-03: użytkownik może dołączyć (zapisać się) do tasku stworzonego przez innego członka grupy i wypisać się z tasku, do którego jest zapisany.** — Archived 2026-10-01 → `context/archive/2026-10-01-task-join-and-leave/`. Lesson: —.
+- **S-04: użytkownik odznacza wystąpienie tasku jako wykonane i natychmiast widzi zaktualizowany wynik w tablicy wyników swojej grupy.** — Archived 2026-10-01 → `context/archive/2026-10-01-checkoff-and-leaderboard/`. Lesson: —.
