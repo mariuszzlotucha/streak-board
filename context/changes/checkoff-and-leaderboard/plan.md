@@ -525,16 +525,16 @@ Additive migration (a table and a view); no backfill because no check-offs exist
 
 #### Automated
 
-- [x] 2.1 Migration applies cleanly on a fresh local stack: `npx supabase db reset`
-- [x] 2.2 Generated types contain the new table and view and the project builds: `grep -q task_checkoffs src/types.ts && grep -q task_checkoff_periods src/types.ts && npm run build`
-- [x] 2.3 SQL RLS scenarios pass: `npm run test:rls`
-- [x] 2.4 Integration tests pass: `npm test`
-- [x] 2.5 Linting passes: `npm run lint`
-- [x] 2.7 Types check: `npx astro check`
+- [x] 2.1 Migration applies cleanly on a fresh local stack: `npx supabase db reset` — 4fcfdc3
+- [x] 2.2 Generated types contain the new table and view and the project builds: `grep -q task_checkoffs src/types.ts && grep -q task_checkoff_periods src/types.ts && npm run build` — 4fcfdc3
+- [x] 2.3 SQL RLS scenarios pass: `npm run test:rls` — 4fcfdc3
+- [x] 2.4 Integration tests pass: `npm test` — 4fcfdc3
+- [x] 2.5 Linting passes: `npm run lint` — 4fcfdc3
+- [x] 2.7 Types check: `npx astro check` — 4fcfdc3
 
 #### Manual
 
-- [x] 2.6 Mutation check: remove `security_invoker = true` from the local view (or weaken `task_checkoffs_select_visible_task`), run `npm test` and see the outsider read tests fail, then restore with `npx supabase db reset`.
+- [x] 2.6 Mutation check: remove `security_invoker = true` from the local view (or weaken `task_checkoffs_select_visible_task`), run `npm test` and see the outsider read tests fail, then restore with `npx supabase db reset`. — 4fcfdc3
 
 ### Phase 3: Server layer — reads and the check-off / undo routes
 
