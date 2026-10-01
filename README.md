@@ -169,19 +169,21 @@ Route protection is handled in `src/middleware.ts`. Add paths to the `PROTECTED_
 
 ### Task routes
 
-| Route                    | Description                                                                            |
-| ------------------------ | -------------------------------------------------------------------------------------- |
-| `POST /api/tasks/create` | Member: create a task in their group (fields `title`, `recurrence`: once/daily/weekly) |
-| `POST /api/tasks/update` | Creator: change the title of a task (fields `task_id`, `title`)                        |
-| `POST /api/tasks/delete` | Creator: delete a task (field `task_id`)                                               |
-| `POST /api/tasks/join`   | Member: join a task of their group (field `task_id`); joining twice does nothing       |
-| `POST /api/tasks/leave`  | Participant: leave a task they joined (field `task_id`); leaving twice does nothing    |
+| Route                      | Description                                                                                       |
+| -------------------------- | ------------------------------------------------------------------------------------------------- |
+| `POST /api/tasks/create`   | Member: create a task in their group (fields `title`, `recurrence`: once/daily/weekly)            |
+| `POST /api/tasks/update`   | Creator: change the title of a task (fields `task_id`, `title`)                                   |
+| `POST /api/tasks/delete`   | Creator: delete a task (field `task_id`)                                                          |
+| `POST /api/tasks/join`     | Member: join a task of their group (field `task_id`); joining twice does nothing                  |
+| `POST /api/tasks/leave`    | Participant: leave a task they joined (field `task_id`); leaving twice does nothing               |
+| `POST /api/tasks/checkoff` | Participant: tick the current day or week of a task (field `task_id`); ticking twice does nothing |
+| `POST /api/tasks/uncheck`  | Participant: undo the tick of the current period (field `task_id`); undoing twice does nothing    |
 
-`/api/groups/*` and `/api/tasks/*` follow the same `PROTECTED_ROUTES` rule as `/dashboard`: an unauthenticated request is redirected to `/auth/signin`. `/join/<code>` is the exception on purpose, so an invited visitor is sent through sign-in by the protected dashboard. Every group and task endpoint redirects back to `/dashboard`, adding `?error=<code>` on failure. Who may do what is decided by Postgres row-level security (see [RLS scenario checks](#rls-scenario-checks)); the app only forwards the signed-in user's session.
+`/api/groups/*` and `/api/tasks/*` follow the same `PROTECTED_ROUTES` rule as `/dashboard`: an unauthenticated request is redirected to `/auth/signin`. `/join/<code>` is the exception on purpose, so an invited visitor is sent through sign-in by the protected dashboard. Every group and task endpoint redirects back to `/dashboard`, adding `?error=<code>` on failure; the two check-off routes also answer JSON (`{ ok, period }` or `{ ok: false, error }`) to a request that sends `Accept: application/json`, which is what the dashboard's check-off button uses. Who may do what is decided by Postgres row-level security (see [RLS scenario checks](#rls-scenario-checks)); the app only forwards the signed-in user's session.
 
 ### RLS scenario checks
 
-`supabase/checks/rls-scenarios.sql` asserts the row-level security rules of `groups`, `group_members`, `tasks` and `task_participants` (visibility, joining via `join_group`, leaving, column privileges, and the `list_group_members` / `preview_group` helper functions) and exits non-zero on the first regression. Run it after every migration that touches group RLS, with the local stack running:
+`supabase/checks/rls-scenarios.sql` asserts the row-level security rules of `groups`, `group_members`, `tasks`, `task_participants` and `task_checkoffs` (visibility, joining via `join_group`, leaving, column privileges, the `task_checkoff_periods` view's group scoping, and the `list_group_members` / `preview_group` helper functions) and exits non-zero on the first regression. Run it after every migration that touches group RLS, with the local stack running:
 
 ```bash
 docker exec -i supabase_db_10x-astro-starter psql -U postgres -d postgres -X -v ON_ERROR_STOP=1 < supabase/checks/rls-scenarios.sql
@@ -257,25 +259,25 @@ These settings live only in the Supabase Dashboard of the hosted project. `supab
 
 ## Smoke test
 
-`scripts/smoke.mjs` is a dependency-free Node script that walks the auth flow (sign-up, sign-in, protected page, sign-out), the group flow and the task flow (create, rename, join, leave, delete) over HTTP. The group and task parts use three signed-up users (an owner and two members) with separate sessions: create, invite link, join, member view, rename, leave, remove member and delete group, including the rejected attempts (a member trying owner actions, malformed input, foreign-origin and GET requests). Run it against the dev server or the production preview after dependency upgrades:
+`scripts/smoke.mjs` is a dependency-free Node script that walks the auth flow (sign-up, sign-in, protected page, sign-out), the group flow and the task flow (create, rename, join, leave, check off, undo, delete) over HTTP. The group and task parts use three signed-up users (an owner and two members) with separate sessions: create, invite link, join, member view, rename, leave, remove member and delete group, including the rejected attempts (a member trying owner actions, malformed input, foreign-origin and GET requests). The check-off steps assert the page after each action (the row, the streak and the Leaderboard totals), the JSON period against an independent Warsaw-date oracle, and that leaving a task erases its history. Run it against the dev server or the production preview after dependency upgrades:
 
 ```bash
 npm run dev            # or: npm run build && npm run preview
 BASE_URL=http://localhost:4321 npm run smoke
 ```
 
-It needs a reachable Supabase instance (local or cloud) with email confirmation disabled and all migrations from `supabase/migrations/` applied (groups, tasks, task participation).
+It needs a reachable Supabase instance (local or cloud) with email confirmation disabled and all migrations from `supabase/migrations/` applied (groups, tasks, task participation, check-offs).
 
 > **Note:** this script exists primarily to guard the development of the starter itself — it is a fast sanity check that dependency upgrades did not break the build, the Cloudflare adapter or the Supabase auth flow. It is **not** a substitute for a real test suite. Once you build your own product on top of this starter, add proper tests (unit, integration, end-to-end) suited to your application.
 
 ## Tests
 
-Integration tests (Vitest, `tests/integration/`) exercise row-level security and creator-only permissions through real Supabase clients: two or more users in different groups, each denial paired with a positive control, and state re-read via the service-role client.
+Integration tests (Vitest, `tests/integration/`) exercise row-level security and creator-only permissions through real Supabase clients: two or more users in different groups, each denial paired with a positive control, and state re-read via the service-role client. Unit tests (`tests/unit/`) cover the pure rules: the streak and Leaderboard rules (`streak-rules`, `leaderboard-rules`, day and week boundaries in Europe/Warsaw, written from the PRD sentence), the check-off island's net-delta store and request protocol (`checkoff-sync`, `checkoff-client`) and the task rules.
 
 Prerequisite: the local stack must be running (`npx supabase start`, see [Supabase Configuration](#supabase-configuration)). No `.env` is needed; the global setup reads the URL and keys from `supabase status -o env`.
 
 ```bash
-npm test            # Vitest integration suite
+npm test            # Vitest: integration and unit suites
 npm run test:rls    # SQL scenarios (supabase/checks/rls-scenarios.sql) via docker exec
 ```
 

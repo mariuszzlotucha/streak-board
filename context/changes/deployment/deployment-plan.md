@@ -171,6 +171,15 @@ Turns "rollback works in theory" into a proven, once-rehearsed step before you n
 - [x] `release` run 36799055950 (merge of PR #40, `1d3a315`) approved in the `production` environment and finished green: Worker deployed (version `7020fa16-d75e-4be9-b04d-626e41266f53`), live URL check passed. The run for the PR #39 merge (36797072465) was superseded and cancelled; it never ran.
 - [x] Production check (2026-10-01, after the release, done by hand by the user): left a task, the join button for it then appeared, and joining worked. Result: passed. Sign-in, dashboard and group flows were not reported separately.
 
+## Phase 9 — Check-off and leaderboard (change `checkoff-and-leaderboard`, S-04)
+
+**Status: ✅ Done (2026-10-01); the `/dashboard` CPU reading was accepted without a measurement**
+
+- [x] Migration `20261002090000_create_task_checkoffs.sql` (table `task_checkoffs` with RLS and the `task_checkoff_periods` view, shipped with phase 2; additive, no backfill) applied by the `release` job: `db push` listed only that migration and applied it. The runs for the earlier phase merges were cancelled or superseded, so it went out with the run for the phase 5 merge (PR #51, `c963e86`).
+- [x] `release` run 36917515328 approved in the `production` environment and finished green: Worker deployed (version `9956ddb1-6eda-4be3-a907-607988f26b08`), live URL check passed.
+- [x] Production check (2026-10-01, after the release, done by hand by the user): two members checked off, the totals updated instantly, the state survived a reload, undo worked and the leave warning showed; on a phone the tap felt instant. Result: passed.
+- [x] CPU and wall time of a `/dashboard` request (Workers Logs, observability enabled in `wrangler.jsonc`): not measured. On 2026-10-01 the user accepted the risk and told Claude to assume the CPU time is fine; no value was recorded. The Workers plan's CPU limit is 10 ms on the Free plan (`context/foundation/infrastructure.md`). Revisit if requests start failing with CPU-limit errors or `/dashboard` slows down as groups are added; the additive `create or replace view` fix is in the plan's Performance Considerations.
+
 ## Verification checklist (end-to-end, once unblocked)
 
 - [ ] Fresh browser session against the live `*.workers.dev` URL: sign up, confirm-email flow (or note if stubbed), sign in, hit `/dashboard`, sign out.
