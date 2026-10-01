@@ -72,7 +72,7 @@ Decisions fixed by the planning interview:
 - **Timing:** the server computes the period from its own clock at request time and returns it; the client never sends one. If the returned period differs from the one the island expected (the page stayed open across Warsaw midnight), the island reloads instead of guessing.
 - **Cascade interaction:** every way a participation row disappears (leave, group leave, owner removal, task delete, group delete, account delete) now also removes check-offs. The S-03 trigger needs no change; the group-delete cascade must stay free of errors (check-offs may already be gone).
 - **Backward compatibility:** the migration only adds a table and a view that the deployed code does not read, so the release may apply it before the new code is live.
-- **Smoke-visible markup:** one `<li>` per task row; the check-off control sits inside that `<li>` on its own line; the Leaderboard is an `<ol aria-label="Leaderboard">` whose rows hold position, e-mail, an optional "You" pill and the total, each in its own element; the island's client-side error text uses `role="status"`, never `role="alert"`; "You" appears on the Leaderboard only on the viewer's own row, and the Members-card helper `memberRow` is anchored to its card (Phase 4 §5), because the Leaderboard repeats the e-mail and the pill.
+- **Smoke-visible markup:** one `<li>` per task row; the check-off control sits inside that `<li>` on its own line; the Leaderboard is an `<ol aria-label="Leaderboard">` whose rows hold position, e-mail, an optional "You" pill and the total, each in its own element; the island's client-side error text uses `role="alert"` (it exists only after a failed tap, so smoke, which reads server HTML, never sees it; a status region inserted already filled is not reliably announced); "You" appears on the Leaderboard only on the viewer's own row, and the Members-card helper `memberRow` is anchored to its card (Phase 4 §5), because the Leaderboard repeats the e-mail and the pill.
 - **Hydration safety:** the Leaderboard's server HTML must equal its first client render, so the shared delta store starts empty and the totals are `server total + net delta`.
 
 ## Phase 1: Streak rule and leaderboard logic (pure TypeScript, test-first)
@@ -255,7 +255,7 @@ Give the dashboard its data and add the two write endpoints in both response mod
 
 **Intent**: Cover the new routes' boundaries with the existing loops and assert the JSON-mode outcomes with an oracle that is independent of the app code.
 
-**Contract**: add an optional `headers` argument to `request()` (for `Accept`) and an optional response-header expectation to the step runner (header name, required substring, case-insensitive); add `checkoff` and `uncheck` to the anonymous-302 and foreign-Origin-403 loop (`:303-315`), malformed-id steps (`:326-345` style → `?error=forbidden`) and GET-404 steps (`:346-349` style). The loop sends no `Accept` header, so add JSON-mode boundary steps for each route: foreign Origin with `Accept: application/json` → 403, anonymous with `Accept: application/json` → 302 `/auth/signin` (the answer Phase 5 maps to `failed`), and a well-formed unknown task id (a fresh UUID, like the join step at `:907-916`) → quiet 302 `/dashboard` in redirect mode and 404 with `"error":"gone"` in JSON mode. Place new JSON-mode steps after the join steps (task exists, B enrolled, C a member who never joined the task): malformed id → 400 with `"error":"invalid"`; B's JSON tick → 200 with `"ok":true`, `Cache-Control: no-store` and a `period` equal to the Warsaw date the script computes itself with `Intl` (computed before and after the request and either accepted, so a tick at midnight cannot flake); a repeated tick → 200 with the same period; C's tick → 403 with `"error":"forbidden"` and `Cache-Control: no-store`; B's JSON undo → 200; a repeated undo → 200. The steps leave no net state behind (B's tick is undone) so later steps are unaffected. Scripts lint note: the ESLint config for `scripts/**/*.mjs` declares only `console`, `process`, `fetch` and `URLSearchParams` as globals (`eslint.config.js:76`); `Intl` and `Date` are fine, but `URL`, `Headers`, `AbortSignal` or `setTimeout` need a global added to that config first.
+**Contract**: add an optional `headers` argument to `request()` (for `Accept`) and an optional response-header expectation to the step runner (header name, required substring, case-insensitive); add `checkoff` and `uncheck` to the anonymous-302 and foreign-Origin-403 loop (`:303-315`), malformed-id steps (`:326-345` style → `?error=forbidden`) and GET-404 steps (`:346-349` style). The loop sends no `Accept` header, so add JSON-mode boundary steps for each route: foreign Origin with `Accept: application/json` → 403, anonymous with `Accept: application/json` → 302 `/auth/signin` (the answer Phase 5 maps to `expired`), and a well-formed unknown task id (a fresh UUID, like the join step at `:907-916`) → quiet 302 `/dashboard` in redirect mode and 404 with `"error":"gone"` in JSON mode. Place new JSON-mode steps after the join steps (task exists, B enrolled, C a member who never joined the task): malformed id → 400 with `"error":"invalid"`; B's JSON tick → 200 with `"ok":true`, `Cache-Control: no-store` and a `period` equal to the Warsaw date the script computes itself with `Intl` (computed before and after the request and either accepted, so a tick at midnight cannot flake); a repeated tick → 200 with the same period; C's tick → 403 with `"error":"forbidden"` and `Cache-Control: no-store`; B's JSON undo → 200; a repeated undo → 200. The steps leave no net state behind (B's tick is undone) so later steps are unaffected. Scripts lint note: the ESLint config for `scripts/**/*.mjs` declares only `console`, `process`, `fetch` and `URLSearchParams` as globals (`eslint.config.js:76`); `Intl` and `Date` are fine, but `URL`, `Headers`, `AbortSignal` or `setTimeout` need a global added to that config first.
 
 ### Success Criteria:
 
@@ -366,18 +366,18 @@ Hydrate the control and the leaderboard so a tap flips the row and re-ranks the 
 
 **Contract**:
 - `checkoff-sync.ts`: a module-level store of net score delta per user id with `publishDelta(userId, delta)`, `subscribeDeltas(listener)` and a `deltasSnapshot()` that returns an immutable map replaced on every publish; net deltas rather than events, so an island that hydrates late still sees the right state. The hook wraps it in `useSyncExternalStore` with an empty map as the server snapshot.
-- `checkoff-client.ts`: `sendCheckoff(action, taskId, expectedPeriod, fetchImpl = fetch)` POSTs `URLSearchParams({ task_id })` with `Accept: application/json`, `credentials: "same-origin"`, `redirect: "manual"` and `keepalive: true` (the request outlives a navigation right after the tap), bounded by an `AbortController` that a 15-second `setTimeout` aborts (`CHECKOFF_TIMEOUT_MS`, the bound of `PENDING_TIMEOUT_MS` in `src/components/hooks/useFormSubmitting.ts`; the timer is cleared in `finally`; not `AbortSignal.timeout`, which fake timers cannot drive), and returns `{ kind: "saved" }` (200 `ok` and the period matches, or `expectedPeriod` is null for `once`), `{ kind: "stale" }` (200 `ok` but a different period), `{ kind: "rejected" }` (403 or 404) or `{ kind: "failed" }` (network error, timeout, 5xx, opaque redirect from an expired session, non-JSON body); a retry after a false timeout is safe because both routes are idempotent.
+- `checkoff-client.ts`: `sendCheckoff(action, taskId, expectedPeriod, fetchImpl = fetch)` POSTs `URLSearchParams({ task_id })` with `Accept: application/json`, `credentials: "same-origin"`, `redirect: "manual"` and `keepalive: true` (the request outlives a navigation right after the tap), bounded by an `AbortController` that a 15-second `setTimeout` aborts (`CHECKOFF_TIMEOUT_MS`, the bound of `PENDING_TIMEOUT_MS` in `src/components/hooks/useFormSubmitting.ts`; the timer is cleared in `finally`; not `AbortSignal.timeout`, which fake timers cannot drive), and returns `{ kind: "saved" }` (200 `ok` and the period matches, or `expectedPeriod` is null for `once`), `{ kind: "stale" }` (200 `ok` but a different period), `{ kind: "rejected" }` (403 or 404), `{ kind: "expired" }` (a redirect: the sign-in redirect of an expired session, which a browser shows as an opaque redirect with status 0) or `{ kind: "failed" }` (network error, timeout, 5xx, non-JSON body); a retry after a false timeout is safe because both routes are idempotent.
 
 #### 2. Optimistic control and live leaderboard
 
-**File**: `src/components/tasks/CheckoffControl.tsx`, `src/components/tasks/Leaderboard.tsx`, `src/pages/dashboard.astro`
+**File**: `src/components/tasks/CheckoffControl.tsx`, `src/components/tasks/Leaderboard.tsx`, `src/pages/dashboard.astro`, `src/lib/leaderboard-rules.ts`
 
 **Intent**: Make the tap instant for the person ticking, and keep the leaderboard consistent with the row.
 
 **Contract**:
 - Add `client:load` to both components in `dashboard.astro`.
-- `CheckoffControl` keeps `checked` and `pending` in local state. On submit it prevents the native POST, computes the new value with `streakValue(recurrence, snapshot, currentPeriod, nextChecked)`, flips the row, publishes the difference as a delta for `viewerId`, then calls `sendCheckoff` (`/api/tasks/uncheck` when it was checked). `saved` keeps the state; `stale` reloads the page; `rejected` and `failed` roll back the row, publish the negative delta and show a short message ("Could not save. Try again." or "This task is no longer available. Reload the page.") in an element with `role="status"`. While a request is pending the button is disabled. Focus moves to the newly rendered button after each toggle (the previous one unmounts), as `EditTaskForm` does. Without JavaScript the forms from Phase 4 submit natively.
-- `Leaderboard` reads the deltas through the hook, shows `total = server total + net delta` and re-ranks with `rankStandings`; with an empty store it renders exactly the server HTML.
+- `CheckoffControl` keeps `checked` and `pending` in local state. On submit it prevents the native POST, computes the new value with `streakValue(recurrence, snapshot, currentPeriod, nextChecked)`, flips the row, publishes the difference as a delta for `viewerId`, then calls `sendCheckoff` (`/api/tasks/uncheck` when it was checked). `saved` keeps the state; `stale` reloads the page; `expired` rolls back and reloads the page, which the middleware turns into the sign-in page (a retry cannot succeed without a session); `rejected` and `failed` roll back the row, publish the negative delta and show a short message ("Could not save. Try again." or "This task is no longer available. Reload the page.") in an element with `role="alert"`. While a request is pending the button is `aria-disabled` (dimmed, no pointer events) and a pending guard ignores a second submit; it is not `disabled`, because a disabled button cannot take the focus that has to move to it right after the tap. Focus moves to the newly rendered button after each toggle (the previous one unmounts), as `EditTaskForm` does. Without JavaScript the forms from Phase 4 submit natively.
+- `Leaderboard` reads the deltas through the hook, shows `total = server total + net delta` and re-ranks with `rankStandings` (the totals come from the pure `applyDeltas(rows, deltas)`, added to `src/lib/leaderboard-rules.ts`); with an empty store it renders exactly the server HTML.
 
 #### 3. Unit tests
 
@@ -385,7 +385,7 @@ Hydrate the control and the leaderboard so a tap flips the row and re-ranks the 
 
 **Intent**: Cover everything about the island that does not need a DOM.
 
-**Contract**: store: net delta accumulates, a rollback returns it to zero, a subscriber added after a publish sees the net value, the snapshot identity changes only on publish; client protocol with an injected `fetch`: a 200 with the expected period is `saved`, a different period is `stale`, 403/404 are `rejected`, a thrown error, 500, an opaque-redirect-like response, a non-JSON body and a fetch that never settles (an injected fetch that rejects when its `signal` aborts, fake timers advanced past 15 s) are `failed`, a `once` task accepts any period, the request is urlencoded with the `Accept` header and `keepalive`; ranking: base totals plus a viewer delta re-rank to the same result as recomputing the totals from scratch.
+**Contract**: store: net delta accumulates, a rollback returns it to zero, a subscriber added after a publish sees the net value, the snapshot identity changes only on publish; client protocol with an injected `fetch`: a 200 with the expected period is `saved`, a different period is `stale`, 403/404 are `rejected`, a 302 and an opaque-redirect-like response are `expired`, a thrown error, 500, a non-JSON body and a fetch that never settles (an injected fetch that rejects when its `signal` aborts, fake timers advanced past 15 s) are `failed`, a `once` task accepts any period, the request is urlencoded with the `Accept` header and `keepalive`; ranking: base totals plus a viewer delta re-rank to the same result as recomputing the totals from scratch.
 
 ### Success Criteria:
 
@@ -570,18 +570,18 @@ Additive migration (a table and a view); no backfill because no check-offs exist
 
 #### Automated
 
-- [ ] 5.1 Unit tests pass (store and client protocol included): `npm test`
-- [ ] 5.2 Linting passes: `npm run lint`
-- [ ] 5.3 Types check: `npx astro check`
-- [ ] 5.4 Project builds: `npm run build`
-- [ ] 5.5 Smoke test still passes against the local stack: `npm run smoke`
+- [x] 5.1 Unit tests pass (store and client protocol included): `npm test` — b0eaadd
+- [x] 5.2 Linting passes: `npm run lint` — b0eaadd
+- [x] 5.3 Types check: `npx astro check` — b0eaadd
+- [x] 5.4 Project builds: `npm run build` — b0eaadd
+- [x] 5.5 Smoke test still passes against the local stack: `npm run smoke` — b0eaadd
 
 #### Manual
 
-- [ ] 5.6 Tapping "Mark done" flips the row to "Done" and updates the viewer's streak and the Leaderboard at once, with no page reload; reloading shows the same state; "Undo" reverses both.
-- [ ] 5.7 With the browser set to offline, a tap rolls the row and the Leaderboard back and shows a short message; with "Slow 3G" throttling the tap still feels instant.
-- [ ] 5.8 With JavaScript disabled in the browser, the same buttons work through the full-page POST.
-- [ ] 5.9 On a phone-width viewport and by keyboard, focus lands on the new button after each toggle and nothing jumps.
+- [x] 5.6 Tapping "Mark done" flips the row to "Done" and updates the viewer's streak and the Leaderboard at once, with no page reload; reloading shows the same state; "Undo" reverses both. — b0eaadd
+- [x] 5.7 With the browser set to offline, a tap rolls the row and the Leaderboard back and shows a short message; with "Slow 3G" throttling the tap still feels instant. — b0eaadd
+- [x] 5.8 With JavaScript disabled in the browser, the same buttons work through the full-page POST. — b0eaadd
+- [x] 5.9 On a phone-width viewport and by keyboard, focus lands on the new button after each toggle and nothing jumps. — b0eaadd
 
 ### Phase 6: Docs and production release
 

@@ -30,7 +30,13 @@
  *     C, T2: base 2 at 09-14, not checked, period 2026-09-28    C has no T1 entry (not enrolled)
  */
 import { describe, expect, it } from "vitest";
-import { buildBoard, groupPeriodsByEnrolment, rankStandings, type StandingInput } from "@/lib/leaderboard-rules";
+import {
+  applyDeltas,
+  buildBoard,
+  groupPeriodsByEnrolment,
+  rankStandings,
+  type StandingInput,
+} from "@/lib/leaderboard-rules";
 import { groupParticipantsByTask, type TaskRecurrence } from "@/lib/task-rules";
 
 describe("groupPeriodsByEnrolment", () => {
@@ -315,5 +321,101 @@ describe("buildBoard", () => {
     medianMs(small); // warm up both paths
     medianMs(large);
     expect(medianMs(large) / medianMs(small)).toBeLessThan(24);
+  });
+});
+
+/**
+ * Optimistic totals (S-04, Phase 5): the Leaderboard island shows `server total + net delta` and ranks that, so a tap
+ * re-ranks the board at once. The delta is correct when it ranks exactly like totals recomputed from the full history.
+ *
+ * World: one daily task, all three members take part, now = 2026-10-02T10:00:00Z = Friday in Warsaw, so the open
+ * period is 2026-10-02 (not missed). Hand-derived values:
+ *   A checked 09-30 and 10-01 -> 2     B checked 10-01 -> 1     C checked nothing -> 0
+ *   positions: A 1, B 2, C 3
+ *   C ticks today: 0 -> 1                       -> A 2, B 1, C 1 -> positions 1, 2, 2 (B and C share, bob before carol)
+ *   B ticks today: 10-01 and 10-02 = 2          -> A 2, B 2, C 0 -> positions 1, 1, 3 (alice before bob)
+ *   A had ticked today (3) and undoes: 3 -> 2   -> the starting world again
+ */
+describe("applyDeltas", () => {
+  const NOW = new Date("2026-10-02T10:00:00Z");
+  const members = [
+    { user_id: "user-a", email: "alice@example.com" },
+    { user_id: "user-b", email: "bob@example.com" },
+    { user_id: "user-c", email: "carol@example.com" },
+  ];
+  const START = { "user-a": ["2026-09-30", "2026-10-01"], "user-b": ["2026-10-01"], "user-c": [] as string[] };
+  const totalsFor = (periods: Record<string, string[]>): StandingInput[] =>
+    buildBoard({
+      members,
+      tasks: [{ id: "t1", recurrence: "daily" }],
+      participantsByTask: new Map([["t1", ["user-a", "user-b", "user-c"]]]),
+      periodsByEnrolment: groupPeriodsByEnrolment(
+        Object.entries(periods).map(([user_id, userPeriods]) => ({ task_id: "t1", user_id, periods: userPeriods })),
+      ),
+      viewerId: "user-a",
+      now: NOW,
+    }).totals;
+  const positions = (rows: StandingInput[], viewerId: string) =>
+    rankStandings(rows, viewerId).map((r) => [r.userId, r.total, r.position]);
+
+  it("ranks a base total plus the viewer's delta like totals recomputed from the full history", () => {
+    const base = totalsFor(START);
+    expect(positions(base, "user-c")).toEqual([
+      ["user-a", 2, 1],
+      ["user-b", 1, 2],
+      ["user-c", 0, 3],
+    ]);
+
+    const cTicks = applyDeltas(base, new Map([["user-c", 1]]));
+    expect(positions(cTicks, "user-c")).toEqual([
+      ["user-a", 2, 1],
+      ["user-b", 1, 2],
+      ["user-c", 1, 2],
+    ]);
+    expect(positions(cTicks, "user-c")).toEqual(positions(totalsFor({ ...START, "user-c": ["2026-10-02"] }), "user-c"));
+
+    const bTicks = applyDeltas(base, new Map([["user-b", 1]]));
+    expect(positions(bTicks, "user-b")).toEqual([
+      ["user-a", 2, 1],
+      ["user-b", 2, 1],
+      ["user-c", 0, 3],
+    ]);
+    expect(positions(bTicks, "user-b")).toEqual(
+      positions(totalsFor({ ...START, "user-b": ["2026-10-01", "2026-10-02"] }), "user-b"),
+    );
+  });
+
+  it("returns to the starting ranking when a tick is rolled back or undone", () => {
+    const base = totalsFor(START);
+    // A rollback publishes the opposite delta, so the net is 0 (the store keeps the zero entry)
+    expect(applyDeltas(base, new Map([["user-c", 0]]))).toEqual(base);
+
+    // A had already ticked today (3); undoing it is -1 and equals the world without that tick
+    const aHadTicked = totalsFor({ ...START, "user-a": ["2026-09-30", "2026-10-01", "2026-10-02"] });
+    expect(aHadTicked.find((r) => r.userId === "user-a")?.total).toBe(3);
+    expect(applyDeltas(aHadTicked, new Map([["user-a", -1]]))).toEqual(base);
+  });
+
+  it("changes only the listed user's total, ignores users who are not listed and does not change its input", () => {
+    const base = totalsFor(START);
+    const copy = structuredClone(base);
+
+    // B ticks (1 -> 2); "nobody" is not a member, so that entry must not appear anywhere
+    const result = applyDeltas(
+      base,
+      new Map([
+        ["user-b", 1],
+        ["nobody", 5],
+      ]),
+    );
+
+    expect(Object.fromEntries(result.map((row) => [row.userId, row.total]))).toEqual({
+      "user-a": 2,
+      "user-b": 2,
+      "user-c": 0,
+    });
+    expect(result).toHaveLength(base.length);
+    expect(applyDeltas(base, new Map())).toEqual(base);
+    expect(base).toEqual(copy);
   });
 });
