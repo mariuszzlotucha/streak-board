@@ -49,13 +49,15 @@ export default function CheckoffControl({
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<string | undefined>();
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const hasToggled = useRef(false);
+  const focusAfterRender = useRef(false);
   // Each number sits alone in its own element: React inserts a comment between adjacent text nodes in server HTML.
   const streak = streakValue(recurrence, snapshot, currentPeriod, checked);
 
-  // Flipping the row unmounts the tapped button: move focus to the one that replaces it.
+  // Flipping the row unmounts the tapped button: move focus to the one that replaces it, once.
   useEffect(() => {
-    if (hasToggled.current) buttonRef.current?.focus();
+    if (!focusAfterRender.current) return;
+    focusAfterRender.current = false;
+    buttonRef.current?.focus();
   }, [checked]);
 
   async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
@@ -64,7 +66,7 @@ export default function CheckoffControl({
 
     const next = !checked;
     const delta = streakValue(recurrence, snapshot, currentPeriod, next) - streak;
-    hasToggled.current = true;
+    focusAfterRender.current = true;
     setChecked(next);
     setPending(true);
     setMessage(undefined);
@@ -76,15 +78,26 @@ export default function CheckoffControl({
       recurrence === "once" ? null : currentPeriod,
     );
 
-    setPending(false);
-    if (result.kind === "saved") return;
+    if (result.kind === "saved") {
+      setPending(false);
+      return;
+    }
     if (result.kind === "stale") {
-      // The page stayed open across Warsaw midnight: the server recorded another period, so show its state.
+      // The page stayed open across Warsaw midnight: the server recorded another period, so show its state. The button
+      // stays pending until the new page replaces this one.
       window.location.reload();
       return;
     }
+    // A rollback can come long after the tap: give focus back only if the user has not moved on in the meantime.
+    focusAfterRender.current = document.activeElement === buttonRef.current || document.activeElement === document.body;
     setChecked(!next);
     publishDelta(viewerId, -delta);
+    if (result.kind === "expired") {
+      // The session is gone, so a retry cannot succeed: reload, and the middleware sends the user to the sign-in page.
+      window.location.reload();
+      return;
+    }
+    setPending(false);
     setMessage(FAILURE_MESSAGES[result.kind]);
   }
 
@@ -130,7 +143,7 @@ export default function CheckoffControl({
         </div>
       )}
       {message && (
-        <p role="status" className="text-destructive basis-full text-xs">
+        <p role="alert" className="text-destructive basis-full text-xs">
           {message}
         </p>
       )}

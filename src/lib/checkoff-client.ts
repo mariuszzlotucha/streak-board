@@ -11,9 +11,12 @@ export type CheckoffAction = "checkoff" | "uncheck";
  * - `saved`: the server recorded it for the period the island expected.
  * - `stale`: the server recorded it for another period (the page stayed open across Warsaw midnight): reload.
  * - `rejected`: the server says the action is not allowed or the task is gone (403, 404).
- * - `failed`: no usable answer: a network error, a timeout, a server error, a redirect or an unexpected body.
+ * - `expired`: the route answered a redirect (the middleware sends a signed-out request to the sign-in page): a retry
+ *   cannot succeed, so reload.
+ * - `failed`: no usable answer: a network error, a timeout, a server error or an unexpected body.
  */
-export type CheckoffResult = { kind: "saved" } | { kind: "stale" } | { kind: "rejected" } | { kind: "failed" };
+export type CheckoffSendResult =
+  { kind: "saved" } | { kind: "stale" } | { kind: "rejected" } | { kind: "expired" } | { kind: "failed" };
 
 /**
  * Both routes are idempotent, so a retry after a false timeout is safe. The body is form-encoded, never JSON: Astro's
@@ -25,7 +28,7 @@ export async function sendCheckoff(
   taskId: string,
   expectedPeriod: PeriodKey | null,
   fetchImpl: typeof fetch = fetch,
-): Promise<CheckoffResult> {
+): Promise<CheckoffSendResult> {
   // Not `AbortSignal.timeout`: fake timers cannot drive it.
   const controller = new AbortController();
   const timer = setTimeout(() => {
@@ -45,6 +48,10 @@ export async function sendCheckoff(
       signal: controller.signal,
     });
 
+    // A browser reports a `redirect: "manual"` redirect as an opaque response (status 0); other runtimes keep the 3xx.
+    if (response.type === "opaqueredirect" || (response.status >= 300 && response.status < 400)) {
+      return { kind: "expired" };
+    }
     if (response.status === 403 || response.status === 404) return { kind: "rejected" };
     if (response.status !== 200) return { kind: "failed" };
 

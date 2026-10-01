@@ -396,13 +396,25 @@ describe("applyDeltas", () => {
     expect(applyDeltas(aHadTicked, new Map([["user-a", -1]]))).toEqual(base);
   });
 
-  it("leaves everyone else alone, ignores users who are not listed and does not change its input", () => {
+  it("changes only the listed user's total, ignores users who are not listed and does not change its input", () => {
     const base = totalsFor(START);
     const copy = structuredClone(base);
 
-    const result = applyDeltas(base, new Map([["nobody", 5]]));
+    // B ticks (1 -> 2); "nobody" is not a member, so that entry must not appear anywhere
+    const result = applyDeltas(
+      base,
+      new Map([
+        ["user-b", 1],
+        ["nobody", 5],
+      ]),
+    );
 
-    expect(result).toEqual(base);
+    expect(Object.fromEntries(result.map((row) => [row.userId, row.total]))).toEqual({
+      "user-a": 2,
+      "user-b": 2,
+      "user-c": 0,
+    });
+    expect(result).toHaveLength(base.length);
     expect(applyDeltas(base, new Map())).toEqual(base);
     expect(base).toEqual(copy);
   });

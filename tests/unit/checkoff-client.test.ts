@@ -10,8 +10,9 @@
  *   saved     200 `{ ok: true, period }` and the period is the one the island expected (a `once` task expects none)
  *   stale     200 `{ ok: true, period }` with another period: the page stayed open across Warsaw midnight, so reload
  *   rejected  403 or 404: the server says the action is not allowed, or the task is gone
- *   failed    everything else: a network error, no answer within 15 s, 5xx, a redirect (browsers show a manual redirect
- *             as an opaque response with status 0), a body that is not the JSON the routes send
+ *   expired   a redirect: the middleware sends a signed-out request to the sign-in page, and a browser shows a manual
+ *             redirect as an opaque response with status 0. Retrying cannot succeed, so the island reloads instead
+ *   failed    everything else: a network error, no answer within 15 s, 5xx, a body that is not the JSON the routes send
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CHECKOFF_TIMEOUT_MS, sendCheckoff } from "@/lib/checkoff-client";
@@ -31,7 +32,7 @@ function respondWith(make: (init: RequestInit) => Response | Promise<Response>) 
   return { fetchImpl, requests };
 }
 
-const send = (response: Response | (() => Promise<Response>), expectedPeriod: string | null = TODAY) =>
+const send = (response: Response | (() => Response | Promise<Response>), expectedPeriod: string | null = TODAY) =>
   sendCheckoff(
     "checkoff",
     "task-1",
@@ -57,6 +58,9 @@ describe("sendCheckoff", () => {
       expect(init.body).toBeInstanceOf(URLSearchParams);
       expect((init.body as URLSearchParams).get("task_id")).toBe("task-1");
       expect(new Headers(init.headers).get("Accept")).toBe("application/json");
+      // No explicit Content-Type: the browser derives urlencoded from the URLSearchParams body, and a JSON type would
+      // opt out of Astro's Origin check.
+      expect(new Headers(init.headers).has("Content-Type")).toBe(false);
       expect(init.credentials).toBe("same-origin");
       expect(init.redirect).toBe("manual");
       expect(init.keepalive).toBe(true);
@@ -77,25 +81,30 @@ describe("sendCheckoff", () => {
     await expect(send(json(404, { ok: false, error: "gone" }))).resolves.toEqual({ kind: "rejected" });
   });
 
-  it("fails on a network error, a server error, a redirect, an opaque redirect and a body that is not the JSON answer", async () => {
+  it("is expired when the route answers a redirect, which a browser shows as an opaque redirect", async () => {
     const opaqueRedirect = { type: "opaqueredirect", status: 0, ok: false } as unknown as Response;
-    const answers: (Response | (() => Promise<Response>))[] = [
-      () => Promise.reject(new TypeError("Failed to fetch")),
-      json(500, { ok: false, error: "unknown" }),
-      json(503, { ok: false, error: "not_configured" }),
-      json(400, { ok: false, error: "invalid" }),
-      json(500, { ok: true, period: TODAY }),
-      new Response(null, { status: 302, headers: { Location: "/auth/signin" } }),
-      opaqueRedirect,
-      new Response("<html>Sign in</html>", { status: 200, headers: { "Content-Type": "text/html" } }),
-      json(200, { ok: false, error: "forbidden" }),
-      json(200, { ok: true }),
-      json(200, {}),
-    ];
 
-    for (const answer of answers) {
-      await expect(send(answer)).resolves.toEqual({ kind: "failed" });
-    }
+    await expect(send(new Response(null, { status: 302, headers: { Location: "/auth/signin" } }))).resolves.toEqual({
+      kind: "expired",
+    });
+    await expect(send(opaqueRedirect)).resolves.toEqual({ kind: "expired" });
+  });
+
+  it.each<[string, () => Response | Promise<Response>]>([
+    ["a network error", () => Promise.reject(new TypeError("Failed to fetch"))],
+    ["a 500 server error", () => json(500, { ok: false, error: "unknown" })],
+    ["a 503 (not configured)", () => json(503, { ok: false, error: "not_configured" })],
+    ["a 400 (malformed id)", () => json(400, { ok: false, error: "invalid" })],
+    ["a 500 that carries an ok body", () => json(500, { ok: true, period: TODAY })],
+    [
+      "an HTML page with status 200",
+      () => new Response("<html>Sign in</html>", { status: 200, headers: { "Content-Type": "text/html" } }),
+    ],
+    ["a 200 that says ok is false", () => json(200, { ok: false, error: "forbidden" })],
+    ["a 200 without a period", () => json(200, { ok: true })],
+    ["a 200 with an empty object", () => json(200, {})],
+  ])("fails on %s", async (_answer, respond) => {
+    await expect(send(respond)).resolves.toEqual({ kind: "failed" });
   });
 
   it("fails when no answer comes within 15 seconds, and aborts the request", async () => {

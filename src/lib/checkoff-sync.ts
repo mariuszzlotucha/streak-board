@@ -4,8 +4,11 @@
 
 type Listener = () => void;
 
+/** The empty store: its initial snapshot, and the one the server (and the first client render) uses. */
+export const NO_DELTAS: ReadonlyMap<string, number> = new Map();
+
 const listeners = new Set<Listener>();
-let snapshot: ReadonlyMap<string, number> = new Map();
+let snapshot = NO_DELTAS;
 
 /**
  * The net score change per user id, not a log of events: an island that hydrates after a tap still sees the right
