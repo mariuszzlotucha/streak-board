@@ -5,6 +5,7 @@ import {
   adminClient,
   anonClient,
   checkOffAs,
+  clearOfUtcMidnight,
   createGroupAs,
   createTaskAs,
   createTestUser,
@@ -26,13 +27,6 @@ const UNIQUE_VIOLATION = "23505";
 const FOREIGN_KEY_VIOLATION = "23503";
 
 const sorted = (...keys: string[]) => [...keys].sort();
-
-// The insert window moves at UTC midnight. A test that straddles it would see its edge periods change verdict, so one
-// that starts within a few seconds of midnight waits for the new day first.
-async function clearOfUtcMidnight(): Promise<void> {
-  const untilMidnight = 86_400_000 - (Date.now() % 86_400_000);
-  if (untilMidnight < 5_000) await new Promise((resolve) => setTimeout(resolve, untilMidnight + 100));
-}
 
 describe("task check-offs", () => {
   let a: TestUser; // owner of GA and member; takes part in the task only where a test says so

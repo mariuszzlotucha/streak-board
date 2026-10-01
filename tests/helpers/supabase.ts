@@ -129,6 +129,13 @@ export function utcDay(offset: number): string {
   return new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10);
 }
 
+// The insert window moves at UTC midnight. A test that straddles it would see its edge periods change verdict, so one
+// that starts within a few seconds of midnight waits for the new day first.
+export async function clearOfUtcMidnight(): Promise<void> {
+  const untilMidnight = 86_400_000 - (Date.now() % 86_400_000);
+  if (untilMidnight < 5_000) await new Promise((resolve) => setTimeout(resolve, untilMidnight + 100));
+}
+
 // Deletes the account now (cascades included) and drops it from the end-of-run cleanup so it is not deleted twice.
 export async function deleteTestUser(user: TestUser): Promise<void> {
   const { error } = await adminClient().auth.admin.deleteUser(user.id);

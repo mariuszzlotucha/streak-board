@@ -28,6 +28,16 @@ let memberIdB;
 let memberIdC;
 // Read from A's rendered delete form: the id of the task A creates.
 let taskId;
+// Read from B's first JSON check-off answer: the period the repeated tick has to answer with again.
+let tickedPeriod;
+// A well-formed task id that no task has.
+const UNKNOWN_TASK_ID = "00000000-0000-4000-8000-000000000000";
+// Makes a check-off route answer in JSON instead of redirecting.
+const JSON_ACCEPT = { Accept: "application/json" };
+// What a browser sends with a form submit: `*/*` is no request for JSON, so the check-off routes must redirect.
+const BROWSER_ACCEPT = { Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" };
+// Every JSON answer of a check-off route must stay out of caches.
+const NO_STORE = { name: "Cache-Control", includes: "no-store" };
 
 function cookieHeader(jar) {
   return [...jar.entries()].map(([k, v]) => `${k}=${v}`).join("; ");
@@ -49,7 +59,8 @@ function storeCookies(response, jar) {
 
 // `jar` selects the session (default: user A). `cookie` replaces the jar's cookies for this request and
 // keeps the response's Set-Cookie out of the jar. `origin` overrides the Origin header (CSRF check).
-async function request(path, { method = "GET", form, cookie, jar = jarA, origin = BASE_URL } = {}) {
+// `headers` adds request headers (the check-off routes answer JSON to `Accept: application/json`).
+async function request(path, { method = "GET", form, cookie, jar = jarA, origin = BASE_URL, headers = {} } = {}) {
   const response = await fetch(BASE_URL + path, {
     method,
     redirect: "manual",
@@ -57,6 +68,7 @@ async function request(path, { method = "GET", form, cookie, jar = jarA, origin 
       Cookie: cookie ?? cookieHeader(jar),
       Origin: origin,
       ...(form ? { "Content-Type": "application/x-www-form-urlencoded" } : {}),
+      ...headers,
     },
     body: form ? new URLSearchParams(form).toString() : undefined,
   });
@@ -65,9 +77,39 @@ async function request(path, { method = "GET", form, cookie, jar = jarA, origin 
     status: response.status,
     location: response.headers.get("location") ?? "",
     setCookies: response.headers.getSetCookie(),
+    headers: response.headers,
     body: await response.text(),
   };
 }
+
+// The Warsaw calendar day as YYYY-MM-DD. Computed here, not with the app's own code (src/lib/streak-rules.ts), so the
+// JSON steps check the period against an oracle that shares nothing with the answer.
+const warsawDayFormat = new Intl.DateTimeFormat("en-US", {
+  timeZone: "Europe/Warsaw",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+function warsawDay() {
+  const parts = Object.fromEntries(warsawDayFormat.formatToParts(new Date()).map(({ type, value }) => [type, value]));
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
+// A form POST that asks for the JSON answer, bracketed by the Warsaw day: a request answered across midnight may carry
+// either day, so both are returned for `periodAnswer`.
+async function postForJson(route, form, jar) {
+  const before = warsawDay();
+  const result = await request(route, { method: "POST", form, jar, headers: JSON_ACCEPT });
+  return { ...result, days: [before, warsawDay()] };
+}
+
+// What a successful JSON answer must be, byte for byte: ok, and the Warsaw day the request was made on. A body that
+// is an error answer, carries extra fields or names another day does not match.
+const periodAnswer = (days) => ({
+  status: 200,
+  header: NO_STORE,
+  bodyMatches: [new RegExp(`^\\{"ok":true,"period":"(?:${[...new Set(days)].join("|")})"\\}$`)],
+});
 
 function escapeRegExp(text) {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -300,7 +342,7 @@ const steps = [
     () => request("/api/groups/create", { method: "POST", form: { name: groupName } }),
     { status: 302, locationExact: "/dashboard", setCookie: "join_code=deleted" },
   ],
-  ...["create", "update", "delete", "join", "leave"].flatMap((action) => [
+  ...["create", "update", "delete", "join", "leave", "checkoff", "uncheck"].flatMap((action) => [
     [
       `anonymous task ${action} redirects to signin`,
       () => request(`/api/tasks/${action}`, { method: "POST", form: { title: "Water plants" }, jar: jarB }),
@@ -343,10 +385,43 @@ const steps = [
     () => request("/api/tasks/leave", { method: "POST", form: { task_id: "not-a-uuid" } }),
     { status: 302, locationExact: "/dashboard?error=forbidden" },
   ],
+  [
+    "task checkoff rejects a malformed task id",
+    () => request("/api/tasks/checkoff", { method: "POST", form: { task_id: "not-a-uuid" } }),
+    { status: 302, locationExact: "/dashboard?error=forbidden" },
+  ],
+  [
+    "task uncheck rejects a malformed task id",
+    () => request("/api/tasks/uncheck", { method: "POST", form: { task_id: "not-a-uuid" } }),
+    { status: 302, locationExact: "/dashboard?error=forbidden" },
+  ],
   ["task update does not answer GET", () => request("/api/tasks/update"), { status: 404 }],
   ["task delete does not answer GET", () => request("/api/tasks/delete"), { status: 404 }],
   ["task join does not answer GET", () => request("/api/tasks/join"), { status: 404 }],
   ["task leave does not answer GET", () => request("/api/tasks/leave"), { status: 404 }],
+  ["task checkoff does not answer GET", () => request("/api/tasks/checkoff"), { status: 404 }],
+  ["task uncheck does not answer GET", () => request("/api/tasks/uncheck"), { status: 404 }],
+  // The loop above sends no Accept header, so the JSON mode gets its own boundary steps.
+  ...["checkoff", "uncheck"].flatMap((action) => [
+    [
+      // A lost session answers with this redirect, not with JSON: the island maps it to a failed tick.
+      `anonymous task ${action} in JSON mode redirects to signin`,
+      () =>
+        request(`/api/tasks/${action}`, {
+          method: "POST",
+          form: { task_id: UNKNOWN_TASK_ID },
+          jar: jarB,
+          headers: JSON_ACCEPT,
+        }),
+      { status: 302, locationExact: "/auth/signin" },
+    ],
+    [
+      // The body is invalid, so nothing changes even if the Origin check were off (it would answer 400 invalid).
+      `task ${action} from a foreign origin in JSON mode is rejected`,
+      () => request(`/api/tasks/${action}`, { method: "POST", form: {}, origin: FOREIGN_ORIGIN, headers: JSON_ACCEPT }),
+      { status: 403 },
+    ],
+  ]),
   [
     "dashboard shows the group and its invite link",
     async () => {
@@ -914,6 +989,100 @@ const steps = [
       }),
     { status: 302, locationExact: "/dashboard" },
   ],
+  ...["checkoff", "uncheck"].flatMap((action) => [
+    [
+      `task ${action} of a task that does not exist is a quiet redirect`,
+      () => request(`/api/tasks/${action}`, { method: "POST", form: { task_id: UNKNOWN_TASK_ID }, jar: jarB }),
+      { status: 302, locationExact: "/dashboard" },
+    ],
+    [
+      `task ${action} of a task that does not exist answers gone in JSON mode`,
+      () =>
+        request(`/api/tasks/${action}`, {
+          method: "POST",
+          form: { task_id: UNKNOWN_TASK_ID },
+          jar: jarB,
+          headers: JSON_ACCEPT,
+        }),
+      { status: 404, header: NO_STORE, bodyIncludes: ['"ok":false', '"error":"gone"'] },
+    ],
+    [
+      `task ${action} with a malformed id answers invalid in JSON mode`,
+      () =>
+        request(`/api/tasks/${action}`, {
+          method: "POST",
+          form: { task_id: "not-a-uuid" },
+          jar: jarB,
+          headers: JSON_ACCEPT,
+        }),
+      { status: 400, header: NO_STORE, bodyIncludes: ['"ok":false', '"error":"invalid"'] },
+    ],
+  ]),
+  [
+    // The task exists and B takes part in it. The steps tick and undo again, so no state is left for the later steps.
+    "user B's JSON checkoff ticks the Warsaw day",
+    async () => {
+      const result = await postForJson("/api/tasks/checkoff", { task_id: taskId }, jarB);
+      tickedPeriod = result.body.match(/"period":"(\d{4}-\d{2}-\d{2})"/)?.[1];
+      if (!tickedPeriod) {
+        console.log(
+          `FAIL  user B's JSON checkoff answered ${result.status} without a period; later check-off steps cannot run`,
+        );
+        process.exit(1);
+      }
+      return result;
+    },
+    (actual) => periodAnswer(actual.days),
+  ],
+  [
+    "repeating the JSON checkoff answers the same period",
+    () => postForJson("/api/tasks/checkoff", { task_id: taskId }, jarB),
+    // The period of the first tick; a repeat that crosses Warsaw midnight may legitimately carry the new day instead.
+    (actual) => periodAnswer([tickedPeriod, ...actual.days]),
+  ],
+  [
+    // C is a member of the group but never joined the task: the foreign key to the participation refuses the tick.
+    "JSON checkoff by a member who never joined the task is forbidden",
+    () =>
+      request("/api/tasks/checkoff", { method: "POST", form: { task_id: taskId }, jar: jarC, headers: JSON_ACCEPT }),
+    { status: 403, header: NO_STORE, bodyIncludes: ['"ok":false', '"error":"forbidden"'] },
+  ],
+  [
+    "user B's JSON uncheck answers ok",
+    () => postForJson("/api/tasks/uncheck", { task_id: taskId }, jarB),
+    (actual) => periodAnswer(actual.days),
+  ],
+  [
+    "repeating the JSON uncheck is a quiet ok",
+    () => postForJson("/api/tasks/uncheck", { task_id: taskId }, jarB),
+    (actual) => periodAnswer(actual.days),
+  ],
+  [
+    // The no-JavaScript path: a browser form post (no JSON `Accept`) ends in a redirect. B's tick is undone below, so
+    // the state is empty again before and after these four steps.
+    "user B's form checkoff with a browser Accept header redirects to the dashboard",
+    () =>
+      request("/api/tasks/checkoff", { method: "POST", form: { task_id: taskId }, jar: jarB, headers: BROWSER_ACCEPT }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "a form checkoff by a member who never joined the task redirects with the forbidden error",
+    () =>
+      request("/api/tasks/checkoff", { method: "POST", form: { task_id: taskId }, jar: jarC, headers: BROWSER_ACCEPT }),
+    { status: 302, locationExact: "/dashboard?error=forbidden" },
+  ],
+  [
+    "user B's form uncheck with a browser Accept header redirects to the dashboard",
+    () =>
+      request("/api/tasks/uncheck", { method: "POST", form: { task_id: taskId }, jar: jarB, headers: BROWSER_ACCEPT }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "repeating the form uncheck is a quiet redirect",
+    () =>
+      request("/api/tasks/uncheck", { method: "POST", form: { task_id: taskId }, jar: jarB, headers: BROWSER_ACCEPT }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
   [
     "task leave by a member succeeds",
     () => request("/api/tasks/leave", { method: "POST", form: { task_id: taskId }, jar: jarB }),
@@ -1094,13 +1263,20 @@ const steps = [
 ];
 
 let failed = 0;
-for (const [name, run, expected] of steps) {
+for (const [name, run, expectation] of steps) {
   const actual = await run();
+  // An expectation that depends on what only this run knows (the Warsaw day, a period an earlier step read) is given
+  // as a function of the result, evaluated after the request.
+  const expected = typeof expectation === "function" ? expectation(actual) : expectation;
   const ok =
     actual.status === expected.status &&
     (expected.location === undefined || actual.location.startsWith(expected.location)) &&
     (expected.locationExact === undefined || actual.location === expected.locationExact) &&
     (expected.setCookie === undefined || actual.setCookies.some((c) => c.includes(expected.setCookie))) &&
+    (expected.header === undefined ||
+      (actual.headers.get(expected.header.name) ?? "")
+        .toLowerCase()
+        .includes(expected.header.includes.toLowerCase())) &&
     [expected.bodyIncludes ?? []].flat().every((text) => actual.body.includes(text)) &&
     [expected.bodyMatches ?? []].flat().every((pattern) => pattern.test(actual.body)) &&
     [expected.bodyNotMatches ?? []].flat().every((pattern) => !pattern.test(actual.body)) &&
@@ -1111,6 +1287,9 @@ for (const [name, run, expected] of steps) {
     console.log(
       `      expected ${expected.status} ${expected.locationExact ?? expected.location ?? ""}` +
         (expected.setCookie ? ` Set-Cookie including "${expected.setCookie}"` : "") +
+        (expected.header
+          ? ` header ${expected.header.name} including "${expected.header.includes}" (got "${actual.headers.get(expected.header.name) ?? ""}")`
+          : "") +
         (expected.bodyIncludes ? ` body includes ${JSON.stringify(expected.bodyIncludes)}` : "") +
         (expected.bodyMatches ? ` body matches ${expected.bodyMatches.join(" and ")}` : "") +
         (expected.bodyNotMatches ? ` body does not match ${expected.bodyNotMatches.join(" or ")}` : "") +
