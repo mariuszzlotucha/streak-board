@@ -43,7 +43,7 @@ export default function CheckoffControl({ taskId, title, recurrence, snapshot, c
       ) : (
         <form method="POST" action="/api/tasks/checkoff">
           <input type="hidden" name="task_id" value={taskId} />
-          <Button type="submit" size="sm" aria-label={`Mark ${title} as done`}>
+          <Button type="submit" size="sm" aria-label={`Mark done ${title}`}>
             Mark done
           </Button>
         </form>

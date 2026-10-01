@@ -293,9 +293,11 @@ const NO_ERROR_ALERT = 'role="alert"';
 const INVITE_INPUT = 'aria-label="Invite link"';
 
 // B's dashboard while B takes part in the daily task and nothing is ticked: the row offers the tick with a streak of 0
-// and A, B and C all share position 1 with a total of 0.
+// and A, B and C all share position 1 with a total of 0. B's Leave dialogs (island props in the server HTML) warn that
+// leaving erases the streaks.
 const B_NOTHING_TICKED = {
   status: 200,
+  bodyIncludes: ["and your streak on it will be lost", "and your streaks in its tasks will be lost"],
   bodyMatches: [
     taskRowWithCheckoffForm(renamedTaskTitle, "/api/tasks/checkoff"),
     taskRowStreak(renamedTaskTitle, 0),
@@ -1226,7 +1228,15 @@ const steps = [
   ],
   [
     "user B's dashboard shows Done today, Undo, a streak of 1 and B leading the board",
-    () => request("/dashboard", { jar: jarB }),
+    async () => {
+      const result = await request("/dashboard", { jar: jarB });
+      // Without JavaScript the Undo form is the only way back, so it has to carry the real task id as well.
+      if (taskTargetInRow(result.body, renamedTaskTitle, "/api/tasks/uncheck") !== taskId) {
+        console.log("FAIL  the member's Undo control does not carry the task id; later undo steps would prove nothing");
+        process.exit(1);
+      }
+      return result;
+    },
     B_TICKED,
   ],
   [
@@ -1235,6 +1245,8 @@ const steps = [
     () => request("/dashboard"),
     {
       status: 200,
+      // The owner's Remove dialog warns that removing a member erases their streaks.
+      bodyIncludes: "and their streaks in its tasks will be lost",
       bodyMatches: [
         taskRowWithCheckoffForm(renamedTaskTitle, "/api/tasks/checkoff"),
         taskRowStreak(renamedTaskTitle, 0),
@@ -1467,7 +1479,16 @@ const steps = [
   ],
   [
     "creator dashboard shows the once task as Done and the creator's total raised by 1",
-    () => request("/dashboard"),
+    async () => {
+      const result = await request("/dashboard");
+      if (taskTargetInRow(result.body, onceTitle, "/api/tasks/uncheck") !== onceTaskId) {
+        console.log(
+          "FAIL  the once task's Undo control does not carry the task id; later undo steps would prove nothing",
+        );
+        process.exit(1);
+      }
+      return result;
+    },
     {
       status: 200,
       bodyMatches: [
@@ -1623,8 +1644,8 @@ for (const [name, run, expectation] of steps) {
           ? ` header ${expected.header.name} including "${expected.header.includes}" (got "${actual.headers.get(expected.header.name) ?? ""}")`
           : "") +
         (expected.bodyIncludes ? ` body includes ${JSON.stringify(expected.bodyIncludes)}` : "") +
-        (expected.bodyMatches ? ` body matches ${expected.bodyMatches.join(" and ")}` : "") +
-        (expected.bodyNotMatches ? ` body does not match ${expected.bodyNotMatches.join(" or ")}` : "") +
+        (expected.bodyMatches ? ` body matches ${[expected.bodyMatches].flat().join(" and ")}` : "") +
+        (expected.bodyNotMatches ? ` body does not match ${[expected.bodyNotMatches].flat().join(" or ")}` : "") +
         (expected.bodyExcludes ? ` body excludes ${JSON.stringify(expected.bodyExcludes)}` : ""),
     );
   }
