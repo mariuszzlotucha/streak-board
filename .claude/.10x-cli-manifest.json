@@ -2,7 +2,7 @@
   "package": "@przeprogramowani/10x-cli",
   "version": "1.22.0",
   "manifestVersion": 3,
-  "lastApplied": "2026-09-29T17:00:14.514Z",
+  "lastApplied": "2026-10-01T17:04:56.411Z",
   "lessonId": "m2l5",
   "course": "10xdevs4",
   "tool": "claude-code",
@@ -1376,7 +1376,7 @@
       "installedManifestHash": "f22f7bf334f0e79bf8b7f095943940825d772c1c39d3613ae7d8531f4803c37f"
     },
     "m2l5": {
-      "appliedAt": "2026-09-29T17:00:14.514Z",
+      "appliedAt": "2026-10-01T17:04:56.411Z",
       "skills": {
         "10x-idea-check": {
           "files": [
