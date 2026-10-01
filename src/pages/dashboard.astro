@@ -5,16 +5,26 @@ import JoinGroupForm from "@/components/groups/JoinGroupForm";
 import CopyInviteLink from "@/components/groups/CopyInviteLink";
 import ConfirmAction from "@/components/groups/ConfirmAction";
 import RenameGroupForm from "@/components/groups/RenameGroupForm";
+import CheckoffControl from "@/components/tasks/CheckoffControl";
 import CreateTaskForm from "@/components/tasks/CreateTaskForm";
 import EditTaskForm from "@/components/tasks/EditTaskForm";
+import Leaderboard from "@/components/tasks/Leaderboard";
 import { CircleAlert } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { listCheckoffPeriods } from "@/lib/checkoffs";
 import { createClient } from "@/lib/supabase";
 import { groupErrorMessage, resolveGroupError } from "@/lib/group-errors";
 import { getMyGroup, listGroupMembers, previewGroup, type GroupMember, type MyGroup } from "@/lib/groups";
 import { clearJoinCode, peekJoinCode } from "@/lib/join-code";
+import {
+  buildBoard,
+  groupPeriodsByEnrolment,
+  rankStandings,
+  UNKNOWN_MEMBER,
+  type Board,
+} from "@/lib/leaderboard-rules";
 import { resolveTaskError } from "@/lib/task-errors";
 import { RECURRENCE_LABELS, groupParticipantsByTask } from "@/lib/task-rules";
 import { listGroupTasks, listTaskParticipants, type GroupTask } from "@/lib/tasks";
@@ -32,28 +42,64 @@ let pendingGroupName: string | null = null;
 let loadFailed = false;
 let tasksFailed = false;
 let participantsFailed = false;
+let checkoffsFailed = false;
+// Set only when tasks, participants and check-offs all loaded and the board could be computed.
+let board: Board | null = null;
 
 try {
   const supabase = createClient(Astro.request.headers, Astro.cookies);
   if (supabase) {
     group = await getMyGroup(supabase);
     if (group) {
-      members = await listGroupMembers(supabase, group.id);
-      try {
-        tasks = await listGroupTasks(supabase, group.id);
-      } catch (taskLoadError) {
+      // The four reads do not depend on each other (RLS scopes each to the caller's group), so they run concurrently.
+      const [membersResult, tasksResult, participantsResult, checkoffsResult] = await Promise.allSettled([
+        listGroupMembers(supabase, group.id),
+        listGroupTasks(supabase, group.id),
+        listTaskParticipants(supabase),
+        listCheckoffPeriods(supabase),
+      ]);
+      // Members are essential: a failure takes the outer catch (`loadFailed`), as when it was awaited on its own.
+      if (membersResult.status === "rejected") throw membersResult.reason;
+      members = membersResult.value;
+      if (tasksResult.status === "fulfilled") {
+        tasks = tasksResult.value;
+      } else {
         // eslint-disable-next-line no-console -- server-side log; the user only sees the fixed message
-        console.error("Loading the tasks failed", taskLoadError);
+        console.error("Loading the tasks failed", tasksResult.reason);
         tasksFailed = true;
       }
-      if (!tasksFailed) {
-        // Participants are secondary: a failure (or the row cap) degrades the rows, it must not hide task management.
+      // Participants and check-offs are secondary: a failure (or the row cap) degrades the rows, it must not hide task
+      // management. When the tasks failed the Tasks card is hidden and these results go unused.
+      if (participantsResult.status === "fulfilled") {
+        participantsByTask = groupParticipantsByTask(participantsResult.value);
+      } else {
+        // eslint-disable-next-line no-console -- server-side log; the user only sees the fixed note
+        console.error("Loading the task participants failed", participantsResult.reason);
+        participantsFailed = true;
+      }
+      if (checkoffsResult.status === "rejected") {
+        // eslint-disable-next-line no-console -- server-side log; the user only sees the fixed note
+        console.error("Loading the check-offs failed", checkoffsResult.reason);
+        checkoffsFailed = true;
+      } else if (user && !tasksFailed && !participantsFailed) {
+        // The slice's riskiest code gets its own try/catch: a throw degrades the scores like a failed read and must not
+        // reach the outer catch, which would hide Members and group management.
         try {
-          participantsByTask = groupParticipantsByTask(await listTaskParticipants(supabase));
-        } catch (participantsLoadError) {
+          const computed = buildBoard({
+            members,
+            tasks,
+            participantsByTask,
+            periodsByEnrolment: groupPeriodsByEnrolment(checkoffsResult.value),
+            viewerId: user.id,
+            now: new Date(),
+          });
+          // The Leaderboard ranks again on render; ranking here first keeps a throw inside this try.
+          rankStandings(computed.totals, user.id);
+          board = computed;
+        } catch (boardError) {
           // eslint-disable-next-line no-console -- server-side log; the user only sees the fixed note
-          console.error("Loading the task participants failed", participantsLoadError);
-          participantsFailed = true;
+          console.error("Computing the leaderboard failed", boardError);
+          checkoffsFailed = true;
         }
       }
     }
@@ -98,7 +144,7 @@ if (tasksFailed && !error) error = groupErrorMessage("unknown");
 const emailByUserId = new Map(members.map((member) => [member.user_id, member.email]));
 function participantsOf(taskId: string) {
   return (participantsByTask.get(taskId) ?? []).map((userId) => ({
-    email: emailByUserId.get(userId) ?? "Unknown member",
+    email: emailByUserId.get(userId) ?? UNKNOWN_MEMBER,
     isYou: userId === user?.id,
   }));
 }
@@ -141,7 +187,7 @@ function participantsOf(taskId: string) {
             <ul class="divide-y">
               {members.map((member) => (
                 <li class="flex flex-wrap items-center gap-x-2 gap-y-1 py-2 first:pt-0 last:pb-0">
-                  <span class="min-w-0 text-sm break-all">{member.email ?? "Unknown member"}</span>
+                  <span class="min-w-0 text-sm break-all">{member.email ?? UNKNOWN_MEMBER}</span>
                   {member.is_owner && (
                     <span class="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
                       Owner
@@ -159,7 +205,7 @@ function participantsOf(taskId: string) {
                         triggerLabel="Remove"
                         triggerAriaLabel={`Remove ${member.email ?? "this member"} from the group`}
                         title="Remove this member?"
-                        description={`${member.email ?? "This member"} will lose access to ${group.name}. They can rejoin later with the invite link.`}
+                        description={`${member.email ?? "This member"} will lose access to ${group.name}, and their streaks in its tasks will be lost. They can rejoin later with the invite link.`}
                         confirmLabel="Remove member"
                       />
                     </div>
@@ -187,6 +233,8 @@ function participantsOf(taskId: string) {
                 {tasks.map((task) => {
                   const participants = participantsOf(task.id);
                   const joined = participants.some((participant) => participant.isYou);
+                  // Only tasks the viewer takes part in have an entry, and only when the board was computed.
+                  const viewerTask = board?.viewerTasks.get(task.id);
                   return (
                     <li class="flex flex-wrap items-center gap-x-2 gap-y-2 py-2 first:pt-0 last:pb-0">
                       {task.created_by === user?.id ? (
@@ -243,7 +291,7 @@ function participantsOf(taskId: string) {
                               triggerLabel="Leave"
                               triggerAriaLabel={`Leave ${task.title}`}
                               title="Leave this task?"
-                              description={`You will no longer take part in ${task.title}. You can join again later.`}
+                              description={`You will no longer take part in ${task.title}, and your streak on it will be lost. You can join again later.`}
                               confirmLabel="Leave task"
                               variant="outline"
                             />
@@ -257,6 +305,16 @@ function participantsOf(taskId: string) {
                           )}
                         </div>
                       )}
+                      {viewerTask && user && (
+                        <CheckoffControl
+                          taskId={task.id}
+                          title={task.title}
+                          recurrence={task.recurrence}
+                          snapshot={viewerTask.snapshot}
+                          currentPeriod={viewerTask.currentPeriod}
+                          viewerId={user.id}
+                        />
+                      )}
                     </li>
                   );
                 })}
@@ -265,10 +323,15 @@ function participantsOf(taskId: string) {
             {participantsFailed && (
               <p class="text-xs text-muted-foreground">Participants are unavailable right now. Reload to try again.</p>
             )}
+            {checkoffsFailed && (
+              <p class="text-xs text-muted-foreground">Scores are unavailable right now. Reload to try again.</p>
+            )}
             <CreateTaskForm client:load />
           </CardContent>
         </Card>
       )}
+
+      {showTasks && board && user && <Leaderboard rows={board.totals} viewerId={user.id} />}
 
       {group && isOwner && (
         <Card>
@@ -320,7 +383,7 @@ function participantsOf(taskId: string) {
               action="/api/groups/leave"
               triggerLabel="Leave group"
               title="Leave this group?"
-              description={`You will no longer be a member of ${group.name}. You can rejoin later with the invite link.`}
+              description={`You will no longer be a member of ${group.name}, and your streaks in its tasks will be lost. You can rejoin later with the invite link.`}
               confirmLabel="Leave group"
             />
           </CardContent>

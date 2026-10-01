@@ -35,7 +35,8 @@ export interface Standing extends StandingInput {
   isYou: boolean;
 }
 
-const UNKNOWN_MEMBER = "Unknown member";
+/** What a member without an e-mail is called, both where the ranking sorts them and wherever the UI displays them. */
+export const UNKNOWN_MEMBER = "Unknown member";
 
 // Code-unit order, not `localeCompare`: the ranking must be the same on the server and in every browser locale.
 const compareCodeUnits = (a: string, b: string): number => (a < b ? -1 : a > b ? 1 : 0);

@@ -15,6 +15,8 @@ const renamedGroupName = `Renamed Crew ${stamp}`;
 // Unique titles: the renamed one does not contain the old one, so "the old title is gone" is a plain substring check.
 const taskTitle = `Smoke Task ${stamp}`;
 const renamedTaskTitle = `Edited Chore ${stamp}`;
+// A second task, of the `once` kind: unique and not containing the other titles, so the row regexes cannot mix them up.
+const onceTitle = `Smoke Once ${stamp}`;
 // User A's session and the sessions of users B and C are independent cookie jars.
 const jarA = new Map();
 const jarB = new Map();
@@ -28,6 +30,8 @@ let memberIdB;
 let memberIdC;
 // Read from A's rendered delete form: the id of the task A creates.
 let taskId;
+// Read from A's rendered Mark done form: the id of the `once` task A creates.
+let onceTaskId;
 // Read from B's first JSON check-off answer: the period the repeated tick has to answer with again.
 let tickedPeriod;
 // A well-formed task id that no task has.
@@ -120,10 +124,12 @@ function groupHeading(name) {
   return new RegExp(`<h1[^>]*>\\s*${escapeRegExp(name)}\\s*</h1>`);
 }
 
-// A member row (<li>) that contains the given email followed by the given marker badge.
+// A member row (<li>) of the Members card that contains the given email followed by the given marker badge. The match
+// starts after the "Members" heading and may not cross the card's closing </ul>: the Leaderboard repeats every email and
+// the viewer's "You" pill, so an unanchored match would be satisfied by the Leaderboard row instead.
 function memberRow(memberEmail, marker) {
   return new RegExp(
-    `<li[^>]*>(?:(?!</li>)[\\s\\S])*${escapeRegExp(memberEmail)}(?:(?!</li>)[\\s\\S])*>\\s*${marker}\\s*<`,
+    `<h2[^>]*>\\s*Members\\s*</h2>(?:(?!</ul>)[\\s\\S])*?<li[^>]*>(?:(?!</li>)[\\s\\S])*${escapeRegExp(memberEmail)}(?:(?!</li>)[\\s\\S])*>\\s*${marker}\\s*<`,
   );
 }
 
@@ -184,6 +190,43 @@ function taskTargetInRow(body, title, route) {
     `<li[^>]*>(?:(?!</li>)[\\s\\S])*${escapeRegExp(title)}(?:(?!</li>)[\\s\\S])*action="${escapeRegExp(route)}"(?:(?!</li>)[\\s\\S])*name="task_id"[^>]*value="([0-9a-f-]{36})"`,
   );
   return body.match(row)?.[1];
+}
+
+// The button label each check-off form carries: "Mark done" ticks the current period, "Undo" takes the tick back.
+const CHECKOFF_BUTTONS = { "/api/tasks/checkoff": "Mark done", "/api/tasks/uncheck": "Undo" };
+
+// A task row (<li>) with the check-off or undo form: it posts to the route and holds its labelled submit button. The
+// task id the form carries is read with `taskTargetInRow`.
+function taskRowWithCheckoffForm(title, route) {
+  return new RegExp(
+    `<li[^>]*>(?:(?!</li>)[\\s\\S])*${escapeRegExp(title)}(?:(?!</li>)[\\s\\S])*<form[^>]*action="${escapeRegExp(route)}"[^>]*>(?:(?!</form>)[\\s\\S])*<button[^>]*type="submit"[^>]*>\\s*${CHECKOFF_BUTTONS[route]}\\s*</button>`,
+  );
+}
+
+// A task row (<li>) whose check-off status element reads exactly `text` ("Done today"), after the title.
+function taskRowWithStatus(title, text) {
+  return taskRowWithBadge(title, escapeRegExp(text));
+}
+
+// A task row (<li>) with the "Streak" label element followed by an element holding only the number `n`. Without `n`
+// it matches the label alone (a `once` task shows no streak figure at all).
+function taskRowStreak(title, n) {
+  const figure = n === undefined ? "" : `\\s*<span[^>]*>\\s*${n}\\s*</span>`;
+  return new RegExp(
+    `<li[^>]*>(?:(?!</li>)[\\s\\S])*${escapeRegExp(title)}(?:(?!</li>)[\\s\\S])*>\\s*Streak\\s*</span>${figure}`,
+  );
+}
+
+// A row of the Leaderboard: a <li> inside <ol aria-label="Leaderboard"> that holds the position, the email, the "You"
+// pill and the total, each in its own element and in this order. `you` true requires the pill, false forbids it,
+// undefined accepts either. The Members card repeats the emails and the pill, so only this match proves what the board
+// shows.
+function leaderboardRow(rowEmail, position, total, { you } = {}) {
+  const pill =
+    you === undefined ? "(?:<span[^>]*>\\s*You\\s*</span>\\s*)?" : you ? "<span[^>]*>\\s*You\\s*</span>\\s*" : "";
+  return new RegExp(
+    `<ol[^>]*aria-label="Leaderboard"[^>]*>(?:(?!</ol>)[\\s\\S])*?<li[^>]*>\\s*<span[^>]*>\\s*${position}\\s*</span>\\s*<span[^>]*>\\s*${escapeRegExp(rowEmail)}\\s*</span>\\s*${pill}<span[^>]*>\\s*${total}\\s*</span>\\s*</li>`,
+  );
 }
 
 // A destructive control must go through the confirmation dialog: Radix renders its trigger with aria-haspopup="dialog"
@@ -248,6 +291,40 @@ function sessionUserId(jar) {
 const NO_ERROR_ALERT = 'role="alert"';
 // Only the rendered read-only input carries this label; the invite URL also sits in the island's serialised props.
 const INVITE_INPUT = 'aria-label="Invite link"';
+
+// B's dashboard while B takes part in the daily task and nothing is ticked: the row offers the tick with a streak of 0
+// and A, B and C all share position 1 with a total of 0.
+const B_NOTHING_TICKED = {
+  status: 200,
+  bodyMatches: [
+    taskRowWithCheckoffForm(renamedTaskTitle, "/api/tasks/checkoff"),
+    taskRowStreak(renamedTaskTitle, 0),
+    leaderboardRow(email, 1, 0, { you: false }),
+    leaderboardRow(emailB, 1, 0, { you: true }),
+    leaderboardRow(emailC, 1, 0, { you: false }),
+  ],
+  bodyNotMatches: [
+    taskRowWithCheckoffForm(renamedTaskTitle, "/api/tasks/uncheck"),
+    taskRowWithStatus(renamedTaskTitle, "Done today"),
+  ],
+  bodyExcludes: NO_ERROR_ALERT,
+};
+
+// B's dashboard while only B has ticked today: the row shows the status, Undo and a streak of 1, B leads the board with
+// a total of 1 and A and C share position 2 with 0.
+const B_TICKED = {
+  status: 200,
+  bodyMatches: [
+    taskRowWithStatus(renamedTaskTitle, "Done today"),
+    taskRowWithCheckoffForm(renamedTaskTitle, "/api/tasks/uncheck"),
+    taskRowStreak(renamedTaskTitle, 1),
+    leaderboardRow(emailB, 1, 1, { you: true }),
+    leaderboardRow(email, 2, 0, { you: false }),
+    leaderboardRow(emailC, 2, 0, { you: false }),
+  ],
+  bodyNotMatches: taskRowWithCheckoffForm(renamedTaskTitle, "/api/tasks/checkoff"),
+  bodyExcludes: NO_ERROR_ALERT,
+};
 
 const steps = [
   ["home renders", () => request("/"), { status: 200 }],
@@ -1084,6 +1161,124 @@ const steps = [
     { status: 302, locationExact: "/dashboard" },
   ],
   [
+    // The JSON and form steps above left B enrolled with nothing ticked: B's own control and the board show that.
+    "user B's dashboard offers Mark done with a streak of 0 and ranks everyone at position 1",
+    async () => {
+      const result = await request("/dashboard", { jar: jarB });
+      // The control has to submit the real task id, or the tick and undo steps below would prove nothing.
+      if (taskTargetInRow(result.body, renamedTaskTitle, "/api/tasks/checkoff") !== taskId) {
+        console.log(
+          "FAIL  the member's Mark done control does not carry the task id; later check-off steps cannot run",
+        );
+        process.exit(1);
+      }
+      return result;
+    },
+    B_NOTHING_TICKED,
+  ],
+  [
+    // C is a member of the group but never joined the task: no control at all (the Join form proves the row rendered).
+    "user C's dashboard shows the task without check-off controls",
+    () => request("/dashboard", { jar: jarC }),
+    {
+      status: 200,
+      bodyMatches: [
+        taskRowWithForm(renamedTaskTitle, "/api/tasks/join"),
+        leaderboardRow(email, 1, 0, { you: false }),
+        leaderboardRow(emailB, 1, 0, { you: false }),
+        leaderboardRow(emailC, 1, 0, { you: true }),
+      ],
+      bodyNotMatches: [
+        taskRowWithCheckoffForm(renamedTaskTitle, "/api/tasks/checkoff"),
+        taskRowWithCheckoffForm(renamedTaskTitle, "/api/tasks/uncheck"),
+        taskRowStreak(renamedTaskTitle),
+      ],
+      bodyExcludes: NO_ERROR_ALERT,
+    },
+  ],
+  [
+    "a checkoff by a member who never joined the task is refused",
+    () => request("/api/tasks/checkoff", { method: "POST", form: { task_id: taskId }, jar: jarC }),
+    { status: 302, locationExact: "/dashboard?error=forbidden" },
+  ],
+  [
+    "the board is unchanged after the refused checkoff",
+    () => request("/dashboard", { jar: jarC }),
+    {
+      status: 200,
+      bodyMatches: [
+        taskRowWithForm(renamedTaskTitle, "/api/tasks/join"),
+        leaderboardRow(email, 1, 0, { you: false }),
+        leaderboardRow(emailB, 1, 0, { you: false }),
+        leaderboardRow(emailC, 1, 0, { you: true }),
+      ],
+      bodyNotMatches: [
+        taskRowWithCheckoffForm(renamedTaskTitle, "/api/tasks/uncheck"),
+        taskRowStreak(renamedTaskTitle),
+      ],
+      bodyExcludes: NO_ERROR_ALERT,
+    },
+  ],
+  [
+    "user B ticks the task",
+    () => request("/api/tasks/checkoff", { method: "POST", form: { task_id: taskId }, jar: jarB }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "user B's dashboard shows Done today, Undo, a streak of 1 and B leading the board",
+    () => request("/dashboard", { jar: jarB }),
+    B_TICKED,
+  ],
+  [
+    // Group-wide: A reads B's tick from the database after a reload, not from B's session. A's own row is still open.
+    "owner dashboard shows user B's total and still offers Mark done on the owner's own row",
+    () => request("/dashboard"),
+    {
+      status: 200,
+      bodyMatches: [
+        taskRowWithCheckoffForm(renamedTaskTitle, "/api/tasks/checkoff"),
+        taskRowStreak(renamedTaskTitle, 0),
+        leaderboardRow(emailB, 1, 1, { you: false }),
+        leaderboardRow(email, 2, 0, { you: true }),
+        leaderboardRow(emailC, 2, 0, { you: false }),
+      ],
+      bodyNotMatches: [
+        taskRowWithCheckoffForm(renamedTaskTitle, "/api/tasks/uncheck"),
+        taskRowWithStatus(renamedTaskTitle, "Done today"),
+      ],
+      bodyExcludes: NO_ERROR_ALERT,
+    },
+  ],
+  [
+    "ticking the task again is a quiet redirect",
+    () => request("/api/tasks/checkoff", { method: "POST", form: { task_id: taskId }, jar: jarB }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  ["the total stays 1 after the repeated tick", () => request("/dashboard", { jar: jarB }), B_TICKED],
+  [
+    "user B undoes the tick",
+    () => request("/api/tasks/uncheck", { method: "POST", form: { task_id: taskId }, jar: jarB }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "user B's dashboard offers Mark done again and every total is back at 0",
+    () => request("/dashboard", { jar: jarB }),
+    B_NOTHING_TICKED,
+  ],
+  [
+    "undoing again is a quiet redirect",
+    () => request("/api/tasks/uncheck", { method: "POST", form: { task_id: taskId }, jar: jarB }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  ["the totals stay at 0 after the repeated undo", () => request("/dashboard", { jar: jarB }), B_NOTHING_TICKED],
+  [
+    // The tick that the cascade has to erase when B leaves the task below.
+    "user B ticks the task again before leaving it",
+    () => request("/api/tasks/checkoff", { method: "POST", form: { task_id: taskId }, jar: jarB }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  ["user B's dashboard shows the tick before leaving the task", () => request("/dashboard", { jar: jarB }), B_TICKED],
+  [
     "task leave by a member succeeds",
     () => request("/api/tasks/leave", { method: "POST", form: { task_id: taskId }, jar: jarB }),
     { status: 302, locationExact: "/dashboard" },
@@ -1099,6 +1294,26 @@ const steps = [
         taskRowWithBadge(renamedTaskTitle, "Daily"),
       ],
       bodyNotMatches: [taskRowListing(renamedTaskTitle, emailB), taskRowWithConfirmedLeave(renamedTaskTitle)],
+      bodyExcludes: NO_ERROR_ALERT,
+    },
+  ],
+  [
+    // The tick went with the participation: B has neither a control nor a score on the board any more.
+    "user B has no check-off control and no score after leaving the task",
+    () => request("/dashboard", { jar: jarB }),
+    {
+      status: 200,
+      bodyMatches: [
+        taskRowWithForm(renamedTaskTitle, "/api/tasks/join"),
+        leaderboardRow(email, 1, 0, { you: false }),
+        leaderboardRow(emailB, 1, 0, { you: true }),
+        leaderboardRow(emailC, 1, 0, { you: false }),
+      ],
+      bodyNotMatches: [
+        taskRowWithCheckoffForm(renamedTaskTitle, "/api/tasks/checkoff"),
+        taskRowWithCheckoffForm(renamedTaskTitle, "/api/tasks/uncheck"),
+        taskRowStreak(renamedTaskTitle),
+      ],
       bodyExcludes: NO_ERROR_ALERT,
     },
   ],
@@ -1149,6 +1364,19 @@ const steps = [
     },
   ],
   [
+    // The leave above erased the tick: a fresh enrolment starts at 0, which proves the history went with the old one.
+    "user B's rejoined task row offers Mark done with a streak of 0",
+    () => request("/dashboard", { jar: jarB }),
+    B_NOTHING_TICKED,
+  ],
+  [
+    // The tick that the group-departure cleanup has to erase when B leaves the group below.
+    "user B ticks the task again before leaving the group",
+    () => request("/api/tasks/checkoff", { method: "POST", form: { task_id: taskId }, jar: jarB }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  ["user B's dashboard shows the tick before leaving the group", () => request("/dashboard", { jar: jarB }), B_TICKED],
+  [
     "user B leaves the group while taking part in the task",
     () => request("/api/groups/leave", { method: "POST", jar: jarB }),
     { status: 302, locationExact: "/dashboard" },
@@ -1184,6 +1412,110 @@ const steps = [
       ],
       bodyNotMatches: taskRowListing(renamedTaskTitle, emailB),
       bodyExcludes: NO_ERROR_ALERT,
+    },
+  ],
+  [
+    "user B joins the task again after returning to the group",
+    () => request("/api/tasks/join", { method: "POST", form: { task_id: taskId }, jar: jarB }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    // Leaving the group erased the tick the same way: B starts again at 0 and the board shows no score for B.
+    "user B's task row offers Mark done with a streak of 0 after the group departure",
+    () => request("/dashboard", { jar: jarB }),
+    B_NOTHING_TICKED,
+  ],
+  [
+    "task create of a once task by the creator succeeds",
+    () => request("/api/tasks/create", { method: "POST", form: { title: onceTitle, recurrence: "once" } }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "creator dashboard offers Mark done on the once task without a streak figure",
+    async () => {
+      const result = await request("/dashboard");
+      onceTaskId = taskTargetInRow(result.body, onceTitle, "/api/tasks/checkoff");
+      if (!onceTaskId) {
+        console.log("FAIL  the once task's Mark done control carries no task id; later once-task steps cannot run");
+        process.exit(1);
+      }
+      return result;
+    },
+    {
+      status: 200,
+      bodyMatches: [
+        taskRowWithBadge(onceTitle, "Once"),
+        taskRowWithCheckoffForm(onceTitle, "/api/tasks/checkoff"),
+        // The daily task's row beside it still shows its streak, so the missing figure is not an empty page.
+        taskRowStreak(renamedTaskTitle, 0),
+        leaderboardRow(email, 1, 0, { you: true }),
+        leaderboardRow(emailB, 1, 0, { you: false }),
+        leaderboardRow(emailC, 1, 0, { you: false }),
+      ],
+      bodyNotMatches: [
+        taskRowStreak(onceTitle),
+        taskRowWithCheckoffForm(onceTitle, "/api/tasks/uncheck"),
+        taskRowWithStatus(onceTitle, "Done"),
+      ],
+      bodyExcludes: NO_ERROR_ALERT,
+    },
+  ],
+  [
+    "creator ticks the once task",
+    () => request("/api/tasks/checkoff", { method: "POST", form: { task_id: onceTaskId } }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "creator dashboard shows the once task as Done and the creator's total raised by 1",
+    () => request("/dashboard"),
+    {
+      status: 200,
+      bodyMatches: [
+        taskRowWithStatus(onceTitle, "Done"),
+        taskRowWithCheckoffForm(onceTitle, "/api/tasks/uncheck"),
+        leaderboardRow(email, 1, 1, { you: true }),
+        leaderboardRow(emailB, 2, 0, { you: false }),
+        leaderboardRow(emailC, 2, 0, { you: false }),
+      ],
+      bodyNotMatches: [taskRowWithCheckoffForm(onceTitle, "/api/tasks/checkoff"), taskRowStreak(onceTitle)],
+      bodyExcludes: NO_ERROR_ALERT,
+    },
+  ],
+  [
+    "creator undoes the once task",
+    () => request("/api/tasks/uncheck", { method: "POST", form: { task_id: onceTaskId } }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "creator dashboard offers Mark done on the once task again and the total is back at 0",
+    () => request("/dashboard"),
+    {
+      status: 200,
+      bodyMatches: [
+        taskRowWithCheckoffForm(onceTitle, "/api/tasks/checkoff"),
+        leaderboardRow(email, 1, 0, { you: true }),
+        leaderboardRow(emailB, 1, 0, { you: false }),
+        leaderboardRow(emailC, 1, 0, { you: false }),
+      ],
+      bodyNotMatches: [taskRowWithCheckoffForm(onceTitle, "/api/tasks/uncheck"), taskRowWithStatus(onceTitle, "Done")],
+      bodyExcludes: NO_ERROR_ALERT,
+    },
+  ],
+  [
+    "task delete of the once task by the creator succeeds",
+    () => request("/api/tasks/delete", { method: "POST", form: { task_id: onceTaskId } }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "creator dashboard no longer lists the once task and keeps the daily one",
+    () => request("/dashboard"),
+    {
+      status: 200,
+      bodyMatches: [
+        taskRowWithBadge(renamedTaskTitle, "Daily"),
+        taskRowWithCheckoffForm(renamedTaskTitle, "/api/tasks/checkoff"),
+      ],
+      bodyExcludes: [onceTitle, NO_ERROR_ALERT],
     },
   ],
   [
