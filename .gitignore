@@ -32,3 +32,6 @@ pnpm-debug.log*
 .agents/**/10x-*
 .claude/prompts/m*
 .notes
+# stryker temp files
+.stryker-tmp
+reports/
