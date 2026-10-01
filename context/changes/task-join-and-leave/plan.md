@@ -243,6 +243,11 @@ Close the slice per the project's release rule: merge, approve the gated release
 - On the production URL, a signed-in member joins and leaves another member's task and the creator is listed on a fresh task.
 - The date, applied migration and result are noted in `context/changes/deployment/deployment-plan.md`.
 
+### Addendum (phase 4 impl review, 2026-10-01):
+
+- The migration did not arrive with the last merge commit: it landed on `master` with the phase 1 merge (PR #36), and went to production with the `release` run for the phase 3 merge (PR #38, `d67717b`), because the phase 1 run was cancelled and the phase 2 run was superseded. Step 4.2 was checked in that run's log (`db push` applied only that migration).
+- Step 4.1 was checked against PR #38, the PR whose merge started the release. Phase 4 has no code; its own PR only carries the deployment note.
+
 ---
 
 ## Testing Strategy
@@ -322,10 +327,10 @@ Additive migration; the backfill enrols creators of existing tasks so existing t
 
 #### Automated
 
-- [ ] 4.1 The required `integration` check is green on the PR to `master`: `gh pr checks`
+- [x] 4.1 The required `integration` check is green on the PR to `master`: `gh pr checks` — 4f22ccc
 
 #### Manual
 
-- [ ] 4.2 After merging, confirm the merge commit contains the new migration (`git show --stat master` lists `supabase/migrations/20261001090000_create_task_participants.sql`), then approve the `release` run in the GitHub `production` environment.
-- [ ] 4.3 On the production URL, a signed-in member joins and leaves another member's task and the creator is listed on a fresh task.
-- [ ] 4.4 The date, applied migration and result are noted in `context/changes/deployment/deployment-plan.md`.
+- [x] 4.2 After merging, confirm the merge commit contains the new migration (`git show --stat master` lists `supabase/migrations/20261001090000_create_task_participants.sql`), then approve the `release` run in the GitHub `production` environment. — 4f22ccc
+- [x] 4.3 On the production URL, a signed-in member joins and leaves another member's task and the creator is listed on a fresh task. — 4f22ccc
+- [x] 4.4 The date, applied migration and result are noted in `context/changes/deployment/deployment-plan.md`. — 4f22ccc
