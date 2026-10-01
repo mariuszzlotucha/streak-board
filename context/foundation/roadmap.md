@@ -3,29 +3,35 @@ project: "StreakBoard"
 version: 1
 status: draft
 created: 2026-09-24
-updated: 2026-10-01
+updated: 2026-10-02
 prd_version: 1
 main_goal: market-feedback
 top_blocker: time
-milestone_id: first-group-checkin-loop
-milestone_seq: 1
+milestone_id: ready-for-real-users
+milestone_seq: 2
 milestone_status: open
 ---
 
 # Roadmap: StreakBoard
 
-> Derived from context/foundation/prd.md (v1) + auto-researched codebase baseline.
+> Derived from context/foundation/roadmap-input-next-slices.md, the user's later additions and PRD v1 (FR-001) + auto-researched codebase baseline.
 > Edit-in-place; archive when superseded.
 > Slices below are listed in dependency order. The "At a glance" table is the index.
 
 ## Milestone
 
-**M-1: Pierwszy pełny cykl: grupa → task → odznaczenie → tablica wyników** — Status: open
+**M-2: Gotowość na realnych użytkowników: adres, logowanie, strona startowa, widok, testy i widoczne awarie** — Status: open
 
-- **Intent:** Dostarczyć kompletny, widoczny dla użytkownika przepływ z Primary Success Criterion PRD: zalogowany użytkownik zakłada lub dołącza do grupy, tworzy lub dołącza do tasku, odznacza go jako wykonany i widzi swój wynik na tablicy wyników grupy — pierwsza pełna walidacja hipotezy produktu z realną grupą znajomych.
-- **Source materials:** `context/foundation/prd.md` (v1)
-- **Done when:** F-01 oraz S-01 do S-04 poniżej mają status `done`.
-- **Scope anchors:** FR-001 do FR-009, US-01 (pełne pokrycie PRD w tym kamieniu milowym — PRD nie ma jeszcze drugiej transzy).
+- **Intent:** Po zamknięciu pierwszego pełnego cyklu (M-1) doprowadzić wdrożone MVP do stanu, w którym można je pokazać realnym użytkownikom i zbierać od nich informację zwrotną: własny adres, łatwe logowanie kontem Google, strona startowa tłumacząca produkt, czytelniejszy widok grupy, testy chroniące zmiany oraz awarie, które nie giną po cichu.
+- **Source materials:** `context/foundation/roadmap-input-next-slices.md` (MS-01 do MS-05, zakres uzgodniony z użytkownikiem po zamknięciu wszystkich pozycji M-1), późniejszy opis użytkownika (MS-06) oraz FR-001 z PRD v1 („email/OAuth/passwordless"), na którym opiera się MS-06. Poza FR-001 ten kamień milowy nie realizuje nowych FR-ów.
+- **Done when:** każdy S-06 do S-11 poniżej ma status `done`.
+- **Scope anchors:** źródło nie ma własnych identyfikatorów, więc zakres jest zapisany jako kotwice `MS-NN`, po jednej na wycinek: MS-01 do MS-05 z wyników opisanych w pliku wejściowym, MS-06 z późniejszego opisu użytkownika:
+  - MS-01: użytkownik wchodzi na aplikację pod własną domeną właściciela, a rejestracja, logowanie i link potwierdzający działają na tej domenie.
+  - MS-02: (jakościowy) zmiany w aplikacji są chronione testami wybranymi według ryzyka, a jakość testów jednostkowych jest mierzona mutacjami.
+  - MS-03: niezalogowany użytkownik widzi stronę startową, która tłumaczy, czym jest aplikacja, i prowadzi do rejestracji lub logowania.
+  - MS-04: zalogowany użytkownik korzysta z czytelniejszego, spójnego wizualnie widoku grupy, tasków i tablicy wyników.
+  - MS-05: (jakościowy) awaria w krytycznym przepływie aplikacji nie jest połykana ani zamieniana na sukces: trafia do odpowiedzi API i do monitoringu.
+  - MS-06: użytkownik może zalogować się kontem Google (logowanie bez hasła); to ta część FR-001 z PRD (OAuth/passwordless), która nie weszła do M-1.
 
 ## Vision recap
 
@@ -33,139 +39,152 @@ Grono znajomych korzystało wcześniej ze wspólnego arkusza Google, w którym r
 
 ## North star
 
-**S-04: Użytkownik odznacza task jako wykonany i widzi wynik w tablicy grupy** — to jedyna historyjka użytkownika w PRD (US-01) i dosłownie odpowiada Primary Success Criterion; jeśli to nie zadziała (odznaczenie nie jest natychmiastowe, albo tablica wyników nie motywuje), reszta produktu nie ma sensu.
+**S-06: użytkownik wchodzi na aplikację pod domeną `streakboard.app`, a rejestracja, logowanie i link potwierdzający działają na tej domenie** — to najmniejszy kompleksowy przepływ, od którego zależy, czy ktokolwiek spoza obecnego grona wejdzie do produktu i zostawi informację zwrotną; błędna konfiguracja adresu potrafi po cichu zepsuć rejestrację na produkcji, więc warto to sprawdzić jako pierwsze, a ten wycinek zmienia też adres, na który wskazują kolejne.
 
-> Gwiazda przewodnia (ang. north star) to najmniejszy kompleksowy wycinek widoczny dla użytkownika, którego dostarczenie jako pierwsze potwierdza główną hipotezę produktu — umieszczony tak wcześnie, jak pozwalają jego zależności, bo wszystko inne ma znaczenie tylko wtedy, gdy to zadziała. Tutaj gwiazda przewodnia ląduje na końcu łańcucha zależności celowo: żeby odznaczyć task, użytkownik musi mieć grupę (S-01) i task, do którego jest zapisany (S-02, S-03) — to prawdziwe zależności, nie sztuczne opóźnienie.
+> Gwiazda przewodnia (ang. north star) to najmniejszy kompleksowy wycinek widoczny dla użytkownika, którego dostarczenie jako pierwszego potwierdza główną hipotezę tego kamienia milowego — umieszczony tak wcześnie, jak pozwalają jego zależności, bo reszta ma znaczenie tylko wtedy, gdy to działa. Tutaj hipoteza brzmi: nowa osoba trafia pod docelowy adres, zakłada konto i dociera do dashboardu bez ręcznych obejść.
 
 ## At a glance
 
-| ID   | Change ID                             | Outcome (user can …)                                                                                       | Prerequisites | PRD refs                                   | Status      |
-| ---- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------------ | ----------- |
-| F-01 | group-schema-and-rls                  | (foundation) schemat grup/członkostwa + RLS wg guardrail widoczności                                       | —             | Access Control, Guardrail                  | done        |
-| S-01 | group-create-join-manage              | założyć/dołączyć do grupy przez link/kod; jako twórca zarządzać grupą                                      | F-01          | FR-001, FR-002, FR-003                     | done        |
-| S-02 | task-create-and-manage                | utworzyć task w grupie; jako twórca edytować/usunąć swój task                                              | S-01          | FR-004, FR-005                             | done |
-| S-03 | task-join-and-leave                   | dołączyć do tasku innego członka i wypisać się z niego                                                     | S-02          | FR-006, FR-007                             | done        |
-| S-04 | checkoff-and-leaderboard              | odznaczyć task jako wykonany i od razu zobaczyć tablicę wyników grupy                                      | S-03          | FR-008, FR-009, US-01, Business Logic      | done |
-| S-05 | release-automation-and-auth-hardening | (release) migracje i wydanie produkcyjne są zautomatyzowane, a rejestracja na produkcji działa niezawodnie | S-01          | — (operacyjne; deployment-plan.md Phase 5) | done |
+| ID   | Change ID                      | Outcome (user can …)                                                                                                                | Prerequisites                                           | PRD refs                           | Status   |
+| ---- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ---------------------------------- | -------- |
+| S-06 | custom-domain                  | wejść na aplikację pod domeną `streakboard.app`; rejestracja, logowanie i link potwierdzający działają na tej domenie               | domena `streakboard.app` w Cloudflare (Registrar i DNS) | — (operacyjne; MS-01)              | ready    |
+| S-07 | google-login                   | zarejestrować się i zalogować kontem Google, bez ustawiania hasła                                                                   | S-06                                                    | FR-001 (OAuth/passwordless); MS-06 | proposed |
+| S-08 | observability-swallowed-errors | (jakościowy) awaria w krytycznym przepływie nie jest połykana ani zamieniana na sukces: trafia do odpowiedzi API i do monitoringu   | —                                                       | — (jakościowe; MS-05)              | ready    |
+| S-09 | landing-page                   | zobaczyć jako niezalogowany stronę startową, która tłumaczy, czym jest aplikacja, i prowadzi do rejestracji lub logowania           | S-06, S-07                                              | — (UI; MS-03)                      | proposed |
+| S-10 | test-coverage                  | (jakościowy) zmiany w aplikacji są chronione testami wybranymi według ryzyka, a jakość testów jednostkowych jest mierzona mutacjami | —                                                       | — (jakościowe; MS-02)              | ready    |
+| S-11 | dashboard-ui                   | korzystać z czytelniejszego, spójnego wizualnie widoku grupy, tasków i tablicy wyników                                              | S-08, S-10                                              | — (UI; MS-04)                      | proposed |
+
+## Streams
+
+Pomoc nawigacyjna — grupuje pozycje ze wspólnym łańcuchem Prerequisites. Kanoniczna kolejność jest w grafie zależności poniżej; ta tabela to proponowana kolejność czytania równoległych ścieżek.
+
+| Stream | Theme                   | Chain                    | Note                                                                                                                                        |
+| ------ | ----------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| A      | Wejście dla nowych osób | `S-06` → `S-07` → `S-09` | Adres, logowanie bez hasła i strona startowa składają się na ścieżkę nowej osoby do dashboardu: to wejście do informacji zwrotnej od rynku. |
+| B      | Siatka testów i widok   | `S-10` → `S-11`          | Testy przed zmianą wyglądu; `S-11` dołącza do strumienia C w `S-08` (wspólny kontrakt błędów i smoke).                                      |
+| C      | Widoczność awarii       | `S-08`                   | Samodzielny, może ruszyć od razu, równolegle z `S-06`; musi się skończyć przed `S-11`.                                                      |
 
 ## Baseline
 
-What's already in place in the codebase as of `2026-09-24` (auto-researched + user-confirmed).
+What's already in place in the codebase as of `2026-10-02` (auto-researched; the user confirmed the domain).
 Foundations below assume these are present and do NOT re-scaffold them.
 
-- **Frontend:** partial — Astro 7 + React 19 + Tailwind 4 + jeden komponent shadcn/ui (`src/components/ui/button.tsx`); istnieją tylko strony auth i pusty dashboard (`src/pages/dashboard.astro`), brak stron domenowych.
-- **Backend / API:** partial — konwencja Astro API routes działa dla auth (`src/pages/api/auth/*.ts`); brak endpointów domenowych.
-- **Data:** absent — klient Supabase podłączony (`src/lib/supabase.ts`), ale brak migracji/tabel/seed danych (`supabase/migrations/` nie istnieje).
-- **Auth:** partial — logowanie email/hasło + middleware sesji działa (`src/middleware.ts`, chroni `/dashboard`), ale brak modelu grup/ról/RLS.
-- **Deploy / infra:** present — aplikacja już wdrożona na Cloudflare Workers (`https://10x-astro-starter.mariusz-zlotucha.workers.dev`), CI (lint/build/smoke/integration) działa, a release na produkcję (migracje `supabase db push`, potem `wrangler deploy`) idzie przez zatwierdzane zadanie `release` w GitHub Actions.
-- **Observability:** absent — brak logowania strukturalnego, error trackingu, korelacji requestów.
+- **Frontend:** present — Astro 7 (SSR; Vite 8.3.0 wymagany przez Astro i adapter) + React 19 + Tailwind 4 + komponenty shadcn/ui; strony auth, `/dashboard` (grupa, taski, tablica wyników, wyspy React) i `/join/[code]`; `/` to nadal szablon startowy („10x Astro Starter"), a nie strona produktu.
+- **Backend / API:** present — 16 tras API (auth, groups, tasks) i `/auth/callback`; 24 wywołania `console.error` w trasach, callbacku i dashboardzie (zachowanie przy błędach do zweryfikowania w audycie S-08).
+- **Data:** present — Supabase (Postgres + RLS): 7 migracji (grupy, członkostwo, taski, uczestnicy, odznaczenia, utwardzenia RLS i uprawnień), lokalny stos i testy RLS.
+- **Auth:** present — Supabase Auth email+hasło (żaden dostawca OAuth nie jest włączony), sesje w cookie, middleware chroni `/dashboard`, `/api/groups` i `/api/tasks`; link potwierdzający wraca przez `/auth/callback`; e-maile z własnego SMTP (Resend) wg README.
+- **Deploy / infra:** present — Cloudflare Workers pod adresem `workers.dev`; CI w GitHub Actions (joby `ci`, `smoke` i `integration`; `release` czeka na wszystkie trzy i na zatwierdzenie w środowisku `production`: migracje, potem deploy); domena `streakboard.app` zarejestrowana (Cloudflare Registrar, DNS w Cloudflare, potwierdzone przez właściciela), aplikacja jeszcze na niej nie stoi (wg README).
+- **Observability:** partial — Workers Logs włączone; brak error trackingu (żadnego Sentry/OTel w zależnościach ani kodzie); `context/audits/` jeszcze nie istnieje, skill `/10x-observability-audit` jest zainstalowany.
+- **Tests (poza standardową listą warstw):** present — Vitest (5 plików unit, 9 integracyjnych na lokalnym Supabase), Playwright (setup, seed, izolacja grup), smoke przez HTTP (skrypt na ponad 1600 linii; stronę `/` sprawdza tylko statusem 200), konfiguracja Stryker (testy mutacyjne); w `test-plan.md` etapy 1 i 4 wdrożone, 2 i 3 nierozpoczęte, a §4 wciąż mówi „e2e: none — not planned".
 
 ## Foundations
 
-### F-01: Schemat grup i RLS dla widoczności per-grupa
-
-- **Outcome:** (foundation) w bazie Supabase istnieją tabele grup i członkostwa (`groups`, `group_members`) wraz z politykami RLS wymuszającymi guardrail „widoczność tylko dla własnej grupy”.
-- **Change ID:** group-schema-and-rls
-- **PRD refs:** Access Control (model dwupoziomowy grupa/task), Success Criteria Guardrail („widoczność tylko dla własnej grupy”)
-- **Unlocks:** S-01, S-02, S-03, S-04 — każdy z nich czyta/zapisuje dane w kontekście grupy przez ten schemat i te polityki
-- **Prerequisites:** —
-- **Parallel with:** —
-- **Blockers:** —
-- **Unknowns:** —
-- **Risk:** Błąd w RLS na tym etapie po cichu łamie guardrail (wyciek widoczności między grupami) dla każdego kolejnego wycinka — warto to domknąć, zanim jakakolwiek praca pionowa na tym wyląduje.
-- **Status:** done
+(brak — M-2 nie wymaga przekrojowego odblokowania. Żadna warstwa ze stanu bazowego nie jest `absent`; konfiguracja dostawcy logowania, error tracking, konfiguracja testów i wiązanie domeny wchodzą do pierwszego wycinka, który ich potrzebuje (S-07, S-08, S-10, S-06), zgodnie z zasadą progresywnego ujawniania elementów technicznych.)
 
 ## Slices
 
-### S-01: Założenie i zarządzanie grupą
+### S-06: Własna domena produktu
 
-- **Outcome:** użytkownik może założyć grupę, dołączyć do istniejącej grupy przez link/kod, a jako jej twórca — usunąć grupę lub usunąć z niej członka.
-- **Change ID:** group-create-join-manage
-- **PRD refs:** FR-001, FR-002, FR-003
-- **Prerequisites:** F-01
-- **Parallel with:** —
-- **Blockers:** —
-- **Unknowns:** —
-- **Risk:** To pierwsza jednostka nadrzędna, pod którą zagnieżdża się wszystko dalej — dobry podział uprawnień twórca/członek tutaj oszczędza przeróbek w S-02/S-03.
-- **Status:** done
-
-### S-02: Tworzenie i zarządzanie taskiem
-
-- **Outcome:** użytkownik może utworzyć task w swojej grupie (jednorazowy lub powtarzalny: dziennie/tygodniowo), a jako jego twórca — edytować go lub usunąć.
-- **Change ID:** task-create-and-manage
-- **PRD refs:** FR-004, FR-005
-- **Prerequisites:** S-01
-- **Parallel with:** —
-- **Blockers:** —
-- **Unknowns:** —
-- **Risk:** Kształt pola cykliczności (dziennie/tygodniowo) wybrany tutaj determinuje logikę streaka w S-04 — ustalić go świadomie, żeby uniknąć migracji wstecz.
-- **Status:** done
-
-### S-03: Dołączanie i wypisywanie się z tasku
-
-- **Outcome:** użytkownik może dołączyć (zapisać się) do tasku stworzonego przez innego członka grupy i wypisać się z tasku, do którego jest zapisany.
-- **Change ID:** task-join-and-leave
-- **PRD refs:** FR-006, FR-007
-- **Prerequisites:** S-02
-- **Parallel with:** —
-- **Blockers:** —
-- **Unknowns:** —
-- **Risk:** Wypisanie się w trakcie trwającego streaka rodzi pytanie UX (co dzieje się z dotychczasowym streakiem) — wystarczająco małe, żeby rozstrzygnąć je w `/10x-plan`, nie tutaj.
-- **Status:** done
-
-### S-04: Odznaczenie tasku i tablica wyników
-
-- **Outcome:** użytkownik odznacza wystąpienie tasku jako wykonane i natychmiast widzi zaktualizowany wynik w tablicy wyników swojej grupy.
-- **Change ID:** checkoff-and-leaderboard
-- **PRD refs:** FR-008, FR-009, US-01, Business Logic
-- **Prerequisites:** S-03
-- **Parallel with:** —
+- **Outcome:** użytkownik wchodzi na aplikację pod domeną `streakboard.app`, a rejestracja, logowanie i link potwierdzający działają na tej domenie.
+- **Change ID:** custom-domain
+- **PRD refs:** — (operacyjne; MS-01)
+- **Prerequisites:** domena `streakboard.app` w Cloudflare (Registrar i DNS)
+- **Parallel with:** S-08, S-10, S-11
 - **Blockers:** —
 - **Unknowns:**
-  - Dokładna wartość, o jaką spada streak za pominięty dzień/okres (PRD: „wartość mniejsza niż jego pełny stan”, bez konkretnej liczby) — Owner: user. Block: no — `/10x-plan` może przyjąć rozsądną wartość domyślną; PRD celowo nie wymaga konfigurowalności na MVP.
-- **Risk:** To jest gwiazda przewodnia — jeśli odznaczenie nie jest odczuwalnie natychmiastowe (guardrail) albo tablica wyników nie działa poprawnie, cała hipoteza produktu pozostaje niepotwierdzona mimo ukończenia reszty mapy drogowej.
-- **Status:** done
+  - Czy stary adres `workers.dev` ma pozostać aktywny po przepięciu na własną domenę (równolegle, z przekierowaniem czy wyłączony)? — Owner: user. Block: no — rozstrzyga `/10x-frame` lub `/10x-research`.
+- **Źródło zakresu:** `context/foundation/roadmap-input-next-slices.md`, sekcja „1. custom-domain" (praca operacyjna bez UI: kroki wymagające dostępu wykonuje właściciel; zakres obejmuje też poprawę dokumentacji, która dziś zakłada adres `workers.dev`).
+- **Risk:** Błędne Redirect URLs lub Site URL w Supabase łamią rejestrację na produkcji (znane z `release-automation-and-auth-hardening` w M-1: bez adresu na liście Supabase po cichu wraca do Site URL, a użytkownik po potwierdzeniu nie jest zalogowany), więc idzie pierwszy: zmienia adres, na który wskazują kolejne wycinki. Zmiana nie dotyka schematu bazy; kod wraca przez rollback Workera, ale ustawień w panelu Supabase rollback nie obejmuje.
+- **Status:** ready
 
-### S-05: Automatyzacja wydań i utwardzenie rejestracji na produkcji
+### S-07: Logowanie kontem Google
 
-- **Outcome:** (release) migracje Supabase i wydanie aplikacji na produkcję przechodzą w przewidywalnej, zautomatyzowanej kolejności (najpierw schemat, potem kod), a rejestracja nowego użytkownika na produkcji działa bez ręcznych obejść: e-maile potwierdzające wychodzą z własnego SMTP, link potwierdzający loguje użytkownika przez `/auth/callback`, a dokumentacja mówi prawdę o tym, jak wdrażamy.
-- **Change ID:** release-automation-and-auth-hardening
-- **PRD refs:** — (zmiana operacyjna, bez FR; źródło: `context/changes/deployment/deployment-plan.md` Phase 5 „Discovered issues” i lekcje w `context/foundation/lessons.md`)
-- **Prerequisites:** S-01 (aplikacja z migracjami działa na produkcji). Brak zależności technicznych od S-02–S-04; ułożony jako ostatni z decyzji użytkownika (2026-09-25), planować po domknięciu M-1 albo wcześniej, jeśli limit e-maili zablokuje testy.
-- **Parallel with:** S-02, S-03, S-04
+- **Outcome:** użytkownik może zarejestrować się i zalogować kontem Google, bez ustawiania hasła.
+- **Change ID:** google-login
+- **PRD refs:** FR-001 (OAuth/passwordless); MS-06
+- **Prerequisites:** S-06
+- **Parallel with:** S-08, S-10, S-11
 - **Blockers:** —
 - **Unknowns:**
-  - Jak uporządkować kolejność „migracja → deploy”, skoro Workers Builds wdraża `master` automatycznie: (a) job GitHub Actions z `supabase db push` uruchamiany przed deployem i wyłączenie Workers Builds na rzecz deployu z Actions, (b) zostawić Workers Builds i wymusić kolejność ręcznie/checkiem, (c) Supabase Branching (plan Pro) — Owner: user. Block: no — rozstrzyga `/10x-plan`.
-  - Wybór dostawcy własnego SMTP (np. Resend) i domeny nadawcy — Owner: user. Block: no.
-- **Odkryte problemy (wejście do tego wycinka):**
-  1. **Workers Builds wdraża `master` automatycznie** — przeczy zapisom „deploy tylko ręczny” w README, deployment-plan.md i roadmapie; kod wymagający nowego schematu może pójść na produkcję przed migracją.
-  2. **Wymóg Site URL w Supabase** — potwierdzenia e-mail linkują do Site URL projektu (domyślnie `http://localhost:3000`); `site_url` z `supabase/config.toml` dotyczy tylko lokalnego stosu i nie jest wypychane przez `db push`. Ustawiane ręcznie w Dashboard → Authentication → URL Configuration (Site URL + Redirect URLs `…/**`).
-  3. **Limit wysyłki e-maili** — wbudowany SMTP Supabase ma bardzo niski limit; powtarzane rejestracje dają `over_email_send_rate_limit` („Too many attempts. Please try again later.”), a usunięcie użytkownika nie zeruje licznika.
-  4. **Jednorazowe linki potwierdzające** — drugie kliknięcie lub skaner e-mail kończy się `otp_expired`; aplikacja nie ma `/auth/callback`, a `signup.ts` nie ustawia `emailRedirectTo`, więc po potwierdzeniu użytkownik ląduje na `/` niezalogowany.
-  5. **Decyzja o ręcznych migracjach (2026-09-25)** — na razie `supabase db push` uruchamia użytkownik ręcznie; ten wycinek ją przegląda (opcje w Unknowns).
-- **Zakres (zadania):**
-  - Zautomatyzować migracje i wydanie produkcyjne w ustalonej kolejności (patrz Unknowns), łącznie z krokiem „production release” z lekcji w `lessons.md`.
-  - Własny SMTP dla e-maili auth w Supabase (Authentication → SMTP Settings).
-  - `emailRedirectTo` w `signup.ts` + trasa `/auth/callback` wymieniająca kod na sesję (`exchangeCodeForSession`) i przekierowująca do `/dashboard`.
-  - Poprawić zapis „deploy tylko ręczny” w `README.md` (Deployment), we wstępie `deployment-plan.md` i w Baseline/Parked tej roadmapy tak, by opisywał Workers Builds i wybrany przepływ wydań.
-  - Udokumentować wymóg Site URL / Redirect URLs jako krok konfiguracji środowiska produkcyjnego.
-- **Risk:** Automatyzacja `db push` na bazie produkcyjnej bez bramki (np. środowisko `production` z ręczną akceptacją) może zastosować błędną migrację bez nadzoru; zmiana wyzwalacza deployu (Workers Builds → Actions) może na chwilę zostawić produkcję bez wdrożeń.
-- **Status:** done
+  - „Passwordless" — czy chodzi tylko o logowanie kontem Google (OAuth), czy także o link logujący wysyłany e-mailem? — Owner: user. Block: no — rozstrzyga `/10x-frame`.
+  - Co z istniejącymi kontami email+hasło, gdy ten sam adres zaloguje się przez Google: połączyć konta czy rozdzielić? — Owner: user. Block: no — decyzja produktowa i bezpieczeństwa przy `/10x-frame`.
+  - Czy ekran zgody Google wymaga od domeny strony głównej i polityki prywatności (a więc czy S-09 musi powstać wcześniej, czy wystarczy przejściowy opis)? — Owner: user. Block: no — rozstrzyga `/10x-research`.
+- **Źródło zakresu:** opis użytkownika (MS-06) i FR-001 z PRD („email/OAuth/passwordless"); praca z krokami ręcznymi właściciela po stronie Google i Supabase (projekt i klient OAuth, ekran zgody; sekret klienta wyłącznie w panelu Supabase, nigdy w repozytorium ani w czacie).
+- **Risk:** Konfiguracja po trzech stronach (Google, Supabase, aplikacja), a pełnego przepływu nie da się przejść lokalnie ani w smoke bez prawdziwego konta Google, więc weryfikacja produkcyjna jest częścią zamknięcia. Kod zaproszenia zapamiętany w cookie przed logowaniem musi przetrwać przekierowanie do Google i z powrotem, a callback logowania zamienia dziś każdy błąd na stały komunikat o wygasłym linku, co dla Google byłoby mylące. Idzie zaraz po S-06, bo adresy przekierowań i ekran zgody konfiguruje się raz, na docelowej domenie; omija wysyłkę e-maili potwierdzających, z którą były problemy w M-1.
+- **Status:** proposed
+
+### S-08: Awarie krytycznego przepływu nie są połykane
+
+- **Outcome:** (jakościowy) awaria w krytycznym przepływie aplikacji nie jest połykana ani zamieniana na sukces: trafia do odpowiedzi API i do monitoringu.
+- **Change ID:** observability-swallowed-errors
+- **PRD refs:** — (jakościowe; MS-05)
+- **Prerequisites:** —
+- **Parallel with:** S-06, S-07, S-09, S-10
+- **Blockers:** —
+- **Unknowns:**
+  - Który krytyczny przepływ audytujemy (kandydaci: odznaczanie i cofanie odznaczenia, dołączanie do grupy) i które znalezisko z raportu naprawiamy? — Owner: user. Block: no — wybór po raporcie z audytu observability.
+  - Czy część B (narzędzie do śledzenia błędów na Workerze, darmowy plan wystarczy) wchodzi w zakres i czy konto jest założone po stronie użytkownika? — Owner: user. Block: no.
+- **Źródło zakresu:** `context/foundation/roadmap-input-next-slices.md`, sekcja „5. observability-swallowed-errors" (część A: audyt jednego przepływu i naprawa jednego znaleziska wraz z testem, że awaria nie jest już sukcesem; część B: opcjonalny monitoring z kluczem DSN jako sekretem, nigdy w repozytorium ani w czacie; raport audytu jest wejściem do planu).
+- **Risk:** Zmiana odpowiedzi na błąd może zmienić kontrakt, na którym polegają wyspa odznaczania (mapuje 403 i 404 na „odrzucone", a inne błędy na „nie zapisano") i smoke; error tracking na Workerze zwiększa zużycie CPU (limit 10 ms na planie Free), więc narzut trzeba sprawdzić. Wycinek jest niezależny, więc może ruszyć od razu, równolegle z S-06; stoi przed S-11, bo oba dotykają wyspy odznaczania i smoke, a stany błędu w nowym widoku powinny wynikać z ustalonego już kontraktu błędów.
+- **Status:** ready
+
+### S-09: Strona startowa dla niezalogowanych
+
+- **Outcome:** niezalogowany użytkownik widzi stronę startową, która tłumaczy, czym jest aplikacja, i prowadzi do rejestracji lub logowania.
+- **Change ID:** landing-page
+- **PRD refs:** — (UI; MS-03)
+- **Prerequisites:** S-06, S-07
+- **Parallel with:** S-08, S-10, S-11
+- **Blockers:** —
+- **Unknowns:**
+  - Co strona obiecuje i do czego prowadzi (decyzja produktowa)? — Owner: user. Block: no — rozstrzyga `/10x-frame`.
+  - Treść i język strony (reszta aplikacji jest po angielsku, a dzisiejsza strona `/` to angielski szablon startowy) — Owner: user. Block: no.
+  - Czy ma być widoczny podgląd tablicy wyników i czy zalogowany użytkownik jest przekierowywany na dashboard? — Owner: user. Block: no.
+- **Źródło zakresu:** `context/foundation/roadmap-input-next-slices.md`, sekcja „3. landing-page" (nowy widok: zwykły łańcuch od `/10x-frame`; `/10x-ui` dopiero przy późniejszych poprawkach).
+- **Risk:** Zależności od S-06 (adres publiczny) i S-07 (strona prowadzi do finalnego zestawu metod rejestracji i logowania) są kolejnościowe, nie techniczne. `/` istnieje, ale opisuje szablon startowy, a jedyny dzisiejszy test tej strony to sprawdzenie statusu 200 w smoke, więc to przepisanie istniejącego widoku, nie widok od zera, a nowe kroki smoke muszą sprawdzać wynik (treść i dokąd prowadzą linki), nie tylko brak błędu (lekcja o smoke).
+- **Status:** proposed
+
+### S-10: Testy dobrane według ryzyka
+
+- **Outcome:** (jakościowy) zmiany w aplikacji są chronione testami wybranymi według ryzyka, a jakość testów jednostkowych jest mierzona mutacjami.
+- **Change ID:** test-coverage
+- **PRD refs:** — (jakościowe; MS-02)
+- **Prerequisites:** —
+- **Parallel with:** S-06, S-07, S-08, S-09
+- **Blockers:** —
+- **Unknowns:**
+  - Jak uzgodnić `test-plan.md` z decyzją o e2e: §4 mówi dziś „e2e: none — not planned", a wejście wprost wlicza e2e kluczowych przepływów (Playwright jest już skonfigurowany) — odświeżyć test-plan przed planowaniem czy uzgodnić to w planie wycinka? — Owner: user. Block: no — rozstrzyga `/10x-frame`.
+- **Źródło zakresu:** `context/foundation/roadmap-input-next-slices.md`, sekcja „2. test-coverage" (testy jednostkowe dla logiki bez testów, testy mutacyjne na modułach z regułami, e2e kluczowych przepływów zamiast wszystkiego; UI poza testami DOM wg test-planu §7).
+- **Risk:** Najszerszy wycinek M-2 i zakres bez granic: plan musi wybrać etapy z test-planu (niezrealizowane są etap 2, bramka kolejności wydania, i etap 3, granice auth i walidacja), zapisać, czego nie testuje, i może rozpaść się na kilka zmian (status przesuwa tylko pierwsza). Stoi przed S-11 jako siatka bezpieczeństwa przed zmianą wyglądu, a przed S-09 nie musi, bo strona startowa zastępuje szablon sprawdzany dziś tylko statusem 200; nie ma zależności technicznych, więc może iść równolegle z wcześniejszymi wycinkami.
+- **Status:** ready
+
+### S-11: Czytelniejszy widok grupy, tasków i tablicy wyników
+
+- **Outcome:** zalogowany użytkownik korzysta z czytelniejszego, spójnego wizualnie widoku grupy, tasków i tablicy wyników.
+- **Change ID:** dashboard-ui
+- **PRD refs:** — (UI; MS-04)
+- **Prerequisites:** S-08, S-10
+- **Parallel with:** S-06, S-07, S-09
+- **Blockers:** —
+- **Unknowns:** —
+- **Źródło zakresu:** `context/foundation/roadmap-input-next-slices.md`, sekcja „4. dashboard-ui" (praca nad widokiem, który już się renderuje, więc `/10x-ui`; przepisanie asercji smoke i sprawdzenie e2e należą do zakresu tego wycinka).
+- **Risk:** Zależności od S-10 (siatka bezpieczeństwa) i S-08 (kontrakt odpowiedzi na błąd ustalony przed przebudową stanów błędu) są kolejnościowe, nie techniczne; zamiana z S-10 jest dopuszczalna, jeśli UI jest pilniejszy niż testy (wtedy e2e powstaje już pod nowy wygląd). Rozbudowany smoke (ponad 1600 linii) dopasowuje dzisiejszy markup, więc zmiana wyglądu łamie go, dopóki asercje nie zostaną przepisane (to część tego wycinka); wyspy optymistyczne muszą zachować zgodność HTML serwera z pierwszym renderem klienta, a PRD wymaga pełnej użyteczności na smartfonie i natychmiastowego odznaczania.
+- **Status:** proposed
 
 ## Backlog Handoff
 
-| Roadmap ID | Change ID                             | Suggested issue title                                                                         | Ready for `/10x-plan` | Notes                                                                                                                                          |
-| ---------- | ------------------------------------- | --------------------------------------------------------------------------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| F-01       | group-schema-and-rls                  | Schemat danych grup/członkostwa + RLS per-grupa                                               | yes                   | Run `/10x-plan group-schema-and-rls`                                                                                                           |
-| S-01       | group-create-join-manage              | Założenie grupy, dołączanie przez link/kod, zarządzanie grupą                                 | no                    | Czeka na F-01                                                                                                                                  |
-| S-02       | task-create-and-manage                | Tworzenie i zarządzanie taskiem w grupie                                                      | no                    | Czeka na S-01                                                                                                                                  |
-| S-03       | task-join-and-leave                   | Dołączanie/wypisywanie się z tasku                                                            | no                    | Czeka na S-02                                                                                                                                  |
-| S-04       | checkoff-and-leaderboard              | Odznaczenie tasku + tablica wyników (streak)                                                  | no                    | Czeka na S-03; gwiazda przewodnia                                                                                                              |
-| S-05       | release-automation-and-auth-hardening | Automatyczne migracje i wydania, własny SMTP, `/auth/callback`, poprawka dokumentacji deployu | yes                   | Bez zależności technicznych od S-02–S-04; ostatni z decyzji użytkownika. Run `/10x-plan release-automation-and-auth-hardening` (po `/10x-new`) |
+| Roadmap ID | Change ID                      | Suggested issue title                                                              | Ready for `/10x-plan` | Notes                                                                                                                                                                                                                        |
+| ---------- | ------------------------------ | ---------------------------------------------------------------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| S-06       | custom-domain                  | Własna domena produktu: wiązanie, Supabase Site URL i Redirect URLs, dokumentacja  | yes                   | Gwiazda przewodnia. Run `/10x-plan custom-domain` (po `/10x-frame` w sprawie adresu `workers.dev`, `/10x-new` i `/10x-research`); zamknięcie wg lekcji o wydaniu.                                                            |
+| S-07       | google-login                   | Logowanie kontem Google: konfiguracja dostawcy, trasa startowa, przycisk, callback | no                    | Czeka na S-06 (adresy przekierowań i ekran zgody konfiguruje się raz, na docelowej domenie). Zwykły łańcuch od `/10x-frame` (znaczenie „passwordless", łączenie kont); kroki ręczne właściciela.                             |
+| S-08       | observability-swallowed-errors | Awarie krytycznego przepływu trafiają do odpowiedzi API i do monitoringu           | yes                   | Niezależny, może ruszyć od razu. Najpierw `/10x-observability-audit` (raport w `context/audits/observability/`), potem Run `/10x-plan observability-swallowed-errors` (po `/10x-new` i `/10x-research`); część B opcjonalna. |
+| S-09       | landing-page                   | Strona startowa dla niezalogowanych użytkowników                                   | no                    | Czeka na S-06 i S-07 (kolejność). Nowy widok: zwykły łańcuch od `/10x-frame`; smoke z asercjami skutków.                                                                                                                     |
+| S-10       | test-coverage                  | Testy dobrane według ryzyka: jednostkowe, mutacyjne i e2e kluczowych przepływów    | yes                   | Niezależny; musi się skończyć przed S-11. Run `/10x-plan test-coverage` (po `/10x-new` i `/10x-research`); plan oparty o `test-plan.md` (etapy 2 i 3 nierozpoczęte), granice zakresu zapisane w planie.                      |
+| S-11       | dashboard-ui                   | Czytelniejszy widok grupy, tasków i tablicy wyników                                | no                    | Czeka na S-08 i S-10 (kolejność). Widok już się renderuje, więc `/10x-ui`; przepisanie asercji smoke w zakresie.                                                                                                             |
 
 ## Open Roadmap Questions
 
-1. **Czy logowanie OAuth/passwordless (część literalnego brzmienia FR-001) jest potrzebne na MVP, czy wystarczy już działające logowanie email+hasło?** — Owner: user. Block: roadmap-wide (informacyjne, nie blokuje żadnego wycinka — obecny mechanizm logowania wystarcza do przejścia całego przepływu S-01 → S-04).
+(brak — nierozstrzygnięte pytania dotyczą pojedynczych wycinków i są w ich polach Unknowns)
 
 ## Parked
 
@@ -176,18 +195,14 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Powiadomienia/przypomnienia o niewykonanym tasku** — Why parked: PRD §Success Criteria Secondary; poza pierwszym widocznym przepływem.
 - **Historia/statystyki długoterminowe (wykresy streaków w czasie)** — Why parked: PRD §Success Criteria Secondary.
 - ~~**Automatyczny deploy na merge (CI/CD)**~~ — Unparked 2026-09-25: Workers Builds i tak wdraża `master`, a automatyzacja migracji trafiła do S-05 (`release-automation-and-auth-hardening`).
-- **Domena własna / środowisko staging** — Why parked: `context/foundation/infrastructure.md` i deployment-plan.md — poza zakresem.
-- **Observability (logowanie strukturalne, error tracking)** — Why parked: żaden FR must-have tego nie wymaga przy obecnej skali (grono znajomych); rozważyć ponownie, jeśli grupa urośnie (per Risk Register w infrastructure.md).
+- ~~**Domena własna / środowisko staging**~~ — Unparked 2026-10-02: domena własna trafiła do S-06 (`custom-domain`); środowisko staging zostaje zaparkowane (osobna pozycja poniżej).
+- **Środowisko staging** — Why parked: `context/foundation/infrastructure.md` i deployment-plan.md — poza zakresem; wydzielone z pozycji „Domena własna / środowisko staging" przy odparkowaniu domeny 2026-10-02.
+- ~~**Observability (logowanie strukturalne, error tracking)**~~ — Unparked 2026-10-02: trafiła do S-08 (`observability-swallowed-errors`) w zakresie audytu jednego przepływu, naprawy jednego połkniętego błędu i opcjonalnego error trackingu; logowanie strukturalne nie jest celem tego wycinka.
 
 ## Milestone History
 
-(brak — to pierwszy kamień milowy)
+- **M-1: Pierwszy pełny cykl: grupa → task → odznaczenie → tablica wyników** (`first-group-checkin-loop`) — closed 2026-10-02. F-01 oraz S-01 do S-05 `done`: pełny przepływ z głównego kryterium sukcesu PRD (FR-001 do FR-009) działa na produkcji, a migracje i wydania są zautomatyzowane; zmiany zarchiwizowane w `context/archive/` (2026-09-25 do 2026-10-01).
 
 ## Done
 
-- **F-01: (foundation) w bazie Supabase istnieją tabele grup i członkostwa (`groups`, `group_members`) wraz z politykami RLS wymuszającymi guardrail „widoczność tylko dla własnej grupy”.** — Archived 2026-09-25 → `context/archive/2026-09-25-group-schema-and-rls/`. Lesson: —.
-- **S-01: użytkownik może założyć grupę, dołączyć do istniejącej grupy przez link/kod, a jako jej twórca — usunąć grupę lub usunąć z niej członka.** — Archived 2026-09-25 → `context/archive/2026-09-25-group-create-join-manage/`. Lesson: —.
-- **S-05: (release) migracje Supabase i wydanie aplikacji na produkcję przechodzą w przewidywalnej, zautomatyzowanej kolejności (najpierw schemat, potem kod), a rejestracja nowego użytkownika na produkcji działa bez ręcznych obejść: e-maile potwierdzające wychodzą z własnego SMTP, link potwierdzający loguje użytkownika przez `/auth/callback`, a dokumentacja mówi prawdę o tym, jak wdrażamy.** — Archived 2026-09-30 → `context/archive/2026-09-30-release-automation-and-auth-hardening/`. Lesson: —.
-- **S-02: użytkownik może utworzyć task w swojej grupie (jednorazowy lub powtarzalny: dziennie/tygodniowo), a jako jego twórca — edytować go lub usunąć.** — Archived 2026-10-01 → `context/archive/2026-09-30-task-create-and-manage/`. Lesson: —.
-- **S-03: użytkownik może dołączyć (zapisać się) do tasku stworzonego przez innego członka grupy i wypisać się z tasku, do którego jest zapisany.** — Archived 2026-10-01 → `context/archive/2026-10-01-task-join-and-leave/`. Lesson: —.
-- **S-04: użytkownik odznacza wystąpienie tasku jako wykonane i natychmiast widzi zaktualizowany wynik w tablicy wyników swojej grupy.** — Archived 2026-10-01 → `context/archive/2026-10-01-checkoff-and-leaderboard/`. Lesson: —.
+(brak — `/10x-archive` dopisze wpis po zarchiwizowaniu pierwszej zmiany z M-2)
