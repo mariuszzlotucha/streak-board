@@ -95,12 +95,12 @@ Write the unit tests first (red), then the pure modules (green). No database, no
 - `periodsBetween(recurrence, from, to): number`: whole periods from `from` to `to` (`to >= from`), by UTC day arithmetic on the keys, divided by 7 for `weekly`.
 - `decayStreak(value, missedPeriods): number`: `floor(value / 2^missedPeriods)`, 0 early for large counts. The only place that holds the decay value.
 - `interface StreakSnapshot { base: { value: number; period: PeriodKey } | null; checked: boolean }`: the state after the last checked period before the current one, and whether the current period is checked.
-- `snapshotOf(recurrence, periods: readonly string[], currentPeriod): StreakSnapshot`: de-duplicates and sorts the keys, snaps weekly keys to their Monday, ignores keys after `currentPeriod`. For `once`: `base` null and `checked` = any key present. It runs for every enrolment on every dashboard load, so it is a single pass over integer day numbers: parse each key once into days since the epoch, sort only when the input is not already ascending, snap weekly keys by arithmetic and fold while skipping repeats; no per-key `Date`, `Set` or array copy (a literal reading costs about 1.5 µs per stored period, see Performance Considerations).
+- `snapshotOf(recurrence, periods: readonly string[], currentPeriod): StreakSnapshot`: de-duplicates and sorts the keys, snaps weekly keys to their Monday, ignores keys after `currentPeriod`. For `once`: `base` null and `checked` = any key present. It runs for every enrolment on every dashboard load, so it is linear over integer day numbers: parse each key once into days since the epoch, sort only when the input is not already ascending, snap weekly keys by arithmetic and fold while skipping repeats; no per-key `Date` or `Set` and no copy of the string array (a literal reading costs about 1.5 µs per stored period, see Performance Considerations).
 - `streakValue(recurrence, snapshot, currentPeriod, checked = snapshot.checked): number`: the value now; passing `checked` is how the island previews a tick or an undo. Checked adds 1 after decaying `base` for the missed periods between `base.period` and `currentPeriod`; unchecked only decays; `once` returns `checked ? 1 : 0`.
 
 #### 2. Leaderboard logic
 
-**File**: `src/lib/leaderboard.ts` (new)
+**File**: `src/lib/leaderboard-rules.ts` (new)
 
 **Intent**: Turn rows from the database into totals, the viewer's per-task snapshots and a ranked list, all pure.
 
@@ -112,7 +112,7 @@ Write the unit tests first (red), then the pure modules (green). No database, no
 
 #### 3. Unit tests
 
-**File**: `tests/unit/streak-rules.test.ts`, `tests/unit/leaderboard.test.ts` (new)
+**File**: `tests/unit/streak-rules.test.ts`, `tests/unit/leaderboard-rules.test.ts` (new)
 
 **Intent**: Prove the rule from the PRD sentence and the interview decisions. Every expected value is derived by hand from those sources and written in a table at the top of the test file, never produced by running the implementation (oracle problem).
 
@@ -381,7 +381,7 @@ Hydrate the control and the leaderboard so a tap flips the row and re-ranks the 
 
 #### 3. Unit tests
 
-**File**: `tests/unit/checkoff-sync.test.ts`, `tests/unit/checkoff-client.test.ts` (new); extend `tests/unit/leaderboard.test.ts`
+**File**: `tests/unit/checkoff-sync.test.ts`, `tests/unit/checkoff-client.test.ts` (new); extend `tests/unit/leaderboard-rules.test.ts`
 
 **Intent**: Cover everything about the island that does not need a DOM.
 
@@ -489,7 +489,7 @@ Where each settled term is proven:
 
 ## Performance Considerations
 
-The dashboard now makes one concurrent batch of four reads after `getMyGroup` instead of four sequential ones, so the page should not be slower than today even with the new read. The view returns one row per enrolment with a date array (about 5 KB per enrolment-year); the streak computation is linear in the number of periods and runs for every enrolment on every load. A literal implementation of the Phase 1 contract measured about 1.5 µs per stored period in warm Node (about 6–8 ms for 15 enrolments × 365 periods, 16–28 ms for 50 × 365), against a 10 ms CPU budget per invocation if the Worker is on the Workers Free plan (`context/foundation/infrastructure.md:31,92`; `wrangler.jsonc` sets no `limits.cpu_ms`). The single-pass fold specified in Phase 1 was about 9× cheaper in a prototype (about 0.6 ms and 2 ms), and Phase 6 reads the real CPU time of `/dashboard` from Workers Logs. The cap guard throws at 1000 enrolments, far above the target scale; snapshots are the future answer if arrays grow.
+The dashboard now makes one concurrent batch of four reads after `getMyGroup` instead of four sequential ones, so the page should not be slower than today even with the new read. The view returns one row per enrolment with a date array (about 5 KB per enrolment-year); the streak computation is linear in the number of periods and runs for every enrolment on every load. A literal implementation of the Phase 1 contract measured about 1.5 µs per stored period in warm Node (about 6–8 ms for 15 enrolments × 365 periods, 16–28 ms for 50 × 365), against a 10 ms CPU budget per invocation if the Worker is on the Workers Free plan (`context/foundation/infrastructure.md:31,92`; `wrangler.jsonc` sets no `limits.cpu_ms`). The single-pass fold specified in Phase 1 was about 9× cheaper in a prototype (about 0.6 ms and 2 ms), and Phase 6 reads the real CPU time of `/dashboard` from Workers Logs. The cap guard throws at 1000 enrolments, far above the target scale; snapshots are the future answer if arrays grow. Measured on the implemented Phase 1 (Node 24, not workerd; see `reviews/impl-review-phase-1.md`): about 200 ns per stored period warm (15 enrolments × 365 periods about 1 ms, 50 × 365 about 3–4 ms) and 3.8–4.7 ms or 7.4–9 ms on the first call in a fresh process, so the saving over the literal reading is about 5.5× rather than 9×. The fold keeps one numeric array of the parsed days (two loops) so that it can stop at the first future key even when the input is unsorted.
 
 ## Migration Notes
 
@@ -510,14 +510,14 @@ Additive migration (a table and a view); no backfill because no check-offs exist
 
 #### Automated
 
-- [ ] 1.1 Unit tests pass (the local Supabase stack must be running, the Vitest global setup reads it): `npm test`
-- [ ] 1.2 Linting passes: `npm run lint`
-- [ ] 1.3 Types check: `npx astro check`
-- [ ] 1.4 Project builds: `npm run build`
+- [x] 1.1 Unit tests pass (the local Supabase stack must be running, the Vitest global setup reads it): `npm test`
+- [x] 1.2 Linting passes: `npm run lint`
+- [x] 1.3 Types check: `npx astro check`
+- [x] 1.4 Project builds: `npm run build`
 
 #### Manual
 
-- [ ] 1.5 Every expected value in the new unit tests can be derived from the PRD sentence and this plan without reading the implementation (check the oracle table at the top of the test files).
+- [x] 1.5 Every expected value in the new unit tests can be derived from the PRD sentence and this plan without reading the implementation (check the oracle table at the top of the test files).
 
 ### Phase 2: Check-off table, RLS and read view
 
