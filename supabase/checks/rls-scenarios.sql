@@ -1,4 +1,4 @@
--- RLS scenario checks for groups / group_members / tasks / task_participants (F-01 + group-rls-hardening + S-01 helper functions + S-02 tasks + S-03 participation).
+-- RLS scenario checks for groups / group_members / tasks / task_participants / task_checkoffs (F-01 + group-rls-hardening + S-01 helper functions + S-02 tasks + S-03 participation + S-04 check-offs).
 --
 -- Run against the LOCAL Supabase database only:
 --   docker exec -i supabase_db_10x-astro-starter psql -U postgres -d postgres -X -v ON_ERROR_STOP=1 < supabase/checks/rls-scenarios.sql
@@ -311,12 +311,12 @@ do $$
 begin
   perform rls_check.expect_value(
     $q$select count(*) from pg_policies
-       where schemaname = 'public' and tablename in ('groups', 'group_members', 'tasks', 'task_participants')
+       where schemaname = 'public' and tablename in ('groups', 'group_members', 'tasks', 'task_participants', 'task_checkoffs')
          and regexp_replace(coalesce(qual, '') || ' ' || coalesce(with_check, ''), '\( SELECT auth\.uid\(\) AS uid\)', '', 'g') ~ 'auth\.uid\(\)'$q$,
     '0', '#6 no policy uses a bare auth.uid()');
   perform rls_check.expect_value(
     $q$select (count(*) > 0)::text from pg_policies
-       where schemaname = 'public' and tablename in ('groups', 'group_members', 'tasks', 'task_participants')
+       where schemaname = 'public' and tablename in ('groups', 'group_members', 'tasks', 'task_participants', 'task_checkoffs')
          and coalesce(qual, '') || ' ' || coalesce(with_check, '') ~ '\( SELECT auth\.uid\(\) AS uid\)'$q$,
     'true', '#6 policies do use (select auth.uid())');
   perform rls_check.expect_value(
@@ -325,6 +325,12 @@ begin
          and policyname in ('task_participants_insert_self', 'task_participants_delete_self')
          and coalesce(qual, '') || ' ' || coalesce(with_check, '') ~ '\( SELECT auth\.uid\(\) AS uid\)'$q$,
     '2', '#6 the task_participants insert and delete policies use (select auth.uid())');
+  perform rls_check.expect_value(
+    $q$select count(*) from pg_policies
+       where schemaname = 'public' and tablename = 'task_checkoffs'
+         and policyname in ('task_checkoffs_insert_self', 'task_checkoffs_delete_self')
+         and coalesce(qual, '') || ' ' || coalesce(with_check, '') ~ '\( SELECT auth\.uid\(\) AS uid\)'$q$,
+    '2', '#6 the task_checkoffs insert and delete policies use (select auth.uid())');
 end;
 $$;
 
@@ -805,6 +811,419 @@ begin
   perform rls_check.expect_error('42501', format('insert into public.group_members (group_id, user_id) values (%L, %L)', ga, a), 'hardening: authenticated cannot insert group_members directly');
   perform rls_check.expect_error('42501', format('update public.group_members set user_id = user_id where group_id = %L', ga), 'hardening: authenticated cannot update group_members');
   perform rls_check.expect_value(format('select count(*) from public.group_members where group_id = %L', ga), '1', 'hardening: the owner still reads the membership created by the trigger');
+
+  perform rls_check.as_postgres();
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- S-04: task_checkoffs (who checks off, enrolment by foreign key, period window, grants, cascades)
+-- ---------------------------------------------------------------------------
+
+-- The UTC day by epoch arithmetic, deliberately not the policy's own expression (the whole file is one transaction, so
+-- now() does not move while the scenarios run).
+create function rls_check.utc_today() returns date
+language sql
+stable
+as $$
+  select date '1970-01-01' + floor(extract(epoch from now()) / 86400)::int;
+$$;
+
+-- The insert statement for one check-off, so that the scenarios below stay readable.
+create function rls_check.tick(p_task uuid, p_user uuid, p_period date) returns text
+language sql
+stable
+as $$
+  select format('insert into public.task_checkoffs (task_id, user_id, period) values (%L, %L, %L)', p_task, p_user, p_period);
+$$;
+
+do $$
+declare
+  a uuid; c uuid; m uuid; b uuid; x uuid; ga uuid; gb uuid; code_a text; t uuid;
+  d0 date := rls_check.utc_today();
+  v_zone text := current_setting('timezone');
+begin
+  a := rls_check.mk_user(); c := rls_check.mk_user(); m := rls_check.mk_user(); b := rls_check.mk_user(); x := rls_check.mk_user();
+
+  perform rls_check.as_user(a);
+  ga := rls_check.new_group(a);
+  code_a := rls_check.code_of(ga);
+  perform rls_check.as_user(c);
+  perform rls_check.expect_value(format('select public.join_group(%L)', code_a), ga::text, 'S-04 setup: C joined group A');
+  perform rls_check.as_user(m);
+  perform rls_check.expect_value(format('select public.join_group(%L)', code_a), ga::text, 'S-04 setup: M joined group A');
+  perform rls_check.as_user(b);
+  gb := rls_check.new_group(b);
+
+  perform rls_check.as_user(c);
+  perform rls_check.expect_rows(format('insert into public.tasks (group_id, created_by, title, recurrence) values (%L, %L, %L, %L)', ga, c, 'Water the plants', 'daily'), 1, 'S-04 setup: C created a task (C is enrolled by the trigger)');
+  select id into t from public.tasks where group_id = ga;
+  perform rls_check.as_user(m);
+  perform rls_check.expect_rows(format('insert into public.task_participants (task_id, user_id) values (%L, %L)', t, m), 1, 'S-04 setup: M joined the task');
+
+  -- An enrolled member checks off; the same period twice is a duplicate, another period is a new row.
+  perform rls_check.as_user(c);
+  perform rls_check.expect_rows(rls_check.tick(t, c, d0), 1, 'S-04 an enrolled member checks off today');
+  perform rls_check.expect_error('23505', rls_check.tick(t, c, d0), 'S-04 checking off the same period twice -> 23505');
+  perform rls_check.expect_rows(rls_check.tick(t, c, d0 - 1), 1, 'S-04 another period inside the window adds a row');
+  perform rls_check.as_postgres();
+  perform rls_check.expect_value(format('select count(*) from public.task_checkoffs where task_id = %L', t), '2', 'S-04 two rows are stored once the repeat is rejected');
+
+  -- Whose check-off it is: the caller's own, for a task they take part in.
+  perform rls_check.as_user(m);
+  perform rls_check.expect_error('42501', rls_check.tick(t, c, d0 - 2), 'S-04 a member cannot check off in another user''s name');
+  perform rls_check.expect_rows(rls_check.tick(t, m, d0), 1, 'S-04 the same member checks off for themselves');
+  perform rls_check.as_user(a);
+  perform rls_check.expect_error('23503', rls_check.tick(t, a, d0), 'S-04 a group member who has not joined the task cannot check off (foreign key to the participation)');
+  perform rls_check.as_user(b);
+  perform rls_check.expect_error('42501', rls_check.tick(t, b, d0), 'S-04 a member of another group cannot check off');
+  perform rls_check.as_user(x);
+  perform rls_check.expect_error('42501', rls_check.tick(t, x, d0), 'S-04 a user without a group cannot check off');
+  perform rls_check.as_anon();
+  perform rls_check.expect_error('42501', rls_check.tick(t, c, d0 - 3), 'S-04 anon cannot check off');
+  perform rls_check.as_user(c);
+  perform rls_check.expect_error('42501', rls_check.tick(gen_random_uuid(), c, d0), 'S-04 a task that does not exist cannot be checked off');
+
+  -- The period window is [UTC today - 7, UTC today + 1].
+  perform rls_check.expect_rows(rls_check.tick(t, c, d0 - 7), 1, 'S-04 a period 7 days back is accepted');
+  perform rls_check.expect_error('42501', rls_check.tick(t, c, d0 - 8), 'S-04 a period 8 days back is rejected');
+  perform rls_check.expect_rows(rls_check.tick(t, c, d0 + 1), 1, 'S-04 tomorrow (UTC) is accepted');
+  perform rls_check.expect_error('42501', rls_check.tick(t, c, d0 + 2), 'S-04 the day after tomorrow (UTC) is rejected');
+
+  -- The window follows the UTC day whatever the session time zone is. The two zones lie on opposite sides of UTC, so at
+  -- any time of day at least one of them is already on another calendar date than UTC.
+  perform rls_check.as_user(m);
+  perform set_config('timezone', 'Pacific/Kiritimati', true);
+  perform rls_check.expect_rows(rls_check.tick(t, m, d0 - 7), 1, 'S-04 in UTC+14 the oldest accepted period is still 7 UTC days back');
+  perform rls_check.expect_error('42501', rls_check.tick(t, m, d0 + 2), 'S-04 in UTC+14 the day after tomorrow (UTC) is still rejected');
+  perform set_config('timezone', 'Pacific/Pago_Pago', true);
+  perform rls_check.expect_rows(rls_check.tick(t, m, d0 + 1), 1, 'S-04 in UTC-11 tomorrow (UTC) is still accepted');
+  perform rls_check.expect_error('42501', rls_check.tick(t, m, d0 - 8), 'S-04 in UTC-11 a period 8 UTC days back is still rejected');
+  perform set_config('timezone', v_zone, true);
+
+  -- Grants: the client sends task_id, user_id and period only; no UPDATE, no TRUNCATE.
+  perform rls_check.as_user(c);
+  perform rls_check.expect_error('42501', format('insert into public.task_checkoffs (task_id, user_id, period, checked_at) values (%L, %L, %L, now())', t, c, d0 - 4), 'S-04 checked_at cannot be sent (column grant)');
+  perform rls_check.expect_error('42501', format('update public.task_checkoffs set period = %L where task_id = %L', d0, t), 'S-04 UPDATE of period is denied');
+  perform rls_check.expect_error('42501', format('update public.task_checkoffs set checked_at = now() where task_id = %L', t), 'S-04 UPDATE of checked_at is denied');
+  perform rls_check.expect_error('42501', 'truncate public.task_checkoffs', 'S-04 TRUNCATE is denied');
+
+  perform rls_check.as_postgres();
+end;
+$$;
+
+-- Reads: every member of the group sees every check-off of its tasks (the owner included, who has not joined the task);
+-- outsiders and anon see none; an ex-member stops seeing them.
+do $$
+declare
+  a uuid; c uuid; m uuid; b uuid; x uuid; ga uuid; gb uuid; code_a text; t uuid; tb uuid;
+  d0 date := rls_check.utc_today();
+begin
+  a := rls_check.mk_user(); c := rls_check.mk_user(); m := rls_check.mk_user(); b := rls_check.mk_user(); x := rls_check.mk_user();
+
+  perform rls_check.as_user(a);
+  ga := rls_check.new_group(a);
+  code_a := rls_check.code_of(ga);
+  perform rls_check.as_user(c);
+  perform rls_check.expect_value(format('select public.join_group(%L)', code_a), ga::text, 'S-04 reads setup: C joined group A');
+  perform rls_check.as_user(m);
+  perform rls_check.expect_value(format('select public.join_group(%L)', code_a), ga::text, 'S-04 reads setup: M joined group A');
+  perform rls_check.as_user(b);
+  gb := rls_check.new_group(b);
+
+  perform rls_check.as_user(c);
+  perform rls_check.expect_rows(format('insert into public.tasks (group_id, created_by, title, recurrence) values (%L, %L, %L, %L)', ga, c, 'Water the plants', 'daily'), 1, 'S-04 reads setup: C created a task');
+  select id into t from public.tasks where group_id = ga;
+  perform rls_check.expect_rows(rls_check.tick(t, c, d0), 1, 'S-04 reads setup: C checked off today');
+  perform rls_check.expect_rows(rls_check.tick(t, c, d0 - 1), 1, 'S-04 reads setup: C checked off yesterday');
+  perform rls_check.as_user(m);
+  perform rls_check.expect_rows(format('insert into public.task_participants (task_id, user_id) values (%L, %L)', t, m), 1, 'S-04 reads setup: M joined the task');
+  perform rls_check.expect_rows(rls_check.tick(t, m, d0), 1, 'S-04 reads setup: M checked off today');
+  perform rls_check.as_user(b);
+  perform rls_check.expect_rows(format('insert into public.tasks (group_id, created_by, title, recurrence) values (%L, %L, %L, %L)', gb, b, 'Read a book', 'daily'), 1, 'S-04 reads setup: B created a task in group B');
+  select id into tb from public.tasks where group_id = gb;
+  perform rls_check.expect_rows(rls_check.tick(tb, b, d0), 1, 'S-04 reads setup: B checked off');
+
+  -- Members of group A read all three rows and not B's.
+  perform rls_check.as_user(m);
+  perform rls_check.expect_value(format('select count(*) from public.task_checkoffs where task_id = %L', t), '3', 'S-04 a member reads all check-offs of the task');
+  perform rls_check.expect_value('select count(*) from public.task_checkoffs', '3', 'S-04 a member reads nothing from another group''s tasks');
+  perform rls_check.as_user(a);
+  perform rls_check.expect_value(format('select count(*) from public.task_checkoffs where task_id = %L', t), '3', 'S-04 the group owner reads all check-offs of the task (without joining it)');
+
+  -- Outsiders read only what is theirs: B reads group B's row, X and anon read nothing.
+  perform rls_check.as_user(b);
+  perform rls_check.expect_value(format('select count(*) from public.task_checkoffs where task_id = %L', t), '0', 'S-04 a member of another group reads none of the check-offs');
+  perform rls_check.expect_value('select count(*) from public.task_checkoffs', '1', 'S-04 a member of another group reads only their own group''s check-offs');
+  perform rls_check.as_user(x);
+  perform rls_check.expect_value('select count(*) from public.task_checkoffs', '0', 'S-04 a user without a group reads none of the check-offs');
+  perform rls_check.as_anon();
+  perform rls_check.expect_error('42501', 'select count(*) from public.task_checkoffs', 'S-04 anon cannot read check-offs');
+
+  -- M leaves the group and stops seeing the check-offs.
+  perform rls_check.as_user(m);
+  perform rls_check.expect_rows(format('delete from public.group_members where user_id = %L', m), 1, 'S-04 M leaves the group');
+  perform rls_check.expect_value('select count(*) from public.task_checkoffs', '0', 'S-04 an ex-member reads no check-offs of the former group');
+
+  perform rls_check.as_postgres();
+end;
+$$;
+
+-- The aggregate view task_checkoff_periods: one row per enrolment with the periods sorted, scoped by the caller's RLS
+-- (security_invoker); the default owner rights would show every group.
+do $$
+declare
+  a uuid; c uuid; m uuid; b uuid; x uuid; ga uuid; gb uuid; code_a text; t uuid; tb uuid;
+  d0 date := rls_check.utc_today();
+begin
+  a := rls_check.mk_user(); c := rls_check.mk_user(); m := rls_check.mk_user(); b := rls_check.mk_user(); x := rls_check.mk_user();
+
+  perform rls_check.as_user(a);
+  ga := rls_check.new_group(a);
+  code_a := rls_check.code_of(ga);
+  perform rls_check.as_user(c);
+  perform rls_check.expect_value(format('select public.join_group(%L)', code_a), ga::text, 'S-04 view setup: C joined group A');
+  perform rls_check.as_user(m);
+  perform rls_check.expect_value(format('select public.join_group(%L)', code_a), ga::text, 'S-04 view setup: M joined group A');
+  perform rls_check.as_user(b);
+  gb := rls_check.new_group(b);
+
+  perform rls_check.as_user(c);
+  perform rls_check.expect_rows(format('insert into public.tasks (group_id, created_by, title, recurrence) values (%L, %L, %L, %L)', ga, c, 'Water the plants', 'daily'), 1, 'S-04 view setup: C created a task');
+  select id into t from public.tasks where group_id = ga;
+  -- Inserted out of order on purpose: the order comes from the view.
+  perform rls_check.expect_rows(rls_check.tick(t, c, d0), 1, 'S-04 view setup: C checked off today');
+  perform rls_check.expect_rows(rls_check.tick(t, c, d0 - 2), 1, 'S-04 view setup: C checked off two days ago');
+  perform rls_check.expect_rows(rls_check.tick(t, c, d0 - 1), 1, 'S-04 view setup: C checked off yesterday');
+  perform rls_check.as_user(m);
+  perform rls_check.expect_rows(format('insert into public.task_participants (task_id, user_id) values (%L, %L)', t, m), 1, 'S-04 view setup: M joined the task');
+  perform rls_check.expect_rows(rls_check.tick(t, m, d0 - 1), 1, 'S-04 view setup: M checked off yesterday');
+  perform rls_check.as_user(b);
+  perform rls_check.expect_rows(format('insert into public.tasks (group_id, created_by, title, recurrence) values (%L, %L, %L, %L)', gb, b, 'Read a book', 'daily'), 1, 'S-04 view setup: B created a task in group B');
+  select id into tb from public.tasks where group_id = gb;
+  perform rls_check.expect_rows(rls_check.tick(tb, b, d0), 1, 'S-04 view setup: B checked off');
+
+  perform rls_check.as_postgres();
+  perform rls_check.expect_value($q$select coalesce(reloptions::text, '') from pg_class where oid = 'public.task_checkoff_periods'::regclass$q$, '{security_invoker=true}', 'S-04 the view runs with the caller''s rights (security_invoker)');
+  -- Behaviour cannot tell this apart: a view with GROUP BY accepts no writes, and anon is stopped by the table anyway.
+  perform rls_check.expect_value(
+    $q$select (has_table_privilege('anon', 'public.task_checkoff_periods', 'select')
+               or has_table_privilege('authenticated', 'public.task_checkoff_periods', 'insert,update,delete,truncate,references,trigger'))::text$q$,
+    'false', 'S-04 the view grants anon nothing and authenticated only SELECT');
+
+  -- Members read one row per enrolment, periods ascending, and nothing of group B.
+  perform rls_check.as_user(m);
+  perform rls_check.expect_value(format('select count(*) from public.task_checkoff_periods where task_id = %L', t), '2', 'S-04 a member reads one aggregated row per enrolment');
+  -- The order has to come from the view's own order by. An index scan on the primary key hands the rows over already
+  -- sorted by period, which would hide a missing order by, so those scan types are off for this one read and the
+  -- aggregate sees heap order (the periods were inserted out of order above).
+  perform set_config('enable_indexscan', 'off', true);
+  perform set_config('enable_indexonlyscan', 'off', true);
+  perform set_config('enable_bitmapscan', 'off', true);
+  perform rls_check.expect_value(format('select periods::text from public.task_checkoff_periods where task_id = %L and user_id = %L', t, c), format('{%s,%s,%s}', d0 - 2, d0 - 1, d0), 'S-04 the view lists an enrolment''s periods in ascending order');
+  perform set_config('enable_indexscan', 'on', true);
+  perform set_config('enable_indexonlyscan', 'on', true);
+  perform set_config('enable_bitmapscan', 'on', true);
+  perform rls_check.expect_value(format('select periods::text from public.task_checkoff_periods where task_id = %L and user_id = %L', t, m), format('{%s}', d0 - 1), 'S-04 the view lists a single period as a one-element array');
+  perform rls_check.expect_value('select count(*) from public.task_checkoff_periods', '2', 'S-04 the view shows nothing of another group');
+  perform rls_check.as_user(a);
+  perform rls_check.expect_value(format('select count(*) from public.task_checkoff_periods where task_id = %L', t), '2', 'S-04 the group owner reads the same aggregated rows (without joining the task)');
+
+  -- Outsiders read only what is theirs, anon is denied.
+  perform rls_check.as_user(b);
+  perform rls_check.expect_value(format('select count(*) from public.task_checkoff_periods where task_id = %L', t), '0', 'S-04 a member of another group reads no aggregated rows of this group');
+  perform rls_check.expect_value('select count(*) from public.task_checkoff_periods', '1', 'S-04 a member of another group reads only their own group''s aggregated rows');
+  perform rls_check.as_user(x);
+  perform rls_check.expect_value('select count(*) from public.task_checkoff_periods', '0', 'S-04 a user without a group reads no aggregated rows');
+  perform rls_check.as_anon();
+  perform rls_check.expect_error('42501', 'select count(*) from public.task_checkoff_periods', 'S-04 anon cannot read the view');
+
+  perform rls_check.as_postgres();
+end;
+$$;
+
+-- Undo: a member deletes only their own check-offs; nobody else's, not even the group owner's.
+do $$
+declare
+  a uuid; c uuid; m uuid; b uuid; x uuid; ga uuid; code_a text; t uuid;
+  d0 date := rls_check.utc_today();
+begin
+  a := rls_check.mk_user(); c := rls_check.mk_user(); m := rls_check.mk_user(); b := rls_check.mk_user(); x := rls_check.mk_user();
+
+  perform rls_check.as_user(a);
+  ga := rls_check.new_group(a);
+  code_a := rls_check.code_of(ga);
+  perform rls_check.as_user(b);
+  perform rls_check.new_group(b);
+  perform rls_check.as_user(c);
+  perform rls_check.expect_value(format('select public.join_group(%L)', code_a), ga::text, 'S-04 undo setup: C joined group A');
+  perform rls_check.as_user(m);
+  perform rls_check.expect_value(format('select public.join_group(%L)', code_a), ga::text, 'S-04 undo setup: M joined group A');
+
+  perform rls_check.as_user(c);
+  perform rls_check.expect_rows(format('insert into public.tasks (group_id, created_by, title, recurrence) values (%L, %L, %L, %L)', ga, c, 'Water the plants', 'daily'), 1, 'S-04 undo setup: C created a task');
+  select id into t from public.tasks where group_id = ga;
+  perform rls_check.expect_rows(rls_check.tick(t, c, d0), 1, 'S-04 undo setup: C checked off today');
+  perform rls_check.expect_rows(rls_check.tick(t, c, d0 - 1), 1, 'S-04 undo setup: C checked off yesterday');
+  perform rls_check.as_user(m);
+  perform rls_check.expect_rows(format('insert into public.task_participants (task_id, user_id) values (%L, %L)', t, m), 1, 'S-04 undo setup: M joined the task');
+  perform rls_check.expect_rows(rls_check.tick(t, m, d0), 1, 'S-04 undo setup: M checked off today');
+
+  -- Nobody else removes C's rows (0 rows, no error), whatever their role.
+  perform rls_check.as_user(a);
+  perform rls_check.expect_rows(format('delete from public.task_checkoffs where task_id = %L and user_id = %L', t, c), 0, 'S-04 a member cannot delete another user''s check-offs (even the group owner)');
+  perform rls_check.as_user(m);
+  perform rls_check.expect_rows(format('delete from public.task_checkoffs where task_id = %L and user_id = %L', t, c), 0, 'S-04 M cannot delete C''s check-offs');
+  perform rls_check.as_user(b);
+  perform rls_check.expect_rows(format('delete from public.task_checkoffs where task_id = %L', t), 0, 'S-04 a member of another group cannot delete check-offs');
+  perform rls_check.as_user(x);
+  perform rls_check.expect_rows(format('delete from public.task_checkoffs where task_id = %L', t), 0, 'S-04 a user without a group cannot delete check-offs');
+  perform rls_check.as_anon();
+  perform rls_check.expect_error('42501', 'delete from public.task_checkoffs', 'S-04 anon cannot delete check-offs');
+  perform rls_check.as_postgres();
+  perform rls_check.expect_value(format('select count(*) from public.task_checkoffs where task_id = %L', t), '3', 'S-04 the rejected deletes changed nothing');
+
+  -- The owner of the rows undoes one period, then everything of theirs for the task; M's row is never touched.
+  perform rls_check.as_user(c);
+  perform rls_check.expect_rows(format('delete from public.task_checkoffs where task_id = %L and period = %L', t, d0), 1, 'S-04 a member undoes one period of their own');
+  perform rls_check.expect_rows(format('delete from public.task_checkoffs where task_id = %L', t), 1, 'S-04 deleting by task alone removes only the caller''s remaining row');
+  perform rls_check.as_postgres();
+  perform rls_check.expect_value(format('select count(*) from public.task_checkoffs where task_id = %L and user_id = %L', t, m), '1', 'S-04 the other member''s check-off survived');
+
+  perform rls_check.as_postgres();
+end;
+$$;
+
+-- Every way a participation row disappears also erases the user's check-offs for the task (composite foreign key with
+-- cascade): leaving a task, leaving the group, removal by the owner, deleting the task and deleting the group.
+do $$
+declare
+  a uuid; c uuid; m uuid; ga uuid; code_a text; t1 uuid; t2 uuid;
+  d0 date := rls_check.utc_today();
+begin
+  a := rls_check.mk_user(); c := rls_check.mk_user(); m := rls_check.mk_user();
+
+  perform rls_check.as_user(a);
+  ga := rls_check.new_group(a);
+  code_a := rls_check.code_of(ga);
+  perform rls_check.as_user(c);
+  perform rls_check.expect_value(format('select public.join_group(%L)', code_a), ga::text, 'S-04 cascade setup: C joined group A');
+  perform rls_check.as_user(m);
+  perform rls_check.expect_value(format('select public.join_group(%L)', code_a), ga::text, 'S-04 cascade setup: M joined group A');
+
+  perform rls_check.as_user(a);
+  perform rls_check.expect_rows(format('insert into public.tasks (group_id, created_by, title, recurrence) values (%L, %L, %L, %L)', ga, a, 'Task one', 'daily'), 1, 'S-04 cascade setup: A created task one');
+  select id into t1 from public.tasks where group_id = ga and title = 'Task one';
+  perform rls_check.expect_rows(format('insert into public.tasks (group_id, created_by, title, recurrence) values (%L, %L, %L, %L)', ga, a, 'Task two', 'daily'), 1, 'S-04 cascade setup: A created task two');
+  select id into t2 from public.tasks where group_id = ga and title = 'Task two';
+
+  -- Everybody takes part in both tasks and checks off both: 3 members x 2 tasks = 6 rows.
+  perform rls_check.expect_rows(format('insert into public.task_checkoffs (task_id, user_id, period) select id, %L, %L from public.tasks where group_id = %L', a, d0, ga), 2, 'S-04 cascade setup: A checked off both tasks');
+  perform rls_check.as_user(c);
+  perform rls_check.expect_rows(format('insert into public.task_participants (task_id, user_id) select id, %L from public.tasks where group_id = %L', c, ga), 2, 'S-04 cascade setup: C joined both tasks');
+  perform rls_check.expect_rows(format('insert into public.task_checkoffs (task_id, user_id, period) select id, %L, %L from public.tasks where group_id = %L', c, d0, ga), 2, 'S-04 cascade setup: C checked off both tasks');
+  perform rls_check.as_user(m);
+  perform rls_check.expect_rows(format('insert into public.task_participants (task_id, user_id) select id, %L from public.tasks where group_id = %L', m, ga), 2, 'S-04 cascade setup: M joined both tasks');
+  perform rls_check.expect_rows(format('insert into public.task_checkoffs (task_id, user_id, period) select id, %L, %L from public.tasks where group_id = %L', m, d0, ga), 2, 'S-04 cascade setup: M checked off both tasks');
+  perform rls_check.as_postgres();
+  perform rls_check.expect_value(format('select count(*) from public.task_checkoffs where task_id in (%L, %L)', t1, t2), '6', 'S-04 cascade setup: six check-offs exist');
+
+  -- C leaves task one: only C's check-offs for that task go.
+  perform rls_check.as_user(c);
+  perform rls_check.expect_rows(format('delete from public.task_participants where task_id = %L and user_id = %L', t1, c), 1, 'S-04 C leaves task one');
+  perform rls_check.as_postgres();
+  perform rls_check.expect_value(format('select count(*) from public.task_checkoffs where task_id = %L and user_id = %L', t1, c), '0', 'S-04 leaving a task erases the leaver''s check-offs for it');
+  perform rls_check.expect_value(format('select count(*) from public.task_checkoffs where user_id = %L', c), '1', 'S-04 the leaver''s check-offs for other tasks stay');
+  perform rls_check.expect_value(format('select count(*) from public.task_checkoffs where task_id = %L', t1), '2', 'S-04 the others'' check-offs for task one stay');
+
+  -- C leaves the group: the S-03 trigger drops C's participation, which takes the remaining check-offs along.
+  perform rls_check.as_user(c);
+  perform rls_check.expect_rows(format('delete from public.group_members where user_id = %L', c), 1, 'S-04 C leaves the group');
+  perform rls_check.as_postgres();
+  perform rls_check.expect_value(format('select count(*) from public.task_checkoffs where user_id = %L', c), '0', 'S-04 leaving the group erases the user''s check-offs');
+  perform rls_check.expect_value(format('select count(*) from public.task_checkoffs where user_id in (%L, %L)', a, m), '4', 'S-04 other members'' check-offs are untouched by C leaving');
+
+  -- The owner removes M.
+  perform rls_check.as_user(a);
+  perform rls_check.expect_rows(format('delete from public.group_members where user_id = %L', m), 1, 'S-04 the owner removes M');
+  perform rls_check.as_postgres();
+  perform rls_check.expect_value(format('select count(*) from public.task_checkoffs where user_id = %L', m), '0', 'S-04 being removed by the owner erases the user''s check-offs');
+  perform rls_check.expect_value(format('select count(*) from public.task_checkoffs where user_id = %L', a), '2', 'S-04 the owner''s check-offs are untouched');
+
+  -- Deleting task one removes its check-offs only.
+  perform rls_check.as_user(a);
+  perform rls_check.expect_rows(format('delete from public.tasks where id = %L', t1), 1, 'S-04 the creator deletes task one');
+  perform rls_check.as_postgres();
+  perform rls_check.expect_value(format('select count(*) from public.task_checkoffs where task_id = %L', t1), '0', 'S-04 deleting a task erases its check-offs');
+  perform rls_check.expect_value(format('select count(*) from public.task_checkoffs where task_id = %L', t2), '1', 'S-04 the other task keeps its check-offs');
+
+  -- Deleting the group cascades tasks, participants and check-offs; the group_members cleanup trigger tolerates it.
+  perform rls_check.as_user(a);
+  perform rls_check.expect_rows(format('delete from public.groups where id = %L', ga), 1, 'S-04 the owner deletes the group');
+  perform rls_check.as_postgres();
+  perform rls_check.expect_value(format('select count(*) from public.task_checkoffs where task_id = %L', t2), '0', 'S-04 deleting the group erases the check-offs of its tasks');
+
+  perform rls_check.as_postgres();
+end;
+$$;
+
+-- Deleting an account erases its check-offs (user_id cascades to the participation, which cascades on).
+do $$
+declare
+  a uuid; m uuid; ga uuid; code_a text; t uuid;
+  d0 date := rls_check.utc_today();
+begin
+  a := rls_check.mk_user(); m := rls_check.mk_user();
+
+  perform rls_check.as_user(a);
+  ga := rls_check.new_group(a);
+  code_a := rls_check.code_of(ga);
+  perform rls_check.as_user(m);
+  perform rls_check.expect_value(format('select public.join_group(%L)', code_a), ga::text, 'S-04 account setup: M joined group A');
+  perform rls_check.as_user(a);
+  perform rls_check.expect_rows(format('insert into public.tasks (group_id, created_by, title, recurrence) values (%L, %L, %L, %L)', ga, a, 'Shared task', 'daily'), 1, 'S-04 account setup: A created a task');
+  select id into t from public.tasks where group_id = ga;
+  perform rls_check.expect_rows(rls_check.tick(t, a, d0), 1, 'S-04 account setup: A checked off');
+  perform rls_check.as_user(m);
+  perform rls_check.expect_rows(format('insert into public.task_participants (task_id, user_id) values (%L, %L)', t, m), 1, 'S-04 account setup: M joined the task');
+  perform rls_check.expect_rows(rls_check.tick(t, m, d0), 1, 'S-04 account setup: M checked off');
+
+  perform rls_check.as_postgres();
+  delete from auth.users where id = m;
+  perform rls_check.expect_value(format('select count(*) from public.task_checkoffs where user_id = %L', m), '0', 'S-04 deleting an account erases its check-offs');
+  perform rls_check.expect_value(format('select count(*) from public.task_checkoffs where user_id = %L', a), '1', 'S-04 other accounts'' check-offs stay');
+
+  perform rls_check.as_postgres();
+end;
+$$;
+
+-- A participation row left behind by the accepted join / leave-group race (S-03) does not let the ex-member check off:
+-- the task is no longer visible to them, so the insert policy rejects the row.
+do $$
+declare
+  a uuid; m uuid; ga uuid; code_a text; t uuid;
+  d0 date := rls_check.utc_today();
+begin
+  a := rls_check.mk_user(); m := rls_check.mk_user();
+
+  perform rls_check.as_user(a);
+  ga := rls_check.new_group(a);
+  code_a := rls_check.code_of(ga);
+  perform rls_check.as_user(m);
+  perform rls_check.expect_value(format('select public.join_group(%L)', code_a), ga::text, 'S-04 ghost setup: M joined group A');
+  perform rls_check.as_user(a);
+  perform rls_check.expect_rows(format('insert into public.tasks (group_id, created_by, title, recurrence) values (%L, %L, %L, %L)', ga, a, 'Ghost task', 'daily'), 1, 'S-04 ghost setup: A created a task');
+  select id into t from public.tasks where group_id = ga;
+  perform rls_check.as_user(m);
+  perform rls_check.expect_rows(format('delete from public.group_members where user_id = %L', m), 1, 'S-04 ghost setup: M leaves the group');
+
+  perform rls_check.as_postgres();
+  perform rls_check.expect_rows(format('insert into public.task_participants (task_id, user_id) values (%L, %L)', t, m), 1, 'S-04 ghost setup: a participation row exists for the ex-member');
+
+  perform rls_check.as_user(m);
+  perform rls_check.expect_error('42501', rls_check.tick(t, m, d0), 'S-04 an ex-member with a leftover participation row cannot check off (the task is not visible to them)');
+  perform rls_check.as_user(a);
+  perform rls_check.expect_rows(rls_check.tick(t, a, d0), 1, 'S-04 the creator can still check off the same task');
 
   perform rls_check.as_postgres();
 end;

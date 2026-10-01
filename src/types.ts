@@ -81,6 +81,35 @@ export type Database = {
         };
         Relationships: [];
       };
+      task_checkoffs: {
+        Row: {
+          checked_at: string;
+          period: string;
+          task_id: string;
+          user_id: string;
+        };
+        Insert: {
+          checked_at?: string;
+          period: string;
+          task_id: string;
+          user_id: string;
+        };
+        Update: {
+          checked_at?: string;
+          period?: string;
+          task_id?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "task_checkoffs_task_id_user_id_fkey";
+            columns: ["task_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "task_participants";
+            referencedColumns: ["task_id", "user_id"];
+          },
+        ];
+      };
       task_participants: {
         Row: {
           joined_at: string;
@@ -144,7 +173,22 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      task_checkoff_periods: {
+        Row: {
+          periods: string[] | null;
+          task_id: string | null;
+          user_id: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "task_checkoffs_task_id_user_id_fkey";
+            columns: ["task_id", "user_id"];
+            isOneToOne: false;
+            referencedRelation: "task_participants";
+            referencedColumns: ["task_id", "user_id"];
+          },
+        ];
+      };
     };
     Functions: {
       is_group_member: { Args: { p_group_id: string }; Returns: boolean };

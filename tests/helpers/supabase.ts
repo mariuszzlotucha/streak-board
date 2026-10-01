@@ -113,6 +113,22 @@ export async function adminParticipants(taskId: string): Promise<string[]> {
   return data.map((row) => row.user_id).sort();
 }
 
+// Returns the raw PostgREST result so tests can assert both successes and error codes. checked_at comes from the default.
+export async function checkOffAs(user: TestUser, taskId: string, period: string) {
+  return user.client.from("task_checkoffs").insert({ task_id: taskId, user_id: user.id, period });
+}
+
+export async function adminCheckoffs(taskId: string): Promise<{ user_id: string; period: string }[]> {
+  const { data, error } = await adminClient().from("task_checkoffs").select("user_id, period").eq("task_id", taskId);
+  if (error) throw new Error(`adminCheckoffs failed: ${error.message}`);
+  return data;
+}
+
+// The UTC day `offset` days from now as YYYY-MM-DD. Plain epoch arithmetic, deliberately not the policy's own expression.
+export function utcDay(offset: number): string {
+  return new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10);
+}
+
 // Deletes the account now (cascades included) and drops it from the end-of-run cleanup so it is not deleted twice.
 export async function deleteTestUser(user: TestUser): Promise<void> {
   const { error } = await adminClient().auth.admin.deleteUser(user.id);
