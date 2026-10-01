@@ -510,14 +510,14 @@ Additive migration (a table and a view); no backfill because no check-offs exist
 
 #### Automated
 
-- [x] 1.1 Unit tests pass (the local Supabase stack must be running, the Vitest global setup reads it): `npm test`
-- [x] 1.2 Linting passes: `npm run lint`
-- [x] 1.3 Types check: `npx astro check`
-- [x] 1.4 Project builds: `npm run build`
+- [x] 1.1 Unit tests pass (the local Supabase stack must be running, the Vitest global setup reads it): `npm test` — c435901
+- [x] 1.2 Linting passes: `npm run lint` — c435901
+- [x] 1.3 Types check: `npx astro check` — c435901
+- [x] 1.4 Project builds: `npm run build` — c435901
 
 #### Manual
 
-- [x] 1.5 Every expected value in the new unit tests can be derived from the PRD sentence and this plan without reading the implementation (check the oracle table at the top of the test files).
+- [x] 1.5 Every expected value in the new unit tests can be derived from the PRD sentence and this plan without reading the implementation (check the oracle table at the top of the test files). — c435901
 
 ### Phase 2: Check-off table, RLS and read view
 
