@@ -307,6 +307,7 @@ function participantsOf(taskId: string) {
                       )}
                       {viewerTask && user && (
                         <CheckoffControl
+                          client:load
                           taskId={task.id}
                           title={task.title}
                           recurrence={task.recurrence}
@@ -331,7 +332,7 @@ function participantsOf(taskId: string) {
         </Card>
       )}
 
-      {showTasks && board && user && <Leaderboard rows={board.totals} viewerId={user.id} />}
+      {showTasks && board && user && <Leaderboard client:load rows={board.totals} viewerId={user.id} />}
 
       {group && isOwner && (
         <Card>

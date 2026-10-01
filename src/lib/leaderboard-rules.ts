@@ -62,6 +62,15 @@ export function rankStandings(rows: readonly StandingInput[], viewerId: string):
   return standings;
 }
 
+/**
+ * The totals the Leaderboard island shows: each server total plus the user's net optimistic change (see
+ * `checkoff-sync`). Users without a delta keep their total, so an empty store gives exactly the server's totals. The
+ * input is not changed.
+ */
+export function applyDeltas(rows: readonly StandingInput[], deltas: ReadonlyMap<string, number>): StandingInput[] {
+  return rows.map((row) => ({ ...row, total: row.total + (deltas.get(row.userId) ?? 0) }));
+}
+
 /** What the viewer's row of one task needs to render its control and to preview a tick or an undo. */
 export interface ViewerTask {
   snapshot: StreakSnapshot;

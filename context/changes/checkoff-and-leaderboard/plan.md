@@ -570,18 +570,18 @@ Additive migration (a table and a view); no backfill because no check-offs exist
 
 #### Automated
 
-- [ ] 5.1 Unit tests pass (store and client protocol included): `npm test`
-- [ ] 5.2 Linting passes: `npm run lint`
-- [ ] 5.3 Types check: `npx astro check`
-- [ ] 5.4 Project builds: `npm run build`
-- [ ] 5.5 Smoke test still passes against the local stack: `npm run smoke`
+- [x] 5.1 Unit tests pass (store and client protocol included): `npm test`
+- [x] 5.2 Linting passes: `npm run lint`
+- [x] 5.3 Types check: `npx astro check`
+- [x] 5.4 Project builds: `npm run build`
+- [x] 5.5 Smoke test still passes against the local stack: `npm run smoke`
 
 #### Manual
 
-- [ ] 5.6 Tapping "Mark done" flips the row to "Done" and updates the viewer's streak and the Leaderboard at once, with no page reload; reloading shows the same state; "Undo" reverses both.
-- [ ] 5.7 With the browser set to offline, a tap rolls the row and the Leaderboard back and shows a short message; with "Slow 3G" throttling the tap still feels instant.
-- [ ] 5.8 With JavaScript disabled in the browser, the same buttons work through the full-page POST.
-- [ ] 5.9 On a phone-width viewport and by keyboard, focus lands on the new button after each toggle and nothing jumps.
+- [x] 5.6 Tapping "Mark done" flips the row to "Done" and updates the viewer's streak and the Leaderboard at once, with no page reload; reloading shows the same state; "Undo" reverses both.
+- [x] 5.7 With the browser set to offline, a tap rolls the row and the Leaderboard back and shows a short message; with "Slow 3G" throttling the tap still feels instant.
+- [x] 5.8 With JavaScript disabled in the browser, the same buttons work through the full-page POST.
+- [x] 5.9 On a phone-width viewport and by keyboard, focus lands on the new button after each toggle and nothing jumps.
 
 ### Phase 6: Docs and production release
 
