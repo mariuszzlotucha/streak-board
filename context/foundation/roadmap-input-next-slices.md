@@ -6,8 +6,9 @@ Notatka robocza do przekazania skillowi `/10x-roadmap` (np. `/10x-roadmap @conte
 
 - Wszystkie wycinki z PRD (F-01, S-01 do S-05) są zrobione i wdrożone.
 - `main_goal` roadmapy: `market-feedback`.
-- Dodać cztery nowe wycinki jako kolejne elementy `S-NN` (numeracja po S-05) wraz z wierszami w `## At a glance` i `## Backlog Handoff`.
+- Dodać pięć nowych wycinków jako kolejne elementy `S-NN` (numeracja po S-05) wraz z wierszami w `## At a glance` i `## Backlog Handoff`.
 - Wycinek 1 wymaga **odparkowania** pozycji „Domena własna / środowisko staging" z sekcji `## Parked` (przekreślić z datą odparkowania, jak zrobiono przy CI/CD). Staging pozostaje zaparkowany.
+- Wycinek 5 wymaga **odparkowania** pozycji „Observability (logowanie strukturalne, error tracking)" z `## Parked`.
 - Poza zakresem PRD: te wycinki nie realizują nowych FR-ów, to praca operacyjna, UI i jakościowa. Kolumna „PRD refs" ma więc wskazać powód (jak przy S-05: „operacyjne"), a nie wymyślać numerów FR.
 
 ## Proponowana kolejność
@@ -16,8 +17,9 @@ Notatka robocza do przekazania skillowi `/10x-roadmap` (np. `/10x-roadmap @conte
 2. `test-coverage`
 3. `landing-page`
 4. `dashboard-ui`
+5. `observability-swallowed-errors`
 
-Uzasadnienie: domena jest mała i zmienia adres, na który wskazują kolejne kroki; testy dają siatkę bezpieczeństwa przed zmianą wyglądu. Zamiana 2 i 4 jest dopuszczalna, jeśli UI jest pilniejsze niż testy (wtedy e2e powstaje już pod nowy wygląd).
+Uzasadnienie: domena jest mała i zmienia adres, na który wskazują kolejne kroki; testy dają siatkę bezpieczeństwa przed zmianą wyglądu. Wycinek 5 jest niezależny od pozostałych i można go wstawić wcześniej (nawet przed 2), jeśli ważniejsze jest wykrywanie awarii niż testy. Zamiana 2 i 4 jest dopuszczalna, jeśli UI jest pilniejsze niż testy (wtedy e2e powstaje już pod nowy wygląd).
 
 ## Wycinki
 
@@ -68,10 +70,26 @@ Uzasadnienie: domena jest mała i zmienia adres, na który wskazują kolejne kro
 - **Ograniczenie, które plan musi uwzględnić:** `scripts/smoke.mjs` dopasowuje obecny markup (jeden `<li>` na task bez zagnieżdżonych `<li>`, `role="alert"` tylko dla błędów, `<ol aria-label="Leaderboard">`, liczby w osobnych elementach). Zmiana wyglądu wymaga przepisania asercji smoke i sprawdzenia e2e; te zmiany należą do zakresu tego wycinka. Island optymistyczny (`CheckoffControl`, `Leaderboard`) musi zachować zgodność HTML serwera z pierwszym renderem klienta.
 - **Prerequisites:** sensownie po `test-coverage` (siatka bezpieczeństwa).
 
+### 5. observability-swallowed-errors
+
+- **Outcome:** (jakościowy) awaria w krytycznym przepływie aplikacji nie jest połykana ani zamieniana na sukces: trafia do odpowiedzi API i do monitoringu.
+- **Change ID:** `observability-swallowed-errors`
+- **Źródło:** zadanie kursowe użytkownika: „Zidentyfikuj połknięty błąd we własnym projekcie. Uruchom `/10x-observability-audit` dla jednego krytycznego przepływu swojej aplikacji. Z raportu wybierz jedno znalezisko, w którym błąd jest połykany albo zamieniany na sukces, i napraw je tak, żeby awaria trafiała do odpowiedzi API i do monitoringu." Opcjonalnie: skonfigurować monitoring (Sentry lub inne narzędzie, darmowy plan Sentry wystarczy) przez `/10x-new` → `/10x-plan` → `/10x-implement`; szczegóły w sekcji kursu o Sentry MCP.
+- **Typ:** audyt, poprawka i opcjonalna konfiguracja monitoringu. Dwie części: (A) audyt jednego przepływu i naprawa jednego znaleziska, (B) opcjonalnie monitoring.
+- **Zakres:**
+  - wybrać jeden krytyczny przepływ (kandydaci: check-off `POST /api/tasks/checkoff|uncheck` albo dołączanie do grupy) i uruchomić audyt;
+  - z raportu wybrać jedno znalezisko typu „błąd połknięty lub zamieniony na sukces" i naprawić je tak, żeby awaria trafiała do odpowiedzi API (kod statusu i treść) oraz do monitoringu;
+  - dołożyć test, który dowodzi, że awaria nie jest już sukcesem (zgodnie z lekcją o asercjach wyniku);
+  - część B: Sentry (lub inne narzędzie) na Cloudflare Workers; DSN jako sekret, nigdy w repozytorium ani w czacie.
+- **Skill:** `/10x-observability-audit` jest zainstalowany w `.claude/skills/` (dodany commitem `a72c2e9`). Wybiera krytyczne przepływy z `context/foundation`, uruchamia audyt i zapisuje raport w `context/audits/observability/`. Raport jest wejściem do planu tego wycinka.
+- **Punkt startowy z kodu (do weryfikacji w audycie, nie ustalony fakt):** trasy API mają `try/catch`, który loguje `console.error` i odpowiada stałym komunikatem; część odczytów w `dashboard.astro` degraduje się po cichu do notki „unavailable". `wrangler.jsonc` ma włączone observability (Workers Logs), ale nie ma error trackingu.
+- **Prerequisites:** brak technicznych; opcjonalna część B wymaga konta Sentry po stronie użytkownika.
+- **Ryzyko:** zmiana sposobu odpowiedzi na błąd może zmienić kontrakt, na którym polega island (`checkoff-client.ts` mapuje 403/404/5xx na `rejected`/`failed`) i smoke. Plan musi to uwzględnić. Sentry w Workerze zwiększa zużycie CPU (limit 10 ms na planie Free), więc sprawdzić narzut.
+
 ## Co NIE jest w tym wejściu
 
 - Nowe FR-y z PRD i zmiany w regule streaka.
-- Powiadomienia, historia i wykresy streaków, observability: zostają w `## Parked`.
+- Powiadomienia i historia/wykresy streaków: zostają w `## Parked` (observability jest teraz wycinkiem 5).
 - Środowisko staging: zostaje zaparkowane.
 - Pomiar czasu CPU `/dashboard` (otwarte ryzyko po S-04, patrz `context/archive/2026-10-01-checkoff-and-leaderboard/` i `deployment-plan.md` Phase 9). Do dodania jako osobny punkt tylko, jeśli użytkownik tego zechce.
 
