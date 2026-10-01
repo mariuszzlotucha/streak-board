@@ -9,3 +9,18 @@ import type { Page } from "@playwright/test";
 export async function waitForHydration(page: Page): Promise<void> {
   await page.waitForFunction(() => !document.querySelector("astro-island[ssr]"));
 }
+
+/**
+ * Signs in through the real form and waits for the dashboard. Only for a spec whose own, freshly created account is
+ * part of the risk (a different identity than the shared session in playwright/.auth/user.json); every other spec
+ * authenticates through that storageState instead.
+ */
+export async function signInThroughForm(page: Page, email: string, password: string): Promise<void> {
+  await page.goto("/auth/signin");
+  await waitForHydration(page);
+  await page.getByLabel("Email").fill(email);
+  // exact: the "Show password" toggle button also carries the word in its accessible name.
+  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await page.waitForURL("**/dashboard");
+}
