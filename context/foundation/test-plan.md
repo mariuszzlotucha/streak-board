@@ -168,8 +168,8 @@ zaskoczyło.)
 
 **Etap 4 (reguła streaka, S-04):**
 
-- Dzień liczy się wg daty w Europe/Warsaw, nie UTC: poniedziałek 00:30 w Warszawie to jeszcze niedziela w UTC, a dni DST mają 23 i 25 godzin. Wiersze oracle dla tych dni łapią implementację na `getUTC*` lub na stałych 24 h.
-- Sprawdzenie mutacyjne (zepsuć kod, zobaczyć czerwony wynik, przywrócić z kopii) wykryło kilka asercji, które nic nie chroniły, m.in. test wejścia `applyDeltas`, który początkowo nie rozróżniał mutacji od kopii.
+- Dzień liczy się wg daty w Europe/Warsaw, nie UTC: poniedziałek 00:30 w Warszawie to jeszcze niedziela w UTC, a dni DST mają 23 i 25 godzin. Dlatego tabela oracle ma osobne wiersze dla granicy dnia, dni DST i poniedziałku 00:30.
+- Sprawdzenie mutacyjne (zepsuć kod, zobaczyć czerwony wynik, przywrócić z kopii) wykryło test wejścia `applyDeltas`, który początkowo nie rozróżniał mutacji wejścia od kopii (przegląd fazy 5, F6).
 - Natychmiastowość odznaczenia pozostaje ocenianą ręcznie i obserwowalnością (§7); testy pokrywają protokół (`checkoff-client`) i sumy (`checkoff-sync`), nie wrażenie opóźnienia.
 
 **Etap 1 (runner + izolacja + uprawnienia):**
