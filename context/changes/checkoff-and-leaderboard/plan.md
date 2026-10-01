@@ -554,17 +554,17 @@ Additive migration (a table and a view); no backfill because no check-offs exist
 
 #### Automated
 
-- [ ] 4.1 Smoke test passes against the local stack (control, streak, leaderboard, undo, leave erases history): `npm run smoke`
-- [ ] 4.2 Integration tests still pass: `npm test`
-- [ ] 4.3 Linting passes: `npm run lint`
-- [ ] 4.4 Project builds: `npm run build`
-- [ ] 4.8 Types check: `npx astro check`
+- [x] 4.1 Smoke test passes against the local stack (control, streak, leaderboard, undo, leave erases history): `npm run smoke` — e4c7b18
+- [x] 4.2 Integration tests still pass: `npm test` — e4c7b18
+- [x] 4.3 Linting passes: `npm run lint` — e4c7b18
+- [x] 4.4 Project builds: `npm run build` — e4c7b18
+- [x] 4.8 Types check: `npx astro check` — e4c7b18
 
 #### Manual
 
-- [ ] 4.5 With two signed-in users in one group: a joined task shows "Mark done" and a streak of 0; after ticking and reloading it shows "Done", "Undo" and 1; the Leaderboard lists both members; the other user sees the new total after a reload; undo returns the row and the total to 0.
-- [ ] 4.6 The Leave dialogs show the streak-loss warning, and after confirming a leave and a rejoin the streak starts from 0.
-- [ ] 4.7 The task row and the Leaderboard stay readable at a narrow (phone) width, and the controls are reachable by keyboard.
+- [x] 4.5 With two signed-in users in one group: a joined task shows "Mark done" and a streak of 0; after ticking and reloading it shows "Done", "Undo" and 1; the Leaderboard lists both members; the other user sees the new total after a reload; undo returns the row and the total to 0. — e4c7b18
+- [x] 4.6 The Leave dialogs show the streak-loss warning, and after confirming a leave and a rejoin the streak starts from 0. — e4c7b18
+- [x] 4.7 The task row and the Leaderboard stay readable at a narrow (phone) width, and the controls are reachable by keyboard. — e4c7b18
 
 ### Phase 5: Instant check-off — optimistic island
 
