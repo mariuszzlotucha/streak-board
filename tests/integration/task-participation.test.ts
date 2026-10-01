@@ -7,6 +7,7 @@ import {
   createGroupAs,
   createTaskAs,
   createTestUser,
+  deleteTestUser,
   joinGroupAs,
   joinTaskAs,
   type TestGroup,
@@ -213,16 +214,38 @@ describe("task participation", () => {
       expect(await adminParticipants(taskId)).toEqual([c.id]);
     });
 
-    it("a removed member cannot delete rows and is not re-enrolled when they return", async () => {
+    it("a removed member loses their participation and is not re-enrolled when they return", async () => {
       await joinTaskAs(m, taskId);
       await a.client.from("group_members").delete().eq("user_id", m.id);
-
-      const { data, error } = await m.client.from("task_participants").delete().eq("task_id", taskId).select("user_id");
-      expect(error).toBeNull();
-      expect(data).toEqual([]);
+      expect(await adminParticipants(taskId)).toEqual([c.id]);
 
       await joinGroupAs(m, ga.joinCode);
       expect(await adminParticipants(taskId)).toEqual([c.id]);
+    });
+
+    it("a participation row left behind by the join/leave race is seen by the group but not by the ex-member", async () => {
+      // The row the accepted race can leave: planted with the service role because the cleanup trigger cannot be raced here.
+      await m.client.from("group_members").delete().eq("user_id", m.id);
+      const { error: plantError } = await adminClient()
+        .from("task_participants")
+        .insert({ task_id: taskId, user_id: m.id });
+      expect(plantError).toBeNull();
+
+      const { data: groupView } = await c.client.from("task_participants").select("user_id").eq("task_id", taskId);
+      expect(groupView?.map((row) => row.user_id).sort()).toEqual(sorted(c.id, m.id));
+
+      const { data: exMemberView } = await m.client.from("task_participants").select("user_id").eq("task_id", taskId);
+      expect(exMemberView).toEqual([]);
+
+      const { data: removed, error } = await m.client
+        .from("task_participants")
+        .delete()
+        .eq("task_id", taskId)
+        .eq("user_id", m.id)
+        .select("user_id");
+      expect(error).toBeNull();
+      expect(removed).toEqual([]);
+      expect(await adminParticipants(taskId)).toEqual(sorted(c.id, m.id));
     });
 
     it("the creator who left and returned is not silently re-enrolled", async () => {
@@ -239,6 +262,22 @@ describe("task participation", () => {
       const { error } = await c.client.from("tasks").delete().eq("id", taskId);
       expect(error).toBeNull();
       expect(await adminParticipants(taskId)).toEqual([]);
+    });
+
+    it("deleting an account that created a task and still participates removes its rows without error", async () => {
+      const d = await createTestUser();
+      await joinGroupAs(d, ga.joinCode);
+      const dTaskId = await createTaskAs(d, ga.id, "Feed the cat", "daily");
+      await joinTaskAs(m, dTaskId);
+      await joinTaskAs(d, taskId);
+      expect(await adminParticipants(dTaskId)).toEqual(sorted(d.id, m.id));
+      expect(await adminParticipants(taskId)).toEqual(sorted(c.id, d.id));
+
+      await deleteTestUser(d);
+
+      expect(await adminTask(dTaskId)).toBeNull();
+      expect(await adminParticipants(dTaskId)).toEqual([]);
+      expect(await adminParticipants(taskId)).toEqual([c.id]);
     });
 
     it("deleting the group removes the participants of its tasks without error", async () => {

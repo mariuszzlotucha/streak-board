@@ -113,6 +113,14 @@ export async function adminParticipants(taskId: string): Promise<string[]> {
   return data.map((row) => row.user_id).sort();
 }
 
+// Deletes the account now (cascades included) and drops it from the end-of-run cleanup so it is not deleted twice.
+export async function deleteTestUser(user: TestUser): Promise<void> {
+  const { error } = await adminClient().auth.admin.deleteUser(user.id);
+  if (error) throw new Error(`deleteTestUser failed: ${error.message}`);
+  const index = createdUserIds.indexOf(user.id);
+  if (index !== -1) createdUserIds.splice(index, 1);
+}
+
 export async function cleanupGroups(): Promise<void> {
   const ids = createdGroupIds.splice(0);
   if (ids.length === 0) return;

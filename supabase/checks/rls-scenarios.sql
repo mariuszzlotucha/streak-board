@@ -266,9 +266,9 @@ begin
   perform rls_check.as_user(f);
   perform rls_check.expect_rows(format('delete from public.group_members where group_id = %L', ga), 0, '#3 a non-member cannot remove anybody');
 
-  -- Members cannot move themselves between groups by UPDATE (no UPDATE policy on group_members).
+  -- Members cannot move themselves between groups by UPDATE (no UPDATE policy, and since 20261001120000 no UPDATE privilege).
   perform rls_check.as_user(c);
-  perform rls_check.expect_rows(format('update public.group_members set group_id = %L where user_id = %L', gb, c), 0, '#3 group_members has no UPDATE path (default deny)');
+  perform rls_check.expect_error('42501', format('update public.group_members set group_id = %L where user_id = %L', gb, c), '#3 group_members has no UPDATE path (no privilege)');
 
   -- Self-leave, then the group is invisible and the user is free to join another group.
   perform rls_check.expect_rows(format('delete from public.group_members where user_id = %L', c), 1, '#3 a member can leave the group (delete own row)');
@@ -404,7 +404,8 @@ begin
   perform rls_check.as_anon();
   perform rls_check.expect_error('42501', format('select public.join_group(%L)', code_a), 'anon cannot call join_group');
   perform rls_check.expect_error('42501', format('select public.is_group_member(%L)', ga), 'anon cannot call is_group_member');
-  perform rls_check.expect_value('select count(*) from public.groups', '0', 'anon sees no groups');
+  perform rls_check.expect_error('42501', 'select count(*) from public.groups', 'anon has no privileges on groups');
+  perform rls_check.expect_error('42501', 'select count(*) from public.group_members', 'anon has no privileges on group_members');
   perform rls_check.expect_error('42501', format('insert into public.groups (owner_id, name) values (%L, %L)', a, 'x'), 'anon cannot insert groups');
 
   -- The owner deletes the group; the cascade removes every membership even though the owner's own row has no DELETE policy.
@@ -748,6 +749,62 @@ begin
   perform rls_check.expect_rows(format('delete from public.groups where id = %L', ga), 1, 'S-03 the owner deletes the group');
   perform rls_check.as_postgres();
   perform rls_check.expect_value(format('select count(*) from public.task_participants where task_id in (%L, %L)', t, t2), '0', 'S-03 deleting the group cascades to participants');
+
+  perform rls_check.as_postgres();
+end;
+$$;
+
+-- A participation row left behind by the accepted join / leave-group race (a "ghost" row for a non-member) is seen by the
+-- group, but the ex-member neither reads it nor removes it.
+do $$
+declare
+  a uuid; m uuid; ga uuid; code_a text; t uuid;
+begin
+  a := rls_check.mk_user(); m := rls_check.mk_user();
+
+  perform rls_check.as_user(a);
+  ga := rls_check.new_group(a);
+  code_a := rls_check.code_of(ga);
+  perform rls_check.as_user(m);
+  perform rls_check.expect_value(format('select public.join_group(%L)', code_a), ga::text, 'S-03 ghost setup: M joined group A');
+  perform rls_check.as_user(a);
+  perform rls_check.expect_rows(format('insert into public.tasks (group_id, created_by, title, recurrence) values (%L, %L, %L, %L)', ga, a, 'Ghost task', 'once'), 1, 'S-03 ghost setup: A created a task');
+  select id into t from public.tasks where group_id = ga and title = 'Ghost task';
+  perform rls_check.as_user(m);
+  perform rls_check.expect_rows(format('delete from public.group_members where user_id = %L', m), 1, 'S-03 ghost setup: M leaves the group');
+
+  -- The race cannot be reproduced in one transaction, so plant the row the way the service role would.
+  perform rls_check.as_postgres();
+  perform rls_check.expect_rows(format('insert into public.task_participants (task_id, user_id) values (%L, %L)', t, m), 1, 'S-03 ghost setup: a participation row exists for the ex-member');
+
+  perform rls_check.as_user(a);
+  perform rls_check.expect_value(format('select count(*) from public.task_participants where task_id = %L', t), '2', 'S-03 the group sees the ghost row next to the creator');
+  perform rls_check.as_user(m);
+  perform rls_check.expect_value(format('select count(*) from public.task_participants where task_id = %L', t), '0', 'S-03 the ex-member does not read the ghost row');
+  perform rls_check.expect_rows(format('delete from public.task_participants where task_id = %L and user_id = %L', t, m), 0, 'S-03 the ex-member cannot remove the ghost row');
+  perform rls_check.as_postgres();
+  perform rls_check.expect_value(format('select count(*) from public.task_participants where user_id = %L', m), '1', 'S-03 the ghost row survives the ex-member''s delete attempt');
+
+  perform rls_check.as_postgres();
+end;
+$$;
+
+-- Least privilege (20261001120000_harden_table_privileges.sql): authenticated keeps no TRUNCATE on any table and cannot
+-- write group_members directly (rows are created by join_group and the owner trigger).
+do $$
+declare
+  a uuid; ga uuid;
+begin
+  a := rls_check.mk_user();
+  perform rls_check.as_user(a);
+  ga := rls_check.new_group(a);
+
+  perform rls_check.expect_error('42501', 'truncate public.groups', 'hardening: authenticated cannot TRUNCATE groups');
+  perform rls_check.expect_error('42501', 'truncate public.group_members', 'hardening: authenticated cannot TRUNCATE group_members');
+  perform rls_check.expect_error('42501', 'truncate public.tasks', 'hardening: authenticated cannot TRUNCATE tasks');
+  perform rls_check.expect_error('42501', format('insert into public.group_members (group_id, user_id) values (%L, %L)', ga, a), 'hardening: authenticated cannot insert group_members directly');
+  perform rls_check.expect_error('42501', format('update public.group_members set user_id = user_id where group_id = %L', ga), 'hardening: authenticated cannot update group_members');
+  perform rls_check.expect_value(format('select count(*) from public.group_members where group_id = %L', ga), '1', 'hardening: the owner still reads the membership created by the trigger');
 
   perform rls_check.as_postgres();
 end;
