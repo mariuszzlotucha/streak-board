@@ -300,16 +300,16 @@ Additive migration; the backfill enrols creators of existing tasks so existing t
 
 #### Automated
 
-- [ ] 3.1 Smoke test passes against the local stack: `npm run smoke`
-- [ ] 3.2 Integration tests still pass: `npm test`
-- [ ] 3.3 Linting passes: `npm run lint`
-- [ ] 3.4 Project builds: `npm run build`
+- [x] 3.1 Smoke test passes against the local stack: `npm run smoke`
+- [x] 3.2 Integration tests still pass: `npm test`
+- [x] 3.3 Linting passes: `npm run lint`
+- [x] 3.4 Project builds: `npm run build`
 
 #### Manual
 
-- [ ] 3.5 With two signed-in users in one group: the creator is listed on a new task; the second user joins, appears for both users after reload, leaves after confirming, and disappears.
-- [ ] 3.6 When a member leaves the group (or is removed by the owner) and returns via the invite link, they are not listed on any task until they join again.
-- [ ] 3.7 The task row stays readable at a narrow (phone) width with several participants, and Join/Leave are reachable by keyboard.
+- [x] 3.5 With two signed-in users in one group: the creator is listed on a new task; the second user joins, appears for both users after reload, leaves after confirming, and disappears.
+- [x] 3.6 When a member leaves the group (or is removed by the owner) and returns via the invite link, they are not listed on any task until they join again.
+- [x] 3.7 The task row stays readable at a narrow (phone) width with several participants, and Join/Leave are reachable by keyboard.
 
 ### Phase 4: Production release
 
