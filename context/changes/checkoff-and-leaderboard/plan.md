@@ -588,7 +588,7 @@ Additive migration (a table and a view); no backfill because no check-offs exist
 #### Automated
 
 - [x] 6.1 Linting and build pass with the documentation changes: `npm run lint && npm run build` — 1b59c73
-- [ ] 6.2 The required `integration` check is green on the PR to `master`: `gh pr checks`
+- [x] 6.2 The required `integration` check is green on the PR to `master`: `gh pr checks` — 268221b
 - [x] 6.7 Types check: `npx astro check` — 1b59c73
 
 #### Manual
