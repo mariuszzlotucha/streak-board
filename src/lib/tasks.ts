@@ -47,7 +47,7 @@ export interface TaskParticipant {
 }
 
 /** PostgREST `max_rows` (supabase/config.toml): a response this long may have been truncated. */
-const POSTGREST_MAX_ROWS = 1000;
+export const POSTGREST_MAX_ROWS = 1000;
 
 /**
  * Participation rows visible to the caller (RLS limits them to tasks of the caller's group), in join order

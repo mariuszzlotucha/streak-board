@@ -540,15 +540,15 @@ Additive migration (a table and a view); no backfill because no check-offs exist
 
 #### Automated
 
-- [ ] 3.1 Integration tests pass (including the check-off flow against real clients): `npm test`
-- [ ] 3.2 Linting passes: `npm run lint`
-- [ ] 3.3 Project builds with the new routes: `npm run build`
-- [ ] 3.4 Smoke test passes against the local stack (boundaries and JSON-mode outcomes): `npm run smoke`
-- [ ] 3.6 Types check: `npx astro check`
+- [x] 3.1 Integration tests pass (including the check-off flow against real clients): `npm test`
+- [x] 3.2 Linting passes: `npm run lint`
+- [x] 3.3 Project builds with the new routes: `npm run build`
+- [x] 3.4 Smoke test passes against the local stack (boundaries and JSON-mode outcomes): `npm run smoke`
+- [x] 3.6 Types check: `npx astro check`
 
 #### Manual
 
-- [ ] 3.5 In a signed-in browser session, `fetch("/api/tasks/checkoff", { method: "POST", headers: { Accept: "application/json" }, body: new URLSearchParams({ task_id }) })` for a task you joined answers `{"ok":true,"period":"<today in Warsaw>"}`, and a second identical call answers the same period.
+- [x] 3.5 In a signed-in browser session, `fetch("/api/tasks/checkoff", { method: "POST", headers: { Accept: "application/json" }, body: new URLSearchParams({ task_id }) })` for a task you joined answers `{"ok":true,"period":"<today in Warsaw>"}`, and a second identical call answers the same period.
 
 ### Phase 4: Dashboard — server-rendered check-off controls, streaks and leaderboard
 
