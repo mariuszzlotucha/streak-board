@@ -491,6 +491,8 @@ Where each settled term is proven:
 
 The dashboard now makes one concurrent batch of four reads after `getMyGroup` instead of four sequential ones, so the page should not be slower than today even with the new read. The view returns one row per enrolment with a date array (about 5 KB per enrolment-year); the streak computation is linear in the number of periods and runs for every enrolment on every load. A literal implementation of the Phase 1 contract measured about 1.5 µs per stored period in warm Node (about 6–8 ms for 15 enrolments × 365 periods, 16–28 ms for 50 × 365), against a 10 ms CPU budget per invocation if the Worker is on the Workers Free plan (`context/foundation/infrastructure.md:31,92`; `wrangler.jsonc` sets no `limits.cpu_ms`). The single-pass fold specified in Phase 1 was about 9× cheaper in a prototype (about 0.6 ms and 2 ms), and Phase 6 reads the real CPU time of `/dashboard` from Workers Logs. The cap guard throws at 1000 enrolments, far above the target scale; snapshots are the future answer if arrays grow. Measured on the implemented Phase 1 (Node 24, not workerd; see `reviews/impl-review-phase-1.md`): about 200 ns per stored period warm (15 enrolments × 365 periods about 1 ms, 50 × 365 about 3–4 ms) and 3.8–4.7 ms or 7.4–9 ms on the first call in a fresh process, so the saving over the literal reading is about 5.5× rather than 9×. The fold keeps one numeric array of the parsed days (two loops) so that it can stop at the first future key even when the input is unsorted.
 
+Measured on the implemented Phase 2 view (local Postgres 17; 20 groups × 5 members × 3 daily tasks × 365 periods = 109,500 rows, of which the viewer's group holds 5,475): the RLS policy adds nothing, because the planner turns its `EXISTS` into a hashed subplan, so the `tasks` policy runs once per task and not once per check-off. What costs is the table scan: an unfiltered read of `task_checkoff_periods` visits the rows of every group, 17–44 ms here (about 50 ms with RLS off) and linear in the whole table, against about 6 ms when the read reaches only the viewer's group. This is database time, not Worker CPU, and it is negligible for a handful of groups, so the view keeps the shape fixed above. If Phase 6 shows the `/dashboard` read growing with the number of groups (the view read is database time and does not count as Worker CPU, so read the wall time of `/dashboard` in Workers Logs next to its CPU time), the additive fix is `create or replace view public.task_checkoff_periods` with a join to `tasks` and `t.group_id` as a last column, keeping `task_id`, `user_id` and `periods` as the first three columns and restating `with (security_invoker = true)` (a replace resets the view's options; without the clause the view would run with its owner's rights and show every group, while the grants are kept), so that Phase 3 can read `.eq("group_id", group.id)` with the group id known right after `getMyGroup` and the four reads stay concurrent.
+
 ## Migration Notes
 
 Additive migration (a table and a view); no backfill because no check-offs exist yet. Rollback of the schema is not supported (per the release lesson); the code can be rolled back with `npx wrangler rollback`, and an older Worker simply ignores the new objects.
@@ -523,16 +525,16 @@ Additive migration (a table and a view); no backfill because no check-offs exist
 
 #### Automated
 
-- [ ] 2.1 Migration applies cleanly on a fresh local stack: `npx supabase db reset`
-- [ ] 2.2 Generated types contain the new table and view and the project builds: `grep -q task_checkoffs src/types.ts && grep -q task_checkoff_periods src/types.ts && npm run build`
-- [ ] 2.3 SQL RLS scenarios pass: `npm run test:rls`
-- [ ] 2.4 Integration tests pass: `npm test`
-- [ ] 2.5 Linting passes: `npm run lint`
-- [ ] 2.7 Types check: `npx astro check`
+- [x] 2.1 Migration applies cleanly on a fresh local stack: `npx supabase db reset` — 4fcfdc3
+- [x] 2.2 Generated types contain the new table and view and the project builds: `grep -q task_checkoffs src/types.ts && grep -q task_checkoff_periods src/types.ts && npm run build` — 4fcfdc3
+- [x] 2.3 SQL RLS scenarios pass: `npm run test:rls` — 4fcfdc3
+- [x] 2.4 Integration tests pass: `npm test` — 4fcfdc3
+- [x] 2.5 Linting passes: `npm run lint` — 4fcfdc3
+- [x] 2.7 Types check: `npx astro check` — 4fcfdc3
 
 #### Manual
 
-- [ ] 2.6 Mutation check: remove `security_invoker = true` from the local view (or weaken `task_checkoffs_select_visible_task`), run `npm test` and see the outsider read tests fail, then restore with `npx supabase db reset`.
+- [x] 2.6 Mutation check: remove `security_invoker = true` from the local view (or weaken `task_checkoffs_select_visible_task`), run `npm test` and see the outsider read tests fail, then restore with `npx supabase db reset`. — 4fcfdc3
 
 ### Phase 3: Server layer — reads and the check-off / undo routes
 
