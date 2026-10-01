@@ -112,6 +112,38 @@ function removeTargetInRow(body, memberEmail) {
   return body.match(row)?.[1];
 }
 
+// A task row (<li>) whose participant line lists the given email after the task title. Emails also appear in the
+// Members card, so only a row-scoped match proves who takes part in which task. With `you`, the email is directly
+// followed by the "You" marker; a marker on another participant's entry would not match.
+function taskRowListing(title, participantEmail, { you = false } = {}) {
+  const marker = you ? `</span>\\s*<span[^>]*>\\s*You\\s*</span>` : "";
+  return new RegExp(
+    `<li[^>]*>(?:(?!</li>)[\\s\\S])*${escapeRegExp(title)}(?:(?!</li>)[\\s\\S])*${escapeRegExp(participantEmail)}${marker}`,
+  );
+}
+
+// A task row with a plain server-rendered form posting to the route (the Join control).
+function taskRowWithForm(title, route) {
+  return new RegExp(
+    `<li[^>]*>(?:(?!</li>)[\\s\\S])*${escapeRegExp(title)}(?:(?!</li>)[\\s\\S])*<form[^>]*action="${escapeRegExp(route)}"`,
+  );
+}
+
+// A task row whose Leave control is the confirmation island: the form and, after it, the dialog trigger.
+function taskRowWithConfirmedLeave(title) {
+  return new RegExp(
+    `<li[^>]*>(?:(?!</li>)[\\s\\S])*${escapeRegExp(title)}(?:(?!</li>)[\\s\\S])*action="/api/tasks/leave"(?:(?!</li>)[\\s\\S])*aria-haspopup="dialog"`,
+  );
+}
+
+// The id the form posting to `route` in the row of the given task submits.
+function taskTargetInRow(body, title, route) {
+  const row = new RegExp(
+    `<li[^>]*>(?:(?!</li>)[\\s\\S])*${escapeRegExp(title)}(?:(?!</li>)[\\s\\S])*action="${escapeRegExp(route)}"(?:(?!</li>)[\\s\\S])*name="task_id"[^>]*value="([0-9a-f-]{36})"`,
+  );
+  return body.match(row)?.[1];
+}
+
 // A destructive control must go through the confirmation dialog: Radix renders its trigger with aria-haspopup="dialog"
 // (the dialog itself is not server-rendered), which a plain <form><button type="submit"> would lack.
 function dialogTrigger(label) {
@@ -268,7 +300,7 @@ const steps = [
     () => request("/api/groups/create", { method: "POST", form: { name: groupName } }),
     { status: 302, locationExact: "/dashboard", setCookie: "join_code=deleted" },
   ],
-  ...["create", "update", "delete"].flatMap((action) => [
+  ...["create", "update", "delete", "join", "leave"].flatMap((action) => [
     [
       `anonymous task ${action} redirects to signin`,
       () => request(`/api/tasks/${action}`, { method: "POST", form: { title: "Water plants" }, jar: jarB }),
@@ -301,8 +333,20 @@ const steps = [
     () => request("/api/tasks/delete", { method: "POST", form: { task_id: "not-a-uuid" } }),
     { status: 302, locationExact: "/dashboard?error=forbidden" },
   ],
+  [
+    "task join rejects a malformed task id",
+    () => request("/api/tasks/join", { method: "POST", form: { task_id: "not-a-uuid" } }),
+    { status: 302, locationExact: "/dashboard?error=forbidden" },
+  ],
+  [
+    "task leave rejects a malformed task id",
+    () => request("/api/tasks/leave", { method: "POST", form: { task_id: "not-a-uuid" } }),
+    { status: 302, locationExact: "/dashboard?error=forbidden" },
+  ],
   ["task update does not answer GET", () => request("/api/tasks/update"), { status: 404 }],
   ["task delete does not answer GET", () => request("/api/tasks/delete"), { status: 404 }],
+  ["task join does not answer GET", () => request("/api/tasks/join"), { status: 404 }],
+  ["task leave does not answer GET", () => request("/api/tasks/leave"), { status: 404 }],
   [
     "dashboard shows the group and its invite link",
     async () => {
@@ -702,8 +746,10 @@ const steps = [
         editControl(taskTitle),
         taskRowWithConfirmedDelete(taskTitle),
         formPostingTo("/api/tasks/create"),
+        // The creator is enrolled at task insert, so the fresh row already lists them, marked as the viewer.
+        taskRowListing(taskTitle, email, { you: true }),
       ],
-      bodyNotMatches: SUBMIT_IN_DESTRUCTIVE_FORM,
+      bodyNotMatches: [SUBMIT_IN_DESTRUCTIVE_FORM, taskRowListing(taskTitle, emailB)],
       bodyExcludes: NO_ERROR_ALERT,
     },
   ],
@@ -775,6 +821,200 @@ const steps = [
       bodyMatches: [taskRowWithBadge(renamedTaskTitle, "Daily")],
       bodyNotMatches: taskRowWithBadge(renamedTaskTitle, "Weekly"),
       bodyExcludes: [taskTitle, NO_ERROR_ALERT],
+    },
+  ],
+  [
+    "member dashboard lists the creator on the task and offers to join it",
+    async () => {
+      const result = await request("/dashboard", { jar: jarB });
+      // The Join control has to submit the real task id, or the join steps below would prove nothing.
+      if (taskTargetInRow(result.body, renamedTaskTitle, "/api/tasks/join") !== taskId) {
+        console.log("FAIL  the member's Join control does not carry the task id; later participation steps cannot run");
+        process.exit(1);
+      }
+      return result;
+    },
+    {
+      status: 200,
+      bodyMatches: [
+        taskRowListing(renamedTaskTitle, email),
+        // The creator's entry carries no "You" marker in B's view.
+        taskRowWithForm(renamedTaskTitle, "/api/tasks/join"),
+      ],
+      bodyNotMatches: [
+        taskRowListing(renamedTaskTitle, email, { you: true }),
+        taskRowListing(renamedTaskTitle, emailB),
+        taskRowWithConfirmedLeave(renamedTaskTitle),
+      ],
+      bodyExcludes: NO_ERROR_ALERT,
+    },
+  ],
+  [
+    "task join by a member succeeds",
+    () => request("/api/tasks/join", { method: "POST", form: { task_id: taskId }, jar: jarB }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "joined member is listed on the task and offered to leave it",
+    () => request("/dashboard", { jar: jarB }),
+    {
+      status: 200,
+      bodyMatches: [
+        taskRowListing(renamedTaskTitle, email),
+        taskRowListing(renamedTaskTitle, emailB, { you: true }),
+        taskRowWithConfirmedLeave(renamedTaskTitle),
+      ],
+      bodyNotMatches: [
+        taskRowWithForm(renamedTaskTitle, "/api/tasks/join"),
+        taskRowListing(renamedTaskTitle, email, { you: true }),
+      ],
+      bodyExcludes: NO_ERROR_ALERT,
+    },
+  ],
+  [
+    "creator dashboard lists the member who joined",
+    () => request("/dashboard"),
+    {
+      status: 200,
+      bodyMatches: [
+        taskRowListing(renamedTaskTitle, email, { you: true }),
+        taskRowListing(renamedTaskTitle, emailB),
+        taskRowWithConfirmedDelete(renamedTaskTitle),
+        taskRowWithConfirmedLeave(renamedTaskTitle),
+      ],
+      bodyNotMatches: taskRowListing(renamedTaskTitle, emailB, { you: true }),
+      bodyExcludes: NO_ERROR_ALERT,
+    },
+  ],
+  [
+    "joining the task again is a quiet redirect",
+    () => request("/api/tasks/join", { method: "POST", form: { task_id: taskId }, jar: jarB }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "participants are unchanged after the repeated join",
+    () => request("/dashboard", { jar: jarB }),
+    {
+      status: 200,
+      bodyMatches: [
+        taskRowListing(renamedTaskTitle, email),
+        taskRowListing(renamedTaskTitle, emailB, { you: true }),
+        taskRowWithConfirmedLeave(renamedTaskTitle),
+      ],
+      bodyExcludes: NO_ERROR_ALERT,
+    },
+  ],
+  [
+    "joining a task that does not exist is a quiet redirect",
+    () =>
+      request("/api/tasks/join", {
+        method: "POST",
+        form: { task_id: "00000000-0000-4000-8000-000000000000" },
+        jar: jarB,
+      }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "task leave by a member succeeds",
+    () => request("/api/tasks/leave", { method: "POST", form: { task_id: taskId }, jar: jarB }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "left member is gone from the task and offered to join again",
+    () => request("/dashboard", { jar: jarB }),
+    {
+      status: 200,
+      bodyMatches: [
+        taskRowListing(renamedTaskTitle, email),
+        taskRowWithForm(renamedTaskTitle, "/api/tasks/join"),
+        taskRowWithBadge(renamedTaskTitle, "Daily"),
+      ],
+      bodyNotMatches: [taskRowListing(renamedTaskTitle, emailB), taskRowWithConfirmedLeave(renamedTaskTitle)],
+      bodyExcludes: NO_ERROR_ALERT,
+    },
+  ],
+  [
+    "creator dashboard no longer lists the member who left",
+    () => request("/dashboard"),
+    {
+      status: 200,
+      bodyMatches: [
+        taskRowListing(renamedTaskTitle, email, { you: true }),
+        taskRowWithConfirmedDelete(renamedTaskTitle),
+      ],
+      bodyNotMatches: taskRowListing(renamedTaskTitle, emailB),
+      bodyExcludes: NO_ERROR_ALERT,
+    },
+  ],
+  [
+    "leaving a task that was not joined is a quiet redirect",
+    () => request("/api/tasks/leave", { method: "POST", form: { task_id: taskId }, jar: jarB }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "task participation of the creator is intact after the member left",
+    () => request("/dashboard"),
+    {
+      status: 200,
+      bodyMatches: [taskRowListing(renamedTaskTitle, email, { you: true })],
+      bodyNotMatches: taskRowListing(renamedTaskTitle, emailB),
+      bodyExcludes: NO_ERROR_ALERT,
+    },
+  ],
+  [
+    // The group-departure cleanup can only be checked once a task exists: the earlier leave/remove steps ran without one.
+    "user B joins the task again before leaving the group",
+    () => request("/api/tasks/join", { method: "POST", form: { task_id: taskId }, jar: jarB }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "user B is listed on the task before leaving the group",
+    () => request("/dashboard", { jar: jarB }),
+    {
+      status: 200,
+      bodyMatches: [
+        taskRowListing(renamedTaskTitle, emailB, { you: true }),
+        taskRowWithConfirmedLeave(renamedTaskTitle),
+      ],
+      bodyExcludes: NO_ERROR_ALERT,
+    },
+  ],
+  [
+    "user B leaves the group while taking part in the task",
+    () => request("/api/groups/leave", { method: "POST", jar: jarB }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "user B joins the group again with the invite code after taking part in the task",
+    () => request("/api/groups/join", { method: "POST", form: { code: joinCode }, jar: jarB }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "returning user B is not listed on the task until joining again",
+    () => request("/dashboard", { jar: jarB }),
+    {
+      status: 200,
+      bodyMatches: [
+        groupHeading(renamedGroupName),
+        taskRowWithBadge(renamedTaskTitle, "Daily"),
+        taskRowListing(renamedTaskTitle, email),
+        taskRowWithForm(renamedTaskTitle, "/api/tasks/join"),
+      ],
+      bodyNotMatches: [taskRowListing(renamedTaskTitle, emailB), taskRowWithConfirmedLeave(renamedTaskTitle)],
+      bodyExcludes: NO_ERROR_ALERT,
+    },
+  ],
+  [
+    "creator dashboard does not list user B after the group departure",
+    () => request("/dashboard"),
+    {
+      status: 200,
+      bodyMatches: [
+        taskRowListing(renamedTaskTitle, email, { you: true }),
+        taskRowWithConfirmedDelete(renamedTaskTitle),
+      ],
+      bodyNotMatches: taskRowListing(renamedTaskTitle, emailB),
+      bodyExcludes: NO_ERROR_ALERT,
     },
   ],
   [
