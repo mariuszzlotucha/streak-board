@@ -206,6 +206,13 @@ Show participants and the Join/Leave control on every task row, and cover the ne
 - When a member leaves the group (or is removed by the owner) and returns via the invite link, they are not listed on any task until they join again.
 - The task row stays readable at a narrow (phone) width with several participants, and Join/Leave are reachable by keyboard.
 
+### Addendum (phase 3 impl review, 2026-10-01):
+
+- Smoke helpers beyond the single row-scoped helper: `taskRowWithForm` (Join form in the row), `taskRowWithConfirmedLeave` (Leave island with its dialog trigger) and `taskTargetInRow` (the `task_id` a row's form submits).
+- Smoke steps beyond the plan: GET on both new routes answers 404; joining a task that does not exist and leaving a task that was not joined are quiet redirects; checks before B leaves the group (B is listed) and after (the creator's view no longer lists B).
+- Deviation from the Contract: a failure of `listTaskParticipants` (including the 1000-row cap) does not hide the Tasks card. Participants load in their own try/catch; on failure the rows render without the participant line and Join/Leave, and a short note says participants are unavailable.
+- The participant line uses ARIA `list`/`listitem` roles instead of `<ul>/<li>`, because the smoke row regexes stop at the first `</li>`.
+
 ---
 
 ## Phase 4: Production release
@@ -300,16 +307,16 @@ Additive migration; the backfill enrols creators of existing tasks so existing t
 
 #### Automated
 
-- [x] 3.1 Smoke test passes against the local stack: `npm run smoke`
-- [x] 3.2 Integration tests still pass: `npm test`
-- [x] 3.3 Linting passes: `npm run lint`
-- [x] 3.4 Project builds: `npm run build`
+- [x] 3.1 Smoke test passes against the local stack: `npm run smoke` — 362b278
+- [x] 3.2 Integration tests still pass: `npm test` — 362b278
+- [x] 3.3 Linting passes: `npm run lint` — 362b278
+- [x] 3.4 Project builds: `npm run build` — 362b278
 
 #### Manual
 
-- [x] 3.5 With two signed-in users in one group: the creator is listed on a new task; the second user joins, appears for both users after reload, leaves after confirming, and disappears.
-- [x] 3.6 When a member leaves the group (or is removed by the owner) and returns via the invite link, they are not listed on any task until they join again.
-- [x] 3.7 The task row stays readable at a narrow (phone) width with several participants, and Join/Leave are reachable by keyboard.
+- [x] 3.5 With two signed-in users in one group: the creator is listed on a new task; the second user joins, appears for both users after reload, leaves after confirming, and disappears. — 362b278
+- [x] 3.6 When a member leaves the group (or is removed by the owner) and returns via the invite link, they are not listed on any task until they join again. — 362b278
+- [x] 3.7 The task row stays readable at a narrow (phone) width with several participants, and Join/Leave are reachable by keyboard. — 362b278
 
 ### Phase 4: Production release
 
