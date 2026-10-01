@@ -9,6 +9,7 @@ import {
   adminClient,
   anonClient,
   checkOffAs,
+  clearOfUtcMidnight,
   createGroupAs,
   createTaskAs,
   createTestUser,
@@ -31,13 +32,6 @@ const sorted = (...keys: string[]) => [...keys].sort();
 // The date `days` after a `YYYY-MM-DD` key, by plain epoch arithmetic (not the code under test).
 const addDays = (key: string, days: number) =>
   new Date(Date.parse(`${key}T00:00:00Z`) + days * DAY_MS).toISOString().slice(0, 10);
-
-// The insert window moves at UTC midnight. A test that straddles it would see its edge periods change verdict, so one
-// that starts within a few seconds of midnight waits for the new day first.
-async function clearOfUtcMidnight(): Promise<void> {
-  const untilMidnight = DAY_MS - (Date.now() % DAY_MS);
-  if (untilMidnight < 5_000) await new Promise((resolve) => setTimeout(resolve, untilMidnight + 100));
-}
 
 const byUser = (rows: readonly EnrolmentPeriods[]) => [...rows].sort((p, q) => p.user_id.localeCompare(q.user_id));
 

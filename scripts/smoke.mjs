@@ -34,6 +34,8 @@ let tickedPeriod;
 const UNKNOWN_TASK_ID = "00000000-0000-4000-8000-000000000000";
 // Makes a check-off route answer in JSON instead of redirecting.
 const JSON_ACCEPT = { Accept: "application/json" };
+// What a browser sends with a form submit: `*/*` is no request for JSON, so the check-off routes must redirect.
+const BROWSER_ACCEPT = { Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" };
 // Every JSON answer of a check-off route must stay out of caches.
 const NO_STORE = { name: "Cache-Control", includes: "no-store" };
 
@@ -1034,13 +1036,9 @@ const steps = [
   ],
   [
     "repeating the JSON checkoff answers the same period",
-    () =>
-      request("/api/tasks/checkoff", { method: "POST", form: { task_id: taskId }, jar: jarB, headers: JSON_ACCEPT }),
-    () => ({
-      status: 200,
-      header: NO_STORE,
-      bodyMatches: [new RegExp(`^\\{"ok":true,"period":"${tickedPeriod}"\\}$`)],
-    }),
+    () => postForJson("/api/tasks/checkoff", { task_id: taskId }, jarB),
+    // The period of the first tick; a repeat that crosses Warsaw midnight may legitimately carry the new day instead.
+    (actual) => periodAnswer([tickedPeriod, ...actual.days]),
   ],
   [
     // C is a member of the group but never joined the task: the foreign key to the participation refuses the tick.
@@ -1058,6 +1056,32 @@ const steps = [
     "repeating the JSON uncheck is a quiet ok",
     () => postForJson("/api/tasks/uncheck", { task_id: taskId }, jarB),
     (actual) => periodAnswer(actual.days),
+  ],
+  [
+    // The no-JavaScript path: a browser form post (no JSON `Accept`) ends in a redirect. B's tick is undone below, so
+    // the state is empty again before and after these four steps.
+    "user B's form checkoff with a browser Accept header redirects to the dashboard",
+    () =>
+      request("/api/tasks/checkoff", { method: "POST", form: { task_id: taskId }, jar: jarB, headers: BROWSER_ACCEPT }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "a form checkoff by a member who never joined the task redirects with the forbidden error",
+    () =>
+      request("/api/tasks/checkoff", { method: "POST", form: { task_id: taskId }, jar: jarC, headers: BROWSER_ACCEPT }),
+    { status: 302, locationExact: "/dashboard?error=forbidden" },
+  ],
+  [
+    "user B's form uncheck with a browser Accept header redirects to the dashboard",
+    () =>
+      request("/api/tasks/uncheck", { method: "POST", form: { task_id: taskId }, jar: jarB, headers: BROWSER_ACCEPT }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "repeating the form uncheck is a quiet redirect",
+    () =>
+      request("/api/tasks/uncheck", { method: "POST", form: { task_id: taskId }, jar: jarB, headers: BROWSER_ACCEPT }),
+    { status: 302, locationExact: "/dashboard" },
   ],
   [
     "task leave by a member succeeds",
