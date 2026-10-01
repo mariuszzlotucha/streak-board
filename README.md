@@ -116,7 +116,7 @@ npx supabase stop
 
 The local Studio UI is available at `http://localhost:54323`.
 
-The database schema (groups, members, row-level security and helper functions) lives in `supabase/migrations/`. A fresh `npx supabase start` applies it; after pulling new migrations run `npx supabase db reset` (it wipes local data) to re-apply them all.
+The database schema (groups, members, tasks, task participation, row-level security and helper functions) lives in `supabase/migrations/`. A fresh `npx supabase start` applies it; after pulling new migrations run `npx supabase db reset` (it wipes local data) to re-apply them all.
 
 ### Using a cloud Supabase project instead
 
@@ -174,12 +174,14 @@ Route protection is handled in `src/middleware.ts`. Add paths to the `PROTECTED_
 | `POST /api/tasks/create` | Member: create a task in their group (fields `title`, `recurrence`: once/daily/weekly) |
 | `POST /api/tasks/update` | Creator: change the title of a task (fields `task_id`, `title`)                        |
 | `POST /api/tasks/delete` | Creator: delete a task (field `task_id`)                                               |
+| `POST /api/tasks/join`   | Member: join a task of their group (field `task_id`); joining twice does nothing       |
+| `POST /api/tasks/leave`  | Participant: leave a task they joined (field `task_id`); leaving twice does nothing    |
 
 `/api/groups/*` and `/api/tasks/*` follow the same `PROTECTED_ROUTES` rule as `/dashboard`: an unauthenticated request is redirected to `/auth/signin`. `/join/<code>` is the exception on purpose, so an invited visitor is sent through sign-in by the protected dashboard. Every group and task endpoint redirects back to `/dashboard`, adding `?error=<code>` on failure. Who may do what is decided by Postgres row-level security (see [RLS scenario checks](#rls-scenario-checks)); the app only forwards the signed-in user's session.
 
 ### RLS scenario checks
 
-`supabase/checks/rls-scenarios.sql` asserts the row-level security rules of `groups`, `group_members` and `tasks` (visibility, joining via `join_group`, leaving, column privileges, and the `list_group_members` / `preview_group` helper functions) and exits non-zero on the first regression. Run it after every migration that touches group RLS, with the local stack running:
+`supabase/checks/rls-scenarios.sql` asserts the row-level security rules of `groups`, `group_members`, `tasks` and `task_participants` (visibility, joining via `join_group`, leaving, column privileges, and the `list_group_members` / `preview_group` helper functions) and exits non-zero on the first regression. Run it after every migration that touches group RLS, with the local stack running:
 
 ```bash
 docker exec -i supabase_db_10x-astro-starter psql -U postgres -d postgres -X -v ON_ERROR_STOP=1 < supabase/checks/rls-scenarios.sql
@@ -255,14 +257,14 @@ These settings live only in the Supabase Dashboard of the hosted project. `supab
 
 ## Smoke test
 
-`scripts/smoke.mjs` is a dependency-free Node script that walks the auth flow (sign-up, sign-in, protected page, sign-out) and the group flow over HTTP. The group part uses three signed-up users (an owner and two members) with separate sessions: create, invite link, join, member view, rename, leave, remove member and delete group, including the rejected attempts (a member trying owner actions, malformed input, foreign-origin and GET requests). Run it against the dev server or the production preview after dependency upgrades:
+`scripts/smoke.mjs` is a dependency-free Node script that walks the auth flow (sign-up, sign-in, protected page, sign-out), the group flow and the task flow (create, rename, join, leave, delete) over HTTP. The group and task parts use three signed-up users (an owner and two members) with separate sessions: create, invite link, join, member view, rename, leave, remove member and delete group, including the rejected attempts (a member trying owner actions, malformed input, foreign-origin and GET requests). Run it against the dev server or the production preview after dependency upgrades:
 
 ```bash
 npm run dev            # or: npm run build && npm run preview
 BASE_URL=http://localhost:4321 npm run smoke
 ```
 
-It needs a reachable Supabase instance (local or cloud) with email confirmation disabled and the group migrations from `supabase/migrations/` applied.
+It needs a reachable Supabase instance (local or cloud) with email confirmation disabled and all migrations from `supabase/migrations/` applied (groups, tasks, task participation).
 
 > **Note:** this script exists primarily to guard the development of the starter itself — it is a fast sanity check that dependency upgrades did not break the build, the Cloudflare adapter or the Supabase auth flow. It is **not** a substitute for a real test suite. Once you build your own product on top of this starter, add proper tests (unit, integration, end-to-end) suited to your application.
 

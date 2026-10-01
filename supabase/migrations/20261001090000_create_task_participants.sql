@@ -1,6 +1,7 @@
 -- task-join-and-leave (S-03): who takes part in a task. Members join and leave tasks of their own group.
 --
--- Additive table that nothing reads yet, so it is backward compatible with the deployed code.
+-- Additive table that the deployed code does not read, plus two triggers on tasks and group_members that never raise, so
+-- the deployed code's task inserts and group_members deletes (including group and account cascades) keep working.
 --
 -- Decisions:
 --   - one row per (task, user); the composite primary key makes a duplicate join a 23505.
@@ -13,9 +14,10 @@
 --   - Client writes are limited by column grants: INSERT of task_id, user_id (joined_at defaults to now()); no UPDATE.
 --   - Known, accepted race: a join that commits at the same moment the user leaves (or is removed from) the group can
 --     leave a participation row for a non-member, because the cleanup trigger cannot see the uncommitted row and the
---     insert policy has no lock on the membership. The ex-member cannot delete it (the select policy hides it). The
---     window is milliseconds in small groups; if it ever matters, add a BEFORE INSERT trigger taking a share lock on the
---     membership row or clean up with the service role.
+--     insert policy has no lock on the membership. The group still sees such a row, while the ex-member neither reads it
+--     nor removes it with a filtered delete (the select policy hides it; asserted in tests/integration and in the
+--     S-03 scenarios). The window is milliseconds in small groups; if it ever matters, add a BEFORE INSERT trigger
+--     taking a share lock on the membership row or clean up with the service role.
 
 -- ---------------------------------------------------------------------------
 -- table
