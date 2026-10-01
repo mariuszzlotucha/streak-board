@@ -29,7 +29,7 @@
 - **Location**: plan.md Progress 6.6; context/changes/deployment/deployment-plan.md (Phase 9 entry)
 - **Detail**: The user has not read the CPU and wall time of `/dashboard` in Workers Logs yet, so 6.6 stays unchecked and the Phase 9 entry has an open item. It is the only measurement of the Performance Considerations budget (10 ms CPU on the Free plan) that could not be made locally, and the change cannot be closed with an unmeasured risk.
 - **Fix**: Read the values in Workers Logs, add them with the plan's CPU limit to the Phase 9 entry, tick 6.6 in a follow-up commit before the full-plan review.
-- **Decision**: SKIPPED — the user has not read the Workers Logs yet; row 6.6 and the Phase 9 entry stay open and the reading is queued in follow-ups/review-fixes.md.
+- **Decision**: ACCEPTED — the user told Claude to assume the CPU time is fine (2026-10-01); no value was measured, 6.6 is ticked with that note and the Phase 9 entry says so.
 
 ### F2 — Two claims in test-plan §6.6 go beyond what was verified
 
@@ -54,4 +54,4 @@ Inline by the main session (a five-file docs diff does not justify two subagents
 
 ## Triage
 
-F1 skipped (reading still to be made by the user), F2 fixed. Full-plan review runs after the reading is recorded or with 6.6 listed as open.
+F1 skipped at first, then accepted by the user without a measurement; F2 fixed.
