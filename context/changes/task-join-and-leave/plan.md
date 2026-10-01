@@ -322,10 +322,10 @@ Additive migration; the backfill enrols creators of existing tasks so existing t
 
 #### Automated
 
-- [x] 4.1 The required `integration` check is green on the PR to `master`: `gh pr checks`
+- [x] 4.1 The required `integration` check is green on the PR to `master`: `gh pr checks` — 4f22ccc
 
 #### Manual
 
-- [x] 4.2 After merging, confirm the merge commit contains the new migration (`git show --stat master` lists `supabase/migrations/20261001090000_create_task_participants.sql`), then approve the `release` run in the GitHub `production` environment.
-- [x] 4.3 On the production URL, a signed-in member joins and leaves another member's task and the creator is listed on a fresh task.
-- [x] 4.4 The date, applied migration and result are noted in `context/changes/deployment/deployment-plan.md`.
+- [x] 4.2 After merging, confirm the merge commit contains the new migration (`git show --stat master` lists `supabase/migrations/20261001090000_create_task_participants.sql`), then approve the `release` run in the GitHub `production` environment. — 4f22ccc
+- [x] 4.3 On the production URL, a signed-in member joins and leaves another member's task and the creator is listed on a fresh task. — 4f22ccc
+- [x] 4.4 The date, applied migration and result are noted in `context/changes/deployment/deployment-plan.md`. — 4f22ccc
