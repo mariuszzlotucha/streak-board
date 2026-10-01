@@ -587,13 +587,13 @@ Additive migration (a table and a view); no backfill because no check-offs exist
 
 #### Automated
 
-- [ ] 6.1 Linting and build pass with the documentation changes: `npm run lint && npm run build`
+- [x] 6.1 Linting and build pass with the documentation changes: `npm run lint && npm run build`
 - [ ] 6.2 The required `integration` check is green on the PR to `master`: `gh pr checks`
-- [ ] 6.7 Types check: `npx astro check`
+- [x] 6.7 Types check: `npx astro check`
 
 #### Manual
 
-- [ ] 6.3 After the Phase 5 merge, confirm `master` contains `supabase/migrations/20261002090000_create_task_checkoffs.sql`, then approve the `release` run in the GitHub `production` environment and read the `migration list` and `db push` output.
-- [ ] 6.4 On the production URL, two members check off, see the totals update instantly, reload to confirm the state persisted, undo, and see the leave warning; on a phone the tap feels instant.
-- [ ] 6.5 The date, applied migration, release run and result are noted in `context/changes/deployment/deployment-plan.md`.
+- [x] 6.3 After the Phase 5 merge, confirm `master` contains `supabase/migrations/20261002090000_create_task_checkoffs.sql`, then approve the `release` run in the GitHub `production` environment and read the `migration list` and `db push` output.
+- [x] 6.4 On the production URL, two members check off, see the totals update instantly, reload to confirm the state persisted, undo, and see the leave warning; on a phone the tap feels instant.
+- [x] 6.5 The date, applied migration, release run and result are noted in `context/changes/deployment/deployment-plan.md`.
 - [ ] 6.6 On production, read the CPU time of a `/dashboard` request for a group with several tasks (Workers Logs; observability is enabled in `wrangler.jsonc`) and note it with the Workers plan's CPU limit in `context/changes/deployment/deployment-plan.md`; investigate if it is close to the limit.
