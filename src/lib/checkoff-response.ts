@@ -1,5 +1,6 @@
 import type { APIContext } from "astro";
 import type { CheckoffOutcome } from "@/lib/checkoffs";
+import { wantsJson as acceptsJson } from "@/lib/http";
 
 /** What a check-off or undo route decided: the data layer's outcome, or one of the failures it finds before that. */
 export type CheckoffResult = CheckoffOutcome | { kind: "invalid" | "not_configured" | "gone" };
@@ -23,7 +24,7 @@ function jsonResponse(status: number, body: Record<string, unknown>): Response {
 
 /** A plain form POST gets a redirect; a `fetch` that asks for `application/json` gets a JSON answer it can act on. */
 export function checkoffResponse(context: APIContext, result: CheckoffResult): Response {
-  const wantsJson = (context.request.headers.get("Accept") ?? "").toLowerCase().includes("application/json");
+  const wantsJson = acceptsJson(context.request.headers);
   if (result.kind === "ok") {
     return wantsJson ? jsonResponse(200, { ok: true, period: result.period }) : context.redirect("/dashboard");
   }
