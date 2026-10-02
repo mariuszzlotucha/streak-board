@@ -261,11 +261,11 @@ These settings live only in the Supabase Dashboard of the hosted project. `supab
 
 The apex `streakboard.app` is attached to the Worker in the Cloudflare dashboard (Worker → Settings → Domains & Routes) and deliberately not declared in `wrangler.jsonc`. With Wrangler 4.131.x a deploy touches custom domains only when the config declares a `custom_domain` route, so a dashboard-attached domain survives every release. Declaring any such route makes Wrangler send the declared set (with `override_scope`, and in CI forcing the DNS and origin overrides), so a domain attached only in the dashboard may be replaced, and `streakboard.app` would then have to be listed in the file too. Do not add `routes` to `wrangler.jsonc` or `--strict` to the release step to silence a "local configuration differs from the remote configuration" warning.
 
-`workers.dev` and Preview URLs are off through `workers_dev: false` and `preview_urls: false` in `wrangler.jsonc` (without them a deploy would turn `workers.dev` back on). The deploy log therefore says "No targets deployed for 10x-astro-starter": expected, not a failure. The old `https://10x-astro-starter.mariusz-zlotucha.workers.dev` address stops serving the app with the first deploy that carries these keys.
+`workers.dev` and Preview URLs are off through `workers_dev: false` and `preview_urls: false` in `wrangler.jsonc` (without them a deploy would turn `workers.dev` back on). The deploy log therefore says "No targets deployed for 10x-astro-starter": expected, not a failure. The old `https://10x-astro-starter.mariusz-zlotucha.workers.dev` address stops serving the app with the first deploy that carries these keys. To bring `workers.dev` back for good, set `workers_dev: true` in `wrangler.jsonc`; switching it on in the dashboard alone is reverted by the next deploy.
 
 Changing the production address, in this order (add before you remove, move the dependants last):
 
-1. Make sure the new host answers (`/` 200, `/dashboard` 302 to its `/auth/signin`).
+1. Attach the new host as a Custom Domain in the Cloudflare dashboard (Worker → Settings → Domains & Routes) and make sure it answers (`/` 200, `/dashboard` 302 to its `/auth/signin`).
 2. Add the new `https://<host>/**` entry to the Supabase Redirect URLs, keeping the old one.
 3. Change the Supabase Site URL.
 4. Change `PRODUCTION_URL` in the GitHub `production` environment.

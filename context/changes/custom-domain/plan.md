@@ -383,7 +383,7 @@ No database migration; `supabase db push --yes` in each `release` reports nothin
 
 #### Manual
 
-- [ ] 3.5 The `PRODUCTION_URL` change was made before the Phase 3 `release` was approved, and that run finished green with "Check the live deployment" passing against `https://streakboard.app`
+- [x] 3.5 The `PRODUCTION_URL` change was made before the Phase 3 `release` was approved, and that run finished green with "Check the live deployment" passing against `https://streakboard.app` — d701775
 - [x] 3.6 README "Custom domain" subsection explains where the domain is attached, why `wrangler.jsonc` has no `routes`, the risk of adding `custom_domain` routes, and the ordered "Changing the production address" checklist — 81f0520
 - [x] 3.7 `deployment-plan.md` Phase 10 records the variable change and the Phase 2 release result, and `:185` and `:193` point to Phase 10 — 81f0520
 
@@ -395,15 +395,15 @@ No database migration; `supabase db push --yes` in each `release` reports nothin
 - [x] 4.2 Type check passes: `npx astro check` — 81f0520
 - [x] 4.3 The build output carries both flags: `npm run build && node -e "const c=JSON.parse(require('fs').readFileSync('dist/server/wrangler.json','utf8'));console.log(c.workers_dev,c.preview_urls)"` prints `false false` — 81f0520
 - [x] 4.4 Docs formatting passes: `npx prettier --check README.md context/changes/deployment/deployment-plan.md context/foundation/roadmap.md` — 81f0520
-- [ ] 4.5 After the release the new host answers: `/` prints `200` and `/dashboard` prints `302 https://streakboard.app/auth/signin`
-- [ ] 4.6 After the release the old host no longer serves the app: `curl -s -o /dev/null -w '%{http_code}\n' https://10x-astro-starter.mariusz-zlotucha.workers.dev/` prints a code other than `200`
+- [x] 4.5 After the release the new host answers: `/` prints `200` and `/dashboard` prints `302 https://streakboard.app/auth/signin` — d701775
+- [x] 4.6 After the release the old host no longer serves the app: `curl -s -o /dev/null -w '%{http_code}\n' https://10x-astro-starter.mariusz-zlotucha.workers.dev/` prints a code other than `200` — d701775
 
 #### Manual
 
-- [ ] 4.7 Confirmed with the owner that no `workers.dev` link has been shared since the frame (the "only me" answer still holds)
-- [ ] 4.8 The `release` run for the Phase 4 PR was approved after checking `supabase/migrations/` (none expected) and finished green; its log shows "No targets deployed for 10x-astro-starter" and the check ran against `https://streakboard.app`
-- [ ] 4.9 The `workers.dev` entry is removed from the Supabase Redirect URLs and the Site URL is unchanged
-- [ ] 4.10 A fresh sign-up on `https://streakboard.app` after the removal still lands signed in on `/dashboard`
-- [ ] 4.11 Main flow on production: sign in, the dashboard loads, a task can be checked off and undone, and the invite link starts with `https://streakboard.app/join/`
-- [ ] 4.12 `deployment-plan.md` Phase 10 records the Phase 3 release result, and the roadmap S-06 Unknown records the decision
-- [ ] 4.13 The closing docs commit sets Phase 10 to `✅ Done` with dates, the Phase 4 release run and the final production check
+- [x] 4.7 Confirmed with the owner that no `workers.dev` link has been shared since the frame (the "only me" answer still holds) — d701775 (owner-reported)
+- [x] 4.8 The `release` run for the Phase 4 PR was approved after checking `supabase/migrations/` (none expected) and finished green; its log shows "No targets deployed for 10x-astro-starter" and the check ran against `https://streakboard.app` — d701775
+- [x] 4.9 The `workers.dev` entry is removed from the Supabase Redirect URLs and the Site URL is unchanged — d701775 (owner-reported)
+- [x] 4.10 A fresh sign-up on `https://streakboard.app` after the removal still lands signed in on `/dashboard` — d701775 (owner-reported)
+- [x] 4.11 Main flow on production: sign in, the dashboard loads, a task can be checked off and undone, and the invite link starts with `https://streakboard.app/join/` — d701775 (owner-reported)
+- [x] 4.12 `deployment-plan.md` Phase 10 records the Phase 3 release result, and the roadmap S-06 Unknown records the decision — d701775
+- [x] 4.13 The closing docs commit sets Phase 10 to `✅ Done` with dates, the Phase 4 release run and the final production check — d701775
