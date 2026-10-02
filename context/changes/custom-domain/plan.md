@@ -342,18 +342,18 @@ No database migration; `supabase db push --yes` in each `release` reports nothin
 
 #### Automated
 
-- [x] 1.1 Apex answers over valid TLS: `curl -s -o /dev/null -w '%{http_code}\n' https://streakboard.app/` prints `200`
-- [x] 1.2 Sign-in page answers on the new host: `curl -s -o /dev/null -w '%{http_code}\n' https://streakboard.app/auth/signin` prints `200`
-- [x] 1.3 Protected route redirects on the new host: `curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' https://streakboard.app/dashboard` prints `302 https://streakboard.app/auth/signin`
-- [x] 1.4 Callback guard answers on the new host: `curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' https://streakboard.app/auth/callback` prints `302 https://streakboard.app/auth/signin?error=link_expired`
-- [x] 1.5 Old address unchanged: `/` prints `200` and `/dashboard` prints `302` on `https://10x-astro-starter.mariusz-zlotucha.workers.dev`
-- [x] 1.6 Docs formatting passes: `npx prettier --check context/changes/deployment/deployment-plan.md`
+- [x] 1.1 Apex answers over valid TLS: `curl -s -o /dev/null -w '%{http_code}\n' https://streakboard.app/` prints `200` — 0b15b59
+- [x] 1.2 Sign-in page answers on the new host: `curl -s -o /dev/null -w '%{http_code}\n' https://streakboard.app/auth/signin` prints `200` — 0b15b59
+- [x] 1.3 Protected route redirects on the new host: `curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' https://streakboard.app/dashboard` prints `302 https://streakboard.app/auth/signin` — 0b15b59
+- [x] 1.4 Callback guard answers on the new host: `curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' https://streakboard.app/auth/callback` prints `302 https://streakboard.app/auth/signin?error=link_expired` — 0b15b59
+- [x] 1.5 Old address unchanged: `/` prints `200` and `/dashboard` prints `302` on `https://10x-astro-starter.mariusz-zlotucha.workers.dev` — 0b15b59
+- [x] 1.6 Docs formatting passes: `npx prettier --check context/changes/deployment/deployment-plan.md` — 0b15b59
 
 #### Manual
 
-- [x] 1.7 Pre-checks done: the zone and the Worker are in the same Cloudflare account, Domains & Routes shows no custom domain or route (only `workers.dev` and Preview URLs), and the zone has no apex A, AAAA or CNAME record
-- [x] 1.8 The Custom Domain for the apex shows active in the dashboard with its certificate issued
-- [x] 1.9 `deployment-plan.md` has the new Phase 10 section with the date and the results of 1.1 to 1.5
+- [x] 1.7 Pre-checks done: the zone and the Worker are in the same Cloudflare account, Domains & Routes shows no custom domain or route (only `workers.dev` and Preview URLs), and the zone has no apex A, AAAA or CNAME record — 0b15b59
+- [x] 1.8 The Custom Domain for the apex shows active in the dashboard with its certificate issued — 0b15b59
+- [x] 1.9 `deployment-plan.md` has the new Phase 10 section with the date and the results of 1.1 to 1.5 — 0b15b59
 
 ### Phase 2: Move Supabase auth to the new address and prove the user flows
 
