@@ -47,7 +47,7 @@ Grono znajomych korzystało wcześniej ze wspólnego arkusza Google, w którym r
 
 | ID   | Change ID                      | Outcome (user can …)                                                                                                                | Prerequisites                                           | PRD refs                           | Status   |
 | ---- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ---------------------------------- | -------- |
-| S-06 | custom-domain                  | wejść na aplikację pod domeną `streakboard.app`; rejestracja, logowanie i link potwierdzający działają na tej domenie               | domena `streakboard.app` w Cloudflare (Registrar i DNS) | — (operacyjne; MS-01)              | ready    |
+| S-06 | custom-domain                  | wejść na aplikację pod domeną `streakboard.app`; rejestracja, logowanie i link potwierdzający działają na tej domenie               | domena `streakboard.app` w Cloudflare (Registrar i DNS) | — (operacyjne; MS-01)              | planning |
 | S-07 | google-login                   | zarejestrować się i zalogować kontem Google, bez ustawiania hasła                                                                   | S-06                                                    | FR-001 (OAuth/passwordless); MS-06 | proposed |
 | S-08 | observability-swallowed-errors | (jakościowy) awaria w krytycznym przepływie nie jest połykana ani zamieniana na sukces: trafia do odpowiedzi API i do monitoringu   | —                                                       | — (jakościowe; MS-05)              | ready    |
 | S-09 | landing-page                   | zobaczyć jako niezalogowany stronę startową, która tłumaczy, czym jest aplikacja, i prowadzi do rejestracji lub logowania           | S-06, S-07                                              | — (UI; MS-03)                      | proposed |
@@ -95,7 +95,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
   - Czy stary adres `workers.dev` ma pozostać aktywny po przepięciu na własną domenę (równolegle, z przekierowaniem czy wyłączony)? — Owner: user. Block: no — rozstrzyga `/10x-frame` lub `/10x-research`.
 - **Źródło zakresu:** `context/foundation/roadmap-input-next-slices.md`, sekcja „1. custom-domain" (praca operacyjna bez UI: kroki wymagające dostępu wykonuje właściciel; zakres obejmuje też poprawę dokumentacji, która dziś zakłada adres `workers.dev`).
 - **Risk:** Błędne Redirect URLs lub Site URL w Supabase łamią rejestrację na produkcji (znane z `release-automation-and-auth-hardening` w M-1: bez adresu na liście Supabase po cichu wraca do Site URL, a użytkownik po potwierdzeniu nie jest zalogowany), więc idzie pierwszy: zmienia adres, na który wskazują kolejne wycinki. Zmiana nie dotyka schematu bazy; kod wraca przez rollback Workera, ale ustawień w panelu Supabase rollback nie obejmuje.
-- **Status:** ready
+- **Status:** planning
 
 ### S-07: Logowanie kontem Google
 
