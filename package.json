@@ -12,7 +12,8 @@
     "format": "prettier --write .",
     "smoke": "node scripts/smoke.mjs",
     "test": "vitest run",
-    "test:rls": "docker exec -i supabase_db_10x-astro-starter psql -U postgres -d postgres -X -v ON_ERROR_STOP=1 < supabase/checks/rls-scenarios.sql"
+    "test:rls": "docker exec -i supabase_db_10x-astro-starter psql -U postgres -d postgres -X -v ON_ERROR_STOP=1 < supabase/checks/rls-scenarios.sql",
+    "prepare": "husky"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.10",
