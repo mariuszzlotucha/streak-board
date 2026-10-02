@@ -190,6 +190,7 @@ The owner edits the two Supabase URL settings additively and the phase proves, w
 **Intent**: one correct production address plus the operating knowledge about the domain, so the next change of address does not rediscover it.
 
 **Contract**:
+
 - The "Production" line (`:7`) names `https://streakboard.app` and drops the "today / will move" wording; the `PRODUCTION_URL` row (`:218`) says it is the production host.
 - "Auth e-mail sender domain" (`:248-250`) drops "Until the custom domain binding is done..." and says the app is served on `https://streakboard.app`.
 - New subsection "Custom domain" after "Production auth settings": the apex is attached in the Cloudflare dashboard (Worker → Settings → Domains & Routes) and deliberately not declared in `wrangler.jsonc`; with Wrangler 4.131.x a deploy touches custom domains only when the config declares a `custom_domain` route; declaring any such route makes wrangler send the declared set (with `override_scope`, and in CI forcing DNS and origin overrides), so a domain attached only in the dashboard may be replaced and `streakboard.app` must then be listed in the file too; the ordered checklist "Changing the production address": (1) the new host answers, (2) add the new Redirect URLs entry, (3) change the Site URL, (4) change `PRODUCTION_URL`, (5) update the docs, (6) verify with a real sign-up and an invite link, (7) only then remove the old Redirect URLs entry and switch the old host off.
@@ -341,34 +342,34 @@ No database migration; `supabase db push --yes` in each `release` reports nothin
 
 #### Automated
 
-- [ ] 1.1 Apex answers over valid TLS: `curl -s -o /dev/null -w '%{http_code}\n' https://streakboard.app/` prints `200`
-- [ ] 1.2 Sign-in page answers on the new host: `curl -s -o /dev/null -w '%{http_code}\n' https://streakboard.app/auth/signin` prints `200`
-- [ ] 1.3 Protected route redirects on the new host: `curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' https://streakboard.app/dashboard` prints `302 https://streakboard.app/auth/signin`
-- [ ] 1.4 Callback guard answers on the new host: `curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' https://streakboard.app/auth/callback` prints `302 https://streakboard.app/auth/signin?error=link_expired`
-- [ ] 1.5 Old address unchanged: `/` prints `200` and `/dashboard` prints `302` on `https://10x-astro-starter.mariusz-zlotucha.workers.dev`
-- [ ] 1.6 Docs formatting passes: `npx prettier --check context/changes/deployment/deployment-plan.md`
+- [x] 1.1 Apex answers over valid TLS: `curl -s -o /dev/null -w '%{http_code}\n' https://streakboard.app/` prints `200` — 0b15b59
+- [x] 1.2 Sign-in page answers on the new host: `curl -s -o /dev/null -w '%{http_code}\n' https://streakboard.app/auth/signin` prints `200` — 0b15b59
+- [x] 1.3 Protected route redirects on the new host: `curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' https://streakboard.app/dashboard` prints `302 https://streakboard.app/auth/signin` — 0b15b59
+- [x] 1.4 Callback guard answers on the new host: `curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' https://streakboard.app/auth/callback` prints `302 https://streakboard.app/auth/signin?error=link_expired` — 0b15b59
+- [x] 1.5 Old address unchanged: `/` prints `200` and `/dashboard` prints `302` on `https://10x-astro-starter.mariusz-zlotucha.workers.dev` — 0b15b59
+- [x] 1.6 Docs formatting passes: `npx prettier --check context/changes/deployment/deployment-plan.md` — 0b15b59
 
 #### Manual
 
-- [ ] 1.7 Pre-checks done: the zone and the Worker are in the same Cloudflare account, Domains & Routes shows no custom domain or route (only `workers.dev` and Preview URLs), and the zone has no apex A, AAAA or CNAME record
-- [ ] 1.8 The Custom Domain for the apex shows active in the dashboard with its certificate issued
-- [ ] 1.9 `deployment-plan.md` has the new Phase 10 section with the date and the results of 1.1 to 1.5
+- [x] 1.7 Pre-checks done: the zone and the Worker are in the same Cloudflare account, Domains & Routes shows no custom domain or route (only `workers.dev` and Preview URLs), and the zone has no apex A, AAAA or CNAME record — 0b15b59
+- [x] 1.8 The Custom Domain for the apex shows active in the dashboard with its certificate issued — 0b15b59
+- [x] 1.9 `deployment-plan.md` has the new Phase 10 section with the date and the results of 1.1 to 1.5 — 0b15b59
 
 ### Phase 2: Move Supabase auth to the new address and prove the user flows
 
 #### Automated
 
 - [ ] 2.1 The Phase 1 release finished green and the domain survived the deploy: `curl -s -o /dev/null -w '%{http_code}\n' https://streakboard.app/` prints `200` after it
-- [ ] 2.2 Docs formatting passes: `npx prettier --check README.md context/changes/deployment/deployment-plan.md`
-- [ ] 2.3 README names the new Site URL: `grep -n "Site URL" README.md` prints a line containing `https://streakboard.app`
+- [x] 2.2 Docs formatting passes: `npx prettier --check README.md context/changes/deployment/deployment-plan.md` — 7dd01af
+- [x] 2.3 README names the new Site URL: `grep -n "Site URL" README.md` prints a line containing `https://streakboard.app` — 7dd01af
 
 #### Manual
 
-- [ ] 2.4 Supabase URL Configuration shows Site URL `https://streakboard.app` and both Redirect URLs entries (`https://streakboard.app/**` and the `workers.dev` one)
-- [ ] 2.5 A fresh sign-up at `https://streakboard.app/auth/signup` in a private window delivers the confirmation e-mail from `noreply@mail.streakboard.app`, and the link carries `redirect_to=https://streakboard.app/auth/callback`
-- [ ] 2.6 Clicking the link in the same browser lands on `https://streakboard.app/dashboard` signed in, without `link_expired`
-- [ ] 2.7 The dashboard on the new host shows an invite link starting with `https://streakboard.app/join/`, and opening it as the new user joins the group
-- [ ] 2.8 Member e-mails are plain text in the page source (no `data-cfemail`, no `/cdn-cgi/l/email-protection`) and the browser console shows no hydration errors
+- [x] 2.4 Supabase URL Configuration shows Site URL `https://streakboard.app` and both Redirect URLs entries (`https://streakboard.app/**` and the `workers.dev` one) — 7dd01af
+- [x] 2.5 A fresh sign-up at `https://streakboard.app/auth/signup` in a private window delivers the confirmation e-mail from `noreply@mail.streakboard.app`, and the link carries `redirect_to=https://streakboard.app/auth/callback` — 7dd01af
+- [x] 2.6 Clicking the link in the same browser lands on `https://streakboard.app/dashboard` signed in, without `link_expired` — 7dd01af
+- [x] 2.7 The dashboard on the new host shows an invite link starting with `https://streakboard.app/join/`, and opening it as the new user joins the group — 7dd01af
+- [x] 2.8 Member e-mails are plain text in the page source (no `data-cfemail`, no `/cdn-cgi/l/email-protection`) and the browser console shows no hydration errors — 7dd01af
 - [ ] 2.9 `deployment-plan.md` Phase 10 records the Phase 1 release result, the Supabase values, the date and the results of 2.4 to 2.8
 
 ### Phase 3: Point the release gate at the new address and update the docs

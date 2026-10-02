@@ -253,8 +253,8 @@ Confirmation e-mails are sent through Resend SMTP (configured in the Supabase Da
 
 These settings live only in the Supabase Dashboard of the hosted project. `supabase/config.toml` configures just the local stack and `supabase db push` does not push it, so nothing in the repo sets them and they must be checked by hand after changing the production URL:
 
-- **Site URL** (Authentication → URL Configuration): the production address, currently `https://10x-astro-starter.mariusz-zlotucha.workers.dev`. Without it confirmation links point to the default `http://localhost:3000`.
-- **Redirect URLs** (same page): `https://<prod>/**` for the production address. Sign-up sends `emailRedirectTo` = `<origin>/auth/callback`; if it is missing from this allow-list Supabase silently falls back to the Site URL and the user is not signed in after confirming.
+- **Site URL** (Authentication → URL Configuration): the production address, `https://streakboard.app`. Without it confirmation links point to the default `http://localhost:3000`.
+- **Redirect URLs** (same page): `https://streakboard.app/**` for the production address, plus `https://10x-astro-starter.mariusz-zlotucha.workers.dev/**` only until the `workers.dev` address is switched off. Sign-up sends `emailRedirectTo` = `<origin>/auth/callback`; if it is missing from this allow-list Supabase silently falls back to the Site URL and the user is not signed in after confirming.
 - **Custom SMTP** (Authentication → SMTP Settings): Resend credentials for the sender domain above. The built-in Supabase SMTP has a low rate limit (`over_email_send_rate_limit`).
 
 ## Smoke test
