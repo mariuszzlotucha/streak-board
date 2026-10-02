@@ -360,16 +360,16 @@ No database migration; `supabase db push --yes` in each `release` reports nothin
 #### Automated
 
 - [ ] 2.1 The Phase 1 release finished green and the domain survived the deploy: `curl -s -o /dev/null -w '%{http_code}\n' https://streakboard.app/` prints `200` after it
-- [x] 2.2 Docs formatting passes: `npx prettier --check README.md context/changes/deployment/deployment-plan.md`
-- [x] 2.3 README names the new Site URL: `grep -n "Site URL" README.md` prints a line containing `https://streakboard.app`
+- [x] 2.2 Docs formatting passes: `npx prettier --check README.md context/changes/deployment/deployment-plan.md` — 7dd01af
+- [x] 2.3 README names the new Site URL: `grep -n "Site URL" README.md` prints a line containing `https://streakboard.app` — 7dd01af
 
 #### Manual
 
-- [x] 2.4 Supabase URL Configuration shows Site URL `https://streakboard.app` and both Redirect URLs entries (`https://streakboard.app/**` and the `workers.dev` one)
-- [x] 2.5 A fresh sign-up at `https://streakboard.app/auth/signup` in a private window delivers the confirmation e-mail from `noreply@mail.streakboard.app`, and the link carries `redirect_to=https://streakboard.app/auth/callback`
-- [x] 2.6 Clicking the link in the same browser lands on `https://streakboard.app/dashboard` signed in, without `link_expired`
-- [x] 2.7 The dashboard on the new host shows an invite link starting with `https://streakboard.app/join/`, and opening it as the new user joins the group
-- [x] 2.8 Member e-mails are plain text in the page source (no `data-cfemail`, no `/cdn-cgi/l/email-protection`) and the browser console shows no hydration errors
+- [x] 2.4 Supabase URL Configuration shows Site URL `https://streakboard.app` and both Redirect URLs entries (`https://streakboard.app/**` and the `workers.dev` one) — 7dd01af
+- [x] 2.5 A fresh sign-up at `https://streakboard.app/auth/signup` in a private window delivers the confirmation e-mail from `noreply@mail.streakboard.app`, and the link carries `redirect_to=https://streakboard.app/auth/callback` — 7dd01af
+- [x] 2.6 Clicking the link in the same browser lands on `https://streakboard.app/dashboard` signed in, without `link_expired` — 7dd01af
+- [x] 2.7 The dashboard on the new host shows an invite link starting with `https://streakboard.app/join/`, and opening it as the new user joins the group — 7dd01af
+- [x] 2.8 Member e-mails are plain text in the page source (no `data-cfemail`, no `/cdn-cgi/l/email-protection`) and the browser console shows no hydration errors — 7dd01af
 - [ ] 2.9 `deployment-plan.md` Phase 10 records the Phase 1 release result, the Supabase values, the date and the results of 2.4 to 2.8
 
 ### Phase 3: Point the release gate at the new address and update the docs
