@@ -1,0 +1,21 @@
+---
+// PROBE-ONLY page, injected into the isolated copy by the runtime-probe harness (probe/suite.mjs): it throws while the
+// response is already streaming. Never ship it.
+export const prerender = false;
+
+async function boom() {
+  await new Promise((resolve) => setTimeout(resolve, 150));
+  throw new Error("probe-stream");
+}
+---
+
+<html lang="en">
+  <head>
+    <title>probe stream</title>
+  </head>
+  <body>
+    <p>stream-start</p>
+    {boom()}
+    <p>stream-end</p>
+  </body>
+</html>

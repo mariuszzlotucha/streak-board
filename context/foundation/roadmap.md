@@ -49,7 +49,7 @@ Grono znajomych korzystało wcześniej ze wspólnego arkusza Google, w którym r
 | ---- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ---------------------------------- | -------- |
 | S-06 | custom-domain                  | wejść na aplikację pod domeną `streakboard.app`; rejestracja, logowanie i link potwierdzający działają na tej domenie               | domena `streakboard.app` w Cloudflare (Registrar i DNS) | — (operacyjne; MS-01)              | done     |
 | S-07 | google-login                   | zarejestrować się i zalogować kontem Google, bez ustawiania hasła                                                                   | S-06                                                    | FR-001 (OAuth/passwordless); MS-06 | proposed |
-| S-08 | observability-swallowed-errors | (jakościowy) awaria w krytycznym przepływie nie jest połykana ani zamieniana na sukces: trafia do odpowiedzi API i do monitoringu   | —                                                       | — (jakościowe; MS-05)              | ready    |
+| S-08 | observability-swallowed-errors | (jakościowy) awaria w krytycznym przepływie nie jest połykana ani zamieniana na sukces: trafia do odpowiedzi API i do monitoringu   | —                                                       | — (jakościowe; MS-05)              | planning |
 | S-09 | landing-page                   | zobaczyć jako niezalogowany stronę startową, która tłumaczy, czym jest aplikacja, i prowadzi do rejestracji lub logowania           | S-06, S-07                                              | — (UI; MS-03)                      | proposed |
 | S-10 | test-coverage                  | (jakościowy) zmiany w aplikacji są chronione testami wybranymi według ryzyka, a jakość testów jednostkowych jest mierzona mutacjami | —                                                       | — (jakościowe; MS-02)              | ready    |
 | S-11 | dashboard-ui                   | korzystać z czytelniejszego, spójnego wizualnie widoku grupy, tasków i tablicy wyników                                              | S-08, S-10                                              | — (UI; MS-04)                      | proposed |
@@ -122,11 +122,12 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Parallel with:** S-06, S-07, S-09, S-10
 - **Blockers:** —
 - **Unknowns:**
+  - Zakres części A rozszerzono decyzją z planowania (2026-10-02): helper raportujący, middleware i wszystkie gałęzie zwróconego błędu w 13 trasach plus wyniki odznaczania, zamiast jednego znaleziska. — Owner: user. Block: no — rozstrzygnięte.
   - Który krytyczny przepływ audytujemy (kandydaci: odznaczanie i cofanie odznaczenia, dołączanie do grupy) i które znalezisko z raportu naprawiamy? — Owner: user. Block: no — wybór po raporcie z audytu observability.
   - Czy część B (narzędzie do śledzenia błędów na Workerze, darmowy plan wystarczy) wchodzi w zakres i czy konto jest założone po stronie użytkownika? — Owner: user. Block: no.
 - **Źródło zakresu:** `context/foundation/roadmap-input-next-slices.md`, sekcja „5. observability-swallowed-errors" (część A: audyt jednego przepływu i naprawa jednego znaleziska wraz z testem, że awaria nie jest już sukcesem; część B: opcjonalny monitoring z kluczem DSN jako sekretem, nigdy w repozytorium ani w czacie; raport audytu jest wejściem do planu).
 - **Risk:** Zmiana odpowiedzi na błąd może zmienić kontrakt, na którym polegają wyspa odznaczania (mapuje 403 i 404 na „odrzucone", a inne błędy na „nie zapisano") i smoke; error tracking na Workerze zwiększa zużycie CPU (limit 10 ms na planie Free), więc narzut trzeba sprawdzić. Wycinek jest niezależny, więc może ruszyć od razu, równolegle z S-06; stoi przed S-11, bo oba dotykają wyspy odznaczania i smoke, a stany błędu w nowym widoku powinny wynikać z ustalonego już kontraktu błędów.
-- **Status:** ready
+- **Status:** planning
 
 ### S-09: Strona startowa dla niezalogowanych
 
@@ -197,7 +198,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - ~~**Automatyczny deploy na merge (CI/CD)**~~ — Unparked 2026-09-25: Workers Builds i tak wdraża `master`, a automatyzacja migracji trafiła do S-05 (`release-automation-and-auth-hardening`).
 - ~~**Domena własna / środowisko staging**~~ — Unparked 2026-10-02: domena własna trafiła do S-06 (`custom-domain`); środowisko staging zostaje zaparkowane (osobna pozycja poniżej).
 - **Środowisko staging** — Why parked: `context/foundation/infrastructure.md` i deployment-plan.md — poza zakresem; wydzielone z pozycji „Domena własna / środowisko staging" przy odparkowaniu domeny 2026-10-02.
-- ~~**Observability (logowanie strukturalne, error tracking)**~~ — Unparked 2026-10-02: trafiła do S-08 (`observability-swallowed-errors`) w zakresie audytu jednego przepływu, naprawy jednego połkniętego błędu i opcjonalnego error trackingu; logowanie strukturalne nie jest celem tego wycinka.
+- ~~**Observability (logowanie strukturalne, error tracking)**~~ — Unparked 2026-10-02: trafiła do S-08 (`observability-swallowed-errors`) w zakresie audytu jednego przepływu, naprawy jednego połkniętego błędu i opcjonalnego error trackingu; pierwotnie logowanie strukturalne nie było celem tego wycinka, ale plan (decyzja z wywiadu planistycznego, 2026-10-02) obejmuje wspólny helper raportujący i wszystkie gałęzie zwróconego błędu Supabase, nie jeden przepływ.
 
 ## Milestone History
 
