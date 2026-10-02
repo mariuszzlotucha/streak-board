@@ -190,11 +190,16 @@ Turns "rollback works in theory" into a proven, once-rehearsed step before you n
 - [x] Supabase auth moved to the new address (owner, Supabase Dashboard → Authentication → URL Configuration, 2026-10-02): Redirect URLs now hold `https://streakboard.app/**` and the earlier `https://10x-astro-starter.mariusz-zlotucha.workers.dev/**` entry; the entry was added first and the Site URL changed second, to `https://streakboard.app`. SMTP settings and e-mail templates were not touched.
 - [x] User flows on the new host (2026-10-02, owner, private window, a fresh sign-up): the confirmation e-mail came from `noreply@mail.streakboard.app` and its link carried `redirect_to=https://streakboard.app/auth/callback`; clicking it in the same browser landed on `/dashboard` signed in, without `link_expired`; the invite link started with `https://streakboard.app/join/` and joined the group when opened as another user; member e-mails were plain text in the page source (no `data-cfemail`, no `/cdn-cgi/l/email-protection`) and the console showed no hydration errors. The owner reported all checks as passing; no obfuscation or template change was reported.
 - [x] Phases 1 and 2 were delivered in one pull request at the owner's request (the plan has one PR per phase). The Supabase steps and the user flows were done before the merge, on the live app, because no code changes and the domain was already attached. Because of that, the check that a normal deploy leaves the dashboard-attached domain alone (plan rows 2.1 and 2.9) can run only after the release of this PR; the Phase 3 PR closes it.
-- [ ] Result of the `release` for the combined Phase 1 and 2 PR (does a normal deploy leave the dashboard-attached domain alone? `https://streakboard.app/` must still print `200` afterwards): recorded by the Phase 3 PR.
+- [x] Result of the `release` for the combined Phase 1 and 2 PR (PR #61, merged 2026-10-02 as merge commit `e2ee1e7`; no new migrations in the merge, the latest is `20261002090000_create_task_checkoffs.sql`): CI run 36991982924 on `master`; the `release` job ran 09:52:48-09:53:40 UTC and finished `success` after the owner's approval. Afterwards `https://streakboard.app/` printed `200`, `/auth/signin` `200`, `/dashboard` `302` to `https://streakboard.app/auth/signin`, `/auth/callback` `302` to `https://streakboard.app/auth/signin?error=link_expired`, and the old host `/` still `200`. A normal deploy left the dashboard-attached domain alone.
+- [x] Variable change: the GitHub environment `production` variable `PRODUCTION_URL` was changed on 2026-10-02 from `https://10x-astro-starter.mariusz-zlotucha.workers.dev` to `https://streakboard.app` (set by Claude through `gh api -X PATCH` at the owner's explicit request; read back through the API).
+- [x] Phases 3 and 4 were delivered in one pull request at the owner's request (the plan has one PR per phase). Consequence: the release of that PR is the first one to check the new address from a runner and also ships `workers_dev: false` and `preview_urls: false`. If it fails with 403 or 503 on `Expected 200 from https://streakboard.app/`, the cause is the zone's bot protection, and `workers.dev` is already off by then (rollback: switch `workers.dev` back on in the dashboard). The result of that release and the final status are recorded by the closing docs PR.
+- [ ] Result of the `release` for the combined Phase 3 and 4 PR (first runner check of `https://streakboard.app`, deploy log "No targets deployed for 10x-astro-starter"): recorded by the closing docs PR.
+- [ ] The owner removes `https://10x-astro-starter.mariusz-zlotucha.workers.dev/**` from the Supabase Redirect URLs after that release and repeats a fresh sign-up on `https://streakboard.app`.
+- [ ] Main-flow check on production and confirmation that `workers.dev` no longer serves the app: recorded by the closing docs PR.
 
 ## Verification checklist (end-to-end, once unblocked)
 
-- [ ] Fresh browser session against the live `*.workers.dev` URL: sign up, confirm-email flow (or note if stubbed), sign in, hit `/dashboard`, sign out.
+- [ ] Fresh browser session against the live `*.workers.dev` URL: sign up, confirm-email flow (or note if stubbed), sign in, hit `/dashboard`, sign out. — superseded by the Phase 10 production checks on `https://streakboard.app` (`workers.dev` is switched off by Phase 4 of that change).
 - [ ] `npx wrangler tail` shows clean request logs, no uncaught exceptions.
 - [ ] `npx wrangler kv namespace list` still returns `[]`.
 - [ ] `npx wrangler rollback` confirmed as the documented recovery path in `README.md`.
@@ -202,6 +207,6 @@ Turns "rollback works in theory" into a proven, once-rehearsed step before you n
 ## Out of scope
 
 - **GitHub Actions / deploy-on-merge automation** — originally excluded from this plan; now delivered by change `release-automation-and-auth-hardening` (gated `release` job in `.github/workflows/ci.yml`, Workers Builds disabled).
-- Custom domain binding — deferred, default `workers.dev` subdomain for now.
+- **Custom domain binding** — originally deferred (default `workers.dev` subdomain); now delivered by change `custom-domain` (Phase 10).
 - Staging environment / `[env.staging]` in `wrangler.jsonc` — deferred, single production environment for this MVP.
 - Docker, multi-region/HA/DR — out of scope per `infrastructure.md`.

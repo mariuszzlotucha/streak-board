@@ -4,7 +4,7 @@
 
 A modern, opinionated starter template for building fast, accessible web applications.
 
-**Production:** <https://10x-astro-starter.mariusz-zlotucha.workers.dev> today. The product domain is **`streakboard.app`** (Cloudflare Registrar, DNS in Cloudflare): it already sends the auth e-mail, and the app itself will move to it in a separate change (custom domain binding, Supabase Site URL and Redirect URLs).
+**Production:** <https://streakboard.app> (Cloudflare Registrar, DNS in Cloudflare). The same domain sends the auth e-mail.
 
 ## Tech Stack
 
@@ -206,16 +206,16 @@ The `release` job runs only on pushes to `master` (never on pull requests), and 
 
 Required configuration of the GitHub `production` environment (Settings → Environments → `production`, with the owner as required reviewer; enter credentialed values in the GitHub UI, never in chat):
 
-| Type     | Name                    | Purpose                                                |
-| -------- | ----------------------- | ------------------------------------------------------ |
-| Secret   | `SUPABASE_ACCESS_TOKEN` | Supabase CLI login for `link` and `db push`            |
-| Secret   | `SUPABASE_DB_PASSWORD`  | Database password for `db push`                        |
-| Secret   | `CLOUDFLARE_API_TOKEN`  | `wrangler deploy`                                      |
-| Secret   | `CLOUDFLARE_ACCOUNT_ID` | `wrangler deploy`                                      |
-| Secret   | `SUPABASE_URL`          | Build-time value of the `npm run build` step           |
-| Secret   | `SUPABASE_KEY`          | Build-time value of the `npm run build` step           |
-| Variable | `SUPABASE_PROJECT_REF`  | Hosted project ref used by `supabase link`             |
-| Variable | `PRODUCTION_URL`        | Base URL for the post-deploy check (no trailing slash) |
+| Type     | Name                    | Purpose                                                                                                 |
+| -------- | ----------------------- | ------------------------------------------------------------------------------------------------------- |
+| Secret   | `SUPABASE_ACCESS_TOKEN` | Supabase CLI login for `link` and `db push`                                                             |
+| Secret   | `SUPABASE_DB_PASSWORD`  | Database password for `db push`                                                                         |
+| Secret   | `CLOUDFLARE_API_TOKEN`  | `wrangler deploy`                                                                                       |
+| Secret   | `CLOUDFLARE_ACCOUNT_ID` | `wrangler deploy`                                                                                       |
+| Secret   | `SUPABASE_URL`          | Build-time value of the `npm run build` step                                                            |
+| Secret   | `SUPABASE_KEY`          | Build-time value of the `npm run build` step                                                            |
+| Variable | `SUPABASE_PROJECT_REF`  | Hosted project ref used by `supabase link`                                                              |
+| Variable | `PRODUCTION_URL`        | Production host, e.g. `https://streakboard.app` (no trailing slash); base URL for the post-deploy check |
 
 The Worker's runtime secrets (`SUPABASE_URL`, `SUPABASE_KEY`) are set once on the Worker itself (or whenever they change):
 
@@ -234,7 +234,7 @@ Only needed if Actions is unavailable. Run migrations first if any are pending (
 npm run build && npx wrangler deploy
 ```
 
-First deploy on a fresh Cloudflare account also needs a one-time `workers.dev` subdomain registered for the account — if `wrangler deploy` fails with "could not automatically register ... as your workers.dev subdomain", enable it from the Worker's **Domains** tab in the Cloudflare dashboard (Workers & Pages → your Worker → Domains → enable the `workers.dev` route), then re-run the deploy.
+Only while `workers_dev` is enabled (it is `false` in `wrangler.jsonc` now), a first deploy on a fresh Cloudflare account also needs a one-time `workers.dev` subdomain registered for the account — if `wrangler deploy` fails with "could not automatically register ... as your workers.dev subdomain", enable it from the Worker's **Domains** tab in the Cloudflare dashboard (Workers & Pages → your Worker → Domains → enable the `workers.dev` route), then re-run the deploy.
 
 ### Rollback
 
@@ -247,15 +247,31 @@ npx wrangler rollback [version-id]   # reverts to the given version, or the prio
 
 ### Auth e-mail sender domain
 
-Confirmation e-mails are sent through Resend SMTP (configured in the Supabase Dashboard under Authentication → SMTP Settings, not in this repo) from the domain `streakboard.app` (Cloudflare Registrar, DNS in Cloudflare). Resend sends from the subdomain `mail.streakboard.app`, with the sender `noreply@mail.streakboard.app`. Until the custom domain binding is done the app itself stays on its `workers.dev` URL; the target production address is `https://streakboard.app`.
+Confirmation e-mails are sent through Resend SMTP (configured in the Supabase Dashboard under Authentication → SMTP Settings, not in this repo) from the domain `streakboard.app` (Cloudflare Registrar, DNS in Cloudflare). Resend sends from the subdomain `mail.streakboard.app`, with the sender `noreply@mail.streakboard.app`. The app itself is served on `https://streakboard.app`.
 
 ### Production auth settings
 
 These settings live only in the Supabase Dashboard of the hosted project. `supabase/config.toml` configures just the local stack and `supabase db push` does not push it, so nothing in the repo sets them and they must be checked by hand after changing the production URL:
 
 - **Site URL** (Authentication → URL Configuration): the production address, `https://streakboard.app`. Without it confirmation links point to the default `http://localhost:3000`.
-- **Redirect URLs** (same page): `https://streakboard.app/**` for the production address, plus `https://10x-astro-starter.mariusz-zlotucha.workers.dev/**` only until the `workers.dev` address is switched off. Sign-up sends `emailRedirectTo` = `<origin>/auth/callback`; if it is missing from this allow-list Supabase silently falls back to the Site URL and the user is not signed in after confirming.
+- **Redirect URLs** (same page): `https://streakboard.app/**`. Sign-up sends `emailRedirectTo` = `<origin>/auth/callback`; if it is missing from this allow-list Supabase silently falls back to the Site URL and the user is not signed in after confirming.
 - **Custom SMTP** (Authentication → SMTP Settings): Resend credentials for the sender domain above. The built-in Supabase SMTP has a low rate limit (`over_email_send_rate_limit`).
+
+### Custom domain
+
+The apex `streakboard.app` is attached to the Worker in the Cloudflare dashboard (Worker → Settings → Domains & Routes) and deliberately not declared in `wrangler.jsonc`. With Wrangler 4.131.x a deploy touches custom domains only when the config declares a `custom_domain` route, so a dashboard-attached domain survives every release. Declaring any such route makes Wrangler send the declared set (with `override_scope`, and in CI forcing the DNS and origin overrides), so a domain attached only in the dashboard may be replaced, and `streakboard.app` would then have to be listed in the file too. Do not add `routes` to `wrangler.jsonc` or `--strict` to the release step to silence a "local configuration differs from the remote configuration" warning.
+
+`workers.dev` and Preview URLs are off through `workers_dev: false` and `preview_urls: false` in `wrangler.jsonc` (without them a deploy would turn `workers.dev` back on). The deploy log therefore says "No targets deployed for 10x-astro-starter": expected, not a failure. The old `https://10x-astro-starter.mariusz-zlotucha.workers.dev` address stops serving the app with the first deploy that carries these keys.
+
+Changing the production address, in this order (add before you remove, move the dependants last):
+
+1. Make sure the new host answers (`/` 200, `/dashboard` 302 to its `/auth/signin`).
+2. Add the new `https://<host>/**` entry to the Supabase Redirect URLs, keeping the old one.
+3. Change the Supabase Site URL.
+4. Change `PRODUCTION_URL` in the GitHub `production` environment.
+5. Update the docs (this README, `context/changes/deployment/deployment-plan.md`).
+6. Verify with a real sign-up and an invite link on the new host.
+7. Only then remove the old Redirect URLs entry and switch the old host off. For the move to `streakboard.app` (2026-10, change `custom-domain`, Phase 4) `workers.dev` is switched off through `wrangler.jsonc` and the `workers.dev` Redirect URLs entry is removed after the release that carries it.
 
 ## Smoke test
 
