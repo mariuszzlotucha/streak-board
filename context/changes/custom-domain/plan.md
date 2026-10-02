@@ -359,7 +359,7 @@ No database migration; `supabase db push --yes` in each `release` reports nothin
 
 #### Automated
 
-- [ ] 2.1 The Phase 1 release finished green and the domain survived the deploy: `curl -s -o /dev/null -w '%{http_code}\n' https://streakboard.app/` prints `200` after it
+- [x] 2.1 The Phase 1 release finished green and the domain survived the deploy: `curl -s -o /dev/null -w '%{http_code}\n' https://streakboard.app/` prints `200` after it — 81f0520
 - [x] 2.2 Docs formatting passes: `npx prettier --check README.md context/changes/deployment/deployment-plan.md` — 7dd01af
 - [x] 2.3 README names the new Site URL: `grep -n "Site URL" README.md` prints a line containing `https://streakboard.app` — 7dd01af
 
@@ -370,31 +370,31 @@ No database migration; `supabase db push --yes` in each `release` reports nothin
 - [x] 2.6 Clicking the link in the same browser lands on `https://streakboard.app/dashboard` signed in, without `link_expired` — 7dd01af
 - [x] 2.7 The dashboard on the new host shows an invite link starting with `https://streakboard.app/join/`, and opening it as the new user joins the group — 7dd01af
 - [x] 2.8 Member e-mails are plain text in the page source (no `data-cfemail`, no `/cdn-cgi/l/email-protection`) and the browser console shows no hydration errors — 7dd01af
-- [ ] 2.9 `deployment-plan.md` Phase 10 records the Phase 1 release result, the Supabase values, the date and the results of 2.4 to 2.8
+- [x] 2.9 `deployment-plan.md` Phase 10 records the Phase 1 release result, the Supabase values, the date and the results of 2.4 to 2.8 — 81f0520
 
 ### Phase 3: Point the release gate at the new address and update the docs
 
 #### Automated
 
-- [ ] 3.1 `PRODUCTION_URL` reads back as the new address: `gh api repos/mariuszzlotucha/streak-board/environments/production/variables --jq '.variables[] | select(.name=="PRODUCTION_URL") | .value'` prints `https://streakboard.app`
-- [ ] 3.2 README names the new production address: `grep -n '^\*\*Production:\*\*' README.md` prints a line containing `https://streakboard.app`
-- [ ] 3.3 No stale wording is left in the README: `grep -nE 'Until the custom domain binding|will move to it' README.md` prints nothing
-- [ ] 3.4 Docs formatting passes: `npx prettier --check README.md context/changes/deployment/deployment-plan.md`
+- [x] 3.1 `PRODUCTION_URL` reads back as the new address: `gh api repos/mariuszzlotucha/streak-board/environments/production/variables --jq '.variables[] | select(.name=="PRODUCTION_URL") | .value'` prints `https://streakboard.app` — 81f0520
+- [x] 3.2 README names the new production address: `grep -n '^\*\*Production:\*\*' README.md` prints a line containing `https://streakboard.app` — 81f0520
+- [x] 3.3 No stale wording is left in the README: `grep -nE 'Until the custom domain binding|will move to it' README.md` prints nothing — 81f0520
+- [x] 3.4 Docs formatting passes: `npx prettier --check README.md context/changes/deployment/deployment-plan.md` — 81f0520
 
 #### Manual
 
 - [ ] 3.5 The `PRODUCTION_URL` change was made before the Phase 3 `release` was approved, and that run finished green with "Check the live deployment" passing against `https://streakboard.app`
-- [ ] 3.6 README "Custom domain" subsection explains where the domain is attached, why `wrangler.jsonc` has no `routes`, the risk of adding `custom_domain` routes, and the ordered "Changing the production address" checklist
-- [ ] 3.7 `deployment-plan.md` Phase 10 records the variable change and the Phase 2 release result, and `:185` and `:193` point to Phase 10
+- [x] 3.6 README "Custom domain" subsection explains where the domain is attached, why `wrangler.jsonc` has no `routes`, the risk of adding `custom_domain` routes, and the ordered "Changing the production address" checklist — 81f0520
+- [x] 3.7 `deployment-plan.md` Phase 10 records the variable change and the Phase 2 release result, and `:185` and `:193` point to Phase 10 — 81f0520
 
 ### Phase 4: Switch workers.dev off
 
 #### Automated
 
-- [ ] 4.1 Lint passes: `npm run lint`
-- [ ] 4.2 Type check passes: `npx astro check`
-- [ ] 4.3 The build output carries both flags: `npm run build && node -e "const c=JSON.parse(require('fs').readFileSync('dist/server/wrangler.json','utf8'));console.log(c.workers_dev,c.preview_urls)"` prints `false false`
-- [ ] 4.4 Docs formatting passes: `npx prettier --check README.md context/changes/deployment/deployment-plan.md context/foundation/roadmap.md`
+- [x] 4.1 Lint passes: `npm run lint` — 81f0520
+- [x] 4.2 Type check passes: `npx astro check` — 81f0520
+- [x] 4.3 The build output carries both flags: `npm run build && node -e "const c=JSON.parse(require('fs').readFileSync('dist/server/wrangler.json','utf8'));console.log(c.workers_dev,c.preview_urls)"` prints `false false` — 81f0520
+- [x] 4.4 Docs formatting passes: `npx prettier --check README.md context/changes/deployment/deployment-plan.md context/foundation/roadmap.md` — 81f0520
 - [ ] 4.5 After the release the new host answers: `/` prints `200` and `/dashboard` prints `302 https://streakboard.app/auth/signin`
 - [ ] 4.6 After the release the old host no longer serves the app: `curl -s -o /dev/null -w '%{http_code}\n' https://10x-astro-starter.mariusz-zlotucha.workers.dev/` prints a code other than `200`
 

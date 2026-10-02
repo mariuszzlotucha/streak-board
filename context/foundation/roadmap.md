@@ -92,7 +92,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Parallel with:** S-08, S-10, S-11
 - **Blockers:** —
 - **Unknowns:**
-  - Czy stary adres `workers.dev` ma pozostać aktywny po przepięciu na własną domenę (równolegle, z przekierowaniem czy wyłączony)? — Owner: user. Block: no — rozstrzyga `/10x-frame` lub `/10x-research`.
+  - Czy stary adres `workers.dev` ma pozostać aktywny po przepięciu na własną domenę (równolegle, z przekierowaniem czy wyłączony)? — Owner: user. Block: no — rozstrzyga `/10x-frame` lub `/10x-research`. Rozstrzygnięte: wyłączony po weryfikacji nowego adresu (faza 4, `workers_dev: false` i `preview_urls: false`).
 - **Źródło zakresu:** `context/foundation/roadmap-input-next-slices.md`, sekcja „1. custom-domain" (praca operacyjna bez UI: kroki wymagające dostępu wykonuje właściciel; zakres obejmuje też poprawę dokumentacji, która dziś zakłada adres `workers.dev`).
 - **Risk:** Błędne Redirect URLs lub Site URL w Supabase łamią rejestrację na produkcji (znane z `release-automation-and-auth-hardening` w M-1: bez adresu na liście Supabase po cichu wraca do Site URL, a użytkownik po potwierdzeniu nie jest zalogowany), więc idzie pierwszy: zmienia adres, na który wskazują kolejne wycinki. Zmiana nie dotyka schematu bazy; kod wraca przez rollback Workera, ale ustawień w panelu Supabase rollback nie obejmuje.
 - **Status:** in-progress
