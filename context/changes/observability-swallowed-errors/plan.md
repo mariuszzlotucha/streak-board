@@ -433,12 +433,12 @@ No migrations. Each phase is code-only and backward compatible; the recovery pat
 
 #### Automated
 
-- [x] 1.1 Lint passes: `npm run lint`
-- [x] 1.2 Types check: `npx astro check`
-- [x] 1.3 Unit and integration tests pass, including the new redact, log, auth-state and middleware tests (needs the local Supabase stack, one session at a time): `npm test`
-- [x] 1.4 Project builds: `npm run build`
-- [x] 1.5 Smoke test still passes, including the anonymous 302 steps for check-off and the task and group routes: `npm run smoke`
-- [x] 1.6 The new libraries import nothing from `astro:*`, so Vitest can load them: `grep -n "astro:" src/lib/redact.ts src/lib/log.ts src/lib/auth-state.ts src/lib/http.ts` prints nothing
+- [x] 1.1 Lint passes: `npm run lint` — c01d4b7
+- [x] 1.2 Types check: `npx astro check` — c01d4b7
+- [x] 1.3 Unit and integration tests pass, including the new redact, log, auth-state and middleware tests (needs the local Supabase stack, one session at a time): `npm test` — c01d4b7
+- [x] 1.4 Project builds: `npm run build` — c01d4b7
+- [x] 1.5 Smoke test still passes, including the anonymous 302 steps for check-off and the task and group routes: `npm run smoke` — c01d4b7
+- [x] 1.6 The new libraries import nothing from `astro:*`, so Vitest can load them: `grep -n "astro:" src/lib/redact.ts src/lib/log.ts src/lib/auth-state.ts src/lib/http.ts` prints nothing — c01d4b7
 
 #### Manual
 

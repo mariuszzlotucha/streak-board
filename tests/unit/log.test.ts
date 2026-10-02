@@ -41,6 +41,21 @@ describe("reportError", () => {
     expect(loggedError().error).toEqual({ message: "oops", details: "d", hint: "h", code: "XX000" });
   });
 
+  it("reads and scrubs details and hint of an Error instance such as PostgrestError", () => {
+    const error = Object.assign(new Error("duplicate"), {
+      details: "Key (join_code)=(abc123) already exists.",
+      hint: "h",
+      code: "23505",
+    });
+    reportError("x.failed", error);
+
+    expect(loggedError().error).toMatchObject({
+      details: "Key (join_code)=(…) already exists.",
+      hint: "h",
+      code: "23505",
+    });
+  });
+
   it("keeps code and status of an Auth network failure", () => {
     reportError("auth.unavailable", new AuthRetryableFetchError("fetch failed", 0));
 

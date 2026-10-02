@@ -36,15 +36,15 @@ function errorFields(error: unknown): ErrorFields {
     candidates.message = text(error.message, MAX_TEXT);
     candidates.stack = text(error.stack, MAX_STACK);
   } else if (typeof error === "object" && error !== null) {
-    const shaped = error as Record<string, unknown>;
-    candidates.message = text(shaped.message, MAX_TEXT);
-    candidates.details = text(shaped.details, MAX_TEXT);
-    candidates.hint = text(shaped.hint, MAX_TEXT);
+    candidates.message = text((error as Record<string, unknown>).message, MAX_TEXT);
   } else {
     candidates.message = text(String(error), MAX_TEXT);
   }
   if (typeof error === "object" && error !== null) {
-    const { code, status } = error as { code?: unknown; status?: unknown };
+    // PostgrestError extends Error, so details and hint are read for every object.
+    const { code, status, details, hint } = error as Record<string, unknown>;
+    candidates.details = text(details, MAX_TEXT);
+    candidates.hint = text(hint, MAX_TEXT);
     candidates.code = plain(code);
     if (typeof status === "number") candidates.status = status;
   }
@@ -89,8 +89,9 @@ export function reportMapped(event: string, code: string, error: unknown, contex
   if (code === "unknown" || code === "forbidden") {
     reportError(event, error, { ...context, outcome: code });
   } else if (code === "rate_limited") {
-    const errorCode = errorFields(error).code;
-    reportInfo(event, { ...context, outcome: code, code: errorCode });
+    safely(event, () => {
+      reportInfo(event, { ...context, outcome: code, code: errorFields(error).code });
+    });
   }
 }
 

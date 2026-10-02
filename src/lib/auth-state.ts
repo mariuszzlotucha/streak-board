@@ -7,7 +7,7 @@ type Supabase = NonNullable<ReturnType<typeof createClient>>;
 export type AuthState =
   | { kind: "signed_in"; user: User }
   | { kind: "anonymous" } // no session, or a session Auth reports as gone
-  | { kind: "unavailable"; error: AuthError } // Auth service failure: status 0 or >= 500
+  | { kind: "unavailable"; error: AuthError } // Auth service failure: network failure (retryable fetch error) or status >= 500
   | { kind: "unexpected"; error: AuthError } // anything else: treated as anonymous, but reported
   | { kind: "not_configured" }; // createClient returned null
 
