@@ -471,12 +471,12 @@ No migrations. Each phase is code-only and backward compatible; the recovery pat
 
 #### Automated
 
-- [x] 3.1 Lint passes: `npm run lint`
-- [x] 3.2 Types check, including the new Sentry modules: `npx astro check`
-- [x] 3.3 All tests pass, including the Sentry options, scrubbing, capture and updated middleware tests (needs the local Supabase stack, one session at a time): `npm test`
-- [x] 3.4 Project builds and the generated config carries the version binding and the variable: `npm run build && grep -E "version_metadata|SENTRY_ENVIRONMENT" dist/server/wrangler.json`
-- [x] 3.5 Smoke test passes with the request wrapper active and no DSN set, so the SDK stays silent: `npm run smoke`
-- [x] 3.6 The onboarding template is not in use: `@sentry/astro` is absent from `package.json` and no `sentry.*.config.*` file exists: `! grep -q "@sentry/astro" package.json && ! ls sentry.*.config.* 2>/dev/null`
+- [x] 3.1 Lint passes: `npm run lint` — 280b11e
+- [x] 3.2 Types check, including the new Sentry modules: `npx astro check` — 280b11e
+- [x] 3.3 All tests pass, including the Sentry options, scrubbing, capture and updated middleware tests (needs the local Supabase stack, one session at a time): `npm test` — 280b11e
+- [x] 3.4 Project builds and the generated config carries the version binding and the variable: `npm run build && grep -E "version_metadata|SENTRY_ENVIRONMENT" dist/server/wrangler.json` — 280b11e
+- [x] 3.5 Smoke test passes with the request wrapper active and no DSN set, so the SDK stays silent: `npm run smoke` — 280b11e
+- [x] 3.6 The onboarding template is not in use: `@sentry/astro` is absent from `package.json` and no `sentry.*.config.*` file exists: `! grep -q "@sentry/astro" package.json && ! ls sentry.*.config.* 2>/dev/null` — 280b11e
 
 #### Manual
 
