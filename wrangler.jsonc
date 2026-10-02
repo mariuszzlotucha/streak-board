@@ -14,6 +14,7 @@
   },
   // The custom domain streakboard.app is attached in the Cloudflare dashboard, not here (README "Custom domain").
   // Declaring `routes` with `custom_domain` would make wrangler manage that set from this file.
+  // workers_dev and preview_urls stay false: without them a deploy turns workers.dev back on (README "Custom domain").
   "workers_dev": false,
   "preview_urls": false,
 }

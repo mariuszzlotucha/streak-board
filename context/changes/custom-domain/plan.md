@@ -400,10 +400,10 @@ No database migration; `supabase db push --yes` in each `release` reports nothin
 
 #### Manual
 
-- [x] 4.7 Confirmed with the owner that no `workers.dev` link has been shared since the frame (the "only me" answer still holds) — d701775
+- [x] 4.7 Confirmed with the owner that no `workers.dev` link has been shared since the frame (the "only me" answer still holds) — d701775 (owner-reported)
 - [x] 4.8 The `release` run for the Phase 4 PR was approved after checking `supabase/migrations/` (none expected) and finished green; its log shows "No targets deployed for 10x-astro-starter" and the check ran against `https://streakboard.app` — d701775
-- [x] 4.9 The `workers.dev` entry is removed from the Supabase Redirect URLs and the Site URL is unchanged — d701775
-- [x] 4.10 A fresh sign-up on `https://streakboard.app` after the removal still lands signed in on `/dashboard` — d701775
-- [x] 4.11 Main flow on production: sign in, the dashboard loads, a task can be checked off and undone, and the invite link starts with `https://streakboard.app/join/` — d701775
+- [x] 4.9 The `workers.dev` entry is removed from the Supabase Redirect URLs and the Site URL is unchanged — d701775 (owner-reported)
+- [x] 4.10 A fresh sign-up on `https://streakboard.app` after the removal still lands signed in on `/dashboard` — d701775 (owner-reported)
+- [x] 4.11 Main flow on production: sign in, the dashboard loads, a task can be checked off and undone, and the invite link starts with `https://streakboard.app/join/` — d701775 (owner-reported)
 - [x] 4.12 `deployment-plan.md` Phase 10 records the Phase 3 release result, and the roadmap S-06 Unknown records the decision — d701775
 - [x] 4.13 The closing docs commit sets Phase 10 to `✅ Done` with dates, the Phase 4 release run and the final production check — d701775
