@@ -451,13 +451,13 @@ No migrations. Each phase is code-only and backward compatible; the recovery pat
 
 #### Automated
 
-- [ ] 2.1 Lint passes: `npm run lint`
-- [ ] 2.2 Types check: `npx astro check`
-- [ ] 2.3 All tests pass, including the new check-off reporting and route tests and the unchanged `task-checkoff-flow` suite (needs the local Supabase stack, one session at a time): `npm test`
-- [ ] 2.4 Project builds: `npm run build`
-- [ ] 2.5 Smoke test still passes, because the responses of the touched routes are unchanged: `npm run smoke`
-- [ ] 2.6 Every returned-error branch reports through the helper: `grep -L "reportMapped(" src/pages/api/groups/{create,delete,join,leave,remove-member,rename}.ts src/pages/api/auth/{signin,signup}.ts src/pages/api/tasks/{create,delete,join,leave,update}.ts` prints nothing
-- [ ] 2.7 No route handler logs with a bare `console` call, and the only remaining ones are the helper's, `callback.ts` and `dashboard.astro`: `grep -rln "console\." src` lists only `src/lib/log.ts`, `src/pages/auth/callback.ts` and `src/pages/dashboard.astro`
+- [x] 2.1 Lint passes: `npm run lint`
+- [x] 2.2 Types check: `npx astro check`
+- [x] 2.3 All tests pass, including the new check-off reporting and route tests and the unchanged `task-checkoff-flow` suite (needs the local Supabase stack, one session at a time): `npm test`
+- [x] 2.4 Project builds: `npm run build`
+- [x] 2.5 Smoke test still passes, because the responses of the touched routes are unchanged: `npm run smoke`
+- [x] 2.6 Every returned-error branch reports through the helper: `grep -L "reportMapped(" src/pages/api/groups/{create,delete,join,leave,remove-member,rename}.ts src/pages/api/auth/{signin,signup}.ts src/pages/api/tasks/{create,delete,join,leave,update}.ts` prints nothing
+- [x] 2.7 No route handler logs with a bare `console` call, and the only remaining ones are the helper's, `callback.ts` and `dashboard.astro`: `grep -rln "console\." src` lists only `src/lib/log.ts`, `src/pages/auth/callback.ts` and `src/pages/dashboard.astro`
 
 #### Manual
 

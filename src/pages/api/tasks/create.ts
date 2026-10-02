@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@/lib/supabase";
+import { reportError, reportMapped, requestFields } from "@/lib/log";
 import { getMyGroup } from "@/lib/groups";
 import { toTaskErrorCode } from "@/lib/task-errors";
 import { normalizeRecurrence, normalizeTaskTitle } from "@/lib/task-rules";
@@ -34,18 +35,19 @@ export const POST: APIRoute = async (context) => {
       return context.redirect("/dashboard?error=forbidden");
     }
 
-    const { error } = await supabase
+    const { error, status } = await supabase
       .from("tasks")
       .insert({ group_id: group.id, created_by: user.id, title, recurrence });
     if (error) {
-      return context.redirect(`/dashboard?error=${toTaskErrorCode(error)}`);
+      const errorCode = toTaskErrorCode(error);
+      reportMapped("tasks.create.failed", errorCode, error, { ...requestFields(context), status });
+      return context.redirect(`/dashboard?error=${errorCode}`);
     }
 
     return context.redirect("/dashboard");
   } catch (error) {
     // Malformed body or a thrown Supabase/network error: end on the dashboard with a fixed message.
-    // eslint-disable-next-line no-console -- server-side log; the user only sees the fixed message
-    console.error("Create task request failed", error);
+    reportError("tasks.create.exception", error, requestFields(context));
     return context.redirect("/dashboard?error=unknown");
   }
 };

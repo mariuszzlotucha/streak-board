@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@/lib/supabase";
+import { reportError, reportMapped, requestFields } from "@/lib/log";
 import { toGroupErrorCode } from "@/lib/group-errors";
 import { normalizeGroupName } from "@/lib/group-rules";
 import { clearJoinCode } from "@/lib/join-code";
@@ -25,17 +26,18 @@ export const POST: APIRoute = async (context) => {
     }
 
     // Only name and owner_id are sent; id and join_code come from column defaults.
-    const { error } = await supabase.from("groups").insert({ name, owner_id: user.id });
+    const { error, status } = await supabase.from("groups").insert({ name, owner_id: user.id });
     if (error) {
-      return context.redirect(`/dashboard?error=${toGroupErrorCode(error)}`);
+      const errorCode = toGroupErrorCode(error);
+      reportMapped("groups.create.failed", errorCode, error, { ...requestFields(context), status });
+      return context.redirect(`/dashboard?error=${errorCode}`);
     }
 
     clearJoinCode(context.cookies);
     return context.redirect("/dashboard");
   } catch (error) {
     // Malformed body or a thrown Supabase/network error: end on the dashboard with a fixed message.
-    // eslint-disable-next-line no-console -- server-side log; the user only sees the fixed message
-    console.error("Create group request failed", error);
+    reportError("groups.create.exception", error, requestFields(context));
     return context.redirect("/dashboard?error=unknown");
   }
 };

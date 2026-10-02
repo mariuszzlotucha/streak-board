@@ -273,6 +273,18 @@ Changing the production address, in this order (add before you remove, move the 
 6. Verify with a real sign-up and an invite link on the new host.
 7. Only then remove the old Redirect URLs entry and switch the old host off. For the move to `streakboard.app` (2026-10, change `custom-domain`, Phase 4) `workers.dev` is switched off through `wrangler.jsonc` and the `workers.dev` Redirect URLs entry is removed after the release that carries it.
 
+## Observability
+
+Server-side failures are reported through `src/lib/log.ts`, never with a bare `console.error`. `reportError(event, error, context)` writes one structured error line, `reportInfo(event, context)` one info line, and `reportMapped(event, code, error, context)` applies the route policy in one place: a returned Supabase error that a route maps to `unknown` or `forbidden` is an error, `rate_limited` is an info line, and every other code is a domain outcome (`invalid_code`, validation) and stays quiet. `requestFields(context)` supplies the `route` (the route pattern, never the raw path), `userId` and the `cf-ray` id.
+
+- **Event names** follow `<area>.<action>.<outcome>`, for example `groups.join.failed`, `tasks.create.exception`, `checkoff.forbidden`, `auth.unavailable`. `.failed` is a returned Supabase error, `.exception` a thrown one.
+- **Levels**: error for unexpected outcomes (unmapped SQLSTATEs, 5xx, network failures, `42501`), info for stale or expected ones (a task that is gone, an invalid id, not enrolled, an undo that removes nothing, a rate limit).
+- **Fields**: `event`, `route`, `userId`, `ray`, `status`, the SQLSTATE `code` and a scrubbed `message` (plus `details`, `hint` and a trimmed `stack` when present). Messages pass through `src/lib/redact.ts`, which masks e-mail addresses, the values in `Key (column)=(value)` fragments and `/join/<code>` URLs.
+- **Never logged**: e-mail addresses, cookies, request bodies and the invite code. The join route logs `codeLength` instead of the code.
+- **Reading logs**: `npx wrangler tail --format json` for a live stream, or query Workers Logs by `event` (and `code`, `userId`) in the Cloudflare dashboard.
+- **503 contract**: when the Auth service is unreachable, a protected request answers 503 (`{"ok":false,"error":"unavailable"}` for `Accept: application/json`, a plain page otherwise) with `Retry-After: 30` and an `auth.unavailable` error line, while a missing session still redirects to `/auth/signin` silently.
+- **Adding a Supabase call**: report its returned `error` through the helper (`reportMapped` in a route that maps the code to a redirect); never map `error.code` and drop it.
+
 ## Smoke test
 
 `scripts/smoke.mjs` is a dependency-free Node script that walks the auth flow (sign-up, sign-in, protected page, sign-out), the group flow and the task flow (create, rename, join, leave, check off, undo, delete) over HTTP. The group and task parts use three signed-up users (an owner and two members) with separate sessions: create, invite link, join, member view, rename, leave, remove member and delete group, including the rejected attempts (a member trying owner actions, malformed input, foreign-origin and GET requests). The check-off steps assert the page after each action (the row, the streak and the Leaderboard totals), the JSON period against an independent Warsaw-date oracle, and that leaving a task erases its history. Run it against the dev server or the production preview after dependency upgrades:

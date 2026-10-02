@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@/lib/supabase";
+import { reportError, reportMapped, requestFields } from "@/lib/log";
 import { toSignUpErrorCode } from "@/lib/auth-errors";
 import { rememberEmail } from "@/lib/auth-email";
 
@@ -20,14 +21,15 @@ export const POST: APIRoute = async (context) => {
 
     if (error) {
       rememberEmail(context.cookies, email);
-      return context.redirect(`/auth/signup?error=${toSignUpErrorCode(error)}`);
+      const errorCode = toSignUpErrorCode(error);
+      reportMapped("auth.signup.failed", errorCode, error, { ...requestFields(context), status: error.status });
+      return context.redirect(`/auth/signup?error=${errorCode}`);
     }
 
     return context.redirect("/auth/confirm-email");
   } catch (error) {
     // Malformed body or a thrown Supabase/network error: end on the sign-up page with a fixed message.
-    // eslint-disable-next-line no-console -- server-side log; the user only sees the fixed message
-    console.error("Sign-up request failed", error);
+    reportError("auth.signup.exception", error, requestFields(context));
     return context.redirect("/auth/signup?error=unknown");
   }
 };

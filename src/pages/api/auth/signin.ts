@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@/lib/supabase";
+import { reportError, reportMapped, requestFields } from "@/lib/log";
 import { toSignInErrorCode } from "@/lib/auth-errors";
 import { rememberEmail } from "@/lib/auth-email";
 
@@ -18,14 +19,15 @@ export const POST: APIRoute = async (context) => {
 
     if (error) {
       rememberEmail(context.cookies, email);
-      return context.redirect(`/auth/signin?error=${toSignInErrorCode(error)}`);
+      const errorCode = toSignInErrorCode(error);
+      reportMapped("auth.signin.failed", errorCode, error, { ...requestFields(context), status: error.status });
+      return context.redirect(`/auth/signin?error=${errorCode}`);
     }
 
     return context.redirect("/dashboard");
   } catch (error) {
     // Malformed body or a thrown Supabase/network error: end on the sign-in page with a fixed message.
-    // eslint-disable-next-line no-console -- server-side log; the user only sees the fixed message
-    console.error("Sign-in request failed", error);
+    reportError("auth.signin.exception", error, requestFields(context));
     return context.redirect("/auth/signin?error=unknown");
   }
 };

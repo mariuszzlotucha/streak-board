@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@/lib/supabase";
+import { reportError, reportMapped, requestFields } from "@/lib/log";
 import { toGroupErrorCode } from "@/lib/group-errors";
 import { normalizeUuid } from "@/lib/group-rules";
 import { getMyGroup } from "@/lib/groups";
@@ -37,7 +38,7 @@ export const POST: APIRoute = async (context) => {
     // Only the owner may delete another member's row. RLS turns "not the owner", "not a member of this group" and
     // "the owner's own row" into an empty result, not an error. The neq is a second guard for the caller's own row
     // (see the string comparison above): Postgres compares the uuids, whatever spelling of the id arrived.
-    const { data, error } = await supabase
+    const { data, error, status } = await supabase
       .from("group_members")
       .delete()
       .eq("group_id", group.id)
@@ -45,7 +46,9 @@ export const POST: APIRoute = async (context) => {
       .neq("user_id", user.id)
       .select("id");
     if (error) {
-      return context.redirect(`/dashboard?error=${toGroupErrorCode(error)}`);
+      const errorCode = toGroupErrorCode(error);
+      reportMapped("groups.remove_member.failed", errorCode, error, { ...requestFields(context), status });
+      return context.redirect(`/dashboard?error=${errorCode}`);
     }
     if (data.length === 0) {
       // For the owner (whose own id was refused above) nothing to delete means the target already left or was
@@ -56,8 +59,7 @@ export const POST: APIRoute = async (context) => {
     return context.redirect("/dashboard");
   } catch (error) {
     // Malformed body or a thrown Supabase/network error: end on the dashboard with a fixed message.
-    // eslint-disable-next-line no-console -- server-side log; the user only sees the fixed message
-    console.error("Remove member request failed", error);
+    reportError("groups.remove_member.exception", error, requestFields(context));
     return context.redirect("/dashboard?error=unknown");
   }
 };
