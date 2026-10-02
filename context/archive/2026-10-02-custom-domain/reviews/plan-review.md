@@ -1,4 +1,5 @@
 <!-- PLAN-REVIEW-REPORT -->
+
 # Plan Review: Custom domain Implementation Plan
 
 - **Plan**: context/changes/custom-domain/plan.md
@@ -9,13 +10,13 @@
 
 ## Verdicts
 
-| Dimension | Verdict |
-|-----------|---------|
-| End-State Alignment | PASS |
-| Lean Execution | PASS |
-| Architectural Fitness | PASS |
-| Blind Spots | PASS (1 observation) |
-| Plan Completeness | WARNING |
+| Dimension             | Verdict              |
+| --------------------- | -------------------- |
+| End-State Alignment   | PASS                 |
+| Lean Execution        | PASS                 |
+| Architectural Fitness | PASS                 |
+| Blind Spots           | PASS (1 observation) |
+| Plan Completeness     | WARNING              |
 
 ## Grounding
 
