@@ -465,7 +465,7 @@ No migrations. Each phase is code-only and backward compatible; the recovery pat
 - [ ] 2.9 After the release, a signed-in browser-console `fetch` of `/api/tasks/checkoff` with a JSON body produces a `checkoff.exception` entry in Workers Logs whose fields (`event`, `code`, `userId`) are searchable; if the object arrives flattened into one string, `src/lib/log.ts` is switched to one JSON string argument and the change is noted
 - [ ] 2.10 Production check after the release: a member checks off and undoes a task and joins a group with a valid invite; nothing changes for the user
 - [ ] 2.11 The release result is added to the S-08 entry in `context/changes/deployment/deployment-plan.md`
-- [ ] 2.12 The rule "report every returned Supabase error" is recorded in `context/foundation/lessons.md` with `/10x-lesson`
+- [x] 2.12 The rule "report every returned Supabase error" is recorded in `context/foundation/lessons.md` with `/10x-lesson` — 5cf7a3c
 
 ### Phase 3: Sentry on the Worker
 
