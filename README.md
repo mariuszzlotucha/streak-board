@@ -179,7 +179,7 @@ Route protection is handled in `src/middleware.ts`. Add paths to the `PROTECTED_
 | `POST /api/tasks/checkoff` | Participant: tick the current day or week of a task (field `task_id`); ticking twice does nothing |
 | `POST /api/tasks/uncheck`  | Participant: undo the tick of the current period (field `task_id`); undoing twice does nothing    |
 
-`/api/groups/*` and `/api/tasks/*` follow the same `PROTECTED_ROUTES` rule as `/dashboard`: an unauthenticated request is redirected to `/auth/signin`. `/join/<code>` is the exception on purpose, so an invited visitor is sent through sign-in by the protected dashboard. Every group and task endpoint redirects back to `/dashboard`, adding `?error=<code>` on failure; the two check-off routes also answer JSON (`{ ok, period }` or `{ ok: false, error }`) to a request that sends `Accept: application/json`, which is what the dashboard's check-off button uses. Who may do what is decided by Postgres row-level security (see [RLS scenario checks](#rls-scenario-checks)); the app only forwards the signed-in user's session.
+`/api/groups/*` and `/api/tasks/*` follow the same `PROTECTED_ROUTES` rule as `/dashboard`: an unauthenticated request is redirected to `/auth/signin`. `/join/<code>` is the exception on purpose, so an invited visitor is sent through sign-in by the protected dashboard. Every group and task endpoint redirects back to `/dashboard`, adding `?error=<code>` on failure; the two check-off routes also answer JSON (`{ ok, period }` or `{ ok: false, error }`) to a request that sends `Accept: application/json`, which is what the dashboard's check-off button uses. When the Auth service is unreachable, a protected request answers 503 (JSON `{ ok: false, error: "unavailable" }` for `Accept: application/json`, a plain page otherwise, both with `Retry-After`) instead of the redirect; a request with no session still redirects to `/auth/signin`. Who may do what is decided by Postgres row-level security (see [RLS scenario checks](#rls-scenario-checks)); the app only forwards the signed-in user's session.
 
 ### RLS scenario checks
 
@@ -272,6 +272,25 @@ Changing the production address, in this order (add before you remove, move the 
 5. Update the docs (this README, `context/changes/deployment/deployment-plan.md`).
 6. Verify with a real sign-up and an invite link on the new host.
 7. Only then remove the old Redirect URLs entry and switch the old host off. For the move to `streakboard.app` (2026-10, change `custom-domain`, Phase 4) `workers.dev` is switched off through `wrangler.jsonc` and the `workers.dev` Redirect URLs entry is removed after the release that carries it.
+
+## Observability
+
+Server-side failures are reported through `src/lib/log.ts`, never with a bare `console.error`. `reportError(event, error, context)` writes one structured error line, `reportInfo(event, context)` one info line, and `reportMapped(event, code, error, context)` applies the route policy in one place: a returned Supabase error that a route maps to `unknown` or `forbidden` is an error, `rate_limited` is an info line, and every other code is a domain outcome (`invalid_code`, validation) and stays quiet. `requestFields(context)` supplies the `route` (the route pattern, never the raw path), `userId` and the `cf-ray` id.
+
+- **Event names** follow `<area>.<action>.<outcome>`, for example `groups.join.failed`, `tasks.create.exception`, `checkoff.forbidden`, `auth.unavailable`. `.failed` is a returned Supabase error, `.exception` a thrown one.
+- **Levels**: error for unexpected outcomes (unmapped SQLSTATEs, 5xx, network failures, `42501`), info for stale or expected ones (a task that is gone, an invalid id, not enrolled, an undo that removes nothing, a rate limit).
+- **Fields**: `event`, `route`, `userId`, `ray`, `status`, the SQLSTATE `code` and a scrubbed `message` (plus `details`, `hint` and a trimmed `stack` when present). Messages pass through `src/lib/redact.ts`, which masks e-mail addresses, the values in `Key (column)=(value)` fragments and `/join/<code>` URLs.
+- **Never logged**: e-mail addresses, cookies, request bodies and the invite code. The join route logs `codeLength` instead of the code.
+- **Reading logs**: `npx wrangler tail --format json` for a live stream, or query Workers Logs by `event` (and `code`, `userId`) in the Cloudflare dashboard.
+- **503 contract**: when the Auth service is unreachable, a protected request answers 503 (`{"ok":false,"error":"unavailable"}` for `Accept: application/json`, a plain page otherwise) with `Retry-After: 30` and an `auth.unavailable` error line, while a missing session still redirects to `/auth/signin` silently.
+- **Adding a Supabase call**: report its returned `error` through the helper (`reportMapped` in a route that maps the code to a redirect); never map `error.code` and drop it.
+- **Sentry**: error-level reports (`reportError`, and `reportMapped` for `unknown` and `forbidden`) are also sent to Sentry through `@sentry/cloudflare`; info lines never are. `src/lib/sentry.ts` wraps each request from the middleware (the adapter's entry point stays), and `src/lib/sentry-options.ts` locks data collection down: no default integrations, no cookies, headers, bodies or query strings, only `user.id`, and a `beforeSend` scrubber. Events group by event name and SQLSTATE; the release is the Worker version id and the environment comes from `SENTRY_ENVIRONMENT` (`production` in `wrangler.jsonc`). With no `SENTRY_DSN` nothing is sent.
+  - Create the Sentry project, then run `npx wrangler secret put SENTRY_DSN` yourself; never put the DSN in the repo, a build variable or a chat.
+  - For a local preview, optionally put `SENTRY_DSN` and `SENTRY_ENVIRONMENT=local` in `.dev.vars` (dev vars win over the config var).
+  - Do not run `npx astro add @sentry/astro` or create `sentry.server.config.js`: its server half loses events on Workers and its Vite plugin touches every build.
+  - Set the key's rate limit and spike protection in Sentry (Dedupe is off, so a burst counts every event against the quota), and add an issue alert rule that mails you, filtered to `environment:production`.
+  - The free quota is second-hand (about 5k errors a month); verify it on sentry.io.
+  - Optional: the Sentry MCP for Claude Code, `claude mcp add --transport http sentry https://mcp.sentry.dev/mcp`.
 
 ## Smoke test
 

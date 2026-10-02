@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@/lib/supabase";
+import { reportError, reportMapped, requestFields } from "@/lib/log";
 import { toGroupErrorCode } from "@/lib/group-errors";
 import { normalizeGroupName } from "@/lib/group-rules";
 import { getMyGroup } from "@/lib/groups";
@@ -30,9 +31,11 @@ export const POST: APIRoute = async (context) => {
     }
 
     // Only the name column is updatable. RLS turns "not the owner" into an empty result, not an error.
-    const { data, error } = await supabase.from("groups").update({ name }).eq("id", group.id).select("id");
+    const { data, error, status } = await supabase.from("groups").update({ name }).eq("id", group.id).select("id");
     if (error) {
-      return context.redirect(`/dashboard?error=${toGroupErrorCode(error)}`);
+      const errorCode = toGroupErrorCode(error);
+      reportMapped("groups.rename.failed", errorCode, error, { ...requestFields(context), status });
+      return context.redirect(`/dashboard?error=${errorCode}`);
     }
     if (data.length === 0) {
       return context.redirect("/dashboard?error=forbidden");
@@ -41,8 +44,7 @@ export const POST: APIRoute = async (context) => {
     return context.redirect("/dashboard");
   } catch (error) {
     // Malformed body or a thrown Supabase/network error: end on the dashboard with a fixed message.
-    // eslint-disable-next-line no-console -- server-side log; the user only sees the fixed message
-    console.error("Rename group request failed", error);
+    reportError("groups.rename.exception", error, requestFields(context));
     return context.redirect("/dashboard?error=unknown");
   }
 };

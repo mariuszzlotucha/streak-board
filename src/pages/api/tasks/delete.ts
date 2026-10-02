@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@/lib/supabase";
+import { reportError, reportMapped, requestFields } from "@/lib/log";
 import { normalizeUuid } from "@/lib/group-rules";
 import { toTaskErrorCode } from "@/lib/task-errors";
 import { getTask } from "@/lib/tasks";
@@ -29,9 +30,11 @@ export const POST: APIRoute = async (context) => {
     }
 
     // RLS turns "not the creator" into an empty result, not an error.
-    const { data, error } = await supabase.from("tasks").delete().eq("id", taskId).select("id");
+    const { data, error, status } = await supabase.from("tasks").delete().eq("id", taskId).select("id");
     if (error) {
-      return context.redirect(`/dashboard?error=${toTaskErrorCode(error)}`);
+      const errorCode = toTaskErrorCode(error);
+      reportMapped("tasks.delete.failed", errorCode, error, { ...requestFields(context), status });
+      return context.redirect(`/dashboard?error=${errorCode}`);
     }
     if (data.length === 0) {
       return context.redirect("/dashboard?error=forbidden");
@@ -39,8 +42,7 @@ export const POST: APIRoute = async (context) => {
 
     return context.redirect("/dashboard");
   } catch (error) {
-    // eslint-disable-next-line no-console -- server-side log; the user only sees the fixed message
-    console.error("Delete task request failed", error);
+    reportError("tasks.delete.exception", error, requestFields(context));
     return context.redirect("/dashboard?error=unknown");
   }
 };

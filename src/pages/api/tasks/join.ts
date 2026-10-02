@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@/lib/supabase";
+import { reportError, reportMapped, requestFields } from "@/lib/log";
 import { normalizeUuid } from "@/lib/group-rules";
 import { toTaskErrorCode } from "@/lib/task-errors";
 import { taskExists } from "@/lib/tasks";
@@ -30,19 +31,20 @@ export const POST: APIRoute = async (context) => {
       return context.redirect("/dashboard");
     }
 
-    const { error } = await supabase.from("task_participants").insert({ task_id: taskId, user_id: user.id });
+    const { error, status } = await supabase.from("task_participants").insert({ task_id: taskId, user_id: user.id });
     if (error) {
       // 23505: already joined. 23503: the task was deleted between the check above and the insert. Both are idempotent no-ops.
       if (error.code === "23505" || error.code === "23503") {
         return context.redirect("/dashboard");
       }
-      return context.redirect(`/dashboard?error=${toTaskErrorCode(error)}`);
+      const errorCode = toTaskErrorCode(error);
+      reportMapped("tasks.join.failed", errorCode, error, { ...requestFields(context), status });
+      return context.redirect(`/dashboard?error=${errorCode}`);
     }
 
     return context.redirect("/dashboard");
   } catch (error) {
-    // eslint-disable-next-line no-console -- server-side log; the user only sees the fixed message
-    console.error("Join task request failed", error);
+    reportError("tasks.join.exception", error, requestFields(context));
     return context.redirect("/dashboard?error=unknown");
   }
 };

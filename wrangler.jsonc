@@ -12,6 +12,13 @@
   "observability": {
     "enabled": true,
   },
+  // Gives the Sentry release the Worker version id. SENTRY_DSN is a Worker secret (README "Observability"), not set here.
+  "version_metadata": {
+    "binding": "CF_VERSION_METADATA",
+  },
+  "vars": {
+    "SENTRY_ENVIRONMENT": "production",
+  },
   // The custom domain streakboard.app is attached in the Cloudflare dashboard, not here (README "Custom domain").
   // Declaring `routes` with `custom_domain` would make wrangler manage that set from this file.
   // workers_dev and preview_urls stay false: without them a deploy turns workers.dev back on (README "Custom domain").

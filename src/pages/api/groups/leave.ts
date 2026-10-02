@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@/lib/supabase";
+import { reportError, reportMapped, requestFields } from "@/lib/log";
 import { toGroupErrorCode } from "@/lib/group-errors";
 import { getMyGroup } from "@/lib/groups";
 
@@ -19,9 +20,11 @@ export const POST: APIRoute = async (context) => {
 
     // A member deletes only their own membership row. RLS turns "not allowed" (the owner cannot leave)
     // and "no membership" into an empty result, not an error.
-    const { data, error } = await supabase.from("group_members").delete().eq("user_id", user.id).select("id");
+    const { data, error, status } = await supabase.from("group_members").delete().eq("user_id", user.id).select("id");
     if (error) {
-      return context.redirect(`/dashboard?error=${toGroupErrorCode(error)}`);
+      const errorCode = toGroupErrorCode(error);
+      reportMapped("groups.leave.failed", errorCode, error, { ...requestFields(context), status });
+      return context.redirect(`/dashboard?error=${errorCode}`);
     }
     if (data.length === 0) {
       // Nothing was deleted: the caller is the owner (still in their group), or they had already left (a stale
@@ -33,8 +36,7 @@ export const POST: APIRoute = async (context) => {
     return context.redirect("/dashboard");
   } catch (error) {
     // A thrown Supabase/network error: end on the dashboard with a fixed message.
-    // eslint-disable-next-line no-console -- server-side log; the user only sees the fixed message
-    console.error("Leave group request failed", error);
+    reportError("groups.leave.exception", error, requestFields(context));
     return context.redirect("/dashboard?error=unknown");
   }
 };

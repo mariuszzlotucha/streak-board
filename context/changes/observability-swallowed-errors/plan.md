@@ -202,21 +202,21 @@ Apply the helper to every returned-error branch of the route handlers, to `signo
 
 **Contract**: in each `if (error)` branch call `reportMapped(event, mappedCode, error, { ...requestFields(context), status })` before the redirect, with `status` taken from the Supabase result where the client returns it (destructure it next to `error`; Auth errors carry their own status). The redirect targets and cookie handling stay exactly as they are. In `tasks/join.ts` the 23505/23503 idempotent early return stays before the report. `groups/join.ts` adds `codeLength: code.length` and never logs the code. Events:
 
-| File | Failed branch | Exception (catch) |
-| --- | --- | --- |
-| `groups/create.ts` | `groups.create.failed` | `groups.create.exception` |
-| `groups/delete.ts` | `groups.delete.failed` | `groups.delete.exception` |
-| `groups/join.ts` | `groups.join.failed` | `groups.join.exception` |
-| `groups/leave.ts` | `groups.leave.failed` | `groups.leave.exception` |
+| File                      | Failed branch                 | Exception (catch)                |
+| ------------------------- | ----------------------------- | -------------------------------- |
+| `groups/create.ts`        | `groups.create.failed`        | `groups.create.exception`        |
+| `groups/delete.ts`        | `groups.delete.failed`        | `groups.delete.exception`        |
+| `groups/join.ts`          | `groups.join.failed`          | `groups.join.exception`          |
+| `groups/leave.ts`         | `groups.leave.failed`         | `groups.leave.exception`         |
 | `groups/remove-member.ts` | `groups.remove_member.failed` | `groups.remove_member.exception` |
-| `groups/rename.ts` | `groups.rename.failed` | `groups.rename.exception` |
-| `auth/signin.ts` | `auth.signin.failed` | `auth.signin.exception` |
-| `auth/signup.ts` | `auth.signup.failed` | `auth.signup.exception` |
-| `tasks/create.ts` | `tasks.create.failed` | `tasks.create.exception` |
-| `tasks/delete.ts` | `tasks.delete.failed` | `tasks.delete.exception` |
-| `tasks/join.ts` | `tasks.join.failed` | `tasks.join.exception` |
-| `tasks/leave.ts` | `tasks.leave.failed` | `tasks.leave.exception` |
-| `tasks/update.ts` | `tasks.update.failed` | `tasks.update.exception` |
+| `groups/rename.ts`        | `groups.rename.failed`        | `groups.rename.exception`        |
+| `auth/signin.ts`          | `auth.signin.failed`          | `auth.signin.exception`          |
+| `auth/signup.ts`          | `auth.signup.failed`          | `auth.signup.exception`          |
+| `tasks/create.ts`         | `tasks.create.failed`         | `tasks.create.exception`         |
+| `tasks/delete.ts`         | `tasks.delete.failed`         | `tasks.delete.exception`         |
+| `tasks/join.ts`           | `tasks.join.failed`           | `tasks.join.exception`           |
+| `tasks/leave.ts`          | `tasks.leave.failed`          | `tasks.leave.exception`          |
+| `tasks/update.ts`         | `tasks.update.failed`         | `tasks.update.exception`         |
 
 #### 2. Catch blocks and sign-out
 
@@ -433,12 +433,12 @@ No migrations. Each phase is code-only and backward compatible; the recovery pat
 
 #### Automated
 
-- [ ] 1.1 Lint passes: `npm run lint`
-- [ ] 1.2 Types check: `npx astro check`
-- [ ] 1.3 Unit and integration tests pass, including the new redact, log, auth-state and middleware tests (needs the local Supabase stack, one session at a time): `npm test`
-- [ ] 1.4 Project builds: `npm run build`
-- [ ] 1.5 Smoke test still passes, including the anonymous 302 steps for check-off and the task and group routes: `npm run smoke`
-- [ ] 1.6 The new libraries import nothing from `astro:*`, so Vitest can load them: `grep -n "astro:" src/lib/redact.ts src/lib/log.ts src/lib/auth-state.ts src/lib/http.ts` prints nothing
+- [x] 1.1 Lint passes: `npm run lint` — c01d4b7
+- [x] 1.2 Types check: `npx astro check` — c01d4b7
+- [x] 1.3 Unit and integration tests pass, including the new redact, log, auth-state and middleware tests (needs the local Supabase stack, one session at a time): `npm test` — c01d4b7
+- [x] 1.4 Project builds: `npm run build` — c01d4b7
+- [x] 1.5 Smoke test still passes, including the anonymous 302 steps for check-off and the task and group routes: `npm run smoke` — c01d4b7
+- [x] 1.6 The new libraries import nothing from `astro:*`, so Vitest can load them: `grep -n "astro:" src/lib/redact.ts src/lib/log.ts src/lib/auth-state.ts src/lib/http.ts` prints nothing — c01d4b7
 
 #### Manual
 
@@ -451,13 +451,13 @@ No migrations. Each phase is code-only and backward compatible; the recovery pat
 
 #### Automated
 
-- [ ] 2.1 Lint passes: `npm run lint`
-- [ ] 2.2 Types check: `npx astro check`
-- [ ] 2.3 All tests pass, including the new check-off reporting and route tests and the unchanged `task-checkoff-flow` suite (needs the local Supabase stack, one session at a time): `npm test`
-- [ ] 2.4 Project builds: `npm run build`
-- [ ] 2.5 Smoke test still passes, because the responses of the touched routes are unchanged: `npm run smoke`
-- [ ] 2.6 Every returned-error branch reports through the helper: `grep -L "reportMapped(" src/pages/api/groups/{create,delete,join,leave,remove-member,rename}.ts src/pages/api/auth/{signin,signup}.ts src/pages/api/tasks/{create,delete,join,leave,update}.ts` prints nothing
-- [ ] 2.7 No route handler logs with a bare `console` call, and the only remaining ones are the helper's, `callback.ts` and `dashboard.astro`: `grep -rln "console\." src` lists only `src/lib/log.ts`, `src/pages/auth/callback.ts` and `src/pages/dashboard.astro`
+- [x] 2.1 Lint passes: `npm run lint` — 5cf7a3c
+- [x] 2.2 Types check: `npx astro check` — 5cf7a3c
+- [x] 2.3 All tests pass, including the new check-off reporting and route tests and the unchanged `task-checkoff-flow` suite (needs the local Supabase stack, one session at a time): `npm test` — 5cf7a3c
+- [x] 2.4 Project builds: `npm run build` — 5cf7a3c
+- [x] 2.5 Smoke test still passes, because the responses of the touched routes are unchanged: `npm run smoke` — 5cf7a3c
+- [x] 2.6 Every returned-error branch reports through the helper: `grep -L "reportMapped(" src/pages/api/groups/{create,delete,join,leave,remove-member,rename}.ts src/pages/api/auth/{signin,signup}.ts src/pages/api/tasks/{create,delete,join,leave,update}.ts` prints nothing — 5cf7a3c
+- [x] 2.7 No route handler logs with a bare `console` call, and the only remaining ones are the helper's, `callback.ts` and `dashboard.astro`: `grep -rln "console\." src` lists only `src/lib/log.ts`, `src/pages/auth/callback.ts` and `src/pages/dashboard.astro` — 5cf7a3c
 
 #### Manual
 
@@ -471,12 +471,12 @@ No migrations. Each phase is code-only and backward compatible; the recovery pat
 
 #### Automated
 
-- [ ] 3.1 Lint passes: `npm run lint`
-- [ ] 3.2 Types check, including the new Sentry modules: `npx astro check`
-- [ ] 3.3 All tests pass, including the Sentry options, scrubbing, capture and updated middleware tests (needs the local Supabase stack, one session at a time): `npm test`
-- [ ] 3.4 Project builds and the generated config carries the version binding and the variable: `npm run build && grep -E "version_metadata|SENTRY_ENVIRONMENT" dist/server/wrangler.json`
-- [ ] 3.5 Smoke test passes with the request wrapper active and no DSN set, so the SDK stays silent: `npm run smoke`
-- [ ] 3.6 The onboarding template is not in use: `@sentry/astro` is absent from `package.json` and no `sentry.*.config.*` file exists: `! grep -q "@sentry/astro" package.json && ! ls sentry.*.config.* 2>/dev/null`
+- [x] 3.1 Lint passes: `npm run lint` — 280b11e
+- [x] 3.2 Types check, including the new Sentry modules: `npx astro check` — 280b11e
+- [x] 3.3 All tests pass, including the Sentry options, scrubbing, capture and updated middleware tests (needs the local Supabase stack, one session at a time): `npm test` — 280b11e
+- [x] 3.4 Project builds and the generated config carries the version binding and the variable: `npm run build && grep -E "version_metadata|SENTRY_ENVIRONMENT" dist/server/wrangler.json` — 280b11e
+- [x] 3.5 Smoke test passes with the request wrapper active and no DSN set, so the SDK stays silent: `npm run smoke` — 280b11e
+- [x] 3.6 The onboarding template is not in use: `@sentry/astro` is absent from `package.json` and no `sentry.*.config.*` file exists: `! grep -q "@sentry/astro" package.json && ! ls sentry.*.config.* 2>/dev/null` — 280b11e
 
 #### Manual
 
