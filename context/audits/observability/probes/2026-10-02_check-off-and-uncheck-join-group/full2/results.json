@@ -1,0 +1,4328 @@
+{
+  "meta": {
+    "run": "full2",
+    "node": "v24.21.0",
+    "nodeRequired": "22.14.0",
+    "startedAt": "2026-10-02T09:16:20.666Z",
+    "base": "http://127.0.0.1:4399",
+    "stub": "http://127.0.0.1:54399",
+    "gitHead": "beee6f7",
+    "gitStatus": [
+      "M src/middleware.ts",
+      "?? probe/",
+      "?? src/pages/api/probe.ts",
+      "?? src/pages/probe-stream.astro"
+    ],
+    "versions": {
+      "astro": "7.3.2",
+      "@astrojs/cloudflare": "14.3.1",
+      "@supabase/supabase-js": "2.116.0",
+      "@supabase/ssr": "0.12.7",
+      "@supabase/postgrest-js": "2.116.0",
+      "@supabase/auth-js": "2.116.0",
+      "wrangler": "4.131.1",
+      "miniflare": "5.20260911.0-alpha",
+      "workerd": "1.20260911.1"
+    },
+    "finishedAt": "2026-10-02T09:21:19.873Z"
+  },
+  "results": [
+    {
+      "id": "C0a",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "control: check-off happy path (JSON)",
+      "shape": "no failure",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 200,
+        "location": "",
+        "setCookies": [],
+        "contentType": "application/json",
+        "bytes": 33,
+        "ms": 42,
+        "hasRoleAlert": false,
+        "bodySnippet": "{\"ok\":true,\"period\":\"2026-10-02\"}"
+      },
+      "console": [
+        "[stdout] POST /api/tasks/checkoff 200 OK (31ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> 200 (0 ms) bearer=user-jwt",
+        "POST /rest/v1/task_checkoffs -> 201 (1 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C0b",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "control: uncheck happy path (JSON)",
+      "shape": "no failure",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/uncheck",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 200,
+        "location": "",
+        "setCookies": [],
+        "contentType": "application/json",
+        "bytes": 33,
+        "ms": 28,
+        "hasRoleAlert": false,
+        "bodySnippet": "{\"ok\":true,\"period\":\"2026-10-02\"}"
+      },
+      "console": [
+        "[stdout] POST /api/tasks/uncheck 200 OK (22ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> 200 (0 ms) bearer=user-jwt",
+        "DELETE /rest/v1/task_checkoffs?task_id=eq.33333333-3333-4333-8333-333333333333&user_id=eq.11111111-1... -> 200 (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C0c",
+      "phase": "main",
+      "flow": "dashboard",
+      "title": "control: dashboard happy path",
+      "shape": "no failure",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/dashboard",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 200,
+        "location": "",
+        "setCookies": [],
+        "contentType": "text/html",
+        "bytes": 33792,
+        "ms": 67,
+        "title": "Dashboard",
+        "hasRoleAlert": false,
+        "alerts": [],
+        "headings": [
+          "Probe Crew",
+          "Members",
+          "Tasks",
+          "Leaderboard",
+          "Rename group",
+          "Delete group"
+        ],
+        "notes": [
+          "Mark done"
+        ],
+        "bodySnippet": "Dashboard Your group Probe Crew Share this invite link to add people to your group. Copy Members 1 member probe@example.test Owner You Tasks 1 task Probe Task Edit Daily Delete Participants: probe@exa"
+      },
+      "console": [
+        "[stdout] GET /dashboard 200 OK (61ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (1 ms) bearer=user-jwt",
+        "GET /rest/v1/groups?select=id%2Cname%2Cjoin_code%2Cowner_id -> 200 (0 ms) bearer=user-jwt",
+        "POST /rest/v1/rpc/list_group_members -> 200 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&group_id=eq.22222222-2222... -> 200 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/task_participants?select=task_id%2Cuser_id&order=joined_at.asc%2Cuser_id.asc -> 200 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/task_checkoff_periods?select=task_id%2Cuser_id%2Cperiods -> 200 (1 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "J0",
+      "phase": "main",
+      "flow": "join",
+      "title": "control: join with valid code",
+      "shape": "no failure",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/groups/join",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "code=abc123def456",
+        "session": true,
+        "extraCookies": [
+          "join_code"
+        ]
+      },
+      "response": {
+        "status": 302,
+        "location": "/dashboard",
+        "setCookies": [
+          "join_code (cleared)"
+        ],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 32,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stdout] POST /api/groups/join 302 Found (25ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "POST /rest/v1/rpc/join_group -> 200 (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C1a",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "Auth 503 JSON on getUser, check-off (JSON mode)",
+      "shape": "auth outage: getUser returns {error}, middleware discards it",
+      "stub": {
+        "auth_user": {
+          "mode": "status",
+          "status": 503,
+          "body": {
+            "code": 503,
+            "error_code": "unexpected_failure",
+            "msg": "Service Unavailable"
+          }
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 302,
+        "location": "/auth/signin",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 31,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stdout] POST /api/tasks/checkoff 302 Found (25ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 503 [status] (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C1b",
+      "phase": "main",
+      "flow": "dashboard",
+      "title": "Auth 503 JSON on getUser, GET /dashboard",
+      "shape": "auth outage",
+      "stub": {
+        "auth_user": {
+          "mode": "status",
+          "status": 503,
+          "body": {
+            "code": 503,
+            "error_code": "unexpected_failure",
+            "msg": "Service Unavailable"
+          }
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/dashboard",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 302,
+        "location": "/auth/signin",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 22,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stdout] GET /dashboard 302 Found (16ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 503 [status] (1 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C1c",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "Auth 503 JSON on getUser, plain form POST (no Accept JSON)",
+      "shape": "auth outage",
+      "stub": {
+        "auth_user": {
+          "mode": "status",
+          "status": 503,
+          "body": {
+            "code": 503,
+            "error_code": "unexpected_failure",
+            "msg": "Service Unavailable"
+          }
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 302,
+        "location": "/auth/signin",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 22,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stdout] POST /api/tasks/checkoff 302 Found (16ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 503 [status] (1 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C1d",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "Auth 502 HTML (gateway) on getUser, check-off (JSON)",
+      "shape": "auth outage, non-JSON body",
+      "stub": {
+        "auth_user": {
+          "mode": "status",
+          "status": 502,
+          "contentType": "text/html; charset=utf-8",
+          "body": "<html><head><title>502 Bad Gateway</title></head><body><center><h1>502 Bad Gateway</h1></center></body></html>"
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 302,
+        "location": "/auth/signin",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 46,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stdout] POST /api/tasks/checkoff 302 Found (37ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 502 [status] (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C1e",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "Auth 500 JSON on getUser, check-off (JSON)",
+      "shape": "auth internal error",
+      "stub": {
+        "auth_user": {
+          "mode": "status",
+          "status": 500,
+          "body": {
+            "code": 500,
+            "error_code": "unexpected_failure",
+            "msg": "Database error querying schema"
+          }
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 302,
+        "location": "/auth/signin",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 48,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stdout] POST /api/tasks/checkoff 302 Found (42ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 500 [status] (1 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C1f",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "Auth 401 bad_jwt on getUser (genuinely invalid session), check-off (JSON)",
+      "shape": "control: real sign-out looks identical to an outage",
+      "stub": {
+        "auth_user": {
+          "mode": "status",
+          "status": 401,
+          "body": {
+            "code": 401,
+            "error_code": "bad_jwt",
+            "msg": "invalid JWT: unable to parse or verify signature"
+          }
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 302,
+        "location": "/auth/signin",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 42,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stdout] POST /api/tasks/checkoff 302 Found (36ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 401 [status] (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C2a",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "Auth connection reset on getUser, check-off (JSON)",
+      "shape": "auth unreachable (RST)",
+      "stub": {
+        "auth_user": {
+          "mode": "reset"
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 302,
+        "location": "/auth/signin",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 29,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stdout] POST /api/tasks/checkoff 302 Found (24ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> reset [reset] (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C2e",
+      "phase": "main",
+      "flow": "dashboard",
+      "title": "Auth connection reset on getUser, GET /dashboard",
+      "shape": "auth unreachable (RST)",
+      "stub": {
+        "auth_user": {
+          "mode": "reset"
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/dashboard",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 302,
+        "location": "/auth/signin",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 44,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stdout] GET /dashboard 302 Found (38ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> reset [reset] (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C2c",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "Auth/PostgREST stub fully stopped (ECONNREFUSED), check-off (JSON)",
+      "shape": "auth host down",
+      "stub": {},
+      "stubStopped": true,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 302,
+        "location": "/auth/signin",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 24,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stdout] POST /api/tasks/checkoff 302 Found (17ms)"
+      ],
+      "stubRequests": []
+    },
+    {
+      "id": "C2d",
+      "phase": "main",
+      "flow": "dashboard",
+      "title": "stub fully stopped (ECONNREFUSED), GET /dashboard",
+      "shape": "auth host down",
+      "stub": {},
+      "stubStopped": true,
+      "request": {
+        "method": "GET",
+        "path": "/dashboard",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 302,
+        "location": "/auth/signin",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 27,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stdout] GET /dashboard 302 Found (22ms)"
+      ],
+      "stubRequests": []
+    },
+    {
+      "id": "C2b",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "Auth slow: getUser answers after 12 s, check-off (JSON)",
+      "shape": "auth slow",
+      "stub": {
+        "auth_user": {
+          "mode": "slow",
+          "delayMs": 12000
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 200,
+        "location": "",
+        "setCookies": [],
+        "contentType": "application/json",
+        "bytes": 33,
+        "ms": 12051,
+        "hasRoleAlert": false,
+        "bodySnippet": "{\"ok\":true,\"period\":\"2026-10-02\"}"
+      },
+      "console": [
+        "[stdout] POST /api/tasks/checkoff 200 OK (12045ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 [slow] (12005 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> 200 (0 ms) bearer=user-jwt",
+        "POST /rest/v1/task_checkoffs -> 201 (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C2h",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "Auth hangs (never answers), client gives up after 25 s",
+      "shape": "auth hang",
+      "stub": {
+        "auth_user": {
+          "mode": "hang"
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "clientError": "TimeoutError: The operation was aborted due to timeout",
+        "ms": 25001
+      },
+      "console": [
+        "[stdout] POST /api/tasks/checkoff 302 Found (25032ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> aborted [hang] (24995 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C4",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "task_checkoffs insert answers 500",
+      "shape": "PostgREST 500: supabase-js returns {error}, outcome unknown",
+      "stub": {
+        "checkoffs_insert": {
+          "mode": "status",
+          "status": 500,
+          "body": {
+            "code": "XX000",
+            "details": null,
+            "hint": null,
+            "message": "internal error: probe injected failure"
+          }
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 500,
+        "location": "",
+        "setCookies": [],
+        "contentType": "application/json",
+        "bytes": 30,
+        "ms": 28,
+        "hasRoleAlert": false,
+        "bodySnippet": "{\"ok\":false,\"error\":\"unknown\"}"
+      },
+      "console": [
+        "[stderr] Check off task request failed {",
+        "[stderr]   code: 'XX000',",
+        "[stderr]   details: null,",
+        "[stderr]   hint: null,",
+        "[stderr]   message: 'internal error: probe injected failure'",
+        "[stderr] }",
+        "[stdout] POST /api/tasks/checkoff 500 Internal Server Error (23ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (1 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> 200 (0 ms) bearer=user-jwt",
+        "POST /rest/v1/task_checkoffs -> 500 [status] (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C5",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "task_checkoffs insert: network reset",
+      "shape": "postgrest-js returns {error:{code:''}, status:0}",
+      "stub": {
+        "checkoffs_insert": {
+          "mode": "reset"
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 500,
+        "location": "",
+        "setCookies": [],
+        "contentType": "application/json",
+        "bytes": 30,
+        "ms": 26,
+        "hasRoleAlert": false,
+        "bodySnippet": "{\"ok\":false,\"error\":\"unknown\"}"
+      },
+      "console": [
+        "[stderr] Check off task request failed {",
+        "[stderr]   message: 'Error: Network connection lost.',",
+        "[stderr]   details: 'Error: Network connection lost.',",
+        "[stderr]   hint: '',",
+        "[stderr]   code: ''",
+        "[stderr] }",
+        "[stdout] POST /api/tasks/checkoff 500 Internal Server Error (21ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> 200 (1 ms) bearer=user-jwt",
+        "POST /rest/v1/task_checkoffs -> reset [reset] (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C6",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "task_checkoffs insert answers 403 / 42501 (RLS refusal)",
+      "shape": "RLS/permission failure mapped to forbidden",
+      "stub": {
+        "checkoffs_insert": {
+          "mode": "status",
+          "status": 403,
+          "body": {
+            "code": "42501",
+            "details": null,
+            "hint": null,
+            "message": "new row violates row-level security policy for table \"task_checkoffs\""
+          }
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 403,
+        "location": "",
+        "setCookies": [],
+        "contentType": "application/json",
+        "bytes": 32,
+        "ms": 25,
+        "hasRoleAlert": false,
+        "bodySnippet": "{\"ok\":false,\"error\":\"forbidden\"}"
+      },
+      "console": [
+        "[stdout] POST /api/tasks/checkoff 403 Forbidden (20ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> 200 (0 ms) bearer=user-jwt",
+        "POST /rest/v1/task_checkoffs -> 403 [status] (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C6b",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "task_checkoffs insert answers 401 PGRST301 JWT expired",
+      "shape": "expired access token at PostgREST",
+      "stub": {
+        "checkoffs_insert": {
+          "mode": "status",
+          "status": 401,
+          "body": {
+            "code": "PGRST301",
+            "details": null,
+            "hint": null,
+            "message": "JWT expired"
+          }
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 500,
+        "location": "",
+        "setCookies": [],
+        "contentType": "application/json",
+        "bytes": 30,
+        "ms": 39,
+        "hasRoleAlert": false,
+        "bodySnippet": "{\"ok\":false,\"error\":\"unknown\"}"
+      },
+      "console": [
+        "[stderr] Check off task request failed { code: 'PGRST301', details: null, hint: null, message: 'JWT expired' }",
+        "[stdout] POST /api/tasks/checkoff 500 Internal Server Error (35ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (1 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> 200 (0 ms) bearer=user-jwt",
+        "POST /rest/v1/task_checkoffs -> 401 [status] (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C7",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "task_checkoffs insert answers 409 / 23503 (not enrolled)",
+      "shape": "FK violation mapped to forbidden",
+      "stub": {
+        "checkoffs_insert": {
+          "mode": "status",
+          "status": 409,
+          "body": {
+            "code": "23503",
+            "details": "Key (task_id, user_id)=(33333333-3333-4333-8333-333333333333, 11111111-1111-4111-8111-111111111111) is not present in table \"task_participants\".",
+            "hint": null,
+            "message": "insert or update on table \"task_checkoffs\" violates foreign key constraint \"task_checkoffs_task_id_user_id_fkey\""
+          }
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 403,
+        "location": "",
+        "setCookies": [],
+        "contentType": "application/json",
+        "bytes": 32,
+        "ms": 25,
+        "hasRoleAlert": false,
+        "bodySnippet": "{\"ok\":false,\"error\":\"forbidden\"}"
+      },
+      "console": [
+        "[stdout] POST /api/tasks/checkoff 403 Forbidden (20ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> 200 (0 ms) bearer=user-jwt",
+        "POST /rest/v1/task_checkoffs -> 409 [status] (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C7b",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "task_checkoffs insert answers 409 / 23505 (already ticked)",
+      "shape": "idempotent no-op",
+      "stub": {
+        "checkoffs_insert": {
+          "mode": "status",
+          "status": 409,
+          "body": {
+            "code": "23505",
+            "details": "Key (task_id, user_id, period)=(33333333-3333-4333-8333-333333333333, 11111111-1111-4111-8111-111111111111, 2026-10-02) already exists.",
+            "hint": null,
+            "message": "duplicate key value violates unique constraint \"task_checkoffs_pkey\""
+          }
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 200,
+        "location": "",
+        "setCookies": [],
+        "contentType": "application/json",
+        "bytes": 33,
+        "ms": 24,
+        "hasRoleAlert": false,
+        "bodySnippet": "{\"ok\":true,\"period\":\"2026-10-02\"}"
+      },
+      "console": [
+        "[stdout] POST /api/tasks/checkoff 200 OK (20ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> 200 (0 ms) bearer=user-jwt",
+        "POST /rest/v1/task_checkoffs -> 409 [status] (1 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C9",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "uncheck: DELETE answers 200 with [] (zero rows deleted)",
+      "shape": "nothing deleted reported as ok",
+      "stub": {
+        "checkoffs_delete": {
+          "mode": "empty"
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/uncheck",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 200,
+        "location": "",
+        "setCookies": [],
+        "contentType": "application/json",
+        "bytes": 33,
+        "ms": 25,
+        "hasRoleAlert": false,
+        "bodySnippet": "{\"ok\":true,\"period\":\"2026-10-02\"}"
+      },
+      "console": [
+        "[stdout] POST /api/tasks/uncheck 200 OK (20ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (1 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> 200 (0 ms) bearer=user-jwt",
+        "DELETE /rest/v1/task_checkoffs?task_id=eq.33333333-3333-4333-8333-333333333333&user_id=eq.11111111-1... -> 200 [empty] (1 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C10",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "uncheck: DELETE answers 500",
+      "shape": "PostgREST 500 on delete",
+      "stub": {
+        "checkoffs_delete": {
+          "mode": "status",
+          "status": 500,
+          "body": {
+            "code": "XX000",
+            "details": null,
+            "hint": null,
+            "message": "internal error: probe injected failure"
+          }
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/uncheck",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 500,
+        "location": "",
+        "setCookies": [],
+        "contentType": "application/json",
+        "bytes": 30,
+        "ms": 26,
+        "hasRoleAlert": false,
+        "bodySnippet": "{\"ok\":false,\"error\":\"unknown\"}"
+      },
+      "console": [
+        "[stderr] Uncheck task request failed {",
+        "[stderr]   code: 'XX000',",
+        "[stderr]   details: null,",
+        "[stderr]   hint: null,",
+        "[stderr]   message: 'internal error: probe injected failure'",
+        "[stderr] }",
+        "[stdout] POST /api/tasks/uncheck 500 Internal Server Error (21ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> 200 (0 ms) bearer=user-jwt",
+        "DELETE /rest/v1/task_checkoffs?task_id=eq.33333333-3333-4333-8333-333333333333&user_id=eq.11111111-1... -> 500 [status] (1 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C10b",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "uncheck: DELETE network reset",
+      "shape": "network failure on delete",
+      "stub": {
+        "checkoffs_delete": {
+          "mode": "reset"
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/uncheck",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 500,
+        "location": "",
+        "setCookies": [],
+        "contentType": "application/json",
+        "bytes": 30,
+        "ms": 18,
+        "hasRoleAlert": false,
+        "bodySnippet": "{\"ok\":false,\"error\":\"unknown\"}"
+      },
+      "console": [
+        "[stderr] Uncheck task request failed {",
+        "[stderr]   message: 'Error: Network connection lost.',",
+        "[stderr]   details: 'Error: Network connection lost.',",
+        "[stderr]   hint: '',",
+        "[stderr]   code: ''",
+        "[stderr] }",
+        "[stdout] POST /api/tasks/uncheck 500 Internal Server Error (13ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> 200 (1 ms) bearer=user-jwt",
+        "DELETE /rest/v1/task_checkoffs?task_id=eq.33333333-3333-4333-8333-333333333333&user_id=eq.11111111-1... -> reset [reset] (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "J1",
+      "phase": "main",
+      "flow": "join",
+      "title": "join_group RPC answers 500",
+      "shape": "PostgREST 500 returned as {error}, route maps it to a redirect",
+      "stub": {
+        "rpc_join_group": {
+          "mode": "status",
+          "status": 500,
+          "body": {
+            "code": "XX000",
+            "details": null,
+            "hint": null,
+            "message": "internal error: probe injected failure"
+          }
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/groups/join",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "code=abc123def456",
+        "session": true,
+        "extraCookies": [
+          "join_code"
+        ]
+      },
+      "response": {
+        "status": 302,
+        "location": "/dashboard?error=unknown",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 44,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stdout] POST /api/groups/join 302 Found (40ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "POST /rest/v1/rpc/join_group -> 500 [status] (1 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "J2",
+      "phase": "main",
+      "flow": "join",
+      "title": "join_group RPC: network reset",
+      "shape": "network failure returned as {error:{code:''}}",
+      "stub": {
+        "rpc_join_group": {
+          "mode": "reset"
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/groups/join",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "code=abc123def456",
+        "session": true,
+        "extraCookies": [
+          "join_code"
+        ]
+      },
+      "response": {
+        "status": 302,
+        "location": "/dashboard?error=unknown",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 22,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stdout] POST /api/groups/join 302 Found (17ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "POST /rest/v1/rpc/join_group -> reset [reset] (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "J3",
+      "phase": "main",
+      "flow": "join",
+      "title": "join_group RPC answers P0002 (invalid code)",
+      "shape": "legit business error",
+      "stub": {
+        "rpc_join_group": {
+          "mode": "status",
+          "status": 404,
+          "body": {
+            "code": "P0002",
+            "details": null,
+            "hint": null,
+            "message": "invalid join code"
+          }
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/groups/join",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "code=abc123def456",
+        "session": true,
+        "extraCookies": [
+          "join_code"
+        ]
+      },
+      "response": {
+        "status": 302,
+        "location": "/dashboard?error=invalid_code",
+        "setCookies": [
+          "join_code (cleared)"
+        ],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 49,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stdout] POST /api/groups/join 302 Found (43ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "POST /rest/v1/rpc/join_group -> 404 [status] (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "J3b",
+      "phase": "main",
+      "flow": "join",
+      "title": "join with a malformed code in the form (no RPC call)",
+      "shape": "validation",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/groups/join",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "code=zzz",
+        "session": true,
+        "extraCookies": [
+          "join_code"
+        ]
+      },
+      "response": {
+        "status": 302,
+        "location": "/dashboard?error=invalid_code",
+        "setCookies": [
+          "join_code (cleared)"
+        ],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 28,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stdout] POST /api/groups/join 302 Found (24ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (1 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "J4",
+      "phase": "main",
+      "flow": "join",
+      "title": "join_group RPC answers 23505 (already in a group)",
+      "shape": "legit business error",
+      "stub": {
+        "rpc_join_group": {
+          "mode": "status",
+          "status": 409,
+          "body": {
+            "code": "23505",
+            "details": "Key (user_id)=(11111111-1111-4111-8111-111111111111) already exists.",
+            "hint": null,
+            "message": "duplicate key value violates unique constraint \"group_members_user_id_key\""
+          }
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/groups/join",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "code=abc123def456",
+        "session": true,
+        "extraCookies": [
+          "join_code"
+        ]
+      },
+      "response": {
+        "status": 302,
+        "location": "/dashboard?error=already_in_group",
+        "setCookies": [
+          "join_code (cleared)"
+        ],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 24,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stdout] POST /api/groups/join 302 Found (19ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "POST /rest/v1/rpc/join_group -> 409 [status] (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "J5",
+      "phase": "main",
+      "flow": "join",
+      "title": "join_group RPC answers 403 / 42501",
+      "shape": "permission failure mapped to forbidden",
+      "stub": {
+        "rpc_join_group": {
+          "mode": "status",
+          "status": 403,
+          "body": {
+            "code": "42501",
+            "details": null,
+            "hint": null,
+            "message": "permission denied for table task_checkoffs"
+          }
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/groups/join",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "code=abc123def456",
+        "session": true,
+        "extraCookies": [
+          "join_code"
+        ]
+      },
+      "response": {
+        "status": 302,
+        "location": "/dashboard?error=forbidden",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 46,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stdout] POST /api/groups/join 302 Found (40ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "POST /rest/v1/rpc/join_group -> 403 [status] (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "J6a",
+      "phase": "main",
+      "flow": "join",
+      "title": "GET /join/zzz (malformed invite link), signed in",
+      "shape": "malformed invite code",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/join/zzz",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 302,
+        "location": "/dashboard",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 18,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stdout] GET /join/zzz 302 Found (14ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "J6b",
+      "phase": "main",
+      "flow": "join",
+      "title": "GET /join/abc123def456 (valid hex), signed in",
+      "shape": "valid invite code",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/join/abc123def456",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 302,
+        "location": "/dashboard",
+        "setCookies": [
+          "join_code (set)"
+        ],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 25,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stdout] GET /join/abc123def456 302 Found (20ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "J6c",
+      "phase": "main",
+      "flow": "join",
+      "title": "GET /join/<65 hex chars> (too long), signed in",
+      "shape": "malformed invite code",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/join/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 302,
+        "location": "/dashboard",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 24,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stdout] GET /join/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa 302 Found (20ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "J6d",
+      "phase": "main",
+      "flow": "join",
+      "title": "GET /join/abc123def456 signed out (public route)",
+      "shape": "valid invite code, no session",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/join/abc123def456",
+        "session": false,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 302,
+        "location": "/dashboard",
+        "setCookies": [
+          "join_code (set)"
+        ],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 25,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stdout] GET /join/abc123def456 302 Found (22ms)"
+      ],
+      "stubRequests": []
+    },
+    {
+      "id": "P1",
+      "phase": "main",
+      "flow": "platform",
+      "title": "P1 throw in a handler (/api/probe?mode=throw)",
+      "shape": "exception escapes the handler",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/probe?mode=throw",
+        "session": false,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 500,
+        "location": "",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 47,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stderr] 09:18:17 [ERROR] Error: probe-handler",
+        "[stderr]     at Module.handler (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/probe_CE4x_HjR.mjs:15:23)",
+        "[stderr]     at renderEndpoint (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/runtime_B6ZgFDrz.mjs:5851:31)",
+        "[stderr]     at handlePages (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:13532:21)",
+        "[stdout] GET /api/probe 500 Internal Server Error (44ms)"
+      ],
+      "stubRequests": []
+    },
+    {
+      "id": "P1b",
+      "phase": "main",
+      "flow": "platform",
+      "title": "P1b throw with a cause",
+      "shape": "Error with cause escapes the handler",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/probe?mode=throw-cause",
+        "session": false,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 500,
+        "location": "",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 37,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stderr] 09:18:19 [ERROR] Error: probe-handler",
+        "[stderr]     at Module.handler (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/probe_CE4x_HjR.mjs:16:29)",
+        "[stderr]     at renderEndpoint (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/runtime_B6ZgFDrz.mjs:5851:31)",
+        "[stderr]     at handlePages (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:13532:21)",
+        "[stdout] GET /api/probe 500 Internal Server Error (33ms)"
+      ],
+      "stubRequests": []
+    },
+    {
+      "id": "P1c",
+      "phase": "main",
+      "flow": "platform",
+      "title": "P1c throw a plain object (as supabase-js errors are)",
+      "shape": "non-Error thrown",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/probe?mode=throw-plain",
+        "session": false,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 500,
+        "location": "",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 32,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stderr] 09:18:21 [ERROR] probe plain object thrown",
+        "[stdout] GET /api/probe 500 Internal Server Error (29ms)"
+      ],
+      "stubRequests": []
+    },
+    {
+      "id": "P5a",
+      "phase": "main",
+      "flow": "platform",
+      "title": "P5 throw in early middleware, GET /",
+      "shape": "middleware throws before getUser",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/",
+        "session": false,
+        "extraCookies": [],
+        "extraHeaders": {
+          "x-probe": "throw-mw"
+        }
+      },
+      "response": {
+        "status": 500,
+        "location": "",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 28,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stderr] 09:18:23 [ERROR] Error: probe-middleware",
+        "[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/virtual_astro_middleware.mjs:13:67",
+        "[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)",
+        "[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1058:10",
+        "[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)",
+        "[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1087:13",
+        "[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:11861:10",
+        "[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)",
+        "[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1058:10",
+        "[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)",
+        "[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1058:10",
+        "[stdout] GET / 500 Internal Server Error (24ms)"
+      ],
+      "stubRequests": []
+    },
+    {
+      "id": "P5b",
+      "phase": "main",
+      "flow": "platform",
+      "title": "P5b throw in early middleware, POST /api/tasks/checkoff (JSON)",
+      "shape": "middleware throws before the route's own typed error handling",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": [],
+        "extraHeaders": {
+          "x-probe": "throw-mw"
+        }
+      },
+      "response": {
+        "status": 500,
+        "location": "",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 31,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stderr] 09:18:25 [ERROR] Error: probe-middleware",
+        "[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/virtual_astro_middleware.mjs:13:67",
+        "[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)",
+        "[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1058:10",
+        "[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)",
+        "[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1087:13",
+        "[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:11861:10",
+        "[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)",
+        "[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1058:10",
+        "[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)",
+        "[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1058:10",
+        "[stdout] POST /api/tasks/checkoff 500 Internal Server Error (27ms)"
+      ],
+      "stubRequests": []
+    },
+    {
+      "id": "P9a",
+      "phase": "main",
+      "flow": "platform",
+      "title": "P9 console.error('label', new Error(msg, {cause}))",
+      "shape": "Error with cause passed as a console argument",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/probe?mode=log-error",
+        "session": false,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 200,
+        "location": "",
+        "setCookies": [],
+        "contentType": "text/plain;charset=UTF-8",
+        "bytes": 6,
+        "ms": 20,
+        "hasRoleAlert": false,
+        "bodySnippet": "logged"
+      },
+      "console": [
+        "[stderr] probe label Error: probe-error",
+        "[stderr]     at Module.handler (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/probe_CE4x_HjR.mjs:31:33)",
+        "[stderr]     at renderEndpoint (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/runtime_B6ZgFDrz.mjs:5851:31)",
+        "[stderr]     at handlePages (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:13532:21) {",
+        "[stderr]   [cause]: Error: probe-cause",
+        "[stderr]       at Module.handler (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/probe_CE4x_HjR.mjs:31:83)",
+        "[stderr]       at renderEndpoint (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/runtime_B6ZgFDrz.mjs:5851:31)",
+        "[stderr]       at handlePages (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:13532:21)",
+        "[stderr] }",
+        "[stdout] GET /api/probe 200 OK (17ms)"
+      ],
+      "stubRequests": []
+    },
+    {
+      "id": "P9b",
+      "phase": "main",
+      "flow": "platform",
+      "title": "P9 console.error('label', {message,details,hint,code}) (PostgREST-shaped plain object)",
+      "shape": "plain object passed as a console argument",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/probe?mode=log-plain",
+        "session": false,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 200,
+        "location": "",
+        "setCookies": [],
+        "contentType": "text/plain;charset=UTF-8",
+        "bytes": 6,
+        "ms": 13,
+        "hasRoleAlert": false,
+        "bodySnippet": "logged"
+      },
+      "console": [
+        "[stderr] probe label { message: 'm', details: 'd', hint: null, code: 'XX000' }",
+        "[stdout] GET /api/probe 200 OK (10ms)"
+      ],
+      "stubRequests": []
+    },
+    {
+      "id": "P9c",
+      "phase": "main",
+      "flow": "platform",
+      "title": "P9 console.error(`label ${error}`) (template string)",
+      "shape": "error interpolated into a string",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/probe?mode=log-string",
+        "session": false,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 200,
+        "location": "",
+        "setCookies": [],
+        "contentType": "text/plain;charset=UTF-8",
+        "bytes": 6,
+        "ms": 33,
+        "hasRoleAlert": false,
+        "bodySnippet": "logged"
+      },
+      "console": [
+        "[stderr] probe label Error: probe-string",
+        "[stdout] GET /api/probe 200 OK (28ms)"
+      ],
+      "stubRequests": []
+    },
+    {
+      "id": "P9d",
+      "phase": "main",
+      "flow": "platform",
+      "title": "P9 console.error(new Error(msg)) (Error alone)",
+      "shape": "Error as the only console argument",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/probe?mode=log-error-only",
+        "session": false,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 200,
+        "location": "",
+        "setCookies": [],
+        "contentType": "text/plain;charset=UTF-8",
+        "bytes": 6,
+        "ms": 19,
+        "hasRoleAlert": false,
+        "bodySnippet": "logged"
+      },
+      "console": [
+        "[stderr] Error: probe-error-only",
+        "[stderr]     at Module.handler (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/probe_CE4x_HjR.mjs:34:34)",
+        "[stderr]     at renderEndpoint (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/runtime_B6ZgFDrz.mjs:5851:31)",
+        "[stderr]     at handlePages (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:13532:21)",
+        "[stdout] GET /api/probe 200 OK (16ms)"
+      ],
+      "stubRequests": []
+    },
+    {
+      "id": "P9e",
+      "phase": "main",
+      "flow": "platform",
+      "title": "P9 console.error('label', JSON.stringify(error))",
+      "shape": "error JSON-stringified",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/probe?mode=log-json",
+        "session": false,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 200,
+        "location": "",
+        "setCookies": [],
+        "contentType": "text/plain;charset=UTF-8",
+        "bytes": 6,
+        "ms": 24,
+        "hasRoleAlert": false,
+        "bodySnippet": "logged"
+      },
+      "console": [
+        "[stderr] probe label {}",
+        "[stdout] GET /api/probe 200 OK (20ms)"
+      ],
+      "stubRequests": []
+    },
+    {
+      "id": "C3a",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "tasks read (getTask) answers 500, check-off",
+      "shape": "PostgREST 500; getTask throws the plain error object",
+      "stub": {
+        "tasks_get": {
+          "mode": "status",
+          "status": 500,
+          "body": {
+            "code": "XX000",
+            "details": null,
+            "hint": null,
+            "message": "internal error: probe injected failure"
+          }
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 500,
+        "location": "",
+        "setCookies": [],
+        "contentType": "application/json",
+        "bytes": 30,
+        "ms": 44,
+        "hasRoleAlert": false,
+        "bodySnippet": "{\"ok\":false,\"error\":\"unknown\"}"
+      },
+      "console": [
+        "[stderr] Check off task request failed {",
+        "[stderr]   code: 'XX000',",
+        "[stderr]   details: null,",
+        "[stderr]   hint: null,",
+        "[stderr]   message: 'internal error: probe injected failure'",
+        "[stderr] }",
+        "[stdout] POST /api/tasks/checkoff 500 Internal Server Error (39ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (1 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> 500 [status] (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C3b",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "tasks read answers 503 PGRST002 (postgrest-js retries GETs)",
+      "shape": "PostgREST schema-cache 503, retried 3x with backoff",
+      "stub": {
+        "tasks_get": {
+          "mode": "status",
+          "status": 503,
+          "body": {
+            "code": "PGRST002",
+            "details": null,
+            "hint": "Try again later",
+            "message": "Could not query the database for the schema cache. Retrying."
+          }
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 500,
+        "location": "",
+        "setCookies": [],
+        "contentType": "application/json",
+        "bytes": 30,
+        "ms": 7067,
+        "hasRoleAlert": false,
+        "bodySnippet": "{\"ok\":false,\"error\":\"unknown\"}"
+      },
+      "console": [
+        "[stderr] Check off task request failed {",
+        "[stderr]   code: 'PGRST002',",
+        "[stderr]   details: null,",
+        "[stderr]   hint: 'Try again later',",
+        "[stderr]   message: 'Could not query the database for the schema cache. Retrying.'",
+        "[stderr] }",
+        "[stdout] POST /api/tasks/checkoff 500 Internal Server Error (7062ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> 503 [status] (0 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> 503 [status] retry#1 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> 503 [status] retry#2 (1 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> 503 [status] retry#3 (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C3c",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "tasks read: network reset (postgrest-js retries GETs)",
+      "shape": "network failure on GET, retried 3x with backoff",
+      "stub": {
+        "tasks_get": {
+          "mode": "reset"
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 500,
+        "location": "",
+        "setCookies": [],
+        "contentType": "application/json",
+        "bytes": 30,
+        "ms": 7073,
+        "hasRoleAlert": false,
+        "bodySnippet": "{\"ok\":false,\"error\":\"unknown\"}"
+      },
+      "console": [
+        "[stderr] Check off task request failed {",
+        "[stderr]   message: 'Error: Network connection lost.',",
+        "[stderr]   details: 'Error: Network connection lost.',",
+        "[stderr]   hint: '',",
+        "[stderr]   code: ''",
+        "[stderr] }",
+        "[stdout] POST /api/tasks/checkoff 500 Internal Server Error (7069ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> reset [reset] (0 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> reset [reset] retry#1 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> reset [reset] retry#2 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> reset [reset] retry#3 (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C3d",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "tasks read answers 500, uncheck",
+      "shape": "PostgREST 500; getTask throws",
+      "stub": {
+        "tasks_get": {
+          "mode": "status",
+          "status": 500,
+          "body": {
+            "code": "XX000",
+            "details": null,
+            "hint": null,
+            "message": "internal error: probe injected failure"
+          }
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/uncheck",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 500,
+        "location": "",
+        "setCookies": [],
+        "contentType": "application/json",
+        "bytes": 30,
+        "ms": 24,
+        "hasRoleAlert": false,
+        "bodySnippet": "{\"ok\":false,\"error\":\"unknown\"}"
+      },
+      "console": [
+        "[stderr] Uncheck task request failed {",
+        "[stderr]   code: 'XX000',",
+        "[stderr]   details: null,",
+        "[stderr]   hint: null,",
+        "[stderr]   message: 'internal error: probe injected failure'",
+        "[stderr] }",
+        "[stdout] POST /api/tasks/uncheck 500 Internal Server Error (18ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> 500 [status] (1 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C3e",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "tasks read answers 502 HTML gateway page, check-off",
+      "shape": "non-JSON error body: error has a message but no code",
+      "stub": {
+        "tasks_get": {
+          "mode": "status",
+          "status": 502,
+          "contentType": "text/html; charset=utf-8",
+          "body": "<html><head><title>502 Bad Gateway</title></head><body><center><h1>502 Bad Gateway</h1></center></body></html>"
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 500,
+        "location": "",
+        "setCookies": [],
+        "contentType": "application/json",
+        "bytes": 30,
+        "ms": 16,
+        "hasRoleAlert": false,
+        "bodySnippet": "{\"ok\":false,\"error\":\"unknown\"}"
+      },
+      "console": [
+        "[stderr] Check off task request failed {",
+        "[stderr]   message: '<html><head><title>502 Bad Gateway</title></head><body><center><h1>502 Bad Gateway</h1></center></body></html>'",
+        "[stderr] }",
+        "[stdout] POST /api/tasks/checkoff 500 Internal Server Error (12ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> 502 [status] (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C8",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "tasks read returns zero rows, check-off",
+      "shape": "RLS-hidden or deleted task: gone",
+      "stub": {
+        "tasks_get": {
+          "mode": "empty"
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 404,
+        "location": "",
+        "setCookies": [],
+        "contentType": "application/json",
+        "bytes": 27,
+        "ms": 25,
+        "hasRoleAlert": false,
+        "bodySnippet": "{\"ok\":false,\"error\":\"gone\"}"
+      },
+      "console": [
+        "[stdout] POST /api/tasks/checkoff 404 Not Found (20ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> 200 [empty] (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C8b",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "tasks read returns zero rows, uncheck",
+      "shape": "RLS-hidden or deleted task: gone",
+      "stub": {
+        "tasks_get": {
+          "mode": "empty"
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/uncheck",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 404,
+        "location": "",
+        "setCookies": [],
+        "contentType": "application/json",
+        "bytes": 27,
+        "ms": 26,
+        "hasRoleAlert": false,
+        "bodySnippet": "{\"ok\":false,\"error\":\"gone\"}"
+      },
+      "console": [
+        "[stdout] POST /api/tasks/uncheck 404 Not Found (20ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (1 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> 200 [empty] (1 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C11a",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "non-form body (application/json {}) on check-off",
+      "shape": "request.formData() throws",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "accept": "application/json",
+        "contentType": "application/json",
+        "body": "{}",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 500,
+        "location": "",
+        "setCookies": [],
+        "contentType": "application/json",
+        "bytes": 30,
+        "ms": 14,
+        "hasRoleAlert": false,
+        "bodySnippet": "{\"ok\":false,\"error\":\"unknown\"}"
+      },
+      "console": [
+        "[stderr] Check off task request failed TypeError: Unrecognized Content-Type header value. FormData can only parse the following MIME types: multipart/form-data, application/x-www-form-urlencoded",
+        "[stderr]     at async Module.POST (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/checkoff_DiA2TU9c.mjs:18:16)",
+        "[stderr]     at async renderEndpoint (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/runtime_B6ZgFDrz.mjs:5851:17)",
+        "[stderr]     at async handlePages (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:13532:15)",
+        "[stderr]     at async callMiddleware (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:14037:9)",
+        "[stderr]     at async handleMiddleware (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:14127:14)",
+        "[stderr]     at async render (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:15606:15)",
+        "[stderr]     at async App.render (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:15911:69)",
+        "[stderr]     at async Object.handle [as fetch] (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/entry.mjs:127:19)",
+        "[stdout] POST /api/tasks/checkoff 500 Internal Server Error (10ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C11b",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "non-form body (application/json {}) on uncheck",
+      "shape": "request.formData() throws",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/uncheck",
+        "accept": "application/json",
+        "contentType": "application/json",
+        "body": "{}",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 500,
+        "location": "",
+        "setCookies": [],
+        "contentType": "application/json",
+        "bytes": 30,
+        "ms": 23,
+        "hasRoleAlert": false,
+        "bodySnippet": "{\"ok\":false,\"error\":\"unknown\"}"
+      },
+      "console": [
+        "[stderr] Uncheck task request failed TypeError: Unrecognized Content-Type header value. FormData can only parse the following MIME types: multipart/form-data, application/x-www-form-urlencoded",
+        "[stderr]     at async Module.POST (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/uncheck_CJVl0hUP.mjs:18:16)",
+        "[stderr]     at async renderEndpoint (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/runtime_B6ZgFDrz.mjs:5851:17)",
+        "[stderr]     at async handlePages (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:13532:15)",
+        "[stderr]     at async callMiddleware (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:14037:9)",
+        "[stderr]     at async handleMiddleware (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:14127:14)",
+        "[stderr]     at async render (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:15606:15)",
+        "[stderr]     at async App.render (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:15911:69)",
+        "[stderr]     at async Object.handle [as fetch] (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/entry.mjs:127:19)",
+        "[stdout] POST /api/tasks/uncheck 500 Internal Server Error (18ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C12a",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "plain form POST, ok",
+      "shape": "no failure; redirect target",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 302,
+        "location": "/dashboard",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 31,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stdout] POST /api/tasks/checkoff 302 Found (26ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (1 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> 200 (0 ms) bearer=user-jwt",
+        "POST /rest/v1/task_checkoffs -> 201 (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C12b",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "plain form POST, insert answers 500",
+      "shape": "redirect target on unknown",
+      "stub": {
+        "checkoffs_insert": {
+          "mode": "status",
+          "status": 500,
+          "body": {
+            "code": "XX000",
+            "details": null,
+            "hint": null,
+            "message": "internal error: probe injected failure"
+          }
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 302,
+        "location": "/dashboard?error=unknown",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 42,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stderr] Check off task request failed {",
+        "[stderr]   code: 'XX000',",
+        "[stderr]   details: null,",
+        "[stderr]   hint: null,",
+        "[stderr]   message: 'internal error: probe injected failure'",
+        "[stderr] }",
+        "[stdout] POST /api/tasks/checkoff 302 Found (38ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> 200 (0 ms) bearer=user-jwt",
+        "POST /rest/v1/task_checkoffs -> 500 [status] (1 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C12c",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "plain form POST, insert answers 403 / 42501",
+      "shape": "redirect target on forbidden",
+      "stub": {
+        "checkoffs_insert": {
+          "mode": "status",
+          "status": 403,
+          "body": {
+            "code": "42501",
+            "details": null,
+            "hint": null,
+            "message": "new row violates row-level security policy for table \"task_checkoffs\""
+          }
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 302,
+        "location": "/dashboard?error=forbidden",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 29,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stdout] POST /api/tasks/checkoff 302 Found (25ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (1 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> 200 (1 ms) bearer=user-jwt",
+        "POST /rest/v1/task_checkoffs -> 403 [status] (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C12d",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "plain form POST, task gone (zero rows)",
+      "shape": "redirect target on gone",
+      "stub": {
+        "tasks_get": {
+          "mode": "empty"
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 302,
+        "location": "/dashboard",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 31,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stdout] POST /api/tasks/checkoff 302 Found (26ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> 200 [empty] (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C12e",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "plain form POST uncheck, DELETE answers 500",
+      "shape": "redirect target on unknown",
+      "stub": {
+        "checkoffs_delete": {
+          "mode": "status",
+          "status": 500,
+          "body": {
+            "code": "XX000",
+            "details": null,
+            "hint": null,
+            "message": "internal error: probe injected failure"
+          }
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/uncheck",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 302,
+        "location": "/dashboard?error=unknown",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 44,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stderr] Uncheck task request failed {",
+        "[stderr]   code: 'XX000',",
+        "[stderr]   details: null,",
+        "[stderr]   hint: null,",
+        "[stderr]   message: 'internal error: probe injected failure'",
+        "[stderr] }",
+        "[stdout] POST /api/tasks/uncheck 302 Found (39ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> 200 (0 ms) bearer=user-jwt",
+        "DELETE /rest/v1/task_checkoffs?task_id=eq.33333333-3333-4333-8333-333333333333&user_id=eq.11111111-1... -> 500 [status] (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C13a",
+      "phase": "main",
+      "flow": "dashboard",
+      "title": "dashboard: list_group_members RPC answers 500",
+      "shape": "essential read fails: outer catch",
+      "stub": {
+        "rpc_list_group_members": {
+          "mode": "status",
+          "status": 500,
+          "body": {
+            "code": "XX000",
+            "details": null,
+            "hint": null,
+            "message": "internal error: probe injected failure"
+          }
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/dashboard",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 200,
+        "location": "",
+        "setCookies": [],
+        "contentType": "text/html",
+        "bytes": 18463,
+        "ms": 43,
+        "title": "Dashboard",
+        "hasRoleAlert": true,
+        "alerts": [
+          "Something went wrong. Please try again."
+        ],
+        "headings": [
+          "Probe Crew",
+          "Rename group",
+          "Delete group"
+        ],
+        "notes": [
+          "Something went wrong"
+        ],
+        "bodySnippet": "Dashboard Something went wrong. Please try again. Your group Probe Crew Share this invite link to add people to your group. Copy Rename group Group name Rename group Delete group Permanently delete th"
+      },
+      "console": [
+        "[stderr] Loading the dashboard failed {",
+        "[stderr]   code: 'XX000',",
+        "[stderr]   details: null,",
+        "[stderr]   hint: null,",
+        "[stderr]   message: 'internal error: probe injected failure'",
+        "[stderr] }",
+        "[stdout] GET /dashboard 200 OK (34ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/groups?select=id%2Cname%2Cjoin_code%2Cowner_id -> 200 (1 ms) bearer=user-jwt",
+        "POST /rest/v1/rpc/list_group_members -> 500 [status] (0 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&group_id=eq.22222222-2222... -> 200 (1 ms) bearer=user-jwt",
+        "GET /rest/v1/task_participants?select=task_id%2Cuser_id&order=joined_at.asc%2Cuser_id.asc -> 200 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/task_checkoff_periods?select=task_id%2Cuser_id%2Cperiods -> 200 (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C13b",
+      "phase": "main",
+      "flow": "dashboard",
+      "title": "dashboard: tasks list answers 500",
+      "shape": "secondary read fails (allSettled)",
+      "stub": {
+        "tasks_list": {
+          "mode": "status",
+          "status": 500,
+          "body": {
+            "code": "XX000",
+            "details": null,
+            "hint": null,
+            "message": "internal error: probe injected failure"
+          }
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/dashboard",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 200,
+        "location": "",
+        "setCookies": [],
+        "contentType": "text/html",
+        "bytes": 19808,
+        "ms": 45,
+        "title": "Dashboard",
+        "hasRoleAlert": true,
+        "alerts": [
+          "Something went wrong. Please try again."
+        ],
+        "headings": [
+          "Probe Crew",
+          "Members",
+          "Rename group",
+          "Delete group"
+        ],
+        "notes": [
+          "Something went wrong"
+        ],
+        "bodySnippet": "Dashboard Something went wrong. Please try again. Your group Probe Crew Share this invite link to add people to your group. Copy Members 1 member probe@example.test Owner You Rename group Group name R"
+      },
+      "console": [
+        "[stderr] Loading the tasks failed {",
+        "[stderr]   code: 'XX000',",
+        "[stderr]   details: null,",
+        "[stderr]   hint: null,",
+        "[stderr]   message: 'internal error: probe injected failure'",
+        "[stderr] }",
+        "[stdout] GET /dashboard 200 OK (31ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (1 ms) bearer=user-jwt",
+        "GET /rest/v1/groups?select=id%2Cname%2Cjoin_code%2Cowner_id -> 200 (1 ms) bearer=user-jwt",
+        "POST /rest/v1/rpc/list_group_members -> 200 (1 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&group_id=eq.22222222-2222... -> 500 [status] (0 ms) bearer=user-jwt",
+        "GET /rest/v1/task_participants?select=task_id%2Cuser_id&order=joined_at.asc%2Cuser_id.asc -> 200 (1 ms) bearer=user-jwt",
+        "GET /rest/v1/task_checkoff_periods?select=task_id%2Cuser_id%2Cperiods -> 200 (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C13c",
+      "phase": "main",
+      "flow": "dashboard",
+      "title": "dashboard: task_participants list answers 500",
+      "shape": "secondary read fails (allSettled)",
+      "stub": {
+        "participants_list": {
+          "mode": "status",
+          "status": 500,
+          "body": {
+            "code": "XX000",
+            "details": null,
+            "hint": null,
+            "message": "internal error: probe injected failure"
+          }
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/dashboard",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 200,
+        "location": "",
+        "setCookies": [],
+        "contentType": "text/html",
+        "bytes": 27331,
+        "ms": 35,
+        "title": "Dashboard",
+        "hasRoleAlert": false,
+        "alerts": [],
+        "headings": [
+          "Probe Crew",
+          "Members",
+          "Tasks",
+          "Rename group",
+          "Delete group"
+        ],
+        "notes": [
+          "Participants are unavailable right now"
+        ],
+        "bodySnippet": "Dashboard Your group Probe Crew Share this invite link to add people to your group. Copy Members 1 member probe@example.test Owner You Tasks 1 task Probe Task Edit Daily Delete Participants are unavai"
+      },
+      "console": [
+        "[stderr] Loading the task participants failed {",
+        "[stderr]   code: 'XX000',",
+        "[stderr]   details: null,",
+        "[stderr]   hint: null,",
+        "[stderr]   message: 'internal error: probe injected failure'",
+        "[stderr] }",
+        "[stdout] GET /dashboard 200 OK (26ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/groups?select=id%2Cname%2Cjoin_code%2Cowner_id -> 200 (1 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&group_id=eq.22222222-2222... -> 200 (0 ms) bearer=user-jwt",
+        "POST /rest/v1/rpc/list_group_members -> 200 (1 ms) bearer=user-jwt",
+        "GET /rest/v1/task_participants?select=task_id%2Cuser_id&order=joined_at.asc%2Cuser_id.asc -> 500 [status] (0 ms) bearer=user-jwt",
+        "GET /rest/v1/task_checkoff_periods?select=task_id%2Cuser_id%2Cperiods -> 200 (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C13d",
+      "phase": "main",
+      "flow": "dashboard",
+      "title": "dashboard: task_checkoff_periods answers 500",
+      "shape": "secondary read fails (allSettled)",
+      "stub": {
+        "periods_list": {
+          "mode": "status",
+          "status": 500,
+          "body": {
+            "code": "XX000",
+            "details": null,
+            "hint": null,
+            "message": "internal error: probe injected failure"
+          }
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/dashboard",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 200,
+        "location": "",
+        "setCookies": [],
+        "contentType": "text/html",
+        "bytes": 29887,
+        "ms": 40,
+        "title": "Dashboard",
+        "hasRoleAlert": false,
+        "alerts": [],
+        "headings": [
+          "Probe Crew",
+          "Members",
+          "Tasks",
+          "Rename group",
+          "Delete group"
+        ],
+        "notes": [
+          "Scores are unavailable right now"
+        ],
+        "bodySnippet": "Dashboard Your group Probe Crew Share this invite link to add people to your group. Copy Members 1 member probe@example.test Owner You Tasks 1 task Probe Task Edit Daily Delete Participants: probe@exa"
+      },
+      "console": [
+        "[stderr] Loading the check-offs failed {",
+        "[stderr]   code: 'XX000',",
+        "[stderr]   details: null,",
+        "[stderr]   hint: null,",
+        "[stderr]   message: 'internal error: probe injected failure'",
+        "[stderr] }",
+        "[stdout] GET /dashboard 200 OK (32ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/groups?select=id%2Cname%2Cjoin_code%2Cowner_id -> 200 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&group_id=eq.22222222-2222... -> 200 (1 ms) bearer=user-jwt",
+        "POST /rest/v1/rpc/list_group_members -> 200 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/task_participants?select=task_id%2Cuser_id&order=joined_at.asc%2Cuser_id.asc -> 200 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/task_checkoff_periods?select=task_id%2Cuser_id%2Cperiods -> 500 [status] (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C13e",
+      "phase": "main",
+      "flow": "dashboard",
+      "title": "dashboard: getMyGroup (groups) answers 500",
+      "shape": "first read fails: outer catch",
+      "stub": {
+        "groups_get": {
+          "mode": "status",
+          "status": 500,
+          "body": {
+            "code": "XX000",
+            "details": null,
+            "hint": null,
+            "message": "internal error: probe injected failure"
+          }
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/dashboard",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 200,
+        "location": "",
+        "setCookies": [],
+        "contentType": "text/html",
+        "bytes": 3156,
+        "ms": 37,
+        "title": "Dashboard",
+        "hasRoleAlert": true,
+        "alerts": [
+          "Something went wrong. Please try again."
+        ],
+        "headings": [],
+        "notes": [
+          "Something went wrong"
+        ],
+        "bodySnippet": "Dashboard Something went wrong. Please try again. Signed in as probe@example.test Sign out"
+      },
+      "console": [
+        "[stderr] Loading the dashboard failed {",
+        "[stderr]   code: 'XX000',",
+        "[stderr]   details: null,",
+        "[stderr]   hint: null,",
+        "[stderr]   message: 'internal error: probe injected failure'",
+        "[stderr] }",
+        "[stdout] GET /dashboard 200 OK (25ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/groups?select=id%2Cname%2Cjoin_code%2Cowner_id -> 500 [status] (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "C13f",
+      "phase": "main",
+      "flow": "dashboard",
+      "title": "dashboard: getMyGroup network reset (GET retried 3x)",
+      "shape": "network failure on the first read",
+      "stub": {
+        "groups_get": {
+          "mode": "reset"
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/dashboard",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 200,
+        "location": "",
+        "setCookies": [],
+        "contentType": "text/html",
+        "bytes": 3156,
+        "ms": 7082,
+        "title": "Dashboard",
+        "hasRoleAlert": true,
+        "alerts": [
+          "Something went wrong. Please try again."
+        ],
+        "headings": [],
+        "notes": [
+          "Something went wrong"
+        ],
+        "bodySnippet": "Dashboard Something went wrong. Please try again. Signed in as probe@example.test Sign out"
+      },
+      "console": [
+        "[stderr] Loading the dashboard failed {",
+        "[stderr]   message: 'Error: Network connection lost.',",
+        "[stderr]   details: 'Error: Network connection lost.',",
+        "[stderr]   hint: '',",
+        "[stderr]   code: ''",
+        "[stderr] }",
+        "[stdout] GET /dashboard 200 OK (7070ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/groups?select=id%2Cname%2Cjoin_code%2Cowner_id -> reset [reset] (0 ms) bearer=user-jwt",
+        "GET /rest/v1/groups?select=id%2Cname%2Cjoin_code%2Cowner_id -> reset [reset] retry#1 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/groups?select=id%2Cname%2Cjoin_code%2Cowner_id -> reset [reset] retry#2 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/groups?select=id%2Cname%2Cjoin_code%2Cowner_id -> reset [reset] retry#3 (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "J7a",
+      "phase": "main",
+      "flow": "join",
+      "title": "GET /dashboard with join_code cookie, no group, preview_group RPC answers 500",
+      "shape": "invite preview fails: outer catch",
+      "stub": {
+        "groups_get": {
+          "mode": "empty"
+        },
+        "rpc_preview_group": {
+          "mode": "status",
+          "status": 500,
+          "body": {
+            "code": "XX000",
+            "details": null,
+            "hint": null,
+            "message": "internal error: probe injected failure"
+          }
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/dashboard",
+        "session": true,
+        "extraCookies": [
+          "join_code"
+        ]
+      },
+      "response": {
+        "status": 200,
+        "location": "",
+        "setCookies": [],
+        "contentType": "text/html",
+        "bytes": 3156,
+        "ms": 31,
+        "title": "Dashboard",
+        "hasRoleAlert": true,
+        "alerts": [
+          "Something went wrong. Please try again."
+        ],
+        "headings": [],
+        "notes": [
+          "Something went wrong"
+        ],
+        "bodySnippet": "Dashboard Something went wrong. Please try again. Signed in as probe@example.test Sign out"
+      },
+      "console": [
+        "[stderr] Loading the dashboard failed {",
+        "[stderr]   code: 'XX000',",
+        "[stderr]   details: null,",
+        "[stderr]   hint: null,",
+        "[stderr]   message: 'internal error: probe injected failure'",
+        "[stderr] }",
+        "[stdout] GET /dashboard 200 OK (23ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (1 ms) bearer=user-jwt",
+        "GET /rest/v1/groups?select=id%2Cname%2Cjoin_code%2Cowner_id -> 200 [empty] (0 ms) bearer=user-jwt",
+        "POST /rest/v1/rpc/preview_group -> 500 [status] (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "J7b",
+      "phase": "main",
+      "flow": "join",
+      "title": "GET /dashboard with join_code cookie, getMyGroup answers 500",
+      "shape": "first read fails: outer catch",
+      "stub": {
+        "groups_get": {
+          "mode": "status",
+          "status": 500,
+          "body": {
+            "code": "XX000",
+            "details": null,
+            "hint": null,
+            "message": "internal error: probe injected failure"
+          }
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/dashboard",
+        "session": true,
+        "extraCookies": [
+          "join_code"
+        ]
+      },
+      "response": {
+        "status": 200,
+        "location": "",
+        "setCookies": [],
+        "contentType": "text/html",
+        "bytes": 3156,
+        "ms": 47,
+        "title": "Dashboard",
+        "hasRoleAlert": true,
+        "alerts": [
+          "Something went wrong. Please try again."
+        ],
+        "headings": [],
+        "notes": [
+          "Something went wrong"
+        ],
+        "bodySnippet": "Dashboard Something went wrong. Please try again. Signed in as probe@example.test Sign out"
+      },
+      "console": [
+        "[stderr] Loading the dashboard failed {",
+        "[stderr]   code: 'XX000',",
+        "[stderr]   details: null,",
+        "[stderr]   hint: null,",
+        "[stderr]   message: 'internal error: probe injected failure'",
+        "[stderr] }",
+        "[stdout] GET /dashboard 200 OK (30ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/groups?select=id%2Cname%2Cjoin_code%2Cowner_id -> 500 [status] (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "J7c",
+      "phase": "main",
+      "flow": "join",
+      "title": "control: dashboard with join_code cookie, no group, preview ok",
+      "shape": "no failure",
+      "stub": {
+        "groups_get": {
+          "mode": "empty"
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/dashboard",
+        "session": true,
+        "extraCookies": [
+          "join_code"
+        ]
+      },
+      "response": {
+        "status": 200,
+        "location": "",
+        "setCookies": [],
+        "contentType": "text/html",
+        "bytes": 17161,
+        "ms": 29,
+        "title": "Dashboard",
+        "hasRoleAlert": false,
+        "alerts": [],
+        "headings": [
+          "Join Probe Crew?",
+          "Create a group",
+          "Join a group"
+        ],
+        "notes": [
+          "You were invited with a link",
+          "Create a group",
+          "Join a group"
+        ],
+        "bodySnippet": "Dashboard Join Probe Crew? You were invited with a link. Confirm to become a member. Join group Create a group Start a group and invite others with a link. Group name Create group Join a group Have an"
+      },
+      "console": [
+        "[stdout] GET /dashboard 200 OK (25ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/groups?select=id%2Cname%2Cjoin_code%2Cowner_id -> 200 [empty] (0 ms) bearer=user-jwt",
+        "POST /rest/v1/rpc/preview_group -> 200 (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "J7d",
+      "phase": "main",
+      "flow": "join",
+      "title": "dashboard with join_code cookie, preview_group returns null (unknown code)",
+      "shape": "legit business error",
+      "stub": {
+        "groups_get": {
+          "mode": "empty"
+        },
+        "rpc_preview_group": {
+          "mode": "empty"
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/dashboard",
+        "session": true,
+        "extraCookies": [
+          "join_code"
+        ]
+      },
+      "response": {
+        "status": 200,
+        "location": "",
+        "setCookies": [
+          "join_code (cleared)"
+        ],
+        "contentType": "text/html",
+        "bytes": 16237,
+        "ms": 32,
+        "title": "Dashboard",
+        "hasRoleAlert": true,
+        "alerts": [
+          "This invite link or code is not valid."
+        ],
+        "headings": [
+          "Create a group",
+          "Join a group"
+        ],
+        "notes": [
+          "not valid",
+          "Create a group",
+          "Join a group"
+        ],
+        "bodySnippet": "Dashboard This invite link or code is not valid. Create a group Start a group and invite others with a link. Group name Create group Join a group Have an invite? Paste the link or code. Invite code or"
+      },
+      "console": [
+        "[stdout] GET /dashboard 200 OK (28ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "GET /rest/v1/groups?select=id%2Cname%2Cjoin_code%2Cowner_id -> 200 [empty] (0 ms) bearer=user-jwt",
+        "POST /rest/v1/rpc/preview_group -> 200 [empty] (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "J8a",
+      "phase": "main",
+      "flow": "join",
+      "title": "Auth 503 on POST /api/groups/join (join_code cookie)",
+      "shape": "auth outage during join",
+      "stub": {
+        "auth_user": {
+          "mode": "status",
+          "status": 503,
+          "body": {
+            "code": 503,
+            "error_code": "unexpected_failure",
+            "msg": "Service Unavailable"
+          }
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/groups/join",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "code=abc123def456",
+        "session": true,
+        "extraCookies": [
+          "join_code"
+        ]
+      },
+      "response": {
+        "status": 302,
+        "location": "/auth/signin",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 19,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stdout] POST /api/groups/join 302 Found (14ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 503 [status] (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "J8b",
+      "phase": "main",
+      "flow": "join",
+      "title": "Auth 503 on GET /dashboard carrying join_code cookie",
+      "shape": "auth outage on the invite landing",
+      "stub": {
+        "auth_user": {
+          "mode": "status",
+          "status": 503,
+          "body": {
+            "code": 503,
+            "error_code": "unexpected_failure",
+            "msg": "Service Unavailable"
+          }
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/dashboard",
+        "session": true,
+        "extraCookies": [
+          "join_code"
+        ]
+      },
+      "response": {
+        "status": 302,
+        "location": "/auth/signin",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 48,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stdout] GET /dashboard 302 Found (43ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 503 [status] (1 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "J9",
+      "phase": "main",
+      "flow": "join",
+      "title": "non-form body (application/json {}) on POST /api/groups/join",
+      "shape": "request.formData() throws",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/groups/join",
+        "contentType": "application/json",
+        "body": "{}",
+        "session": true,
+        "extraCookies": [
+          "join_code"
+        ]
+      },
+      "response": {
+        "status": 302,
+        "location": "/dashboard?error=unknown",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 39,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stderr] Join group request failed TypeError: Unrecognized Content-Type header value. FormData can only parse the following MIME types: multipart/form-data, application/x-www-form-urlencoded",
+        "[stderr]     at async Module.POST (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/join_CAKV7Ujo.mjs:16:16)",
+        "[stderr]     at async renderEndpoint (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/runtime_B6ZgFDrz.mjs:5851:17)",
+        "[stderr]     at async handlePages (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:13532:15)",
+        "[stderr]     at async callMiddleware (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:14037:9)",
+        "[stderr]     at async handleMiddleware (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:14127:14)",
+        "[stderr]     at async render (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:15606:15)",
+        "[stderr]     at async App.render (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:15911:69)",
+        "[stderr]     at async Object.handle [as fetch] (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/entry.mjs:127:19)",
+        "[stdout] POST /api/groups/join 302 Found (35ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "P4",
+      "phase": "main",
+      "flow": "platform",
+      "title": "P4 handler returns 500 without throwing",
+      "shape": "5xx returned, nothing thrown",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/probe?mode=return500",
+        "session": false,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 500,
+        "location": "",
+        "setCookies": [],
+        "contentType": "text/plain;charset=UTF-8",
+        "bytes": 9,
+        "ms": 11,
+        "hasRoleAlert": false,
+        "bodySnippet": "probe-500"
+      },
+      "console": [
+        "[stdout] GET /api/probe 500 Internal Server Error (9ms)"
+      ],
+      "stubRequests": []
+    },
+    {
+      "id": "P7",
+      "phase": "main",
+      "flow": "platform",
+      "title": "P7 floating promise rejection after a 200",
+      "shape": "unhandled rejection",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/probe?mode=reject",
+        "session": false,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 200,
+        "location": "",
+        "setCookies": [],
+        "contentType": "text/plain;charset=UTF-8",
+        "bytes": 18,
+        "ms": 19,
+        "hasRoleAlert": false,
+        "bodySnippet": "probe-reject-fired"
+      },
+      "console": [
+        "[stdout] GET /api/probe 200 OK (14ms)"
+      ],
+      "stubRequests": []
+    },
+    {
+      "id": "P8",
+      "phase": "main",
+      "flow": "platform",
+      "title": "P8 waitUntil(Promise.reject(...)) after a 200",
+      "shape": "background task fails after the response",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/probe?mode=waituntil-fail",
+        "session": false,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 200,
+        "location": "",
+        "setCookies": [],
+        "contentType": "text/plain;charset=UTF-8",
+        "bytes": 21,
+        "ms": 27,
+        "hasRoleAlert": false,
+        "bodySnippet": "probe-waituntil-fired"
+      },
+      "console": [
+        "[stdout] GET /api/probe 200 OK (23ms)",
+        "[stderr] NOSENTRY reporting trace with exceptions, but no exception outcome; trace->eventInfo = FetchEventInfo: GET, http://127.0.0.1:4399/api/probe?mode=waituntil-fail"
+      ],
+      "stubRequests": []
+    },
+    {
+      "id": "P10",
+      "phase": "main",
+      "flow": "platform",
+      "title": "P10 throw while the page streams (/probe-stream)",
+      "shape": "failure after the first bytes were sent",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/probe-stream",
+        "session": false,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 200,
+        "location": "",
+        "setCookies": [],
+        "contentType": "text/html",
+        "bytes": 96,
+        "ms": 167,
+        "title": "probe stream",
+        "hasRoleAlert": false,
+        "alerts": [],
+        "headings": [],
+        "notes": [],
+        "bodySnippet": "probe stream stream-start"
+      },
+      "console": [
+        "[stdout] GET /probe-stream 200 OK (31ms)",
+        "[stderr] Uncaught exception: workerd/jsg/_virtual_includes/iterator/workerd/jsg/value.h:1477: failed: remote.jsg.Error: probe-stream",
+        "[stderr] stack: /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@3752547 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@3752b45 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@33f6390 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@33eb3b0 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@33ec04c /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@5b61428 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@315642e /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@3156e9b /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@3157873 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@2488c67 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@2488d7d /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@3228179 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@2440470 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@5920f0a /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@5b61428 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@591ff30 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@3165850 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@33eb820 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@33ebbd6 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@5b61428 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@31566e1 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@3156bbe /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@3157873 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@31566e1 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@3228179 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@2440470 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@5920f0a /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@5b61428 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@5b64742 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@5b6a033 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@5b5f737 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@23d6a2d"
+      ],
+      "stubRequests": []
+    },
+    {
+      "id": "P3a",
+      "phase": "main",
+      "flow": "platform",
+      "title": "P3 POST /api/auth/signout while /auth/v1/logout answers 500",
+      "shape": "unwrapped route ignores the sign-out result",
+      "stub": {
+        "auth_logout": {
+          "mode": "status",
+          "status": 500,
+          "body": {
+            "code": 500,
+            "error_code": "unexpected_failure",
+            "msg": "Database error querying schema"
+          }
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/auth/signout",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 302,
+        "location": "/",
+        "setCookies": [
+          "sb-127-auth-token (cleared)",
+          "join_code (cleared)"
+        ],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 29,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stdout] POST /api/auth/signout 302 Found (25ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "POST /auth/v1/logout?scope=global -> 500 [status] (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "P3b",
+      "phase": "main",
+      "flow": "platform",
+      "title": "P3 POST /api/auth/signout while /auth/v1/logout is unreachable (reset)",
+      "shape": "unwrapped route ignores the sign-out result",
+      "stub": {
+        "auth_logout": {
+          "mode": "reset"
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/auth/signout",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 302,
+        "location": "/",
+        "setCookies": [
+          "sb-127-auth-token (cleared)",
+          "join_code (cleared)"
+        ],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 42,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stdout] POST /api/auth/signout 302 Found (37ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "POST /auth/v1/logout?scope=global -> reset [reset] (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "P3c",
+      "phase": "main",
+      "flow": "platform",
+      "title": "control: POST /api/auth/signout, logout ok",
+      "shape": "no failure",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/auth/signout",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 302,
+        "location": "/",
+        "setCookies": [
+          "sb-127-auth-token (cleared)",
+          "join_code (cleared)"
+        ],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 31,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stdout] POST /api/auth/signout 302 Found (26ms)"
+      ],
+      "stubRequests": [
+        "GET /auth/v1/user -> 200 (1 ms) bearer=user-jwt",
+        "POST /auth/v1/logout?scope=global -> 204 (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "P13a",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "P13 expired token: 2nd refresh answers 400, PostgREST refuses the anon key (check-off JSON)",
+      "shape": "getSession() error dropped, anon key sent as Bearer, 42501 on the tasks read",
+      "stub": {
+        "auth_token": {
+          "mode": "status",
+          "status": 400,
+          "body": {
+            "code": 400,
+            "error_code": "refresh_token_already_used",
+            "msg": "Invalid Refresh Token: Already Used"
+          },
+          "after": 1
+        },
+        "rest_anon_guard": {
+          "mode": "anon_guard"
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": "expired access token",
+        "extraCookies": []
+      },
+      "response": {
+        "status": 500,
+        "location": "",
+        "setCookies": [
+          "sb-127-auth-token (cleared)"
+        ],
+        "contentType": "application/json",
+        "bytes": 30,
+        "ms": 33,
+        "hasRoleAlert": false,
+        "bodySnippet": "{\"ok\":false,\"error\":\"unknown\"}"
+      },
+      "console": [
+        "[stderr] AuthApiError: Invalid Refresh Token: Already Used",
+        "[stderr]     at handleError (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12988:8)",
+        "[stderr]     at async _handleRequest (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13024:18)",
+        "[stderr]     at async _request (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13007:15)",
+        "[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:18971:12",
+        "[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12669:20 {",
+        "[stderr]   __isAuthError: true,",
+        "[stderr]   status: 400,",
+        "[stderr]   code: 'refresh_token_already_used'",
+        "[stderr] }",
+        "[stderr] AuthApiError: Invalid Refresh Token: Already Used",
+        "[stderr]     at handleError (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12988:8)",
+        "[stderr]     at async _handleRequest (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13024:18)",
+        "[stderr]     at async _request (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13007:15)",
+        "[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:18971:12",
+        "[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12669:20 {",
+        "[stderr]   __isAuthError: true,",
+        "[stderr]   status: 400,",
+        "[stderr]   code: 'refresh_token_already_used'",
+        "[stderr] }",
+        "[stderr] Check off task request failed {",
+        "[stderr]   code: '42501',",
+        "[stderr]   details: null,",
+        "[stderr]   hint: null,",
+        "[stderr]   message: 'permission denied for table tasks'",
+        "[stderr] }",
+        "[stdout] POST /api/tasks/checkoff 500 Internal Server Error (29ms)"
+      ],
+      "stubRequests": [
+        "POST /auth/v1/token?grant_type=refresh_token -> 200 (1 ms) bearer=anon-key",
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "POST /auth/v1/token?grant_type=refresh_token -> 400 [status] (0 ms) bearer=anon-key",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> 403 [anon_guard] (1 ms) bearer=anon-key"
+      ]
+    },
+    {
+      "id": "P13b",
+      "phase": "main",
+      "flow": "join",
+      "title": "P13 expired token: 2nd refresh answers 400, PostgREST refuses the anon key (join_group RPC)",
+      "shape": "getSession() error dropped, anon key sent as Bearer, 42501 on the RPC",
+      "stub": {
+        "auth_token": {
+          "mode": "status",
+          "status": 400,
+          "body": {
+            "code": 400,
+            "error_code": "refresh_token_already_used",
+            "msg": "Invalid Refresh Token: Already Used"
+          },
+          "after": 1
+        },
+        "rest_anon_guard": {
+          "mode": "anon_guard"
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/groups/join",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "code=abc123def456",
+        "session": "expired access token",
+        "extraCookies": [
+          "join_code"
+        ]
+      },
+      "response": {
+        "status": 302,
+        "location": "/dashboard?error=forbidden",
+        "setCookies": [
+          "sb-127-auth-token (cleared)"
+        ],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 38,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stderr] AuthApiError: Invalid Refresh Token: Already Used",
+        "[stderr]     at handleError (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12988:8)",
+        "[stderr]     at async _handleRequest (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13024:18)",
+        "[stderr]     at async _request (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13007:15)",
+        "[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:18971:12",
+        "[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12669:20 {",
+        "[stderr]   __isAuthError: true,",
+        "[stderr]   status: 400,",
+        "[stderr]   code: 'refresh_token_already_used'",
+        "[stderr] }",
+        "[stderr] AuthApiError: Invalid Refresh Token: Already Used",
+        "[stderr]     at handleError (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12988:8)",
+        "[stderr]     at async _handleRequest (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13024:18)",
+        "[stderr]     at async _request (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13007:15)",
+        "[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:18971:12",
+        "[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12669:20 {",
+        "[stderr]   __isAuthError: true,",
+        "[stderr]   status: 400,",
+        "[stderr]   code: 'refresh_token_already_used'",
+        "[stderr] }",
+        "[stdout] POST /api/groups/join 302 Found (32ms)"
+      ],
+      "stubRequests": [
+        "POST /auth/v1/token?grant_type=refresh_token -> 200 (1 ms) bearer=anon-key",
+        "GET /auth/v1/user -> 200 (1 ms) bearer=user-jwt",
+        "POST /auth/v1/token?grant_type=refresh_token -> 400 [status] (0 ms) bearer=anon-key",
+        "POST /rest/v1/rpc/join_group -> 403 [anon_guard] (0 ms) bearer=anon-key"
+      ]
+    },
+    {
+      "id": "P13c",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "P13 expired token: 2nd refresh answers 500 (retryable: auth-js backs off), anon key refused (check-off JSON)",
+      "shape": "retryable refresh failure then anon downgrade",
+      "stub": {
+        "auth_token": {
+          "mode": "status",
+          "status": 500,
+          "body": {
+            "code": 500,
+            "error_code": "unexpected_failure",
+            "msg": "Database error querying schema"
+          },
+          "after": 1
+        },
+        "rest_anon_guard": {
+          "mode": "anon_guard"
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": "expired access token",
+        "extraCookies": []
+      },
+      "response": {
+        "status": 500,
+        "location": "",
+        "setCookies": [
+          "sb-127-auth-token (set)"
+        ],
+        "contentType": "application/json",
+        "bytes": 30,
+        "ms": 25859,
+        "hasRoleAlert": false,
+        "bodySnippet": "{\"ok\":false,\"error\":\"unknown\"}"
+      },
+      "console": [
+        "[stderr] AuthRetryableFetchError: Database error querying schema",
+        "[stderr]     at handleError (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12979:56)",
+        "[stderr]     at async _handleRequest (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13024:18)",
+        "[stderr]     at async _request (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13007:15)",
+        "[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:18971:12",
+        "[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12669:20 {",
+        "[stderr]   __isAuthError: true,",
+        "[stderr]   status: 500,",
+        "[stderr]   code: undefined",
+        "[stderr] }",
+        "[stderr] AuthRetryableFetchError: Database error querying schema",
+        "[stderr]     at handleError (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12979:56)",
+        "[stderr]     at async _handleRequest (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13024:18)",
+        "[stderr]     at async _request (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13007:15)",
+        "[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:18971:12",
+        "[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12669:20 {",
+        "[stderr]   __isAuthError: true,",
+        "[stderr]   status: 500,",
+        "[stderr]   code: undefined",
+        "[stderr] }",
+        "[stderr] Check off task request failed {",
+        "[stderr]   code: '42501',",
+        "[stderr]   details: null,",
+        "[stderr]   hint: null,",
+        "[stderr]   message: 'permission denied for table tasks'",
+        "[stderr] }",
+        "[stdout] POST /api/tasks/checkoff 500 Internal Server Error (25849ms)"
+      ],
+      "stubRequests": [
+        "POST /auth/v1/token?grant_type=refresh_token -> 200 (1 ms) bearer=anon-key",
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "POST /auth/v1/token?grant_type=refresh_token -> 500 [status] (0 ms) bearer=anon-key",
+        "POST /auth/v1/token?grant_type=refresh_token -> 500 [status] (0 ms) bearer=anon-key",
+        "POST /auth/v1/token?grant_type=refresh_token -> 500 [status] (1 ms) bearer=anon-key",
+        "POST /auth/v1/token?grant_type=refresh_token -> 500 [status] (0 ms) bearer=anon-key",
+        "POST /auth/v1/token?grant_type=refresh_token -> 500 [status] (1 ms) bearer=anon-key",
+        "POST /auth/v1/token?grant_type=refresh_token -> 500 [status] (0 ms) bearer=anon-key",
+        "POST /auth/v1/token?grant_type=refresh_token -> 500 [status] (1 ms) bearer=anon-key",
+        "POST /auth/v1/token?grant_type=refresh_token -> 500 [status] (0 ms) bearer=anon-key",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> 403 [anon_guard] (0 ms) bearer=anon-key"
+      ]
+    },
+    {
+      "id": "P13d",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "P13 control: expired token, both refreshes succeed (check-off JSON)",
+      "shape": "two refreshes per request, no failure",
+      "stub": {
+        "rest_anon_guard": {
+          "mode": "anon_guard"
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": "expired access token",
+        "extraCookies": []
+      },
+      "response": {
+        "status": 200,
+        "location": "",
+        "setCookies": [
+          "sb-127-auth-token (set)"
+        ],
+        "contentType": "application/json",
+        "bytes": 33,
+        "ms": 45,
+        "hasRoleAlert": false,
+        "bodySnippet": "{\"ok\":true,\"period\":\"2026-10-02\"}"
+      },
+      "console": [
+        "[stdout] POST /api/tasks/checkoff 200 OK (39ms)"
+      ],
+      "stubRequests": [
+        "POST /auth/v1/token?grant_type=refresh_token -> 200 (1 ms) bearer=anon-key",
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "POST /auth/v1/token?grant_type=refresh_token -> 200 (0 ms) bearer=anon-key",
+        "GET /rest/v1/tasks?select=id%2Ctitle%2Crecurrence%2Ccreated_by&id=eq.33333333-3333-4333-... -> 200 (0 ms) bearer=user-jwt",
+        "POST /rest/v1/task_checkoffs -> 201 (0 ms) bearer=user-jwt"
+      ]
+    },
+    {
+      "id": "P13e",
+      "phase": "main",
+      "flow": "check-off",
+      "title": "P13 expired token: the 1st refresh (middleware) answers 400 (check-off JSON)",
+      "shape": "refresh rejected in the middleware: looks like a sign-out",
+      "stub": {
+        "auth_token": {
+          "mode": "status",
+          "status": 400,
+          "body": {
+            "code": 400,
+            "error_code": "refresh_token_already_used",
+            "msg": "Invalid Refresh Token: Already Used"
+          }
+        },
+        "rest_anon_guard": {
+          "mode": "anon_guard"
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": "expired access token",
+        "extraCookies": []
+      },
+      "response": {
+        "status": 302,
+        "location": "/auth/signin",
+        "setCookies": [
+          "sb-127-auth-token (cleared)"
+        ],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 49,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stderr] AuthApiError: Invalid Refresh Token: Already Used",
+        "[stderr]     at handleError (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12988:8)",
+        "[stderr]     at async _handleRequest (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13024:18)",
+        "[stderr]     at async _request (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13007:15)",
+        "[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:18971:12",
+        "[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12669:20 {",
+        "[stderr]   __isAuthError: true,",
+        "[stderr]   status: 400,",
+        "[stderr]   code: 'refresh_token_already_used'",
+        "[stderr] }",
+        "[stderr] AuthApiError: Invalid Refresh Token: Already Used",
+        "[stderr]     at handleError (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12988:8)",
+        "[stderr]     at async _handleRequest (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13024:18)",
+        "[stderr]     at async _request (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13007:15)",
+        "[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:18971:12",
+        "[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12669:20 {",
+        "[stderr]   __isAuthError: true,",
+        "[stderr]   status: 400,",
+        "[stderr]   code: 'refresh_token_already_used'",
+        "[stderr] }",
+        "[stdout] POST /api/tasks/checkoff 302 Found (44ms)"
+      ],
+      "stubRequests": [
+        "POST /auth/v1/token?grant_type=refresh_token -> 400 [status] (0 ms) bearer=anon-key"
+      ]
+    },
+    {
+      "id": "P13f",
+      "phase": "main",
+      "flow": "dashboard",
+      "title": "P13 expired token: 2nd refresh answers 400, GET /dashboard",
+      "shape": "anon downgrade on the dashboard reads",
+      "stub": {
+        "auth_token": {
+          "mode": "status",
+          "status": 400,
+          "body": {
+            "code": 400,
+            "error_code": "refresh_token_already_used",
+            "msg": "Invalid Refresh Token: Already Used"
+          },
+          "after": 1
+        },
+        "rest_anon_guard": {
+          "mode": "anon_guard"
+        }
+      },
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/dashboard",
+        "session": "expired access token",
+        "extraCookies": []
+      },
+      "response": {
+        "status": 200,
+        "location": "",
+        "setCookies": [
+          "sb-127-auth-token (cleared)"
+        ],
+        "contentType": "text/html",
+        "bytes": 3156,
+        "ms": 46,
+        "title": "Dashboard",
+        "hasRoleAlert": true,
+        "alerts": [
+          "Something went wrong. Please try again."
+        ],
+        "headings": [],
+        "notes": [
+          "Something went wrong"
+        ],
+        "bodySnippet": "Dashboard Something went wrong. Please try again. Signed in as probe@example.test Sign out"
+      },
+      "console": [
+        "[stderr] AuthApiError: Invalid Refresh Token: Already Used",
+        "[stderr]     at handleError (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12988:8)",
+        "[stderr]     at async _handleRequest (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13024:18)",
+        "[stderr]     at async _request (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13007:15)",
+        "[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:18971:12",
+        "[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12669:20 {",
+        "[stderr]   __isAuthError: true,",
+        "[stderr]   status: 400,",
+        "[stderr]   code: 'refresh_token_already_used'",
+        "[stderr] }",
+        "[stderr] AuthApiError: Invalid Refresh Token: Already Used",
+        "[stderr]     at handleError (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12988:8)",
+        "[stderr]     at async _handleRequest (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13024:18)",
+        "[stderr]     at async _request (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13007:15)",
+        "[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:18971:12",
+        "[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12669:20 {",
+        "[stderr]   __isAuthError: true,",
+        "[stderr]   status: 400,",
+        "[stderr]   code: 'refresh_token_already_used'",
+        "[stderr] }",
+        "[stderr] Loading the dashboard failed {",
+        "[stderr]   code: '42501',",
+        "[stderr]   details: null,",
+        "[stderr]   hint: null,",
+        "[stderr]   message: 'permission denied for table groups'",
+        "[stderr] }",
+        "[stdout] GET /dashboard 200 OK (36ms)"
+      ],
+      "stubRequests": [
+        "POST /auth/v1/token?grant_type=refresh_token -> 200 (0 ms) bearer=anon-key",
+        "GET /auth/v1/user -> 200 (0 ms) bearer=user-jwt",
+        "POST /auth/v1/token?grant_type=refresh_token -> 400 [status] (0 ms) bearer=anon-key",
+        "GET /rest/v1/groups?select=id%2Cname%2Cjoin_code%2Cowner_id -> 403 [anon_guard] (0 ms) bearer=anon-key"
+      ]
+    },
+    {
+      "id": "P12a-unset",
+      "phase": "env:unset",
+      "flow": "platform",
+      "title": "[SUPABASE_URL and SUPABASE_KEY unset] secrets visible to the Worker? (/api/probe?mode=env)",
+      "shape": "env check",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/probe?mode=env",
+        "session": false,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 200,
+        "location": "",
+        "setCookies": [],
+        "contentType": "application/json",
+        "bytes": 31,
+        "ms": 21,
+        "hasRoleAlert": false,
+        "bodySnippet": "{\"urlSet\":false,\"keySet\":false}"
+      },
+      "console": [
+        "[stdout] GET /api/probe 200 OK (16ms)"
+      ],
+      "stubRequests": []
+    },
+    {
+      "id": "P12b-unset",
+      "phase": "env:unset",
+      "flow": "platform",
+      "title": "[SUPABASE_URL and SUPABASE_KEY unset] GET / (landing page)",
+      "shape": "env misconfigured",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/",
+        "session": false,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 200,
+        "location": "",
+        "setCookies": [],
+        "contentType": "text/html",
+        "bytes": 5010,
+        "ms": 28,
+        "title": "10x Astro Starter",
+        "hasRoleAlert": true,
+        "alerts": [
+          "Uwaga: Supabase nie jest skonfigurowany — funkcje uwierzytelniania są wyłączone. Zobacz instrukcję konfiguracji ."
+        ],
+        "headings": [
+          "10x Astro Starter"
+        ],
+        "notes": [
+          "Supabase nie jest skonfigurowany"
+        ],
+        "bodySnippet": "10x Astro Starter Uwaga: Supabase nie jest skonfigurowany — funkcje uwierzytelniania są wyłączone. Zobacz instrukcję konfiguracji . Not signed in Sign in Sign up 10x Astro Starter A production-ready s"
+      },
+      "console": [
+        "[stdout] GET / 200 OK (23ms)"
+      ],
+      "stubRequests": []
+    },
+    {
+      "id": "P12c-unset",
+      "phase": "env:unset",
+      "flow": "platform",
+      "title": "[SUPABASE_URL and SUPABASE_KEY unset] GET /auth/signin",
+      "shape": "env misconfigured",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/auth/signin",
+        "session": false,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 200,
+        "location": "",
+        "setCookies": [
+          "auth_email (cleared)"
+        ],
+        "contentType": "text/html",
+        "bytes": 13273,
+        "ms": 38,
+        "title": "Sign in",
+        "hasRoleAlert": true,
+        "alerts": [
+          "Uwaga: Supabase nie jest skonfigurowany — funkcje uwierzytelniania są wyłączone. Zobacz instrukcję konfiguracji ."
+        ],
+        "headings": [
+          "Sign in"
+        ],
+        "notes": [
+          "Supabase nie jest skonfigurowany"
+        ],
+        "bodySnippet": "Sign in Uwaga: Supabase nie jest skonfigurowany — funkcje uwierzytelniania są wyłączone. Zobacz instrukcję konfiguracji . Sign in Email Password Sign in Don't have an account? Sign up"
+      },
+      "console": [
+        "[stdout] GET /auth/signin 200 OK (32ms)"
+      ],
+      "stubRequests": []
+    },
+    {
+      "id": "P12d-unset",
+      "phase": "env:unset",
+      "flow": "dashboard",
+      "title": "[SUPABASE_URL and SUPABASE_KEY unset] GET /dashboard with a session cookie",
+      "shape": "env misconfigured",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/dashboard",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 302,
+        "location": "/auth/signin",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 41,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stdout] GET /dashboard 302 Found (34ms)"
+      ],
+      "stubRequests": []
+    },
+    {
+      "id": "P12e-unset",
+      "phase": "env:unset",
+      "flow": "check-off",
+      "title": "[SUPABASE_URL and SUPABASE_KEY unset] POST /api/tasks/checkoff (JSON) with a session cookie",
+      "shape": "env misconfigured",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 302,
+        "location": "/auth/signin",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 43,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stdout] POST /api/tasks/checkoff 302 Found (33ms)"
+      ],
+      "stubRequests": []
+    },
+    {
+      "id": "P12f-unset",
+      "phase": "env:unset",
+      "flow": "join",
+      "title": "[SUPABASE_URL and SUPABASE_KEY unset] POST /api/groups/join with a session and join_code cookie",
+      "shape": "env misconfigured",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/groups/join",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "code=abc123def456",
+        "session": true,
+        "extraCookies": [
+          "join_code"
+        ]
+      },
+      "response": {
+        "status": 302,
+        "location": "/auth/signin",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 26,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stdout] POST /api/groups/join 302 Found (20ms)"
+      ],
+      "stubRequests": []
+    },
+    {
+      "id": "P12a-malformed",
+      "phase": "env:malformed",
+      "flow": "platform",
+      "title": "[SUPABASE_URL malformed ('not-a-url')] secrets visible to the Worker? (/api/probe?mode=env)",
+      "shape": "env check",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/api/probe?mode=env",
+        "session": false,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 500,
+        "location": "",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 34,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stderr] 09:21:07 [ERROR] Error: Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL.",
+        "[stderr]     at validateSupabaseUrl (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:20992:48)",
+        "[stderr]     at new SupabaseClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:21228:19)",
+        "[stderr]     at createClient$1 (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:21483:9)",
+        "[stderr]     at createServerClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:22365:17)",
+        "[stderr]     at createClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:22403:9)",
+        "[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/virtual_astro_middleware.mjs:14:19",
+        "[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)",
+        "[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1058:10",
+        "[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)",
+        "[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1087:13",
+        "[stdout] GET /api/probe 500 Internal Server Error (27ms)"
+      ],
+      "stubRequests": []
+    },
+    {
+      "id": "P12b-malformed",
+      "phase": "env:malformed",
+      "flow": "platform",
+      "title": "[SUPABASE_URL malformed ('not-a-url')] GET / (landing page)",
+      "shape": "env misconfigured",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/",
+        "session": false,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 500,
+        "location": "",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 31,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stderr] 09:21:09 [ERROR] Error: Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL.",
+        "[stderr]     at validateSupabaseUrl (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:20992:48)",
+        "[stderr]     at new SupabaseClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:21228:19)",
+        "[stderr]     at createClient$1 (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:21483:9)",
+        "[stderr]     at createServerClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:22365:17)",
+        "[stderr]     at createClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:22403:9)",
+        "[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/virtual_astro_middleware.mjs:14:19",
+        "[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)",
+        "[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1058:10",
+        "[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)",
+        "[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1087:13",
+        "[stdout] GET / 500 Internal Server Error (25ms)"
+      ],
+      "stubRequests": []
+    },
+    {
+      "id": "P12c-malformed",
+      "phase": "env:malformed",
+      "flow": "platform",
+      "title": "[SUPABASE_URL malformed ('not-a-url')] GET /auth/signin",
+      "shape": "env misconfigured",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/auth/signin",
+        "session": false,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 500,
+        "location": "",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 26,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stderr] 09:21:11 [ERROR] Error: Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL.",
+        "[stderr]     at validateSupabaseUrl (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:20992:48)",
+        "[stderr]     at new SupabaseClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:21228:19)",
+        "[stderr]     at createClient$1 (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:21483:9)",
+        "[stderr]     at createServerClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:22365:17)",
+        "[stderr]     at createClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:22403:9)",
+        "[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/virtual_astro_middleware.mjs:14:19",
+        "[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)",
+        "[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1058:10",
+        "[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)",
+        "[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1087:13",
+        "[stdout] GET /auth/signin 500 Internal Server Error (22ms)"
+      ],
+      "stubRequests": []
+    },
+    {
+      "id": "P12d-malformed",
+      "phase": "env:malformed",
+      "flow": "dashboard",
+      "title": "[SUPABASE_URL malformed ('not-a-url')] GET /dashboard with a session cookie",
+      "shape": "env misconfigured",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "GET",
+        "path": "/dashboard",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 500,
+        "location": "",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 30,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stderr] 09:21:13 [ERROR] Error: Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL.",
+        "[stderr]     at validateSupabaseUrl (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:20992:48)",
+        "[stderr]     at new SupabaseClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:21228:19)",
+        "[stderr]     at createClient$1 (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:21483:9)",
+        "[stderr]     at createServerClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:22365:17)",
+        "[stderr]     at createClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:22403:9)",
+        "[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/virtual_astro_middleware.mjs:14:19",
+        "[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)",
+        "[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1058:10",
+        "[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)",
+        "[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1087:13",
+        "[stdout] GET /dashboard 500 Internal Server Error (25ms)"
+      ],
+      "stubRequests": []
+    },
+    {
+      "id": "P12e-malformed",
+      "phase": "env:malformed",
+      "flow": "check-off",
+      "title": "[SUPABASE_URL malformed ('not-a-url')] POST /api/tasks/checkoff (JSON) with a session cookie",
+      "shape": "env misconfigured",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/tasks/checkoff",
+        "accept": "application/json",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "task_id=33333333-3333-4333-8333-333333333333",
+        "session": true,
+        "extraCookies": []
+      },
+      "response": {
+        "status": 500,
+        "location": "",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 31,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stderr] 09:21:15 [ERROR] Error: Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL.",
+        "[stderr]     at validateSupabaseUrl (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:20992:48)",
+        "[stderr]     at new SupabaseClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:21228:19)",
+        "[stderr]     at createClient$1 (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:21483:9)",
+        "[stderr]     at createServerClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:22365:17)",
+        "[stderr]     at createClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:22403:9)",
+        "[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/virtual_astro_middleware.mjs:14:19",
+        "[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)",
+        "[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1058:10",
+        "[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)",
+        "[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1087:13",
+        "[stdout] POST /api/tasks/checkoff 500 Internal Server Error (21ms)"
+      ],
+      "stubRequests": []
+    },
+    {
+      "id": "P12f-malformed",
+      "phase": "env:malformed",
+      "flow": "join",
+      "title": "[SUPABASE_URL malformed ('not-a-url')] POST /api/groups/join with a session and join_code cookie",
+      "shape": "env misconfigured",
+      "stub": {},
+      "stubStopped": false,
+      "request": {
+        "method": "POST",
+        "path": "/api/groups/join",
+        "contentType": "application/x-www-form-urlencoded",
+        "body": "code=abc123def456",
+        "session": true,
+        "extraCookies": [
+          "join_code"
+        ]
+      },
+      "response": {
+        "status": 500,
+        "location": "",
+        "setCookies": [],
+        "contentType": "",
+        "bytes": 0,
+        "ms": 36,
+        "hasRoleAlert": false,
+        "bodySnippet": ""
+      },
+      "console": [
+        "[stderr] 09:21:17 [ERROR] Error: Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL.",
+        "[stderr]     at validateSupabaseUrl (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:20992:48)",
+        "[stderr]     at new SupabaseClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:21228:19)",
+        "[stderr]     at createClient$1 (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:21483:9)",
+        "[stderr]     at createServerClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:22365:17)",
+        "[stderr]     at createClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:22403:9)",
+        "[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/virtual_astro_middleware.mjs:14:19",
+        "[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)",
+        "[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1058:10",
+        "[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)",
+        "[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1087:13",
+        "[stdout] POST /api/groups/join 500 Internal Server Error (31ms)"
+      ],
+      "stubRequests": []
+    }
+  ]
+}

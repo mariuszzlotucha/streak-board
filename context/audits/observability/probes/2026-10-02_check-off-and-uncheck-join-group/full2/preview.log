@@ -1,0 +1,529 @@
+--- preview start (main) ---
+[stdout] 
+[stdout] > 10x-astro-starter@0.0.1 preview
+[stdout] > astro preview --port 4399 --host 127.0.0.1 --ignore-lock
+[stdout] 
+[stdout] 11:16:26 [@astrojs/cloudflare] Enabling image processing with Cloudflare Images for production with the "IMAGES" Images binding.
+[stderr] Default inspector port 9229 not available, using 9230 instead
+[stderr] 
+[stdout] Using secrets defined in dist/server/.dev.vars
+[stdout] 11:16:26 [@astrojs/cloudflare] 
+[stdout]  astro  v14.3.1 ready in 97 ms
+[stdout] 
+[stdout] ┃ Local    http://127.0.0.1:4399/
+[stdout] 
+[stdout] ✨ Parsed 1 valid header rule.
+[stdout] GET /api/probe 200 OK (34ms)
+[stdout] POST /api/tasks/checkoff 200 OK (31ms)
+[stdout] POST /api/tasks/uncheck 200 OK (22ms)
+[stdout] GET /dashboard 200 OK (61ms)
+[stdout] POST /api/groups/join 302 Found (25ms)
+[stdout] POST /api/tasks/checkoff 302 Found (25ms)
+[stdout] GET /dashboard 302 Found (16ms)
+[stdout] POST /api/tasks/checkoff 302 Found (16ms)
+[stdout] POST /api/tasks/checkoff 302 Found (37ms)
+[stdout] POST /api/tasks/checkoff 302 Found (42ms)
+[stdout] POST /api/tasks/checkoff 302 Found (36ms)
+[stdout] POST /api/tasks/checkoff 302 Found (24ms)
+[stdout] GET /dashboard 302 Found (38ms)
+[stdout] POST /api/tasks/checkoff 302 Found (17ms)
+[stdout] GET /dashboard 302 Found (22ms)
+[stdout] POST /api/tasks/checkoff 200 OK (12045ms)
+[stdout] POST /api/tasks/checkoff 302 Found (25032ms)
+[stderr] Check off task request failed {
+[stderr]   code: 'XX000',
+[stderr]   details: null,
+[stderr]   hint: null,
+[stderr]   message: 'internal error: probe injected failure'
+[stderr] }
+[stdout] POST /api/tasks/checkoff 500 Internal Server Error (23ms)
+[stderr] Check off task request failed {
+[stderr]   message: 'Error: Network connection lost.',
+[stderr]   details: 'Error: Network connection lost.',
+[stderr]   hint: '',
+[stderr]   code: ''
+[stderr] }
+[stdout] POST /api/tasks/checkoff 500 Internal Server Error (21ms)
+[stdout] POST /api/tasks/checkoff 403 Forbidden (20ms)
+[stderr] Check off task request failed { code: 'PGRST301', details: null, hint: null, message: 'JWT expired' }
+[stdout] POST /api/tasks/checkoff 500 Internal Server Error (35ms)
+[stdout] POST /api/tasks/checkoff 403 Forbidden (20ms)
+[stdout] POST /api/tasks/checkoff 200 OK (20ms)
+[stdout] POST /api/tasks/uncheck 200 OK (20ms)
+[stderr] Uncheck task request failed {
+[stderr]   code: 'XX000',
+[stderr]   details: null,
+[stderr]   hint: null,
+[stderr]   message: 'internal error: probe injected failure'
+[stderr] }
+[stdout] POST /api/tasks/uncheck 500 Internal Server Error (21ms)
+[stderr] Uncheck task request failed {
+[stderr]   message: 'Error: Network connection lost.',
+[stderr]   details: 'Error: Network connection lost.',
+[stderr]   hint: '',
+[stderr]   code: ''
+[stderr] }
+[stdout] POST /api/tasks/uncheck 500 Internal Server Error (13ms)
+[stdout] POST /api/groups/join 302 Found (40ms)
+[stdout] POST /api/groups/join 302 Found (17ms)
+[stdout] POST /api/groups/join 302 Found (43ms)
+[stdout] POST /api/groups/join 302 Found (24ms)
+[stdout] POST /api/groups/join 302 Found (19ms)
+[stdout] POST /api/groups/join 302 Found (40ms)
+[stdout] GET /join/zzz 302 Found (14ms)
+[stdout] GET /join/abc123def456 302 Found (20ms)
+[stdout] GET /join/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa 302 Found (20ms)
+[stdout] GET /join/abc123def456 302 Found (22ms)
+[stderr] 09:18:17 [ERROR] Error: probe-handler
+[stderr]     at Module.handler (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/probe_CE4x_HjR.mjs:15:23)
+[stderr]     at renderEndpoint (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/runtime_B6ZgFDrz.mjs:5851:31)
+[stderr]     at handlePages (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:13532:21)
+[stdout] GET /api/probe 500 Internal Server Error (44ms)
+[stderr] 09:18:19 [ERROR] Error: probe-handler
+[stderr]     at Module.handler (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/probe_CE4x_HjR.mjs:16:29)
+[stderr]     at renderEndpoint (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/runtime_B6ZgFDrz.mjs:5851:31)
+[stderr]     at handlePages (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:13532:21)
+[stdout] GET /api/probe 500 Internal Server Error (33ms)
+[stderr] 09:18:21 [ERROR] probe plain object thrown
+[stdout] GET /api/probe 500 Internal Server Error (29ms)
+[stderr] 09:18:23 [ERROR] Error: probe-middleware
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/virtual_astro_middleware.mjs:13:67
+[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1058:10
+[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1087:13
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:11861:10
+[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1058:10
+[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1058:10
+[stdout] GET / 500 Internal Server Error (24ms)
+[stderr] 09:18:25 [ERROR] Error: probe-middleware
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/virtual_astro_middleware.mjs:13:67
+[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1058:10
+[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1087:13
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:11861:10
+[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1058:10
+[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1058:10
+[stdout] POST /api/tasks/checkoff 500 Internal Server Error (27ms)
+[stderr] probe label Error: probe-error
+[stderr]     at Module.handler (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/probe_CE4x_HjR.mjs:31:33)
+[stderr]     at renderEndpoint (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/runtime_B6ZgFDrz.mjs:5851:31)
+[stderr]     at handlePages (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:13532:21) {
+[stderr]   [cause]: Error: probe-cause
+[stderr]       at Module.handler (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/probe_CE4x_HjR.mjs:31:83)
+[stderr]       at renderEndpoint (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/runtime_B6ZgFDrz.mjs:5851:31)
+[stderr]       at handlePages (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:13532:21)
+[stderr] }
+[stdout] GET /api/probe 200 OK (17ms)
+[stderr] probe label { message: 'm', details: 'd', hint: null, code: 'XX000' }
+[stdout] GET /api/probe 200 OK (10ms)
+[stderr] probe label Error: probe-string
+[stdout] GET /api/probe 200 OK (28ms)
+[stderr] Error: probe-error-only
+[stderr]     at Module.handler (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/probe_CE4x_HjR.mjs:34:34)
+[stderr]     at renderEndpoint (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/runtime_B6ZgFDrz.mjs:5851:31)
+[stderr]     at handlePages (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:13532:21)
+[stdout] GET /api/probe 200 OK (16ms)
+[stderr] probe label {}
+[stdout] GET /api/probe 200 OK (20ms)
+[stderr] Check off task request failed {
+[stderr]   code: 'XX000',
+[stderr]   details: null,
+[stderr]   hint: null,
+[stderr]   message: 'internal error: probe injected failure'
+[stderr] }
+[stdout] POST /api/tasks/checkoff 500 Internal Server Error (39ms)
+[stderr] Check off task request failed {
+[stderr]   code: 'PGRST002',
+[stderr]   details: null,
+[stderr]   hint: 'Try again later',
+[stderr]   message: 'Could not query the database for the schema cache. Retrying.'
+[stderr] }
+[stdout] POST /api/tasks/checkoff 500 Internal Server Error (7062ms)
+[stderr] Check off task request failed {
+[stderr]   message: 'Error: Network connection lost.',
+[stderr]   details: 'Error: Network connection lost.',
+[stderr]   hint: '',
+[stderr]   code: ''
+[stderr] }
+[stdout] POST /api/tasks/checkoff 500 Internal Server Error (7069ms)
+[stderr] Uncheck task request failed {
+[stderr]   code: 'XX000',
+[stderr]   details: null,
+[stderr]   hint: null,
+[stderr]   message: 'internal error: probe injected failure'
+[stderr] }
+[stdout] POST /api/tasks/uncheck 500 Internal Server Error (18ms)
+[stderr] Check off task request failed {
+[stderr]   message: '<html><head><title>502 Bad Gateway</title></head><body><center><h1>502 Bad Gateway</h1></center></body></html>'
+[stderr] }
+[stdout] POST /api/tasks/checkoff 500 Internal Server Error (12ms)
+[stdout] POST /api/tasks/checkoff 404 Not Found (20ms)
+[stdout] POST /api/tasks/uncheck 404 Not Found (20ms)
+[stderr] Check off task request failed TypeError: Unrecognized Content-Type header value. FormData can only parse the following MIME types: multipart/form-data, application/x-www-form-urlencoded
+[stderr]     at async Module.POST (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/checkoff_DiA2TU9c.mjs:18:16)
+[stderr]     at async renderEndpoint (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/runtime_B6ZgFDrz.mjs:5851:17)
+[stderr]     at async handlePages (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:13532:15)
+[stderr]     at async callMiddleware (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:14037:9)
+[stderr]     at async handleMiddleware (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:14127:14)
+[stderr]     at async render (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:15606:15)
+[stderr]     at async App.render (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:15911:69)
+[stderr]     at async Object.handle [as fetch] (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/entry.mjs:127:19)
+[stdout] POST /api/tasks/checkoff 500 Internal Server Error (10ms)
+[stderr] Uncheck task request failed TypeError: Unrecognized Content-Type header value. FormData can only parse the following MIME types: multipart/form-data, application/x-www-form-urlencoded
+[stderr]     at async Module.POST (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/uncheck_CJVl0hUP.mjs:18:16)
+[stderr]     at async renderEndpoint (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/runtime_B6ZgFDrz.mjs:5851:17)
+[stderr]     at async handlePages (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:13532:15)
+[stderr]     at async callMiddleware (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:14037:9)
+[stderr]     at async handleMiddleware (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:14127:14)
+[stderr]     at async render (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:15606:15)
+[stderr]     at async App.render (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:15911:69)
+[stderr]     at async Object.handle [as fetch] (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/entry.mjs:127:19)
+[stdout] POST /api/tasks/uncheck 500 Internal Server Error (18ms)
+[stdout] POST /api/tasks/checkoff 302 Found (26ms)
+[stderr] Check off task request failed {
+[stderr]   code: 'XX000',
+[stderr]   details: null,
+[stderr]   hint: null,
+[stderr]   message: 'internal error: probe injected failure'
+[stderr] }
+[stdout] POST /api/tasks/checkoff 302 Found (38ms)
+[stdout] POST /api/tasks/checkoff 302 Found (25ms)
+[stdout] POST /api/tasks/checkoff 302 Found (26ms)
+[stderr] Uncheck task request failed {
+[stderr]   code: 'XX000',
+[stderr]   details: null,
+[stderr]   hint: null,
+[stderr]   message: 'internal error: probe injected failure'
+[stderr] }
+[stdout] POST /api/tasks/uncheck 302 Found (39ms)
+[stderr] Loading the dashboard failed {
+[stderr]   code: 'XX000',
+[stderr]   details: null,
+[stderr]   hint: null,
+[stderr]   message: 'internal error: probe injected failure'
+[stderr] }
+[stdout] GET /dashboard 200 OK (34ms)
+[stderr] Loading the tasks failed {
+[stderr]   code: 'XX000',
+[stderr]   details: null,
+[stderr]   hint: null,
+[stderr]   message: 'internal error: probe injected failure'
+[stderr] }
+[stdout] GET /dashboard 200 OK (31ms)
+[stderr] Loading the task participants failed {
+[stderr]   code: 'XX000',
+[stderr]   details: null,
+[stderr]   hint: null,
+[stderr]   message: 'internal error: probe injected failure'
+[stderr] }
+[stdout] GET /dashboard 200 OK (26ms)
+[stderr] Loading the check-offs failed {
+[stderr]   code: 'XX000',
+[stderr]   details: null,
+[stderr]   hint: null,
+[stderr]   message: 'internal error: probe injected failure'
+[stderr] }
+[stdout] GET /dashboard 200 OK (32ms)
+[stderr] Loading the dashboard failed {
+[stderr]   code: 'XX000',
+[stderr]   details: null,
+[stderr]   hint: null,
+[stderr]   message: 'internal error: probe injected failure'
+[stderr] }
+[stdout] GET /dashboard 200 OK (25ms)
+[stderr] Loading the dashboard failed {
+[stderr]   message: 'Error: Network connection lost.',
+[stderr]   details: 'Error: Network connection lost.',
+[stderr]   hint: '',
+[stderr]   code: ''
+[stderr] }
+[stdout] GET /dashboard 200 OK (7070ms)
+[stderr] Loading the dashboard failed {
+[stderr]   code: 'XX000',
+[stderr]   details: null,
+[stderr]   hint: null,
+[stderr]   message: 'internal error: probe injected failure'
+[stderr] }
+[stdout] GET /dashboard 200 OK (23ms)
+[stderr] Loading the dashboard failed {
+[stderr]   code: 'XX000',
+[stderr]   details: null,
+[stderr]   hint: null,
+[stderr]   message: 'internal error: probe injected failure'
+[stderr] }
+[stdout] GET /dashboard 200 OK (30ms)
+[stdout] GET /dashboard 200 OK (25ms)
+[stdout] GET /dashboard 200 OK (28ms)
+[stdout] POST /api/groups/join 302 Found (14ms)
+[stdout] GET /dashboard 302 Found (43ms)
+[stderr] Join group request failed TypeError: Unrecognized Content-Type header value. FormData can only parse the following MIME types: multipart/form-data, application/x-www-form-urlencoded
+[stderr]     at async Module.POST (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/join_CAKV7Ujo.mjs:16:16)
+[stderr]     at async renderEndpoint (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/runtime_B6ZgFDrz.mjs:5851:17)
+[stderr]     at async handlePages (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:13532:15)
+[stderr]     at async callMiddleware (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:14037:9)
+[stderr]     at async handleMiddleware (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:14127:14)
+[stderr]     at async render (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:15606:15)
+[stderr]     at async App.render (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/entrypoints_BP00GMby.mjs:15911:69)
+[stderr]     at async Object.handle [as fetch] (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/entry.mjs:127:19)
+[stdout] POST /api/groups/join 302 Found (35ms)
+[stdout] GET /api/probe 500 Internal Server Error (9ms)
+[stdout] GET /api/probe 200 OK (14ms)
+[stdout] GET /api/probe 200 OK (23ms)
+[stderr] NOSENTRY reporting trace with exceptions, but no exception outcome; trace->eventInfo = FetchEventInfo: GET, http://127.0.0.1:4399/api/probe?mode=waituntil-fail
+[stdout] GET /probe-stream 200 OK (31ms)
+[stderr] Uncaught exception: workerd/jsg/_virtual_includes/iterator/workerd/jsg/value.h:1477: failed: remote.jsg.Error: probe-stream
+[stderr] stack: /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@3752547 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@3752b45 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@33f6390 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@33eb3b0 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@33ec04c /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@5b61428 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@315642e /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@3156e9b /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@3157873 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@2488c67 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@2488d7d /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@3228179 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@2440470 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@5920f0a /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@5b61428 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@591ff30 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@3165850 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@33eb820 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@33ebbd6 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@5b61428 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@31566e1 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@3156bbe /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@3157873 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@31566e1 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@3228179 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@2440470 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@5920f0a /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@5b61428 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@5b64742 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@5b6a033 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@5b5f737 /home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/node_modules/@cloudflare/workerd-linux-64/bin/workerd@23d6a2d
+[stdout] POST /api/auth/signout 302 Found (25ms)
+[stdout] POST /api/auth/signout 302 Found (37ms)
+[stdout] POST /api/auth/signout 302 Found (26ms)
+[stderr] AuthApiError: Invalid Refresh Token: Already Used
+[stderr]     at handleError (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12988:8)
+[stderr]     at async _handleRequest (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13024:18)
+[stderr]     at async _request (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13007:15)
+[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:18971:12
+[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12669:20 {
+[stderr]   __isAuthError: true,
+[stderr]   status: 400,
+[stderr]   code: 'refresh_token_already_used'
+[stderr] }
+[stderr] AuthApiError: Invalid Refresh Token: Already Used
+[stderr]     at handleError (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12988:8)
+[stderr]     at async _handleRequest (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13024:18)
+[stderr]     at async _request (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13007:15)
+[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:18971:12
+[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12669:20 {
+[stderr]   __isAuthError: true,
+[stderr]   status: 400,
+[stderr]   code: 'refresh_token_already_used'
+[stderr] }
+[stderr] Check off task request failed {
+[stderr]   code: '42501',
+[stderr]   details: null,
+[stderr]   hint: null,
+[stderr]   message: 'permission denied for table tasks'
+[stderr] }
+[stdout] POST /api/tasks/checkoff 500 Internal Server Error (29ms)
+[stderr] AuthApiError: Invalid Refresh Token: Already Used
+[stderr]     at handleError (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12988:8)
+[stderr]     at async _handleRequest (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13024:18)
+[stderr]     at async _request (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13007:15)
+[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:18971:12
+[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12669:20 {
+[stderr]   __isAuthError: true,
+[stderr]   status: 400,
+[stderr]   code: 'refresh_token_already_used'
+[stderr] }
+[stderr] AuthApiError: Invalid Refresh Token: Already Used
+[stderr]     at handleError (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12988:8)
+[stderr]     at async _handleRequest (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13024:18)
+[stderr]     at async _request (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13007:15)
+[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:18971:12
+[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12669:20 {
+[stderr]   __isAuthError: true,
+[stderr]   status: 400,
+[stderr]   code: 'refresh_token_already_used'
+[stderr] }
+[stdout] POST /api/groups/join 302 Found (32ms)
+[stderr] AuthRetryableFetchError: Database error querying schema
+[stderr]     at handleError (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12979:56)
+[stderr]     at async _handleRequest (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13024:18)
+[stderr]     at async _request (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13007:15)
+[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:18971:12
+[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12669:20 {
+[stderr]   __isAuthError: true,
+[stderr]   status: 500,
+[stderr]   code: undefined
+[stderr] }
+[stderr] AuthRetryableFetchError: Database error querying schema
+[stderr]     at handleError (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12979:56)
+[stderr]     at async _handleRequest (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13024:18)
+[stderr]     at async _request (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13007:15)
+[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:18971:12
+[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12669:20 {
+[stderr]   __isAuthError: true,
+[stderr]   status: 500,
+[stderr]   code: undefined
+[stderr] }
+[stderr] Check off task request failed {
+[stderr]   code: '42501',
+[stderr]   details: null,
+[stderr]   hint: null,
+[stderr]   message: 'permission denied for table tasks'
+[stderr] }
+[stdout] POST /api/tasks/checkoff 500 Internal Server Error (25849ms)
+[stdout] POST /api/tasks/checkoff 200 OK (39ms)
+[stderr] AuthApiError: Invalid Refresh Token: Already Used
+[stderr]     at handleError (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12988:8)
+[stderr]     at async _handleRequest (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13024:18)
+[stderr]     at async _request (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13007:15)
+[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:18971:12
+[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12669:20 {
+[stderr]   __isAuthError: true,
+[stderr]   status: 400,
+[stderr]   code: 'refresh_token_already_used'
+[stderr] }
+[stderr] AuthApiError: Invalid Refresh Token: Already Used
+[stderr]     at handleError (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12988:8)
+[stderr]     at async _handleRequest (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13024:18)
+[stderr]     at async _request (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13007:15)
+[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:18971:12
+[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12669:20 {
+[stderr]   __isAuthError: true,
+[stderr]   status: 400,
+[stderr]   code: 'refresh_token_already_used'
+[stderr] }
+[stdout] POST /api/tasks/checkoff 302 Found (44ms)
+[stderr] AuthApiError: Invalid Refresh Token: Already Used
+[stderr]     at handleError (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12988:8)
+[stderr]     at async _handleRequest (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13024:18)
+[stderr]     at async _request (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13007:15)
+[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:18971:12
+[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12669:20 {
+[stderr]   __isAuthError: true,
+[stderr]   status: 400,
+[stderr]   code: 'refresh_token_already_used'
+[stderr] }
+[stderr] AuthApiError: Invalid Refresh Token: Already Used
+[stderr]     at handleError (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12988:8)
+[stderr]     at async _handleRequest (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13024:18)
+[stderr]     at async _request (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:13007:15)
+[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:18971:12
+[stderr]     at async file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:12669:20 {
+[stderr]   __isAuthError: true,
+[stderr]   status: 400,
+[stderr]   code: 'refresh_token_already_used'
+[stderr] }
+[stderr] Loading the dashboard failed {
+[stderr]   code: '42501',
+[stderr]   details: null,
+[stderr]   hint: null,
+[stderr]   message: 'permission denied for table groups'
+[stderr] }
+[stdout] GET /dashboard 200 OK (36ms)
+--- preview start (env:unset) ---
+[stdout] 
+[stdout] > 10x-astro-starter@0.0.1 preview
+[stdout] > astro preview --port 4399 --host 127.0.0.1 --ignore-lock
+[stdout] 
+[stdout] 11:20:49 [@astrojs/cloudflare] Enabling image processing with Cloudflare Images for production with the "IMAGES" Images binding.
+[stderr] Default inspector port 9229 not available, using 9230 instead
+[stderr] 
+[stdout] Using secrets defined in dist/server/.dev.vars
+[stdout] 11:20:49 [@astrojs/cloudflare] 
+[stdout]  astro  v14.3.1 ready in 107 ms
+[stdout] 
+[stdout] ┃ Local    http://127.0.0.1:4399/
+[stdout] 
+[stdout] ✨ Parsed 1 valid header rule.
+[stdout] GET /api/probe 200 OK (23ms)
+[stdout] GET /api/probe 200 OK (16ms)
+[stdout] GET / 200 OK (23ms)
+[stdout] GET /auth/signin 200 OK (32ms)
+[stdout] GET /dashboard 302 Found (34ms)
+[stdout] POST /api/tasks/checkoff 302 Found (33ms)
+[stdout] POST /api/groups/join 302 Found (20ms)
+--- preview start (env:malformed) ---
+[stdout] 
+[stdout] > 10x-astro-starter@0.0.1 preview
+[stdout] > astro preview --port 4399 --host 127.0.0.1 --ignore-lock
+[stdout] 
+[stdout] 11:21:05 [@astrojs/cloudflare] Enabling image processing with Cloudflare Images for production with the "IMAGES" Images binding.
+[stderr] Default inspector port 9229 not available, using 9230 instead
+[stderr] 
+[stdout] Using secrets defined in dist/server/.dev.vars
+[stdout] 11:21:05 [@astrojs/cloudflare] 
+[stdout]  astro  v14.3.1 ready in 55 ms
+[stdout] 
+[stdout] ┃ Local    http://127.0.0.1:4399/
+[stdout] 
+[stdout] ✨ Parsed 1 valid header rule.
+[stderr] 09:21:06 [ERROR] Error: Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL.
+[stderr]     at validateSupabaseUrl (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:20992:48)
+[stderr]     at new SupabaseClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:21228:19)
+[stderr]     at createClient$1 (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:21483:9)
+[stderr]     at createServerClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:22365:17)
+[stderr]     at createClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:22403:9)
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/virtual_astro_middleware.mjs:14:19
+[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1058:10
+[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1087:13
+[stdout] GET /api/probe 500 Internal Server Error (33ms)
+[stderr] 09:21:07 [ERROR] Error: Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL.
+[stderr]     at validateSupabaseUrl (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:20992:48)
+[stderr]     at new SupabaseClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:21228:19)
+[stderr]     at createClient$1 (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:21483:9)
+[stderr]     at createServerClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:22365:17)
+[stderr]     at createClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:22403:9)
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/virtual_astro_middleware.mjs:14:19
+[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1058:10
+[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1087:13
+[stdout] GET /api/probe 500 Internal Server Error (27ms)
+[stderr] 09:21:09 [ERROR] Error: Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL.
+[stderr]     at validateSupabaseUrl (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:20992:48)
+[stderr]     at new SupabaseClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:21228:19)
+[stderr]     at createClient$1 (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:21483:9)
+[stderr]     at createServerClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:22365:17)
+[stderr]     at createClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:22403:9)
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/virtual_astro_middleware.mjs:14:19
+[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1058:10
+[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1087:13
+[stdout] GET / 500 Internal Server Error (25ms)
+[stderr] 09:21:11 [ERROR] Error: Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL.
+[stderr]     at validateSupabaseUrl (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:20992:48)
+[stderr]     at new SupabaseClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:21228:19)
+[stderr]     at createClient$1 (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:21483:9)
+[stderr]     at createServerClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:22365:17)
+[stderr]     at createClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:22403:9)
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/virtual_astro_middleware.mjs:14:19
+[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1058:10
+[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1087:13
+[stdout] GET /auth/signin 500 Internal Server Error (22ms)
+[stderr] 09:21:13 [ERROR] Error: Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL.
+[stderr]     at validateSupabaseUrl (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:20992:48)
+[stderr]     at new SupabaseClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:21228:19)
+[stderr]     at createClient$1 (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:21483:9)
+[stderr]     at createServerClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:22365:17)
+[stderr]     at createClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:22403:9)
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/virtual_astro_middleware.mjs:14:19
+[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1058:10
+[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1087:13
+[stdout] GET /dashboard 500 Internal Server Error (25ms)
+[stderr] 09:21:15 [ERROR] Error: Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL.
+[stderr]     at validateSupabaseUrl (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:20992:48)
+[stderr]     at new SupabaseClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:21228:19)
+[stderr]     at createClient$1 (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:21483:9)
+[stderr]     at createServerClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:22365:17)
+[stderr]     at createClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:22403:9)
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/virtual_astro_middleware.mjs:14:19
+[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1058:10
+[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1087:13
+[stdout] POST /api/tasks/checkoff 500 Internal Server Error (21ms)
+[stderr] 09:21:17 [ERROR] Error: Invalid supabaseUrl: Must be a valid HTTP or HTTPS URL.
+[stderr]     at validateSupabaseUrl (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:20992:48)
+[stderr]     at new SupabaseClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:21228:19)
+[stderr]     at createClient$1 (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:21483:9)
+[stderr]     at createServerClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:22365:17)
+[stderr]     at createClient (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/supabase_VudKXuMR.mjs:22403:9)
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/virtual_astro_middleware.mjs:14:19
+[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1058:10
+[stderr]     at applyHandle (file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1061:11)
+[stderr]     at file:///home/mariusz/code/streak-board/.claude/worktrees/agent-aa29ab60279009f81/dist/server/chunks/sequence_BUHvf60t.mjs:1087:13
+[stdout] POST /api/groups/join 500 Internal Server Error (31ms)

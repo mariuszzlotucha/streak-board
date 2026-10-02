@@ -1,0 +1,16 @@
+diff --git a/src/middleware.ts b/src/middleware.ts
+index 8333812..996bee3 100644
+--- a/src/middleware.ts
++++ b/src/middleware.ts
+@@ -5,6 +5,11 @@ const PROTECTED_ROUTES = ["/dashboard", "/api/groups", "/api/tasks"];
+ const AUTH_ROUTES = ["/auth/signin", "/auth/signup"];
+ 
+ export const onRequest = defineMiddleware(async (context, next) => {
++  // PROBE-ONLY gate (runtime-probe harness): lets one build show a throw in early middleware. Never ship it.
++  if (context.request.headers.get("x-probe") === "throw-mw") {
++    throw new Error("probe-middleware");
++  }
++
+   const supabase = createClient(context.request.headers, context.cookies);
+ 
+   if (supabase) {
