@@ -1,0 +1,98 @@
+id | baseline | verify | events in verify | console lines base->verify
+C0a | 200 | 200 | - | 1->1
+C0b | 200 | 200 | - | 1->1
+C0c | 200 | 200 | - | 1->1
+J0 | 302 /dashboard | 302 /dashboard | - | 1->1
+C1a | 302 /auth/signin | 503 | auth.unavailable(error) | 1->24
+C1b | 302 /auth/signin | 503 | auth.unavailable(error) | 1->24
+C1c | 302 /auth/signin | 503 | auth.unavailable(error) | 1->24
+C1d | 302 /auth/signin | 503 | auth.unavailable(error) | 1->24
+C1e | 302 /auth/signin | 503 | auth.unavailable(error) | 1->24
+C1f | 302 /auth/signin | 302 /auth/signin | - | 1->1
+C2a | 302 /auth/signin | 503 | auth.unavailable(error) | 1->24
+C2e | 302 /auth/signin | 503 | auth.unavailable(error) | 1->24
+C2c | 302 /auth/signin | 503 | auth.unavailable(error) | 1->24
+C2d | 302 /auth/signin | 503 | auth.unavailable(error) | 1->24
+C2b | 200 | 200 | - | 1->1
+C2h | undefined | undefined | auth.unavailable(error) | 1->24
+C4 | 500 | 500 | checkoff.failed(error) | 7->10
+C5 | 500 | 500 | checkoff.failed(error) | 7->13
+C6 | 403 | 403 | checkoff.forbidden(error) | 1->12
+C6b | 500 | 500 | checkoff.failed(error) | 2->10
+C7 | 403 | 403 | checkoff.not_enrolled(info) | 1->7
+C7b | 200 | 200 | - | 1->1
+C9 | 200 | 200 | uncheck.nothing_removed(info) | 1->7
+C10 | 500 | 500 | uncheck.failed(error) | 7->10
+C10b | 500 | 500 | uncheck.failed(error) | 7->13
+J1 | 302 /dashboard?error=unknown | 302 /dashboard?error=unknown | groups.join.failed(error) | 1->12
+J2 | 302 /dashboard?error=unknown | 302 /dashboard?error=unknown | groups.join.failed(error) | 1->15
+J3 | 302 /dashboard?error=invalid_code | 302 /dashboard?error=invalid_code | - | 1->1
+J3b | 302 /dashboard?error=invalid_code | 302 /dashboard?error=invalid_code | - | 1->1
+J4 | 302 /dashboard?error=already_in_group | 302 /dashboard?error=already_in_group | - | 1->1
+J5 | 302 /dashboard?error=forbidden | 302 /dashboard?error=forbidden | groups.join.failed(error) | 1->15
+J6a | 302 /dashboard | 302 /dashboard | - | 1->1
+J6b | 302 /dashboard | 302 /dashboard | - | 1->1
+J6c | 302 /dashboard | 302 /dashboard | - | 1->1
+J6d | 302 /dashboard | 302 /dashboard | - | 1->1
+P1 | 500 | 500 | request.unhandled(error) | 5->20
+P1b | 500 | 500 | request.unhandled(error) | 5->20
+P1c | 500 | 500 | request.unhandled(error) | 2->10
+P5a | 500 | 500 | - | 12->12
+P5b | 500 | 500 | - | 12->12
+P9a | 200 | 200 | - | 10->10
+P9b | 200 | 200 | - | 2->2
+P9c | 200 | 200 | - | 2->2
+P9d | 200 | 200 | - | 5->5
+P9e | 200 | 200 | - | 2->2
+C3a | 500 | 500 | checkoff.exception(error) | 7->9
+C3b | 500 | 500 | checkoff.exception(error) | 7->13
+C3c | 500 | 500 | checkoff.exception(error) | 7->12
+C3d | 500 | 500 | uncheck.exception(error) | 7->9
+C3e | 500 | 500 | checkoff.exception(error) | 4->11
+C8 | 404 | 404 | checkoff.task_gone(info) | 1->9
+C8b | 404 | 404 | uncheck.task_gone(info) | 1->9
+C11a | 500 | 500 | checkoff.exception(error) | 10->23
+C11b | 500 | 500 | uncheck.exception(error) | 10->23
+C12a | 302 /dashboard | 302 /dashboard | - | 1->1
+C12b | 302 /dashboard?error=unknown | 302 /dashboard?error=unknown | checkoff.failed(error) | 7->10
+C12c | 302 /dashboard?error=forbidden | 302 /dashboard?error=forbidden | checkoff.forbidden(error) | 1->12
+C12d | 302 /dashboard | 302 /dashboard | checkoff.task_gone(info) | 1->9
+C12e | 302 /dashboard?error=unknown | 302 /dashboard?error=unknown | uncheck.failed(error) | 7->10
+C13a | 200 | 200 | - | 7->7
+C13b | 200 | 200 | - | 7->7
+C13c | 200 | 200 | - | 7->7
+C13d | 200 | 200 | - | 7->7
+C13e | 200 | 200 | - | 7->7
+C13f | 200 | 200 | - | 7->7
+J7a | 200 | 200 | - | 7->7
+J7b | 200 | 200 | - | 7->7
+J7c | 200 | 200 | - | 1->1
+J7d | 200 | 200 | - | 1->1
+J8a | 302 /auth/signin | 503 | auth.unavailable(error) | 1->24
+J8b | 302 /auth/signin | 503 | auth.unavailable(error) | 1->24
+J9 | 302 /dashboard?error=unknown | 302 /dashboard?error=unknown | groups.join.exception(error) | 10->23
+P4 | 500 | 500 | - | 1->1
+P7 | 200 | 200 | - | 1->1
+P8 | 200 | 200 | - | 2->2
+P10 | 200 | 200 | - | 3->3
+P3a | 302 / | 302 / | auth.signout.failed(error) | 1->24
+P3b | 302 / | 302 / | auth.signout.failed(error) | 1->24
+P3c | 302 / | 302 / | - | 1->1
+P13a | 500 | 500 | checkoff.exception(error) | 27->29
+P13b | 302 /dashboard?error=forbidden | 302 /dashboard?error=forbidden | groups.join.failed(error) | 21->35
+P13c | 500 | 500 | checkoff.exception(error) | 27->29
+P13d | 200 | 200 | - | 1->1
+P13e | 302 /auth/signin | 302 /auth/signin | - | 21->21
+P13f | 200 | 200 | - | 27->27
+P12a-unset | 200 | 200 | - | 1->1
+P12b-unset | 200 | 200 | - | 1->1
+P12c-unset | 200 | 200 | - | 1->1
+P12d-unset | 302 /auth/signin | 302 /auth/signin | - | 1->1
+P12e-unset | 302 /auth/signin | 302 /auth/signin | - | 1->1
+P12f-unset | 302 /auth/signin | 302 /auth/signin | - | 1->1
+P12a-malformed | 500 | 500 | request.unhandled(error) | 12->34
+P12b-malformed | 500 | 500 | request.unhandled(error) | 12->34
+P12c-malformed | 500 | 500 | request.unhandled(error) | 12->34
+P12d-malformed | 500 | 500 | request.unhandled(error) | 12->34
+P12e-malformed | 500 | 500 | request.unhandled(error) | 12->34
+P12f-malformed | 500 | 500 | request.unhandled(error) | 12->34
