@@ -1,6 +1,9 @@
 import { AuthRetryableFetchError } from "@supabase/supabase-js";
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
+import { captureException, isEnabled } from "@sentry/cloudflare";
 import { reportError, reportInfo, reportMapped, requestFields } from "@/lib/log";
+
+vi.mock("@sentry/cloudflare", () => ({ captureException: vi.fn(), isEnabled: vi.fn() }));
 
 let errorSpy: MockInstance<typeof console.error>;
 let infoSpy: MockInstance<typeof console.info>;
@@ -15,6 +18,8 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.restoreAllMocks();
+  vi.mocked(captureException).mockReset();
+  vi.mocked(isEnabled).mockReset();
 });
 
 describe("reportError", () => {
@@ -149,5 +154,80 @@ describe("requestFields", () => {
     expect(
       requestFields({ request: new Request("https://app.test/"), routePattern: "/", locals: { user: null } }),
     ).toEqual({ route: "/", userId: null, ray: null });
+  });
+});
+
+describe("Sentry capture", () => {
+  it("captures an error report once with the tag, user id, fingerprint and scrubbed extra", () => {
+    vi.mocked(isEnabled).mockReturnValue(true);
+    reportError(
+      "groups.join.failed",
+      { message: "mail jane@example.com", details: "Key (join_code)=(abc123) already exists.", code: "XX000" },
+      { route: "/api/groups/join", userId: "u1", ray: "r1", codeLength: 6 },
+    );
+
+    expect(captureException).toHaveBeenCalledOnce();
+    const [captured, hint] = vi.mocked(captureException).mock.calls[0];
+    expect(captured).toBeInstanceOf(Error);
+    expect(captured).toMatchObject({ name: "SupabaseError", message: "mail [email]" });
+    expect(hint).toMatchObject({
+      level: "error",
+      tags: { event: "groups.join.failed" },
+      user: { id: "u1" },
+      fingerprint: ["groups.join.failed", "XX000"],
+      extra: {
+        route: "/api/groups/join",
+        ray: "r1",
+        codeLength: 6,
+        error: { details: "Key (join_code)=(…) already exists.", code: "XX000" },
+      },
+    });
+    expect(JSON.stringify(hint)).not.toContain("abc123");
+  });
+
+  it("sends the original Error and a fingerprint without a code", () => {
+    vi.mocked(isEnabled).mockReturnValue(true);
+    const error = new TypeError("boom");
+    reportError("x.exception", error);
+
+    expect(captureException).toHaveBeenCalledWith(
+      error,
+      expect.objectContaining({ fingerprint: ["x.exception", "none"], user: undefined }),
+    );
+  });
+
+  it("captures through reportMapped for unknown and forbidden but never for rate_limited", () => {
+    vi.mocked(isEnabled).mockReturnValue(true);
+    reportMapped("x.failed", "unknown", { message: "m", code: "XX000" });
+    reportMapped("x.failed", "rate_limited", { message: "m", code: "over_request_rate_limit" });
+
+    expect(captureException).toHaveBeenCalledOnce();
+  });
+
+  it("does not capture an info report", () => {
+    vi.mocked(isEnabled).mockReturnValue(true);
+    reportInfo("x.stale", { userId: "u1" });
+
+    expect(captureException).not.toHaveBeenCalled();
+  });
+
+  it("does not capture when the SDK is not enabled", () => {
+    vi.mocked(isEnabled).mockReturnValue(false);
+    reportError("x.failed", new Error("boom"));
+
+    expect(captureException).not.toHaveBeenCalled();
+    expect(errorSpy).toHaveBeenCalledOnce();
+  });
+
+  it("still returns and logs when the capture throws", () => {
+    vi.mocked(isEnabled).mockReturnValue(true);
+    vi.mocked(captureException).mockImplementation(() => {
+      throw new Error("sdk down");
+    });
+
+    expect(() => {
+      reportError("x.failed", new Error("boom"));
+    }).not.toThrow();
+    expect(errorSpy).toHaveBeenLastCalledWith("report.failed", "x.failed");
   });
 });

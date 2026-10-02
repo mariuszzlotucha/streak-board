@@ -6,6 +6,9 @@ import { createClient } from "@/lib/supabase";
 // The middleware imports Astro's virtual module and the Supabase client reads `astro:env`; neither exists in Vitest.
 vi.mock("astro:middleware", () => ({ defineMiddleware: (fn: unknown) => fn }));
 vi.mock("@/lib/supabase", () => ({ createClient: vi.fn() }));
+// The request wrapper needs `cloudflare:workers`; here it only runs the handler and records that it did.
+const runWithSentry = vi.hoisted(() => vi.fn((_context: unknown, handler: () => Promise<Response>) => handler()));
+vi.mock("@/lib/sentry", () => ({ runWithSentry }));
 
 const getUser = vi.fn();
 
@@ -41,11 +44,24 @@ let infoSpy: MockInstance<typeof console.info>;
 
 beforeEach(() => {
   getUser.mockReset();
+  runWithSentry.mockClear();
   errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
   infoSpy = vi.spyOn(console, "info").mockImplementation(() => undefined);
 });
 
 describe("middleware", () => {
+  it("runs the whole request through runWithSentry", async () => {
+    const { onRequest } = await loadOnRequest();
+    getUser.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
+    const context = buildContext("/dashboard");
+
+    const response = await onRequest(context, next);
+
+    expect(runWithSentry).toHaveBeenCalledOnce();
+    expect(runWithSentry.mock.calls[0][0]).toBe(context);
+    expect(response.status).toBe(200);
+  });
+
   it("answers 503 JSON and logs auth.unavailable when Auth is down on a protected API path", async () => {
     const { onRequest } = await loadOnRequest();
     getUser.mockResolvedValue({ data: { user: null }, error: new AuthRetryableFetchError("fetch failed", 0) });

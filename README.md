@@ -284,6 +284,13 @@ Server-side failures are reported through `src/lib/log.ts`, never with a bare `c
 - **Reading logs**: `npx wrangler tail --format json` for a live stream, or query Workers Logs by `event` (and `code`, `userId`) in the Cloudflare dashboard.
 - **503 contract**: when the Auth service is unreachable, a protected request answers 503 (`{"ok":false,"error":"unavailable"}` for `Accept: application/json`, a plain page otherwise) with `Retry-After: 30` and an `auth.unavailable` error line, while a missing session still redirects to `/auth/signin` silently.
 - **Adding a Supabase call**: report its returned `error` through the helper (`reportMapped` in a route that maps the code to a redirect); never map `error.code` and drop it.
+- **Sentry**: error-level reports (`reportError`, and `reportMapped` for `unknown` and `forbidden`) are also sent to Sentry through `@sentry/cloudflare`; info lines never are. `src/lib/sentry.ts` wraps each request from the middleware (the adapter's entry point stays), and `src/lib/sentry-options.ts` locks data collection down: no default integrations, no cookies, headers, bodies or query strings, only `user.id`, and a `beforeSend` scrubber. Events group by event name and SQLSTATE; the release is the Worker version id and the environment comes from `SENTRY_ENVIRONMENT` (`production` in `wrangler.jsonc`). With no `SENTRY_DSN` nothing is sent.
+  - Create the Sentry project, then run `npx wrangler secret put SENTRY_DSN` yourself; never put the DSN in the repo, a build variable or a chat.
+  - For a local preview, optionally put `SENTRY_DSN` and `SENTRY_ENVIRONMENT=local` in `.dev.vars` (dev vars win over the config var).
+  - Do not run `npx astro add @sentry/astro` or create `sentry.server.config.js`: its server half loses events on Workers and its Vite plugin touches every build.
+  - Set the key's rate limit and spike protection in Sentry (Dedupe is off, so a burst counts every event against the quota), and add an issue alert rule that mails you, filtered to `environment:production`.
+  - The free quota is second-hand (about 5k errors a month); verify it on sentry.io.
+  - Optional: the Sentry MCP for Claude Code, `claude mcp add --transport http sentry https://mcp.sentry.dev/mcp`.
 
 ## Smoke test
 

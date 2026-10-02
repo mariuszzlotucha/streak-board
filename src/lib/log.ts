@@ -1,3 +1,4 @@
+import { captureException, isEnabled } from "@sentry/cloudflare";
 import { scrubSecrets } from "@/lib/redact";
 
 export type ReportContext = {
@@ -63,12 +64,32 @@ function safely(event: string, write: () => void): void {
   }
 }
 
+// Sends one error-level report to Sentry. A plain PostgREST object has no stack, so it becomes a synthetic Error, and the
+// fingerprint keeps events grouped by event and code instead of by this helper's own frames.
+function captureReport(event: string, error: unknown, context: ReportContext, fields: ErrorFields): void {
+  if (!isEnabled()) return;
+  const { userId, ...rest } = context;
+  const captured =
+    error instanceof Error
+      ? error
+      : Object.assign(new Error(fields.message ?? "unknown error"), { name: "SupabaseError", stack: undefined });
+  captureException(captured, {
+    level: "error",
+    tags: { event },
+    user: userId ? { id: userId } : undefined,
+    extra: { ...rest, error: fields },
+    fingerprint: [event, fields.code ?? "none"],
+  });
+}
+
 /* eslint-disable no-console -- this file is the one place that writes server-side logs */
 
 /** One structured error line: the event, the request ids and the cause with its code and status. */
 export function reportError(event: string, error: unknown, context: ReportContext = {}): void {
   safely(event, () => {
-    console.error({ level: "error", event, ...context, error: errorFields(error) });
+    const fields = errorFields(error);
+    console.error({ level: "error", event, ...context, error: fields });
+    captureReport(event, error, context, fields);
   });
 }
 

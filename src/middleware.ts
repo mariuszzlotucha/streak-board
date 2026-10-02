@@ -1,6 +1,8 @@
+import type { APIContext, MiddlewareNext } from "astro";
 import { defineMiddleware } from "astro:middleware";
 import { resolveAuthState, unavailableResponse } from "@/lib/auth-state";
 import { reportError, requestFields } from "@/lib/log";
+import { runWithSentry } from "@/lib/sentry";
 import { createClient } from "@/lib/supabase";
 
 const PROTECTED_ROUTES = ["/dashboard", "/api/groups", "/api/tasks"];
@@ -9,7 +11,7 @@ const AUTH_ROUTES = ["/auth/signin", "/auth/signup"];
 // Missing configuration is the same on every request, so it is reported once per isolate.
 let reportedNotConfigured = false;
 
-export const onRequest = defineMiddleware(async (context, next) => {
+async function handle(context: APIContext, next: MiddlewareNext): Promise<Response> {
   try {
     const state = await resolveAuthState(createClient(context.request.headers, context.cookies));
     context.locals.user = state.kind === "signed_in" ? state.user : null;
@@ -45,4 +47,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
     reportError("request.unhandled", error, requestFields(context));
     throw error;
   }
-});
+}
+
+// The wrapper sits inside the middleware, so the adapter's entry point stays as it is and everything the middleware
+// calls runs with a client and a scope.
+export const onRequest = defineMiddleware((context, next) => runWithSentry(context, () => handle(context, next)));
