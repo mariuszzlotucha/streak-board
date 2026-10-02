@@ -442,10 +442,10 @@ No migrations. Each phase is code-only and backward compatible; the recovery pat
 
 #### Manual
 
-- [ ] 1.7 With an Auth outage simulated on a signed-in session (the audit's probe harness, or briefly stopping the local Supabase auth container when no other session uses the stack), `/dashboard` answers a 503 page, a "Mark done" tap shows "Could not save. Try again." and rolls back, `npm run preview` prints one `auth.unavailable` object per request, and restoring Auth returns normal behaviour without a restart
+- [x] 1.7 With an Auth outage simulated on a signed-in session (the audit's probe harness, or briefly stopping the local Supabase auth container when no other session uses the stack), `/dashboard` answers a 503 page, a "Mark done" tap shows "Could not save. Try again." and rolls back, `npm run preview` prints one `auth.unavailable` object per request, and restoring Auth returns normal behaviour without a restart
 - [x] 1.8 Normal use on the preview build (sign in, dashboard, check off and undo, sign out, anonymous `/dashboard` redirect to sign-in) prints no `auth.*` or `request.unhandled` lines
-- [ ] 1.9 After the PR is merged, the `release` run is approved in the GitHub `production` environment (this phase has no migration) and the production URL passes the same walk-through; `npx wrangler tail --format json` shows no `auth.*` events during it
-- [ ] 1.10 The date, release run and result are noted in `context/changes/deployment/deployment-plan.md` under a new S-08 entry (Phase 11; S-06 holds Phase 10, take the next free number if another slice landed first)
+- [x] 1.9 After the PR is merged, the `release` run is approved in the GitHub `production` environment (this phase has no migration) and the production URL passes the same walk-through; `npx wrangler tail --format json` shows no `auth.*` events during it
+- [x] 1.10 The date, release run and result are noted in `context/changes/deployment/deployment-plan.md` under a new S-08 entry (Phase 11; S-06 holds Phase 10, take the next free number if another slice landed first)
 
 ### Phase 2: Report returned Supabase errors in routes and check-off outcomes
 
@@ -462,9 +462,9 @@ No migrations. Each phase is code-only and backward compatible; the recovery pat
 #### Manual
 
 - [x] 2.8 `/10x-observability-audit --verify context/audits/observability/2026-10-02_check-off-and-uncheck-join-group.md --runtime` on the phase branch shows: J1, J2 and J5 now log `groups.join.failed`; C6 logs `checkoff.forbidden`; C7, C8 and C9 log info events; the HTTP responses of the touched routes are unchanged; the Phase 1 rows (C1a–C1e, C2a, C2c, C2d, C2e, J8a, J8b) answer 503 with `auth.unavailable` while the control C1f stays a silent 302 and C2b and C2h are unchanged
-- [ ] 2.9 After the release, a signed-in browser-console `fetch` of `/api/tasks/checkoff` with a JSON body produces a `checkoff.exception` entry in Workers Logs whose fields (`event`, `code`, `userId`) are searchable; if the object arrives flattened into one string, `src/lib/log.ts` is switched to one JSON string argument and the change is noted
-- [ ] 2.10 Production check after the release: a member checks off and undoes a task and joins a group with a valid invite; nothing changes for the user
-- [ ] 2.11 The release result is added to the S-08 entry in `context/changes/deployment/deployment-plan.md`
+- [x] 2.9 After the release, a signed-in browser-console `fetch` of `/api/tasks/checkoff` with a JSON body produces a `checkoff.exception` entry in Workers Logs whose fields (`event`, `code`, `userId`) are searchable; if the object arrives flattened into one string, `src/lib/log.ts` is switched to one JSON string argument and the change is noted
+- [x] 2.10 Production check after the release: a member checks off and undoes a task and joins a group with a valid invite; nothing changes for the user
+- [x] 2.11 The release result is added to the S-08 entry in `context/changes/deployment/deployment-plan.md`
 - [x] 2.12 The rule "report every returned Supabase error" is recorded in `context/foundation/lessons.md` with `/10x-lesson` — 5cf7a3c
 
 ### Phase 3: Sentry on the Worker
@@ -480,10 +480,10 @@ No migrations. Each phase is code-only and backward compatible; the recovery pat
 
 #### Manual
 
-- [ ] 3.7 The Workers plan tier is read in the Cloudflare dashboard and noted in `context/changes/deployment/deployment-plan.md`, which resolves the open question behind the 10 ms CPU limit
-- [ ] 3.8 Baseline CPU time (P50, P95 and Max of `$workers.cpuTimeMs` for at least 30 invocations each of `GET /dashboard` and `POST /api/tasks/checkoff`) is read from Workers Logs before this phase's release and noted; a short manual session generates the samples if traffic is low
-- [ ] 3.9 The Sentry project exists and its DSN is set as a Worker secret by the user with `! npx wrangler secret put SENTRY_DSN`, never in the repo; if the DSN was ever shown in a chat, a new client key replaces it and the old one is disabled; the key's rate limit and spike protection are set and an issue alert rule that mails the user exists
-- [ ] 3.10 On the local preview build with the DSN and `SENTRY_ENVIRONMENT=local` in `.dev.vars`, a forced `checkoff.exception` (JSON body to `/api/tasks/checkoff`) appears in Sentry grouped by event and code, and its JSON has no `request` block, cookies, headers, body, query string, e-mail, IP or invite code, only `user.id`, the tags and the scrubbed message
+- [x] 3.7 The Workers plan tier is read in the Cloudflare dashboard and noted in `context/changes/deployment/deployment-plan.md`, which resolves the open question behind the 10 ms CPU limit
+- [x] 3.8 Baseline CPU time (P50, P95 and Max of `$workers.cpuTimeMs` for at least 30 invocations each of `GET /dashboard` and `POST /api/tasks/checkoff`) is read from Workers Logs before this phase's release and noted; a short manual session generates the samples if traffic is low
+- [x] 3.9 The Sentry project exists and its DSN is set as a Worker secret by the user with `! npx wrangler secret put SENTRY_DSN`, never in the repo; if the DSN was ever shown in a chat, a new client key replaces it and the old one is disabled; the key's rate limit and spike protection are set and an issue alert rule that mails the user exists
+- [x] 3.10 On the local preview build with the DSN and `SENTRY_ENVIRONMENT=local` in `.dev.vars`, a forced `checkoff.exception` (JSON body to `/api/tasks/checkoff`) appears in Sentry grouped by event and code, and its JSON has no `request` block, cookies, headers, body, query string, e-mail, IP or invite code, only `user.id`, the tags and the scrubbed message
 - [x] 3.11 After the release, a different forced event (`uncheck.exception`, JSON body to `/api/tasks/uncheck`) arrives from production as a new issue with the Worker version id as release and `production` as environment, and the alert mail arrives (the local `checkoff.exception` has another environment and fingerprint, so it cannot merge with it or suppress the alert)
-- [ ] 3.12 The CPU gate passes on production with the same measurements: no `exceededCpu` outcome or Error 1102, Max under 10 ms on both routes, and P95 within 2 ms of the baseline; otherwise run `npx wrangler rollback`, revert this phase's PR, note the measurement in `deployment-plan.md` and close the slice with Phases 1 and 2 in place
-- [ ] 3.13 `context/changes/deployment/deployment-plan.md` holds the final S-08 entry: versions released, secrets set, CPU readings and plan tier
+- [x] 3.12 The CPU gate passes on production with the same measurements: no `exceededCpu` outcome or Error 1102, Max under 10 ms on both routes, and P95 within 2 ms of the baseline; otherwise run `npx wrangler rollback`, revert this phase's PR, note the measurement in `deployment-plan.md` and close the slice with Phases 1 and 2 in place
+- [x] 3.13 `context/changes/deployment/deployment-plan.md` holds the final S-08 entry: versions released, secrets set, CPU readings and plan tier
