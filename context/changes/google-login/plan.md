@@ -314,12 +314,12 @@ No schema change and no migration. Existing users and their foreign keys are unt
 - [x] 2.7 Locally, `/auth/signin` and `/auth/signup` show "Continue with Google" above an "or" divider and the e-mail form; the layout holds at phone width and keyboard focus is visible — 03e21f5
 - [x] 2.8 Locally, clicking the button ends on GoTrue's JSON error (provider off locally): the app shows no error page and logs no error line — 03e21f5
 - [x] 2.9 The Playwright e2e specs still pass locally — 03e21f5
-- [ ] 2.10 After the merge and the owner's approval, the `release` run finishes `success`, including the new two-hop Google check
-- [ ] 2.11 On production, the owner's existing e-mail account signs in with Google and lands on `/dashboard` as the same user with the same group
-- [ ] 2.12 On production, a Google account without a StreakBoard account lands on `/dashboard` as a new user with the create and join forms
-- [ ] 2.13 On production, an invite opened signed out and followed by "Continue with Google" ends on `/dashboard` with the "Join" card
-- [ ] 2.14 On production, cancelling at the consent screen ends on `/auth/signin` with the cancelled message, and reloading shows no error
-- [ ] 2.15 On production, e-mail+password sign-in and sign-out still work
-- [ ] 2.16 The flows above leave no error-level `auth.google.*` line and no new Sentry issue, and Workers Logs show no `auth.google.callback.returned` line with `providerError=server_error`
-- [ ] 2.17 The Phase 12 section of `deployment-plan.md` records the release result and the manual results, owner-reported rows tagged, and whether the user created by 2.12 was kept or deleted
+- [x] 2.10 After the merge and the owner's approval, the `release` run finishes `success`, including the new two-hop Google check — 827cb19
+- [x] 2.11 On production, the owner's existing e-mail account signs in with Google and lands on `/dashboard` as the same user with the same group — 827cb19
+- [x] 2.12 On production, a Google account without a StreakBoard account lands on `/dashboard` as a new user with the create and join forms — 827cb19
+- [x] 2.13 On production, an invite opened signed out and followed by "Continue with Google" ends on `/dashboard` with the "Join" card — 827cb19
+- [x] 2.14 On production, cancelling at the consent screen ends on `/auth/signin` with the cancelled message, and reloading shows no error — 827cb19
+- [x] 2.15 On production, e-mail+password sign-in and sign-out still work — 827cb19
+- [x] 2.16 The flows above leave no error-level `auth.google.*` line and no new Sentry issue, and Workers Logs show no `auth.google.callback.returned` line with `providerError=server_error` — 827cb19
+- [x] 2.17 The Phase 12 section of `deployment-plan.md` records the release result and the manual results, owner-reported rows tagged, and whether the user created by 2.12 was kept or deleted — 827cb19
 - [ ] 2.18 The closing docs PR is merged
