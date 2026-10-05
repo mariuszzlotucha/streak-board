@@ -1,9 +1,9 @@
 ---
 change_id: google-login
 title: Google login
-status: plan_reviewed
+status: implementing
 created: 2026-10-05
-updated: 2026-10-05
+updated: 2026-10-06
 archived_at: null
 ---
 

@@ -286,17 +286,17 @@ No schema change and no migration. Existing users and their foreign keys are unt
 
 #### Automated
 
-- [ ] 1.1 The provider answers on the hosted project: `curl` of the Supabase `/authorize` URL prints `302` and a `https://accounts.google.com/` URL with `client_id=` and the Supabase callback as `redirect_uri`
-- [ ] 1.2 The edited document is formatted: `npx prettier --check context/changes/deployment/deployment-plan.md`
+- [x] 1.1 The provider answers on the hosted project: `curl` of the Supabase `/authorize` URL prints `302` and a `https://accounts.google.com/` URL with `client_id=` and the Supabase callback as `redirect_uri`
+- [x] 1.2 The edited document is formatted: `npx prettier --check context/changes/deployment/deployment-plan.md`
 
 #### Manual
 
-- [ ] 1.3 "Confirm email" (and phone confirmation, if shown) read in the Supabase Dashboard and reported as on or off
-- [ ] 1.4 Google app: user type External, status Testing, support and developer e-mails set, owner, friends and one extra account without a StreakBoard account listed as test users, scopes unchanged
-- [ ] 1.5 Web client created with the two URIs; the Client secret is stored only in the owner's password manager
-- [ ] 1.6 Supabase Google provider enabled with the client id and secret, both switches off, displayed callback URL equal to the registered redirect URI
-- [ ] 1.7 Supabase Site URL and Redirect URLs read back unchanged
-- [ ] 1.8 The Phase 12 section is committed on the Phase 1 branch with the owner-reported rows tagged as such; its merge to `master` is verified when the Phase 2 branch is cut
+- [x] 1.3 "Confirm email" (and phone confirmation, if shown) read in the Supabase Dashboard and reported as on or off
+- [x] 1.4 Google app: user type External, status Testing, support and developer e-mails set, owner, friends and one extra account without a StreakBoard account listed as test users, scopes unchanged
+- [x] 1.5 Web client created with the two URIs; the Client secret is stored only in the owner's password manager
+- [x] 1.6 Supabase Google provider enabled with the client id and secret, both switches off, displayed callback URL equal to the registered redirect URI
+- [x] 1.7 Supabase Site URL and Redirect URLs read back unchanged
+- [x] 1.8 The Phase 12 section is committed on the Phase 1 branch with the owner-reported rows tagged as such; its merge to `master` is verified when the Phase 2 branch is cut
 
 ### Phase 2: App code, tests, smoke, release check, docs, and the production proof
 
