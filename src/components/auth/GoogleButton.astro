@@ -2,7 +2,7 @@
 import { buttonVariants } from "@/components/ui/button";
 ---
 
-<!-- A plain form, so it works before any island hydrates; it stays outside the e-mail form (no nested forms). -->
+{/* A plain form, so it works before any island hydrates; it stays outside the e-mail form (no nested forms). */}
 <form method="POST" action="/api/auth/google">
   <button type="submit" class:list={[buttonVariants({ variant: "outline" }), "w-full"]}>
     <svg aria-hidden="true" viewBox="0 0 24 24">

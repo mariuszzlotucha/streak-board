@@ -36,6 +36,8 @@ let onceTaskId;
 let tickedPeriod;
 // A well-formed task id that no task has.
 const UNKNOWN_TASK_ID = "00000000-0000-4000-8000-000000000000";
+// A well-formed auth code that no flow state has: the real GoTrue answers it with a stale-flow error.
+const UNKNOWN_FLOW_CODE = "11111111-1111-4111-8111-111111111111";
 // Makes a check-off route answer in JSON instead of redirecting.
 const JSON_ACCEPT = { Accept: "application/json" };
 // What a browser sends with a form submit: `*/*` is no request for JSON, so the check-off routes must redirect.
@@ -136,6 +138,12 @@ function memberRow(memberEmail, marker) {
 // The form the component rendered posts to `route` (the card heading and the serialised island props would not match).
 function formPostingTo(route) {
   return new RegExp(`<form[^>]*action="${escapeRegExp(route)}"`);
+}
+
+// The message inside the rendered alert. A `client:load` island repeats its props (the message too) in the HTML, so a
+// plain substring check would also pass on a page whose alert does not render.
+function alertMessage(text) {
+  return new RegExp(`data-slot="alert-description"[^>]*>\\s*${escapeRegExp(text)}`);
 }
 
 // A member row (<li>) that contains the given email and, after it, a form posting to the remove-member route.
@@ -402,6 +410,25 @@ const steps = [
     { status: 302, locationExact: "/auth/signin?error=oauth_failed" },
   ],
   [
+    // A code without the verifier cookie reaches the real exchange, where the SDK itself refuses before any request.
+    "google return with a code but no verifier cookie ends on signin with oauth_failed",
+    () => request("/auth/google/callback?code=not-a-real-code", { cookie: "" }),
+    { status: 302, locationExact: "/auth/signin?error=oauth_failed" },
+  ],
+  [
+    // The verifier cookies come from a real start and the code is well formed but unknown, so the stack's own GoTrue
+    // answers: that answer has to map to oauth_failed and not to a fault. Without verifier cookies the start answer is
+    // returned instead, which cannot match the expected Location.
+    "google return with the verifier cookie and an unknown code ends on signin with oauth_failed",
+    async () => {
+      const started = await request("/api/auth/google", { method: "POST", form: {}, cookie: "" });
+      const cookie = started.setCookies.map((c) => c.split(";")[0]).join("; ");
+      if (!cookie.includes("-code-verifier=")) return started;
+      return request(`/auth/google/callback?code=${UNKNOWN_FLOW_CODE}`, { cookie });
+    },
+    { status: 302, locationExact: "/auth/signin?error=oauth_failed" },
+  ],
+  [
     "google return after a cancelled consent ends on signin with oauth_cancelled",
     () => request("/auth/google/callback?error=access_denied&error_description=", { cookie: "" }),
     { status: 302, locationExact: "/auth/signin?error=oauth_cancelled" },
@@ -428,12 +455,12 @@ const steps = [
   [
     "signin page shows the cancelled message",
     () => request("/auth/signin?error=oauth_cancelled", { cookie: "" }),
-    { status: 200, bodyIncludes: "Google sign-in was cancelled" },
+    { status: 200, bodyMatches: [alertMessage("Google sign-in was cancelled")] },
   ],
   [
     "signin page shows the failed message",
     () => request("/auth/signin?error=oauth_failed", { cookie: "" }),
-    { status: 200, bodyIncludes: "Google sign-in could not be completed" },
+    { status: 200, bodyMatches: [alertMessage("Google sign-in could not be completed")] },
   ],
   [
     "signin page does not reflect a foreign error",

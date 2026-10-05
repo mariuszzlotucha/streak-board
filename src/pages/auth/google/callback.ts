@@ -1,6 +1,6 @@
 import type { APIRoute } from "astro";
 import { createClient } from "@/lib/supabase";
-import { reportError, reportInfo, requestFields } from "@/lib/log";
+import { reportError, reportInfo, reportMapped, requestFields } from "@/lib/log";
 import { toGoogleExchangeErrorCode, toGoogleReturnErrorCode } from "@/lib/auth-errors";
 
 export const prerender = false;
@@ -40,15 +40,12 @@ export const GET: APIRoute = async (context) => {
     const { error } = await supabase.auth.exchangeCodeForSession(params.get("code") ?? "");
     if (error) {
       const errorCode = toGoogleExchangeErrorCode(error);
-      if (errorCode === "unknown") {
-        reportError("auth.google.callback.failed", error, { ...requestFields(context), status: error.status });
+      const fields = { ...requestFields(context), status: error.status };
+      if (errorCode === "oauth_failed") {
+        // A stale attempt is an expected outcome that `reportMapped` would leave silent.
+        reportInfo("auth.google.callback.failed", { ...fields, outcome: errorCode, code: error.code });
       } else {
-        reportInfo("auth.google.callback.failed", {
-          ...requestFields(context),
-          outcome: errorCode,
-          code: error.code,
-          status: error.status,
-        });
+        reportMapped("auth.google.callback.failed", errorCode, error, fields);
       }
       return context.redirect(`/auth/signin?error=${errorCode}`);
     }

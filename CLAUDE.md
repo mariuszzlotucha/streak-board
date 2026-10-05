@@ -10,7 +10,7 @@ Astro 7 SSR app (`output: "server"` in `astro.config.mjs`) with React 19 islands
 
 - API endpoints: `src/pages/api/auth/{signin,signup,signout,google}.ts` (`google.ts` starts the Google sign-in, a form POST guarded by Astro's origin check), `src/pages/api/groups/{create,join,rename,leave,remove-member,delete}.ts`, `src/pages/api/tasks/{create,update,delete,join,leave,checkoff,uncheck}.ts`
 - Auth pages: `src/pages/auth/{signin,signup,confirm-email}.astro`; both sign-in and sign-up render `src/components/auth/GoogleButton.astro` ("Continue with Google", a plain form posting to `/api/auth/google`)
-- Auth return routes (public GETs): `src/pages/auth/callback.ts` (e-mail confirmation link; every failure ends on `/auth/signin?error=link_expired`) and `src/pages/auth/google/callback.ts` (Google sign-in; cancellation, a stale attempt and a failure end on `/auth/signin?error=oauth_cancelled|oauth_failed|unknown`, mapped by `src/lib/auth-errors.ts`, never reflecting provider text)
+- Auth return routes (public GETs): `src/pages/auth/callback.ts` (e-mail confirmation link; every exchange failure ends on `/auth/signin?error=link_expired`) and `src/pages/auth/google/callback.ts` (Google sign-in; cancellation, a stale attempt and a failure end on `/auth/signin` with a fixed code from `src/lib/auth-errors.ts`, never reflecting provider text)
 - Protected group hub: `src/pages/dashboard.astro`
 - Public invite route: `src/pages/join/[code].ts` (stores the code in a cookie and redirects to `/dashboard`)
 

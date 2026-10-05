@@ -186,7 +186,7 @@ jobs:
           probe() { curl -s -o /dev/null --max-time 20 -w '%{http_code} %{redirect_url}' "$@" || true; }
           authorize=""
           for i in 1 2 3; do
-            read -r code location <<< "$(probe -X POST -H "Origin: $base" "$base/api/auth/google")"
+            read -r code location <<< "$(probe -X POST -d '' -H "Origin: $base" "$base/api/auth/google")"
             case "$code $location" in
               "302 https://"*"/auth/v1/authorize?provider=google"*) authorize="$location"; break ;;
             esac

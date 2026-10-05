@@ -17,7 +17,7 @@ function callback(query: string) {
   const url = new URL(`http://localhost:4321/auth/google/callback${query}`);
   const context = {
     url,
-    request: new Request(url),
+    request: new Request(url, { headers: { cookie: "sb-test-code-verifier=abc" } }),
     routePattern: "/auth/google/callback",
     locals: { user: null },
     cookies,
@@ -164,6 +164,17 @@ describe("GET /auth/google/callback exchange", () => {
     expectCookiesUntouched();
   });
 
+  it("builds the Supabase client from the request's own headers and the Astro cookies", async () => {
+    exchangeCodeForSession.mockResolvedValue({ data: {}, error: null });
+
+    await callback("?code=abc");
+
+    expect(createClient).toHaveBeenCalledOnce();
+    const [headers, passedCookies] = vi.mocked(createClient).mock.calls[0];
+    expect(headers.get("cookie")).toBe("sb-test-code-verifier=abc");
+    expect(passedCookies).toBe(cookies);
+  });
+
   it.each([
     ["flow_state_not_found", 404],
     ["flow_state_expired", 422],
@@ -220,6 +231,7 @@ describe("GET /auth/google/callback exchange", () => {
       level: "error",
       event: "auth.google.callback.failed",
       route: "/auth/google/callback",
+      outcome: "unknown",
       status: 500,
       error: { code: "unexpected_failure" },
     });

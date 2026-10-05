@@ -19,7 +19,7 @@ export const POST: APIRoute = async (context) => {
 
     if (error || !data.url) {
       // The URL carries the PKCE challenge and is never reported.
-      reportError("auth.google.start_failed", error ?? new Error("signInWithOAuth returned no URL"), {
+      reportError("auth.google.start.failed", error ?? new Error("signInWithOAuth returned no URL"), {
         ...requestFields(context),
         status: error?.status,
       });
@@ -28,7 +28,7 @@ export const POST: APIRoute = async (context) => {
 
     return context.redirect(data.url);
   } catch (error) {
-    reportError("auth.google.start_exception", error, requestFields(context));
+    reportError("auth.google.start.exception", error, requestFields(context));
     return context.redirect("/auth/signin?error=unknown");
   }
 };

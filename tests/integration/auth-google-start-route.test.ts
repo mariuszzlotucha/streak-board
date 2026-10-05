@@ -16,10 +16,10 @@ const AUTHORIZE_URL = "https://project.supabase.co/auth/v1/authorize?provider=go
 let errorSpy: MockInstance<typeof console.error>;
 let infoSpy: MockInstance<typeof console.info>;
 
-function start() {
-  const url = new URL("http://localhost:4321/api/auth/google");
+function start(requestUrl = "http://localhost:4321/api/auth/google") {
+  const url = new URL(requestUrl);
   const context = {
-    request: new Request(url, { method: "POST" }),
+    request: new Request(url, { method: "POST", headers: { cookie: "sb-test-code-verifier=abc" } }),
     routePattern: "/api/auth/google",
     locals: { user: null },
     cookies,
@@ -60,6 +60,28 @@ describe("POST /api/auth/google", () => {
     expect(infoSpy).not.toHaveBeenCalled();
   });
 
+  it("builds the Supabase client from the request's own headers and the Astro cookies", async () => {
+    signInWithOAuth.mockResolvedValue({ data: { provider: "google", url: AUTHORIZE_URL }, error: null });
+
+    await start();
+
+    expect(createClient).toHaveBeenCalledOnce();
+    const [headers, passedCookies] = vi.mocked(createClient).mock.calls[0];
+    expect(headers.get("cookie")).toBe("sb-test-code-verifier=abc");
+    expect(passedCookies).toBe(cookies);
+  });
+
+  it("asks for the return route on whichever origin the request came in on", async () => {
+    signInWithOAuth.mockResolvedValue({ data: { provider: "google", url: AUTHORIZE_URL }, error: null });
+
+    await start("https://streakboard.app/api/auth/google");
+
+    expect(signInWithOAuth).toHaveBeenCalledExactlyOnceWith({
+      provider: "google",
+      options: { redirectTo: "https://streakboard.app/auth/google/callback" },
+    });
+  });
+
   it("sets and clears no cookie of its own", async () => {
     signInWithOAuth.mockResolvedValue({ data: { provider: "google", url: AUTHORIZE_URL }, error: null });
 
@@ -69,7 +91,7 @@ describe("POST /api/auth/google", () => {
     expect(cookies.delete).not.toHaveBeenCalled();
   });
 
-  it("redirects with unknown and logs auth.google.start_failed for a returned error", async () => {
+  it("redirects with unknown and logs auth.google.start.failed for a returned error", async () => {
     // The URL is deliberately present next to the error: a report that carried the response data would leak it.
     signInWithOAuth.mockResolvedValue({
       data: { provider: "google", url: AUTHORIZE_URL },
@@ -81,7 +103,7 @@ describe("POST /api/auth/google", () => {
     expect(response.headers.get("location")).toBe("/auth/signin?error=unknown");
     expect(errorSpy).toHaveBeenCalledOnce();
     expect(errorSpy.mock.calls[0][0]).toMatchObject({
-      event: "auth.google.start_failed",
+      event: "auth.google.start.failed",
       route: "/api/auth/google",
       status: 400,
       error: { code: "validation_failed" },
@@ -89,18 +111,18 @@ describe("POST /api/auth/google", () => {
     expectNoUrlInLogs();
   });
 
-  it("redirects with unknown and logs auth.google.start_failed when Supabase returns no URL", async () => {
+  it("redirects with unknown and logs auth.google.start.failed when Supabase returns no URL", async () => {
     signInWithOAuth.mockResolvedValue({ data: { provider: "google", url: null }, error: null });
 
     const response = await start();
 
     expect(response.headers.get("location")).toBe("/auth/signin?error=unknown");
     expect(errorSpy).toHaveBeenCalledOnce();
-    expect(errorSpy.mock.calls[0][0]).toMatchObject({ event: "auth.google.start_failed", route: "/api/auth/google" });
+    expect(errorSpy.mock.calls[0][0]).toMatchObject({ event: "auth.google.start.failed", route: "/api/auth/google" });
     expectNoUrlInLogs();
   });
 
-  it("redirects with unknown and logs auth.google.start_exception when the call throws", async () => {
+  it("redirects with unknown and logs auth.google.start.exception when the call throws", async () => {
     signInWithOAuth.mockRejectedValue(new Error("network down"));
 
     const response = await start();
@@ -108,7 +130,7 @@ describe("POST /api/auth/google", () => {
     expect(response.headers.get("location")).toBe("/auth/signin?error=unknown");
     expect(errorSpy).toHaveBeenCalledOnce();
     expect(errorSpy.mock.calls[0][0]).toMatchObject({
-      event: "auth.google.start_exception",
+      event: "auth.google.start.exception",
       route: "/api/auth/google",
       error: { message: "network down" },
     });

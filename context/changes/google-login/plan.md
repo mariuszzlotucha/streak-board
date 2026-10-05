@@ -302,18 +302,18 @@ No schema change and no migration. Existing users and their foreign keys are unt
 
 #### Automated
 
-- [x] 2.1 Linting passes: `npm run lint`
-- [x] 2.2 Type check passes: `npx astro check`
-- [x] 2.3 Build passes: `npm run build`
-- [x] 2.4 Unit and integration tests pass, including the new and updated ones, with the local stack running: `npm test`
-- [x] 2.5 Smoke passes against the production preview with the new steps, with the local stack running
-- [x] 2.6 The new mapping functions survive a narrowed mutation run, survivors reviewed one by one
+- [x] 2.1 Linting passes: `npm run lint` — 03e21f5
+- [x] 2.2 Type check passes: `npx astro check` — 03e21f5
+- [x] 2.3 Build passes: `npm run build` — 03e21f5
+- [x] 2.4 Unit and integration tests pass, including the new and updated ones, with the local stack running: `npm test` — 03e21f5
+- [x] 2.5 Smoke passes against the production preview with the new steps, with the local stack running — 03e21f5
+- [x] 2.6 The new mapping functions survive a narrowed mutation run, survivors reviewed one by one — 03e21f5
 
 #### Manual
 
-- [x] 2.7 Locally, `/auth/signin` and `/auth/signup` show "Continue with Google" above an "or" divider and the e-mail form; the layout holds at phone width and keyboard focus is visible
-- [x] 2.8 Locally, clicking the button ends on GoTrue's JSON error (provider off locally): the app shows no error page and logs no error line
-- [x] 2.9 The Playwright e2e specs still pass locally
+- [x] 2.7 Locally, `/auth/signin` and `/auth/signup` show "Continue with Google" above an "or" divider and the e-mail form; the layout holds at phone width and keyboard focus is visible — 03e21f5
+- [x] 2.8 Locally, clicking the button ends on GoTrue's JSON error (provider off locally): the app shows no error page and logs no error line — 03e21f5
+- [x] 2.9 The Playwright e2e specs still pass locally — 03e21f5
 - [ ] 2.10 After the merge and the owner's approval, the `release` run finishes `success`, including the new two-hop Google check
 - [ ] 2.11 On production, the owner's existing e-mail account signs in with Google and lands on `/dashboard` as the same user with the same group
 - [ ] 2.12 On production, a Google account without a StreakBoard account lands on `/dashboard` as a new user with the create and join forms
