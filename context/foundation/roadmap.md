@@ -3,7 +3,7 @@ project: "StreakBoard"
 version: 1
 status: draft
 created: 2026-09-24
-updated: 2026-10-02
+updated: 2026-10-05
 prd_version: 1
 main_goal: market-feedback
 top_blocker: time
@@ -48,7 +48,7 @@ Grono znajomych korzystało wcześniej ze wspólnego arkusza Google, w którym r
 | ID   | Change ID                      | Outcome (user can …)                                                                                                                | Prerequisites                                           | PRD refs                           | Status   |
 | ---- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ---------------------------------- | -------- |
 | S-06 | custom-domain                  | wejść na aplikację pod domeną `streakboard.app`; rejestracja, logowanie i link potwierdzający działają na tej domenie               | domena `streakboard.app` w Cloudflare (Registrar i DNS) | — (operacyjne; MS-01)              | done     |
-| S-07 | google-login                   | zarejestrować się i zalogować kontem Google, bez ustawiania hasła                                                                   | S-06                                                    | FR-001 (OAuth/passwordless); MS-06 | proposed |
+| S-07 | google-login                   | zarejestrować się i zalogować kontem Google, bez ustawiania hasła                                                                   | S-06                                                    | FR-001 (OAuth/passwordless); MS-06 | planning |
 | S-08 | observability-swallowed-errors | (jakościowy) awaria w krytycznym przepływie nie jest połykana ani zamieniana na sukces: trafia do odpowiedzi API i do monitoringu   | —                                                       | — (jakościowe; MS-05)              | done     |
 | S-09 | landing-page                   | zobaczyć jako niezalogowany stronę startową, która tłumaczy, czym jest aplikacja, i prowadzi do rejestracji lub logowania           | S-06, S-07                                              | — (UI; MS-03)                      | proposed |
 | S-10 | test-coverage                  | (jakościowy) zmiany w aplikacji są chronione testami wybranymi według ryzyka, a jakość testów jednostkowych jest mierzona mutacjami | —                                                       | — (jakościowe; MS-02)              | ready    |
@@ -111,7 +111,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
   - Czy ekran zgody Google wymaga od domeny strony głównej i polityki prywatności (a więc czy S-09 musi powstać wcześniej, czy wystarczy przejściowy opis)? — Owner: user. Block: no — rozstrzyga `/10x-research`.
 - **Źródło zakresu:** opis użytkownika (MS-06) i FR-001 z PRD („email/OAuth/passwordless"); praca z krokami ręcznymi właściciela po stronie Google i Supabase (projekt i klient OAuth, ekran zgody; sekret klienta wyłącznie w panelu Supabase, nigdy w repozytorium ani w czacie).
 - **Risk:** Konfiguracja po trzech stronach (Google, Supabase, aplikacja), a pełnego przepływu nie da się przejść lokalnie ani w smoke bez prawdziwego konta Google, więc weryfikacja produkcyjna jest częścią zamknięcia. Kod zaproszenia zapamiętany w cookie przed logowaniem musi przetrwać przekierowanie do Google i z powrotem, a callback logowania zamienia dziś każdy błąd na stały komunikat o wygasłym linku, co dla Google byłoby mylące. Idzie zaraz po S-06, bo adresy przekierowań i ekran zgody konfiguruje się raz, na docelowej domenie; omija wysyłkę e-maili potwierdzających, z którą były problemy w M-1.
-- **Status:** proposed
+- **Status:** planning
 
 ### S-08: Awarie krytycznego przepływu nie są połykane
 
