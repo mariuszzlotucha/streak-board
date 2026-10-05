@@ -36,6 +36,8 @@ let onceTaskId;
 let tickedPeriod;
 // A well-formed task id that no task has.
 const UNKNOWN_TASK_ID = "00000000-0000-4000-8000-000000000000";
+// A well-formed auth code that no flow state has: the real GoTrue answers it with a stale-flow error.
+const UNKNOWN_FLOW_CODE = "11111111-1111-4111-8111-111111111111";
 // Makes a check-off route answer in JSON instead of redirecting.
 const JSON_ACCEPT = { Accept: "application/json" };
 // What a browser sends with a form submit: `*/*` is no request for JSON, so the check-off routes must redirect.
@@ -136,6 +138,12 @@ function memberRow(memberEmail, marker) {
 // The form the component rendered posts to `route` (the card heading and the serialised island props would not match).
 function formPostingTo(route) {
   return new RegExp(`<form[^>]*action="${escapeRegExp(route)}"`);
+}
+
+// The message inside the rendered alert. A `client:load` island repeats its props (the message too) in the HTML, so a
+// plain substring check would also pass on a page whose alert does not render.
+function alertMessage(text) {
+  return new RegExp(`data-slot="alert-description"[^>]*>\\s*${escapeRegExp(text)}`);
 }
 
 // A member row (<li>) that contains the given email and, after it, a form posting to the remove-member route.
@@ -353,6 +361,132 @@ const steps = [
     "signin page shows the expired-link message",
     () => request("/auth/signin?error=link_expired"),
     { status: 200, bodyIncludes: "expired or was already used" },
+  ],
+  // The Google flow without Google: only the app's own side can be asserted here (the provider is off on the local
+  // stack and no step leaves the app). Every request uses `cookie` so user A's jar is never touched.
+  [
+    // The server-side call only builds the Supabase URL, so this holds with the provider disabled. The verifier cookie
+    // has to be on this same response, or the return could never be exchanged.
+    "google start redirects to the Supabase authorize URL with a challenge and sets the verifier cookie",
+    () => request("/api/auth/google", { method: "POST", form: {}, cookie: "" }),
+    {
+      status: 302,
+      locationIncludes: [
+        "/auth/v1/authorize?provider=google",
+        `redirect_to=${encodeURIComponent(`${BASE_URL}/auth/google/callback`)}`,
+        "code_challenge=",
+      ],
+      setCookie: "-code-verifier=",
+    },
+  ],
+  [
+    // The same-origin start above answers 302, so a 403 here can only come from the Origin check.
+    "google start from a foreign origin is rejected",
+    () => request("/api/auth/google", { method: "POST", form: {}, cookie: "", origin: FOREIGN_ORIGIN }),
+    { status: 403, setCookieExcludes: "-code-verifier" },
+  ],
+  [
+    // Safe methods skip the Origin check, so a GET handler would let any site start a sign-in for the visitor.
+    "google start does not answer GET",
+    () => request("/api/auth/google", { cookie: "" }),
+    { status: 404 },
+  ],
+  [
+    // The Google round trip must not lose a pending invite: the start route neither sets nor clears `join_code`. The
+    // redirect and the verifier cookie prove the request went through the whole route, so the missing cookie is not an
+    // artefact of an early exit.
+    "google start leaves the join_code cookie alone",
+    () => request("/api/auth/google", { method: "POST", form: {}, cookie: "join_code=0123abcd" }),
+    {
+      status: 302,
+      locationIncludes: "/auth/v1/authorize?provider=google",
+      setCookie: "-code-verifier=",
+      setCookieExcludes: "join_code",
+    },
+  ],
+  [
+    "google return without parameters ends on signin with oauth_failed",
+    () => request("/auth/google/callback", { cookie: "" }),
+    { status: 302, locationExact: "/auth/signin?error=oauth_failed" },
+  ],
+  [
+    // A code without the verifier cookie reaches the real exchange, where the SDK itself refuses before any request.
+    "google return with a code but no verifier cookie ends on signin with oauth_failed",
+    () => request("/auth/google/callback?code=not-a-real-code", { cookie: "" }),
+    { status: 302, locationExact: "/auth/signin?error=oauth_failed" },
+  ],
+  [
+    // The verifier cookies come from a real start and the code is well formed but unknown, so the stack's own GoTrue
+    // answers: that answer has to map to oauth_failed and not to a fault. Without verifier cookies the start answer is
+    // returned instead, which cannot match the expected Location.
+    "google return with the verifier cookie and an unknown code ends on signin with oauth_failed",
+    async () => {
+      const started = await request("/api/auth/google", { method: "POST", form: {}, cookie: "" });
+      const cookie = started.setCookies.map((c) => c.split(";")[0]).join("; ");
+      if (!cookie.includes("-code-verifier=")) return started;
+      return request(`/auth/google/callback?code=${UNKNOWN_FLOW_CODE}`, { cookie });
+    },
+    { status: 302, locationExact: "/auth/signin?error=oauth_failed" },
+  ],
+  [
+    "google return after a cancelled consent ends on signin with oauth_cancelled",
+    () => request("/auth/google/callback?error=access_denied&error_description=", { cookie: "" }),
+    { status: 302, locationExact: "/auth/signin?error=oauth_cancelled" },
+  ],
+  [
+    // `error_code` marks a refusal after Supabase loaded the state, which is not a user's cancellation.
+    "google return after a refusal with an error_code ends on signin with unknown",
+    () => request("/auth/google/callback?error=access_denied&error_code=signup_disabled", { cookie: "" }),
+    { status: 302, locationExact: "/auth/signin?error=unknown" },
+  ],
+  // Supabase answers an expired, unknown or used flow state on the Site URL root, where nothing else would show it.
+  ...["bad_oauth_state", "bad_oauth_callback", "flow_state_already_used"].map((errorCode) => [
+    `home with error_code=${errorCode} ends on signin with oauth_failed`,
+    () => request(`/?error_code=${errorCode}`, { cookie: "" }),
+    { status: 302, locationExact: "/auth/signin?error=oauth_failed" },
+  ]),
+  [
+    // Only the three flow-state codes redirect; the landing page keeps answering for any other query.
+    "home with an unrelated error_code still renders",
+    () => request("/?error_code=something_else", { cookie: "" }),
+    { status: 200 },
+  ],
+  ["home without a query still renders", () => request("/", { cookie: "" }), { status: 200 }],
+  [
+    "signin page shows the cancelled message",
+    () => request("/auth/signin?error=oauth_cancelled", { cookie: "" }),
+    { status: 200, bodyMatches: [alertMessage("Google sign-in was cancelled")] },
+  ],
+  [
+    "signin page shows the failed message",
+    () => request("/auth/signin?error=oauth_failed", { cookie: "" }),
+    { status: 200, bodyMatches: [alertMessage("Google sign-in could not be completed")] },
+  ],
+  [
+    "signin page does not reflect a foreign error",
+    () => request("/auth/signin?error=Injected%20message", { cookie: "" }),
+    { status: 200, bodyExcludes: "Injected message" },
+  ],
+  [
+    // The button also says "Continue with Google", so only the hint's own wording proves the message changed.
+    "signin page adds the Google hint to the invalid-credentials message",
+    () => request("/auth/signin?error=invalid_credentials", { cookie: "" }),
+    { status: 200, bodyIncludes: "If you signed up with Google" },
+  ],
+  [
+    "signup page adds the Google hint to the duplicate-email message",
+    () => request("/auth/signup?error=email_taken", { cookie: "" }),
+    { status: 200, bodyIncludes: "if you signed up with it" },
+  ],
+  [
+    "signin page offers Continue with Google through a form posting to the start route",
+    () => request("/auth/signin", { cookie: "" }),
+    { status: 200, bodyIncludes: "Continue with Google", bodyMatches: [formPostingTo("/api/auth/google")] },
+  ],
+  [
+    "signup page offers Continue with Google through a form posting to the start route",
+    () => request("/auth/signup", { cookie: "" }),
+    { status: 200, bodyIncludes: "Continue with Google", bodyMatches: [formPostingTo("/api/auth/google")] },
   ],
   [
     "signup creates account",
@@ -1625,7 +1759,9 @@ for (const [name, run, expectation] of steps) {
     actual.status === expected.status &&
     (expected.location === undefined || actual.location.startsWith(expected.location)) &&
     (expected.locationExact === undefined || actual.location === expected.locationExact) &&
+    [expected.locationIncludes ?? []].flat().every((text) => actual.location.includes(text)) &&
     (expected.setCookie === undefined || actual.setCookies.some((c) => c.includes(expected.setCookie))) &&
+    [expected.setCookieExcludes ?? []].flat().every((text) => !actual.setCookies.some((c) => c.includes(text))) &&
     (expected.header === undefined ||
       (actual.headers.get(expected.header.name) ?? "")
         .toLowerCase()
@@ -1639,7 +1775,12 @@ for (const [name, run, expectation] of steps) {
     failed++;
     console.log(
       `      expected ${expected.status} ${expected.locationExact ?? expected.location ?? ""}` +
+        (expected.locationIncludes ? ` Location including ${JSON.stringify(expected.locationIncludes)}` : "") +
         (expected.setCookie ? ` Set-Cookie including "${expected.setCookie}"` : "") +
+        // Only the cookie names are printed: a value may be a session or a code verifier.
+        (expected.setCookieExcludes
+          ? ` no Set-Cookie including ${JSON.stringify(expected.setCookieExcludes)} (got names ${JSON.stringify(actual.setCookies.map((c) => c.split("=")[0]))})`
+          : "") +
         (expected.header
           ? ` header ${expected.header.name} including "${expected.header.includes}" (got "${actual.headers.get(expected.header.name) ?? ""}")`
           : "") +

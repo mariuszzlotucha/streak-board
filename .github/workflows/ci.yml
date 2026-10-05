@@ -179,3 +179,31 @@ jobs:
             */auth/signin?error=link_expired) ;;
             *) echo "Expected /auth/callback to redirect to /auth/signin?error=link_expired, got $location"; exit 1 ;;
           esac
+          # The Google flow, anonymously and in two hops. The start route has to reach Supabase's authorize endpoint, and that
+          # endpoint has to redirect to Google: a disabled provider or a missing client id or secret answers a JSON 400
+          # instead. Each hop is tried up to 3 times, 3 s apart, and only the third failed try fails the step. Hop 2 makes
+          # Supabase store one short-lived flow state per run.
+          probe() { curl -s -o /dev/null --max-time 20 -w '%{http_code} %{redirect_url}' "$@" || true; }
+          authorize=""
+          for i in 1 2 3; do
+            read -r code location <<< "$(probe -X POST -d '' -H "Origin: $base" "$base/api/auth/google")"
+            case "$code $location" in
+              "302 https://"*"/auth/v1/authorize?provider=google"*) authorize="$location"; break ;;
+            esac
+            if [ "$i" = "3" ]; then
+              echo "Expected $base/api/auth/google to redirect to https://*/auth/v1/authorize?provider=google*, got $code $location"
+              exit 1
+            fi
+            sleep 3
+          done
+          for i in 1 2 3; do
+            read -r code location <<< "$(probe "$authorize")"
+            case "$code $location" in
+              "302 https://accounts.google.com/"*) break ;;
+            esac
+            if [ "$i" = "3" ]; then
+              echo "Expected the Supabase authorize URL to redirect to https://accounts.google.com/*, got $code $location"
+              exit 1
+            fi
+            sleep 3
+          done

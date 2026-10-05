@@ -146,14 +146,18 @@ Users can then sign in immediately after sign-up without clicking a confirmation
 
 ### Auth routes
 
-| Route                 | Description                                                          |
-| --------------------- | -------------------------------------------------------------------- |
-| `/auth/signin`        | Email/password sign-in form                                          |
-| `/auth/signup`        | Email/password sign-up form                                          |
-| `/auth/confirm-email` | Post-signup "check your inbox" page                                  |
-| `/dashboard`          | Protected group hub (redirects to `/auth/signin` if unauthenticated) |
+| Route                   | Description                                                                                                                                                                         |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/auth/signin`          | Email/password sign-in form, with "Continue with Google" above it                                                                                                                   |
+| `/auth/signup`          | Email/password sign-up form, with "Continue with Google" above it                                                                                                                   |
+| `/auth/confirm-email`   | Post-signup "check your inbox" page                                                                                                                                                 |
+| `POST /api/auth/google` | Starts the Google sign-in (the button's form): redirects to Supabase's authorize URL and sets the PKCE code verifier cookie on the same response; `GET` answers 404                 |
+| `/auth/google/callback` | Return from Google (`GET`): exchanges the `code` and continues to `/dashboard`; cancellation, a stale attempt and a failure end on `/auth/signin?error=<code>` with a fixed message |
+| `/dashboard`            | Protected group hub (redirects to `/auth/signin` if unauthenticated)                                                                                                                |
 
 Route protection is handled in `src/middleware.ts`. Add paths to the `PROTECTED_ROUTES` array there to require authentication.
+
+The Google provider is off on the local stack (`supabase/config.toml` has no `[auth.external.google]`, and no Google credentials are used locally), so locally the "Continue with Google" button ends on GoTrue's JSON error from the local Supabase. That is expected; the start and return routes are covered by the Vitest tests and the smoke script instead, and the whole flow is checked on production.
 
 ### Group routes
 
@@ -199,7 +203,7 @@ This project deploys to [Cloudflare Workers](https://workers.cloudflare.com/) th
 
 1. Merge the PR to `master`. The `ci`, `smoke` and `integration` jobs run first.
 2. When all three pass, the `release` job waits for approval in the GitHub `production` environment (Actions run page → **Review deployments**). **Before approving, check `supabase/migrations/` in the merge commit**: the approval comes before the job prints `supabase migration list`, so this is the moment to see which migrations will reach production.
-3. After approval the job runs in this order: link the hosted Supabase project, `supabase migration list`, `npm run build` (so a build failure cannot leave the schema ahead), `supabase db push --yes` (schema before code), `npx wrangler deploy`, and finally checks the live URL (`/` must answer 200, `/dashboard` and `/auth/callback` must answer 302 to `/auth/signin`).
+3. After approval the job runs in this order: link the hosted Supabase project, `supabase migration list`, `npm run build` (so a build failure cannot leave the schema ahead), `supabase db push --yes` (schema before code), `npx wrangler deploy`, and finally checks the live URL (`/` must answer 200, `/dashboard` and `/auth/callback` must answer 302 to `/auth/signin`, and the Google flow must answer in two hops: `POST /api/auth/google` 302 to Supabase's `/auth/v1/authorize?provider=google`, and that URL 302 to `https://accounts.google.com/`; each hop is tried up to 3 times).
 4. If a release fails, fix the cause and re-run the failed jobs from the Actions run page: `db push` is idempotent and skips migrations that are already applied.
 
 The `release` job runs only on pushes to `master` (never on pull requests), and releases are serialised (`concurrency: release`), so two pushes cannot interleave migrations; if a newer push queues while an older release still waits for approval, the older run is superseded.
@@ -254,8 +258,9 @@ Confirmation e-mails are sent through Resend SMTP (configured in the Supabase Da
 These settings live only in the Supabase Dashboard of the hosted project. `supabase/config.toml` configures just the local stack and `supabase db push` does not push it, so nothing in the repo sets them and they must be checked by hand after changing the production URL:
 
 - **Site URL** (Authentication → URL Configuration): the production address, `https://streakboard.app`. Without it confirmation links point to the default `http://localhost:3000`.
-- **Redirect URLs** (same page): `https://streakboard.app/**`. Sign-up sends `emailRedirectTo` = `<origin>/auth/callback`; if it is missing from this allow-list Supabase silently falls back to the Site URL and the user is not signed in after confirming.
+- **Redirect URLs** (same page): `https://streakboard.app/**`. Sign-up sends `emailRedirectTo` = `<origin>/auth/callback` and the Google start route sends `redirectTo` = `<origin>/auth/google/callback` (both covered by the wildcard); if either is missing from this allow-list Supabase silently falls back to the Site URL and the user is not signed in.
 - **Custom SMTP** (Authentication → SMTP Settings): Resend credentials for the sender domain above. The built-in Supabase SMTP has a low rate limit (`over_email_send_rate_limit`).
+- **Google provider** (Authentication → Sign In / Providers → Google): enabled with the Client ID and Client secret of a Web application client created in the Google Cloud Console (Google Auth Platform, publishing status **Testing**). The Client ID and secret are entered only in this Dashboard form, never in the repo, CI or chat. The client's authorized redirect URI is Supabase's own callback, `https://<project-ref>.supabase.co/auth/v1/callback`; the wildcard Redirect URL above covers the app's `/auth/google/callback`. In Testing every person who should sign in must be listed as a test user in the Google console (limit 100). Publishing the app (Testing to In production) is gated on a public privacy policy page, which does not exist yet (it belongs to the landing-page slice, S-09). A wrong, rotated or deleted client secret reaches the user as "Something went wrong" and shows only as an `auth.google.callback.returned` info line with `providerError=server_error` in Workers Logs, not in Sentry.
 
 ### Custom domain
 
@@ -294,7 +299,7 @@ Server-side failures are reported through `src/lib/log.ts`, never with a bare `c
 
 ## Smoke test
 
-`scripts/smoke.mjs` is a dependency-free Node script that walks the auth flow (sign-up, sign-in, protected page, sign-out), the group flow and the task flow (create, rename, join, leave, check off, undo, delete) over HTTP. The group and task parts use three signed-up users (an owner and two members) with separate sessions: create, invite link, join, member view, rename, leave, remove member and delete group, including the rejected attempts (a member trying owner actions, malformed input, foreign-origin and GET requests). The check-off steps assert the page after each action (the row, the streak and the Leaderboard totals), the JSON period against an independent Warsaw-date oracle, and that leaving a task erases its history. Run it against the dev server or the production preview after dependency upgrades:
+`scripts/smoke.mjs` is a dependency-free Node script that walks the auth flow (sign-up, sign-in, protected page, sign-out), the group flow and the task flow (create, rename, join, leave, check off, undo, delete) over HTTP. The group and task parts use three signed-up users (an owner and two members) with separate sessions: create, invite link, join, member view, rename, leave, remove member and delete group, including the rejected attempts (a member trying owner actions, malformed input, foreign-origin and GET requests). The check-off steps assert the page after each action (the row, the streak and the Leaderboard totals), the JSON period against an independent Warsaw-date oracle, and that leaving a task erases its history. The Google steps need no Google account (the provider is off on the local stack): they assert the start route (302 to Supabase's authorize URL with the PKCE challenge and the verifier cookie, 403 for a foreign origin, 404 for GET, `join_code` untouched), the three outcomes of the return route that need no exchange (no parameters, cancelled, refused), the `/` redirect for an expired flow state, the Google messages and hints, and the button on both auth pages. Run it against the dev server or the production preview after dependency upgrades:
 
 ```bash
 npm run dev            # or: npm run build && npm run preview
@@ -326,7 +331,7 @@ GitHub Actions runs five jobs: `changes`, `ci`, `smoke` and `integration` on eve
 - **ci** — lint, `astro check` and build. Configure `SUPABASE_URL` and `SUPABASE_KEY` as repository secrets for the build step (the `release` build reads the same names from the `production` environment secrets, so set both).
 - **smoke** — starts a local Supabase via the Supabase CLI, builds, serves the production preview on the Cloudflare runtime and runs `npm run smoke` against it. No secrets required.
 - **integration** — starts a local Supabase, then runs `npm test` and the SQL scenarios in `supabase/checks/rls-scenarios.sql`. No secrets required.
-- **release** — runs only on pushes to `master`, after `ci`, `smoke` and `integration` pass and a reviewer approves the `production` environment: `supabase db push`, then `wrangler deploy`, then a check of the live URL. See [Deployment](#deployment).
+- **release** — runs only on pushes to `master`, after `ci`, `smoke` and `integration` pass and a reviewer approves the `production` environment: `supabase db push`, then `wrangler deploy`, then a check of the live URL, including the anonymous two-hop Google check (the start route redirects to Supabase, and Supabase's Google provider redirects to `accounts.google.com`; each run leaves one short-lived flow state row in Supabase). See [Deployment](#deployment).
 
 ## License
 

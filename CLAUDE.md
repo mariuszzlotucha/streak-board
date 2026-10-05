@@ -8,8 +8,9 @@ Astro 7 SSR app (`output: "server"` in `astro.config.mjs`) with React 19 islands
 
 **Auth flow**: `src/lib/supabase.ts` creates a Supabase SSR client (`@supabase/ssr`, cookie-based sessions) from `SUPABASE_URL`/`SUPABASE_KEY` — declared as server-only secrets in `astro.config.mjs`'s `env.schema` and read via `astro:env/server`. Both are `optional: true`; if either is unset, `createClient` returns `null`. `src/middleware.ts` runs on every request, resolves the user onto `context.locals.user` (or `null` when Supabase isn't configured), and redirects unauthenticated requests away from paths listed in its `PROTECTED_ROUTES` array (currently `["/dashboard", "/api/groups", "/api/tasks"]`). The middleware tells an Auth service failure (answered 503 on those paths, via `resolveAuthState` in `src/lib/auth-state.ts`) from a missing session (302), and reports failures through `src/lib/log.ts`.
 
-- API endpoints: `src/pages/api/auth/{signin,signup,signout}.ts`, `src/pages/api/groups/{create,join,rename,leave,remove-member,delete}.ts`, `src/pages/api/tasks/{create,update,delete,join,leave,checkoff,uncheck}.ts`
-- Auth pages: `src/pages/auth/{signin,signup,confirm-email}.astro`
+- API endpoints: `src/pages/api/auth/{signin,signup,signout,google}.ts` (`google.ts` starts the Google sign-in, a form POST guarded by Astro's origin check), `src/pages/api/groups/{create,join,rename,leave,remove-member,delete}.ts`, `src/pages/api/tasks/{create,update,delete,join,leave,checkoff,uncheck}.ts`
+- Auth pages: `src/pages/auth/{signin,signup,confirm-email}.astro`; both sign-in and sign-up render `src/components/auth/GoogleButton.astro` ("Continue with Google", a plain form posting to `/api/auth/google`)
+- Auth return routes (public GETs): `src/pages/auth/callback.ts` (e-mail confirmation link; every exchange failure ends on `/auth/signin?error=link_expired`) and `src/pages/auth/google/callback.ts` (Google sign-in; cancellation, a stale attempt and a failure end on `/auth/signin` with a fixed code from `src/lib/auth-errors.ts`, never reflecting provider text)
 - Protected group hub: `src/pages/dashboard.astro`
 - Public invite route: `src/pages/join/[code].ts` (stores the code in a cookie and redirects to `/dashboard`)
 

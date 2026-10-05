@@ -1,6 +1,15 @@
 ---
 import Welcome from "@/components/Welcome.astro";
 import Layout from "@/layouts/Layout.astro";
+
+// Supabase sends the browser to the Site URL root when a Google sign-in's flow state is unknown or older than five
+// minutes (bad_oauth_state), missing (bad_oauth_callback) or already used (flow_state_already_used). Show the failure
+// message instead of a landing page that says nothing; any other query renders the page as usual.
+const FLOW_STATE_ERRORS = ["bad_oauth_state", "bad_oauth_callback", "flow_state_already_used"];
+const errorCode = Astro.url.searchParams.get("error_code");
+if (errorCode !== null && FLOW_STATE_ERRORS.includes(errorCode)) {
+  return Astro.redirect("/auth/signin?error=oauth_failed");
+}
 ---
 
 <Layout>

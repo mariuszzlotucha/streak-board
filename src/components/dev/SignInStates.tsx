@@ -135,7 +135,7 @@ export default function SignInStates() {
         description="Alert from a known error code"
         email="jane@example.com"
         password="wrong-password"
-        serverError="Invalid email or password."
+        serverError="Invalid email or password. If you signed up with Google, use Continue with Google."
       />
       <DisabledCell />
       <StateCell
