@@ -5,6 +5,10 @@ on:
     branches: [master]
   pull_request:
     branches: [master]
+    # Docs-only PRs skip the checks. Do not add this to `push`: the `release` job runs on pushes to master.
+    paths-ignore:
+      - "context/**"
+      - "**/*.md"
 
 permissions:
   contents: read

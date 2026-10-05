@@ -13,7 +13,8 @@
     "smoke": "node scripts/smoke.mjs",
     "test": "vitest run",
     "test:rls": "docker exec -i supabase_db_10x-astro-starter psql -U postgres -d postgres -X -v ON_ERROR_STOP=1 < supabase/checks/rls-scenarios.sql",
-    "prepare": "husky"
+    "prepare": "husky",
+    "deps": "depcruise src tests scripts --config .dependency-cruiser.cjs"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.10",
@@ -46,6 +47,7 @@
     "@playwright/test": "^1.63.0",
     "@stryker-mutator/core": "^10.0.0",
     "@stryker-mutator/vitest-runner": "^10.0.0",
+    "dependency-cruiser": "^18.5.0",
     "eslint": "^10.10.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-astro": "^3.1.0",
