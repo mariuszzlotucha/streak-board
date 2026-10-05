@@ -320,8 +320,9 @@ Safety guard: the suite refuses to run unless the Supabase URL host is `127.0.0.
 
 ## CI
 
-GitHub Actions runs four jobs: `ci`, `smoke` and `integration` on every push and PR to `master`, and `release` only after a push to `master`:
+GitHub Actions runs five jobs: `changes`, `ci`, `smoke` and `integration` on every push and PR to `master`, and `release` only after a push to `master`. On a pull request that changes only files under `context/` and `*.md` files, `ci`, `smoke` and `integration` are skipped at job level; a job skipped by `if:` satisfies the required check `integration`, so docs-only PRs can merge. Do not use `paths-ignore` on the workflow trigger: a workflow skipped by a path filter never reports that check and blocks the merge.
 
+- **changes** — decides whether a PR touches anything besides `context/**` and `*.md` files (always yes on a push). If it cannot tell, the other jobs run.
 - **ci** — lint, `astro check` and build. Configure `SUPABASE_URL` and `SUPABASE_KEY` as repository secrets for the build step (the `release` build reads the same names from the `production` environment secrets, so set both).
 - **smoke** — starts a local Supabase via the Supabase CLI, builds, serves the production preview on the Cloudflare runtime and runs `npm run smoke` against it. No secrets required.
 - **integration** — starts a local Supabase, then runs `npm test` and the SQL scenarios in `supabase/checks/rls-scenarios.sql`. No secrets required.
