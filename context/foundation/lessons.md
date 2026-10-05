@@ -136,3 +136,10 @@
 - **Problem**: Handlers mapped `error.code` to a `?error=` redirect and logged nothing; the `try/catch → console.error` is unreachable for backend failures, so outages, rejected keys and RLS regressions looked like ordinary redirects and left no trace (audit of check-off and join, G1-G3).
 - **Rule**: Every new Supabase call reports its returned error through `src/lib/log.ts` (`reportMapped` in route handlers, `reportError` elsewhere) with `requestFields(context)`; unexpected outcomes are error lines, stale or domain outcomes are info or quiet, and never put an e-mail, cookie, body or invite code in a report (use `codeLength`). Do not call `console.*` directly in routes.
 - **Applies to**: plan, implement, impl-review
+
+## A required status check must report on every PR, including docs-only ones
+
+- **Context**: `.github/workflows/ci.yml` triggers, and any change to the required checks of the `master` ruleset (here `integration`, ruleset "master protection").
+- **Problem**: `paths-ignore` for `context/**` and `**/*.md` on the `pull_request` trigger (commit `26ff4f6`) skipped the whole workflow for a docs-only PR, so nothing reported `integration`: PR #74 stayed on "Expected — Waiting for status to be reported" and could not be merged. It surfaced only at the first docs-only PR after the change, because the earlier PRs also touched a code or config file.
+- **Rule**: Never put `paths`, `paths-ignore` or branch/tag filters on the workflow that holds a required check. Skip slow jobs at job level instead, with an `if:` that fails safe (run unless the `changes` job answers `false`, written with `!cancelled()` and not `success()`): a job skipped by `if:` reports as skipped, which satisfies the required check, while a skipped workflow reports nothing. After changing triggers or required-check names, confirm the result on the next docs-only PR before relying on it.
+- **Applies to**: plan, implement, impl-review
