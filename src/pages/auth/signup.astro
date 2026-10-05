@@ -1,6 +1,7 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import SignUpForm from "@/components/auth/SignUpForm";
+import GoogleButton from "@/components/auth/GoogleButton.astro";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { resolveSignUpError } from "@/lib/auth-errors";
@@ -20,6 +21,7 @@ const serverFieldErrors = error?.field ? { [error.field]: error.message } : {};
         <h1 class="font-heading text-center text-2xl font-semibold">Sign up</h1>
       </CardHeader>
       <CardContent>
+        <GoogleButton />
         <SignUpForm
           serverError={serverError}
           serverFieldErrors={serverFieldErrors}
