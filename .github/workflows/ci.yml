@@ -5,16 +5,39 @@ on:
     branches: [master]
   pull_request:
     branches: [master]
-    # Docs-only PRs skip the checks. Do not add this to `push`: the `release` job runs on pushes to master.
-    paths-ignore:
-      - "context/**"
-      - "**/*.md"
 
 permissions:
   contents: read
 
 jobs:
+  # Docs-only PRs skip the slow jobs at job level, never with `paths-ignore` on the trigger: a workflow skipped by a
+  # path filter reports nothing, so the required check `integration` stays pending and the PR cannot merge, while a
+  # job skipped by `if:` reports as skipped, which satisfies it. The `if:` on those jobs fails safe: they run unless
+  # this job answers `false` (a failed `changes` job leaves the output empty).
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.diff.outputs.code }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: diff
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          code=true
+          if [ "$EVENT" = "pull_request" ]; then
+            git diff --name-only "origin/$BASE_REF...HEAD" > changed-files.txt
+            cat changed-files.txt
+            if [ -s changed-files.txt ] && ! grep -qvE '^context/|\.md$' changed-files.txt; then code=false; fi
+          fi
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+
   ci:
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -32,6 +55,8 @@ jobs:
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
 
   smoke:
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -62,6 +87,8 @@ jobs:
         run: supabase stop --no-backup
 
   integration:
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
