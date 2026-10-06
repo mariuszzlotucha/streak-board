@@ -25,7 +25,7 @@
 
 ### Key Discoveries:
 
-- Only `integration` is required (`gh api repos/mariuszzlotucha/streak-board/rulesets/24254172`: `required_status_checks: [integration]`, `bypass_actors: []`), and a failed `changes` job does not stop `integration` (`ci.yml:91`: `!cancelled()`, an empty output is not `'false'`). A guard in `changes` would be advisory, so the guards go into `integration` (research verification V27).
+- Only `integration` is required (`gh api repos/mariuszzlotucha/streak-board/rulesets/24254172`: `required_status_checks: [integration]`, `bypass_actors: []`, `strict_required_status_checks_policy: false`), and a failed `changes` job does not stop `integration` (`ci.yml:91`: `!cancelled()`, an empty output is not `'false'`). A guard in `changes` would be advisory, so the guards go into `integration` (research verification V27).
 - `npm run deps` (dependency-cruiser) is defined at `package.json:17` and referenced nowhere in `.github/`, `.husky/`, `README.md` or `CLAUDE.md`, and dependency-cruiser does not parse `.astro` (`.dependency-cruiser.cjs:2`); ESLint is the enforceable tool (V26). Relevant to the deferred route skeleton, not to this plan.
 - `vitest.config.ts:14` registers a `globalSetup` that needs the local stack (`tests/setup/global-setup.ts:103-110`): every `npm test` run, unit files included, needs `supabase start`; in CI the new suites run in the required `integration` job (V25).
 - `tests/helpers/supabase.ts:164-165` registers `afterEach(cleanupGroups)` and `afterAll(cleanupUsers)` at import, so suites that do not use the database must not import it.
@@ -48,14 +48,14 @@
 - An ESLint `no-restricted-imports` rule against direct `@/lib/supabase` imports from routes: belongs with the route skeleton.
 - Fixing the NUL drift, the `prerender = false` chore on three auth routes, or any change to an existing migration (the Phase 2 guard forbids it).
 - Mutation runs with Stryker on the rule modules (S-10); this plan uses manual break-and-restore checks.
-- Editing `CLAUDE.md` (it carries unrelated uncommitted edits) and `roadmap.md`.
+- Editing `CLAUDE.md` (it defers CI jobs and scripts to the README, which Phase 2 updates) and `roadmap.md`.
 - The items the research found not worth a refactor: D2, D3, D6, D9, D16, D18, D20, D21 and the test gaps T6, T8, T12, T13.
 
 ## Implementation Approach
 
-Five phases, independent in code and ordered only by their criteria (Phase 5's rows 5.3 and 5.4 use scripts that Phase 2 adds), each reverted by reverting its merge. Order: OPP-2 first (smallest, a deferred gap), then the CI guards (they are the only items that cut a production-side risk, and from Phase 2 on they check every later PR), then the two test phases, then the grants (the only phase that ships a migration and needs the owner's hosted query and a release approval). The order differs from the research ranking, which put OPP-1 second because it gates the structural chain; with that chain deferred the argument no longer applies and value over cost puts the guards first. Phases 3 and 4 only add tests, so `src` stays untouched there (a criterion checks it); behaviour is pinned as it is today, including the quiet zero-row branches.
+Five phases, independent in code and ordered only by their criteria (Phase 5's rows 5.3 and 5.4 use scripts that Phase 2 adds), each reverted by reverting its merge. The order is by self-containment and value, not by cost: OPP-2 first (small, fully self-contained, a deferred gap), then the CI guards (costlier than Phases 4 and 5 [I], but the only items that cut a production-side risk, and from Phase 2 on they check every later PR, the Phase 5 migration included), then the two test phases, then the grants, which are cheap but the least self-contained (the only phase that ships a migration and needs the owner's hosted query, a release approval and, for two rows, the Phase 2 scripts). The order differs from the research ranking, which put OPP-1 second because it gates the structural chain; with that chain deferred the argument no longer applies and value puts the guards first. Phases 3 and 4 only add tests, so `src` stays untouched there (a criterion checks it); behaviour is pinned as it is today, including the quiet zero-row branches. Two rules apply where a phase needs them: code that no test covers (only the dashboard page, in Phase 1) is edited only after its current answers are recorded, and enforcement that is not itself a test (the lint rule in Phase 1, the CI steps in Phase 2) is switched on in its own commit after what it checks passes; the tests of Phases 3 to 5 are checks of their own and need no separate switch.
 
-Per `context/foundation/lessons.md`: each phase runs on its own branch `refactor-opportunities/phase-<N>` cut from a fresh `master` (no roadmap id), commits are in English, `/10x-impl-review refactor-opportunities phase <N>` is triaged before the branch is pushed, and the PR is opened with `gh pr create`. Inside Phases 1 to 4 every logical step is its own commit so it can be reverted alone. Run the phases one at a time: every phase uses the local stack for tests or manual checks and only one session may run database-backed commands at a time (`context/foundation/lessons.md:119-124`), and Phase 2 is the only one that edits `ci.yml`. Every merge to `master` queues a `release` run that waits for approval in `production` (`.github/workflows/ci.yml:112-118`): approve it for Phases 1 and 5, which change what is deployed; for Phases 2 to 4 (the same Worker) approve it or let a newer push supersede it (`README.md:211`).
+Per `context/foundation/lessons.md`: each phase runs on its own branch `refactor-opportunities/phase-<N>` cut from a fresh `master` (no roadmap id), commits are in English, `/10x-impl-review refactor-opportunities phase <N>` is triaged before the branch is pushed, and the PR is opened with `gh pr create`. Inside Phases 1 to 4 every logical step is its own commit, so a step can be reverted separately; a step that later ones depend on (the page before the lint rule, a script before its CI step) is reverted after them. Run the phases one at a time: every phase uses the local stack for tests or manual checks and only one session may run database-backed commands at a time (`context/foundation/lessons.md:119-124`), and Phase 2 is the only one that edits `ci.yml`. Every merge to `master` queues a `release` run that waits for approval in `production` (`.github/workflows/ci.yml:112-118`): approve it for Phases 1 and 5, which change what is deployed; for Phases 2 to 4 (the same Worker) approve it or let a newer push supersede it (`README.md:211`).
 
 ## Critical Implementation Details
 
@@ -67,9 +67,17 @@ Per `context/foundation/lessons.md`: each phase runs on its own branch `refactor
 
 ### Overview
 
-Report the five failed dashboard loads through `src/lib/log.ts` instead of bare `console.error`, so they reach the Workers log and Sentry with request ids, and make `no-console` an error so the convention is enforced. The HTTP response stays the same: 200 with the same banners and degraded sections.
+Report the five failed dashboard loads through `src/lib/log.ts` instead of bare `console.error`, so they reach the Workers log and Sentry with request ids, and make `no-console` an error so the convention is enforced. The HTTP response stays the same: 200 with the same banners and degraded sections. No automated test can cover the page, so what it answers today is recorded first (item 0) and the manual rows compare against that baseline. Three commits in this order: the page, the lint rule (it turns the convention on only after nothing violates it, and is reverted before the page), the docs.
 
 ### Changes Required:
+
+#### 0. Baseline of the page (before the first edit)
+
+**File**: none (the captures stay outside the repository, for example in a scratch directory)
+
+**Intent**: Pin what `/dashboard` answers today in every state this phase touches, because no automated test can cover an `.astro` frontmatter; the manual rows then compare against recorded output instead of memory.
+
+**Contract**: on the fresh phase branch, before `dashboard.astro` is edited, with the local stack up, no other session using it and a signed-in test user who is in a group with at least one task (the secondary reads run only for a group member, `src/pages/dashboard.astro:53`), save the status code and the HTML of `GET /dashboard` in five states: all reads healthy; PostgREST stopped; `select` revoked on `public.tasks`; on `public.task_participants`; on the view `public.task_checkoff_periods` (the injections of rows 1.6 and 1.7, each undone before the next one is applied; the `tasks` revoke also fails the participants and check-off reads, because their policies and the security-invoker view read `tasks`, so that state shows all three secondary reads down). After the edit repeat the same five captures and `diff` each against its baseline, on the same Warsaw day because the board is computed from `new Date()` (`src/pages/dashboard.astro:94`). Equal means an empty diff; a value that differs on every run (for instance a cache-busting query string from the dev server [I]) is masked identically in both runs and named in the PR; any other difference is a regression of this phase.
 
 #### 1. Dashboard frontmatter
 
@@ -107,12 +115,12 @@ Report the five failed dashboard loads through `src/lib/log.ts` instead of bare 
 
 #### Manual Verification:
 
-- With the local stack up, a signed-in test user and no other session using the stack, stop PostgREST (`docker stop supabase_rest_10x-astro-starter`) and load `/dashboard`: the page shows the same "Something went wrong" banner as before, and the dev server output carries exactly one `dashboard.load.failed` error line with `route`, `userId`, `ray` and the cause; start the container again
-- For each secondary read in turn, run `revoke select on public.tasks from authenticated`, then the same for `public.task_participants` and the view `public.task_checkoff_periods`, reload `/dashboard` and see the matching `dashboard.tasks.failed`, `dashboard.participants.failed` or `dashboard.checkoffs.failed` line with code `42501` and the unchanged degraded page; restore each grant right after (`grant select on … to authenticated`)
+- With the local stack up, the baseline of item 0 recorded and no other session using the stack, stop PostgREST (`docker stop supabase_rest_10x-astro-starter`) and load `/dashboard` as the same test user: the status code and the HTML equal the baseline of that state (the same "Something went wrong" banner as before), and the dev server output carries exactly one `dashboard.load.failed` error line with `route`, `userId`, `ray` and the cause; start the container again and see the page equal the healthy baseline
+- For each secondary read in turn, as the same test user (a group member, because the secondary reads run only for one), run `revoke select on public.tasks from authenticated`, then the same for `public.task_participants` and the view `public.task_checkoff_periods`, reload `/dashboard` and see the matching `dashboard.tasks.failed`, `dashboard.participants.failed` or `dashboard.checkoffs.failed` line with code `42501` (the `tasks` revoke fails all three reads, because the policies of `task_participants` and `task_checkoffs` and the security-invoker view read `tasks`, so expect all three lines there and the Tasks card hidden; the other two revokes fail only their own read) and a status code and HTML equal to the baseline of that state; restore each grant right after (`grant select on … to authenticated`) and see the page equal the healthy baseline
 - No e-mail, cookie, request body or invite code appears in any of the new lines, and `dashboard.leaderboard.failed` is checked by reading the call site unless some real data makes the compute throw (record which in the PR)
 - After the merge and the owner's approval of the `release` run, `/dashboard` loads on the production URL for a signed-in user as before (the new events appear only when a read fails)
 
-**Implementation Note**: No automated test can cover an `.astro` frontmatter in the current stack, the same limit the S-08 plan accepted; the manual fault injection above is the verification. After the automated checks pass, pause for the human to confirm the manual ones.
+**Implementation Note**: No automated test can cover an `.astro` frontmatter in the current stack, the same limit the S-08 plan accepted; the baseline of item 0, recorded before the first edit, and the manual fault injection above are the verification. After the automated checks pass, pause for the human to confirm the manual ones. Row 1.9 needs this PR's own merge and release, so it is not confirmed with the others: it is ticked after the release, in a small closing docs PR (as rows 5.9 to 5.11 are) or in the next phase's PR, never before the production check.
 
 ---
 
@@ -120,7 +128,7 @@ Report the five failed dashboard loads through `src/lib/log.ts` instead of bare 
 
 ### Overview
 
-Three guards in the required `integration` job: merged migrations stay immutable, a destructive new migration carries a `-- compat:` marker, and `src/types.ts` equals a fresh generation. The first two live in one script (rules: immutability, marker, and an ordering rule that keeps a new migration newer than every merged one) with unit tests; the third is one npm script and one CI step. Three commits, each revertible alone: the migration guard with its tests, `package.json` script and CI step (immutability, marker and ordering); the types check with its script and CI step; the docs and lesson.
+Three guards in the required `integration` job: merged migrations stay immutable, a destructive new migration carries a `-- compat:` marker, and `src/types.ts` equals a fresh generation. The first two live in one script (rules: immutability, marker, and an ordering rule that keeps a new migration newer than every merged one) with unit tests; the third is one npm script and one CI step. Mechanism and enforcement are separate steps. Five commits, in this order: the migration guard with its tests (nothing runs it in CI yet); the two npm scripts `guard:migrations` and `types:check` (both pass locally, nothing is enforced yet); the CI step that runs the migration guard (immutability, marker and ordering), which switches that enforcement on; the CI step that checks the generated types, its own commit because the pg-meta image in CI is the least verified part and the step can then be adjusted or reverted without switching the migration guard off; the docs and lesson. A CI commit is added only after its script passes locally (rows 2.3 and 2.4), so the first red CI run is a real finding and not a wiring error, and reverting a CI commit alone switches that guard off.
 
 ### Changes Required:
 
@@ -130,12 +138,12 @@ Three guards in the required `integration` job: merged migrations stay immutable
 
 **Intent**: One script with pure, exported functions and a thin CLI that compares the working tree with the PR's base and fails on the migration rules.
 
-**Contract**: `node scripts/migration-guard.mjs --base <ref>` (default `origin/master`) reads `git diff --name-status --find-renames <ref>...HEAD -- supabase/migrations`; exit 0 passes, exit 1 prints violations as `::error file=…::` annotations and each used exception as a `::warning file=…::` annotation. `--entry <migration file>` prints the allowlist line for the file's current content.
+**Contract**: `node scripts/migration-guard.mjs --base <ref>` (default `origin/master`) reads `git diff --name-status --find-renames <ref>...HEAD -- supabase/migrations`; exit 0 passes, exit 1 prints violations as `::error file=…::` annotations and each used exception as a `::warning file=…::` annotation. `--entry <migration file>` prints the allowlist line for the file's current content, with the literal `<reason>` (under 20 characters) as the reason, so a line committed without editing it fails the length rule.
 
 - Immutability: `A` is fine; `D` and `R*` always fail and cannot be allowlisted (the hosted history records the version, a missing file breaks `db push`); `M` passes when the file differs from the base only in comments and blank lines (comparison normalises line endings and trailing whitespace, and strips `--` comments outside single-quoted strings) and otherwise fails unless an allowlist entry authorises it.
 - Allowlist `supabase/checks/migration-edit-allowlist.txt`: one line per exception, `<migration file name> <sha256 of the edited file> <reason of at least 20 characters>`; `#` lines and blank lines are ignored. Rules against abuse: the file is append-only (the base file's lines must be an unchanged prefix of HEAD's); an entry counts only if it is new in this PR, its hash equals the sha256 of the migration at HEAD, and the file is an `M` change that is not comment-only; an entry that matches no such edit is itself a violation (no pre-authorisation, no stale entry); every used entry prints a warning with file and reason. A later edit of the same file needs a new entry because the hash changes.
 - Marker: for each `A` migration F, flag a `drop` statement of any object, `alter policy`, an `alter … rename`, or a `revoke` whose target (table, view or function; `all tables in schema` counts) is created by a migration that sorts before F by file name. A flagged F needs one line `-- compat: <non-empty text>` anywhere in the file. This is a heuristic that prompts the author; it proves nothing about compatibility and the message says so.
-- Ordering: an `A` migration must sort after every migration at the base ref; otherwise a violation that says to rename it to a newer timestamp (the file is new in the PR, so a rename is free; `supabase db push` is expected to refuse a file older than the newest applied one [I], research Open Question 8).
+- Ordering: an `A` migration must sort after every migration at the base ref; otherwise a violation that says to rename it to a newer timestamp (the file is new in the PR, so a rename is free; `supabase db push` is expected to refuse a file older than the newest applied one [I], research Open Question 8). The rule sees the base at the time `integration` runs, and the ruleset does not require branches to be up to date (`strict_required_status_checks_policy: false`), so a PR whose last run predates the merge of another migration is not re-checked: update the branch (re-run `integration`) before merging a migration PR when another migration has merged since. A merged out-of-order file cannot be renamed or deleted past the guard; the owner applies it with `supabase db push --include-all` (credentialed, by hand, never through the chat) [I].
 - Typing: every export carries JSDoc (`@param`, `@returns`): `allowJs` is on, but the test that imports the script is linted with `strictTypeChecked` while `scripts/**/*.mjs` have type checking disabled (`eslint.config.js:76-81`), so untyped exports would trip the `no-unsafe-*` rules.
 
 #### 2. Guard tests
@@ -144,11 +152,11 @@ Three guards in the required `integration` job: merged migrations stay immutable
 
 **Intent**: Pin every rule and every abuse case, and prove the whole path once against a real git repository.
 
-**Contract**: pure-function cases with in-memory strings: comment-only edit passes, statement edit fails, delete and rename fail even with an entry, an entry already present at base authorises nothing, a wrong hash, a reason under 20 characters, a non-append-only change, an entry for an unedited file and an entry for a comment-only edit all fail, a valid new entry passes with a warning; marker cases for `drop policy`, `alter policy`, a rename and a `revoke` on an earlier table (flagged), a `revoke` on the migration's own table or function (not flagged), a marker with and without text; an added migration older than the newest at base fails and a newer one passes. A fixture test over the real seven migrations asserts that exactly `20260925011727_harden_group_rls.sql` and `20261001120000_harden_table_privileges.sql` need a marker (stable because merged migrations are immutable). One end-to-end test builds a throwaway repository in `os.tmpdir()` (base commit, then a comment edit, a statement edit, an allowlisted edit with the right hash, and an added destructive migration without a marker) and asserts the exit codes; the repository gets its own git identity (`-c user.name` and `-c user.email`, or `GIT_AUTHOR_*` and `GIT_COMMITTER_*`) because a CI runner has none.
+**Contract**: pure-function cases with in-memory strings: comment-only edit passes, statement edit fails, delete and rename fail even with an entry, an entry already present at base authorises nothing, a wrong hash, a reason under 20 characters (the unedited `--entry` placeholder included), a non-append-only change, an entry for an unedited file and an entry for a comment-only edit all fail, a valid new entry passes with a warning; marker cases for `drop policy`, `alter policy`, a rename and a `revoke` on an earlier table (flagged), a `revoke` on the migration's own table or function (not flagged), a marker with and without text; an added migration older than the newest at base fails and a newer one passes. A fixture test over a fixed list of the seven migration file names at `c9f6451` (not a directory glob, which the first later migration that is flagged and carries a marker would turn red) asserts that exactly `20260925011727_harden_group_rls.sql` and `20261001120000_harden_table_privileges.sql` need a marker (stable because merged migrations are immutable). One end-to-end test builds a throwaway repository in `os.tmpdir()` (base commit, then a comment edit, a statement edit, an allowlisted edit with the right hash, and an added destructive migration without a marker) and asserts the exit codes; the repository gets its own git identity (`-c user.name` and `-c user.email`, or `GIT_AUTHOR_*` and `GIT_COMMITTER_*`) because a CI runner has none.
 
 #### 3. npm scripts
 
-**File**: `package.json`
+**File**: `package.json` (own commit, before any CI step)
 
 **Intent**: Give the guard and the types check one local command each, the same one CI runs.
 
@@ -156,9 +164,9 @@ Three guards in the required `integration` job: merged migrations stay immutable
 
 #### 4. CI wiring
 
-**File**: `.github/workflows/ci.yml` (`integration` job)
+**File**: `.github/workflows/ci.yml` (`integration` job; two commits, one per step, each after its script passes locally)
 
-**Intent**: Run the guards where a failure blocks the merge.
+**Intent**: Switch the enforcement on, in the job where a failure blocks the merge.
 
 **Contract**: the checkout of `integration` uses `fetch-depth: 0`; a step `Check migrations` runs `npm run guard:migrations -- --base "origin/$BASE_REF"` with `BASE_REF: ${{ github.base_ref }}`, only when `github.event_name == 'pull_request'`, before `Start local Supabase`; a step `Check generated types are fresh` runs `npm run types:check` after the stack is up and, on failure, prints the regeneration command (`npx supabase gen types typescript --local > src/types.ts && npx prettier --write src/types.ts`). The steps stay out of `changes`, which is not required (see Key Discoveries).
 
@@ -168,7 +176,7 @@ Three guards in the required `integration` job: merged migrations stay immutable
 
 **Intent**: Record the guards where authors look and capture the placement rule so the next CI guard does not repeat the mistake.
 
-**Contract**: `README.md` CI section lists the two steps and the backward-compatibility paragraph (`README.md:233`) names the immutability rule, the `-- compat:` marker, the ordering rule and the allowlist flow; `test-plan.md` §5 marks the "migration/code consistency check" row as partly wired (immutability, marker, ordering, types) with the old-code-against-new-schema gate still pending, and §6.5 replaces its "TBD" with how to write a compatible migration and which commands to run; `lessons.md` gets one appended entry in the existing format: enforcement steps belong inside the job that holds the required check, because a failed `changes` job does not stop it.
+**Contract**: `README.md` CI section lists the two steps and the backward-compatibility paragraph (`README.md:233`) names the immutability rule, the `-- compat:` marker, the ordering rule with its limit (update the branch before merging a migration PR after another migration merged, and the owner's `supabase db push --include-all` recovery for a merged out-of-order file) and the allowlist flow; `test-plan.md` §5 marks the "migration/code consistency check" row as partly wired (immutability, marker, ordering, types) with the old-code-against-new-schema gate still pending, and §6.5 replaces its "TBD" with how to write a compatible migration and which commands to run; `lessons.md` gets one appended entry in the existing format: enforcement steps belong inside the job that holds the required check, because a failed `changes` job does not stop it.
 
 ### Success Criteria:
 
@@ -352,7 +360,7 @@ Move the table-level privileges the app already depends on from platform default
 
 ### Unit Tests:
 
-- Phase 2: every rule and abuse case of the migration guard on in-memory strings, the real-migrations fixture (exactly two files need a marker) and one end-to-end run against a throwaway git repository.
+- Phase 2: every rule and abuse case of the migration guard on in-memory strings, the real-migrations fixture (a fixed list of the seven names, exactly two need a marker) and one end-to-end run against a throwaway git repository.
 - Phase 3: error mappers, input normalisers, `join-code` and `checkoffResponse`, with oracle values taken from comments, SQL rules and the README.
 
 ### Integration Tests:
@@ -363,7 +371,7 @@ Move the table-level privileges the app already depends on from platform default
 
 ### Manual Testing Steps:
 
-1. Phase 1: fault injection on the dashboard reads (stop PostgREST, revoke one read grant at a time), read the log lines, restore.
+1. Phase 1: record the baseline of the page before the first edit, then inject faults on the dashboard reads (stop PostgREST, revoke one read grant at a time), compare each state with its baseline, read the log lines, restore.
 2. Phases 2 to 4: break-and-restore checks, scratch-branch guard demos, and, with the owner's go-ahead, one draft PR that shows a red guard.
 3. Phase 5: the hosted privilege query by the owner, the release approval and a production check of sign-in, the dashboard and one tick with its undo.
 
@@ -401,8 +409,8 @@ Only Phase 5 touches the database: one additive `grant` that works with the code
 
 #### Manual
 
-- [ ] 1.6 With the local stack up, a signed-in test user and no other session using the stack, stop PostgREST (`docker stop supabase_rest_10x-astro-starter`) and load `/dashboard`: the page shows the same "Something went wrong" banner as before, and the dev server output carries exactly one `dashboard.load.failed` error line with `route`, `userId`, `ray` and the cause; start the container again
-- [ ] 1.7 For each secondary read in turn, run `revoke select on public.tasks from authenticated`, then the same for `public.task_participants` and the view `public.task_checkoff_periods`, reload `/dashboard` and see the matching `dashboard.tasks.failed`, `dashboard.participants.failed` or `dashboard.checkoffs.failed` line with code `42501` and the unchanged degraded page; restore each grant right after (`grant select on … to authenticated`)
+- [ ] 1.6 With the local stack up, the baseline of item 0 recorded and no other session using the stack, stop PostgREST (`docker stop supabase_rest_10x-astro-starter`) and load `/dashboard` as the same test user: the status code and the HTML equal the baseline of that state (the same "Something went wrong" banner as before), and the dev server output carries exactly one `dashboard.load.failed` error line with `route`, `userId`, `ray` and the cause; start the container again and see the page equal the healthy baseline
+- [ ] 1.7 For each secondary read in turn, as the same test user (a group member, because the secondary reads run only for one), run `revoke select on public.tasks from authenticated`, then the same for `public.task_participants` and the view `public.task_checkoff_periods`, reload `/dashboard` and see the matching `dashboard.tasks.failed`, `dashboard.participants.failed` or `dashboard.checkoffs.failed` line with code `42501` (the `tasks` revoke fails all three reads, because the policies of `task_participants` and `task_checkoffs` and the security-invoker view read `tasks`, so expect all three lines there and the Tasks card hidden; the other two revokes fail only their own read) and a status code and HTML equal to the baseline of that state; restore each grant right after (`grant select on … to authenticated`) and see the page equal the healthy baseline
 - [ ] 1.8 No e-mail, cookie, request body or invite code appears in any of the new lines, and `dashboard.leaderboard.failed` is checked by reading the call site unless some real data makes the compute throw (record which in the PR)
 - [ ] 1.9 After the merge and the owner's approval of the `release` run, `/dashboard` loads on the production URL for a signed-in user as before (the new events appear only when a read fails)
 

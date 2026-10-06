@@ -6,8 +6,9 @@
 - **Mode**: Deep
 - **Date**: 2026-10-06
 - **Verdict**: REVISE
-- **Findings**: 0 critical, 4 warnings, 4 observations
-- **Triage**: all 8 findings fixed in the plan and the brief (F5 via Fix A); verdict after fixes: SOUND
+- **Findings**: 0 critical, 2 warnings, 4 observations
+- **Triage**: all 6 findings fixed in the plan and the brief (F3 via Fix A); verdict after fixes: SOUND
+- **Scope**: the plan after the edits made once its first review was done (a page baseline in Phase 1, five Phase 2 commits that separate mechanism from enforcement, the wording of the phase order). The first review (8 findings, all fixed) is in git history at `1f0f29a`.
 
 ## Verdicts
 
@@ -21,97 +22,86 @@
 
 ## Grounding
 
-Grounding: 97/97 checks ✓ (17 modified paths, 6 parent dirs, 11 new paths free of collisions, 49 line anchors, 14 symbols), brief↔plan ✓.
+Grounding: 119/119 checks ✓ (97 carried over from the first review and re-run, 22 new for the edited plan: 15 line anchors in `dashboard.astro`, `checkoff.ts`, `uncheck.ts`, `groups.ts`, `tasks.ts`, `README.md`, `eslint.config.js` and `lessons.md`, and 7 path, symbol and absence checks), brief↔plan ✓, Progress↔Phase ✓ (43 criteria, 43 rows, identical titles, no checkbox outside `## Progress`). `docs/reference/contract-surfaces.md` does not exist, so that check was skipped.
 
-Deep mode was run inline, without a sub-agent (the session policy allows spawning one only on an explicit request). Claims that held: `no-console: error` breaks nothing (forced from the CLI the only hits are 13 in `scripts/smoke.mjs`, which the config exempts; with the real config there are 0 problems); `gen types --local` starts its own container from `postgres-meta:v0.99.0`, so the service excluded in CI is not needed; the guards belong in the required `integration` job; the anonymous role gets 401 with `42501`; the TS normaliser and the database CHECK agree on 15 boundary cases. Claims that failed: wall-clock use in the check-off routes (F1) and the cleanup mechanics of Phase 4 (F4).
+Deep mode was run inline, without a sub-agent (the session policy allows spawning one only on an explicit request). Claims that held:
+
+- The grep of criterion 1.1 prints exactly the five `console.error` lines of `src/pages/dashboard.astro` (68, 77, 82, 101, 126) at baseline and nothing else.
+- The `-- compat:` heuristic flags exactly `20260925011727_harden_group_rls.sql` (drops and `alter policy`) and `20261001120000_harden_table_privileges.sql` (revokes on tables created by earlier files); the other five revoke only objects they create themselves and contain no `drop` (read statement by statement, the script does not exist yet).
+- The Phase 3 contract matches the two routes read, `tasks/checkoff.ts` and `groups/leave.ts`: an anonymous redirect to `/auth/signin` before any client, the `checkoff.invalid_id` info line before the client, `not_configured` after validation, the `checkoff.task_gone` info line for a null `getTask`, `new Date()` at `checkoff.ts:37`, and the quiet zero-row branch with a post-read in `leave.ts`.
+- `requestFields` returns `route`, `userId` and `ray` (`null` without a `cf-ray` header), so row 1.6 holds locally.
+- `rls_check.expect_value` inserts one row into `rls_check.results` per assertion and the summary counts them, so six plus one assertions give "+7".
+- `vitest@^5.0.3` supports `toFake`. Ruleset 24254172 requires `integration` only and has no bypass actor.
+
+Claims that failed: the isolation of the `tasks` revoke in row 1.7 (F1) and the assumption that a required `integration` run sees the final base (F3). The probes behind F1 ran in transactions that were rolled back; the table privileges were re-read afterwards and are unchanged.
 
 ## Findings
 
-### F1 — Check-off route rows depend on the wall clock
+### F1 — Revoking `select` on `tasks` fails all three secondary reads
 
 - **Severity**: ⚠️ WARNING
 - **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
 - **Dimension**: Blind Spots
-- **Location**: Phase 3 — change 4 (route suite) and its Success Criteria
-- **Detail**: `src/pages/api/tasks/checkoff.ts:37` and `uncheck.ts:39` call `new Date()`. The resulting `period` (the Warsaw day or the Monday key, `src/lib/streak-rules.ts:42-53`) lands in the JSON body `{ ok: true, period }` (`src/lib/checkoff-response.ts:29`) and in the insert and filter arguments of the call chain the plan wants pinned. The plan never fixes the clock, so a row either hard-codes a date and fails the next day, or leaves `period` unasserted; around Warsaw midnight it is flaky either way. Only `tests/unit/checkoff-client.test.ts` pins a clock today, and `vitest.config.ts:12` sets `TZ=America/Los_Angeles` on purpose.
-- **Fix**: Pin the instant for every row (`vi.useFakeTimers({ toFake: ["Date"] })` plus `vi.setSystemTime(...)`, restored in `afterEach`) at a moment whose Warsaw day differs from its Los Angeles day, and put the expected `period` (the day, and the Monday key for weekly) into the `checkoff` and `uncheck` rows.
-- **Decision**: FIXED (Fix in plan: Phase 3 contract pins the clock and the check-off rows carry the expected `period`)
+- **Location**: Phase 1 — row 1.7 and the five-state baseline (item 0)
+- **Detail**: Row 1.7 treats the three revokes as isolated injections ("for each secondary read in turn ... the matching line"). The policies of `task_participants` and `task_checkoffs` read `public.tasks` in an `exists (...)` subquery (`supabase/migrations/20261001090000_create_task_participants.sql:54,60`, `20261002090000_create_task_checkoffs.sql:56,62`) and `task_checkoff_periods` is `security_invoker = true` (`20261002090000_create_task_checkoffs.sql:77-78`). Probed on the local database in rolled-back transactions: after `revoke select on public.tasks from authenticated`, reads of `task_participants`, of the view and of `tasks` all fail with `permission denied for table tasks`; revoking on `task_participants` or on the view fails that read only. The first injection therefore logs three events in one request (`dashboard.tasks.failed`, `dashboard.participants.failed`, `dashboard.checkoffs.failed`) and renders the page with the Tasks card hidden and both notes, so `dashboard.tasks.failed` is never seen alone and a verifier who expects one line may read the other two as a defect.
+- **Fix**: In row 1.7 and item 0 say that the `tasks` revoke fails all three reads (expect three lines, and that page is the baseline of that state) and that the `task_participants` and view revokes isolate one event each.
+- **Decision**: FIXED (Fix in plan: row 1.7, in the criteria and in Progress, and item 0 say that the `tasks` revoke fails all three reads)
 
-### F2 — "Independent phases" contradicts Phase 5's own criteria
-
-- **Severity**: ⚠️ WARNING
-- **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
-- **Dimension**: Plan Completeness
-- **Location**: Overview, Implementation Approach, brief; Phase 5 rows 5.3 and 5.4
-- **Detail**: The plan and the brief call the phases independent, and the brief says that if the hosted privileges differ Phase 5 "moves to the front". But rows 5.3 and 5.4 run `npm run types:check` and `npm run guard:migrations`, which exist only after Phase 2. Run first, those rows cannot pass and Phase 5 cannot close.
-- **Fix**: Say "independent in code, ordered by their criteria", and mark 5.3 and 5.4 "requires Phase 2; if Phase 5 runs first, run `npm run lint` and tick these two when Phase 2 lands" (same note in the brief).
-- **Decision**: FIXED (Fix in plan: independence reworded, rows 5.3 and 5.4 conditional on Phase 2, brief updated)
-
-### F3 — Release handling is described only for Phase 5
-
-- **Severity**: ⚠️ WARNING
-- **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
-- **Dimension**: Blind Spots
-- **Location**: Implementation Approach; Phase 1 Success Criteria
-- **Detail**: Every push to `master` runs all CI jobs (`changes` answers `code=true` for non-PR events, `.github/workflows/ci.yml:30-36`) and queues a `release` run that waits for approval in the `production` environment (`ci.yml:112-118`, `README.md:206-211`). Phase 1 changes deployed code (`src/pages/dashboard.astro`) yet its criteria stop at local checks, and Phases 2 to 4 redeploy the same Worker. The owner meets five approval prompts with guidance for only one (a newer push supersedes a waiting older run, `README.md:211`).
-- **Fix**: Add one sentence to Implementation Approach (every merge queues a `release`; approve it for Phases 1 and 5, and for Phases 2 to 4 approve it or let a newer push supersede it) and one Manual row to Phase 1: after the merge and the approval, `/dashboard` loads on the production URL for a signed-in user as before.
-- **Decision**: FIXED (Fix in plan: release sentence in Implementation Approach, new Phase 1 row 1.9, brief prerequisites)
-
-### F4 — Phase 4 cleanup mechanics break `afterAll` and skip the helper pattern
+### F2 — Row 1.9 can be confirmed only after the merge and the release, and Phase 1 does not say when it is ticked
 
 - **Severity**: ⚠️ WARNING
 - **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
 - **Dimension**: Plan Completeness
-- **Location**: Phase 4 — change 1, "Mechanics"
-- **Detail**: The plan has the accepted cases use "a fresh owner or an admin delete of the group before the next case". A raw insert leaves an untracked group; `afterAll(cleanupUsers)` then fails on `owner_id … on delete restrict` (`supabase/migrations/20260925003350_create_groups_and_group_members.sql:15`, `tests/helpers/supabase.ts:154-162`), and "before the next case" does not cover the last case. The repo pattern avoids it: users per file (`beforeAll`), groups per test, `afterEach` cleanup (`context/foundation/test-plan.md:178`, `tests/integration/group-permissions.test.ts:28-35`).
-- **Fix**: Accepted cases go through `createGroupAs` and `createTaskAs` (they track ids and `afterEach` frees the owner) with one user per file; only rejected cases use a raw insert, because nothing is created.
-- **Decision**: FIXED (Fix in plan: Phase 4 mechanics use `createGroupAs` and `createTaskAs`, one user per file)
+- **Location**: Phase 1 — row 1.9 and the Implementation Note
+- **Detail**: Row 1.9 (the production check, added as the fix of the first review's F3) needs this PR's own merge and an approved `release` run. Per `lessons.md:105-110` the manual rows are confirmed before the branch is pushed and the PR is opened, so 1.9 cannot be confirmed at that point. Phase 5's note solves the same problem for rows 5.9 to 5.11 (a small closing docs PR after the release, the pattern of `lessons.md:77-82` and `:126-131`); Phase 1's note does not mention 1.9. The implementer has to guess: leave Phase 1 with an open row, stop and wait, or tick it early.
+- **Fix**: Add to the Phase 1 Implementation Note that row 1.9 needs this PR's own release and is ticked after it, in a small closing docs PR (as for rows 5.9 to 5.11) or in the next phase's PR, never before the production check.
+- **Decision**: FIXED (Fix in plan: the Phase 1 Implementation Note says row 1.9 is ticked after the release, in a closing docs PR or in the next phase's PR)
 
-### F5 — Out-of-order migrations: not guarded, and recovery is blocked
+### F3 — The ordering rule cannot see a migration merged after the PR's last CI run
 
 - **Severity**: ℹ️ OBSERVATION
 - **Impact**: 🔎 MEDIUM — real tradeoff; pause to reason through it
 - **Dimension**: Blind Spots
-- **Location**: Phase 2 — guard rules; What We're NOT Doing
-- **Detail**: Research Open Question 8 (a migration older than the newest on the remote, relevant because `CLAUDE.md` sets up parallel worktrees) is untested and the plan neither covers nor lists it. `supabase db push --include-all` exists for "migrations not found on remote history table" (`npx supabase db push --help`), which suggests the default refuses such a file [I], and `release` then fails after the build. Once merged, the clean recovery is a rename or delete, which the guard forbids and the allowlist cannot authorise (the rationale "history records the version" does not hold for a never-applied file): the fix would need an edit of the guard itself.
-- **Fix A ⭐ Recommended**: Add one exact rule to the guard: an added migration must sort after every migration at the base ref ("rename it to a newer timestamp"), with one unit test and one README sentence.
-  - Strength: About 10 lines, no heuristic; it stops the case before merge, when a rename is free because the file is new in the PR.
-  - Tradeoff: Grows the guard by a rule the owner did not ask for.
-  - Confidence: MED — the refusal is inferred from the flag, not observed.
+- **Location**: Phase 2 — guard rules (Ordering), docs
+- **Detail**: The rule compares a new migration with the tree of `origin/$BASE_REF` at the moment `integration` runs. The ruleset has `strict_required_status_checks_policy: false` (`gh api repos/mariuszzlotucha/streak-board/rulesets/24254172`), so a PR whose last green run predates the merge of another migration PR can still merge, and its older timestamp lands behind the newer one on `master`. By the plan's own inference [I], `db push` then refuses the file and `release` fails after the build, on this and every later release until the owner acts, while the guard forbids the clean recovery by rename or delete. `CLAUDE.md` sets up parallel worktrees, so two open migration PRs are a normal case; this plan's own sequence has one migration (Phase 5) and avoids it, but other slices may overlap.
+- **Fix A ⭐ Recommended**: Document the limit and the recovery: one sentence in the Ordering bullet and in the README backward-compatibility paragraph saying that the branch is updated (so `integration` re-runs) before a migration PR is merged when another migration has merged since, and that a merged out-of-order file is applied by the owner with `supabase db push --include-all` (credentialed, by hand), because the guard forbids rename and delete.
+  - Strength: No policy change and about two sentences; it uses the CLI flag that exists for this case.
+  - Tradeoff: It relies on discipline; the failure is still caught only by `release`.
+  - Confidence: MED — the refusal and the effect of `--include-all` are inferred from the help text [I], not observed.
   - Blind spot: `db push` behaviour on an out-of-order file stays untested.
-- **Fix B**: Record it under "What We're NOT Doing" with a trigger (two migration-adding branches overlap) and a documented recovery (`supabase db push --include-all` by the owner, or a guard edit).
-  - Strength: No scope growth.
-  - Tradeoff: The failure is caught by `release` after the merge, the worst moment.
-  - Confidence: MED — same inference.
-  - Blind spot: Same.
-- **Decision**: FIXED (Fix A: ordering rule added to the Phase 2 guard, its tests, docs, Key Discoveries and the brief)
+- **Fix B**: Ask the owner to enable "Require branches to be up to date before merging" on the ruleset (`strict_required_status_checks_policy: true`) and add a Manual row to Phase 2 that confirms it with `gh api`.
+  - Strength: It closes the race mechanically for this rule and for every other base-relative check in `integration`.
+  - Tradeoff: It is an owner-only change of merge policy, and every PR must be updated and re-run after another merge.
+  - Confidence: HIGH — the flag is `false` today (read with `gh api`).
+  - Blind spot: The effect on the docs-only flow (skipped jobs still report) was not tested.
+- **Decision**: FIXED (Fix A: the Ordering bullet, the README description and the brief record the limit, the update-the-branch advice and the `--include-all` recovery; the strict flag is noted in Key Discoveries)
 
-### F6 — Guard script typing and end-to-end test mechanics
+### F4 — "Two rules hold in every phase" overclaims
+
+- **Severity**: ℹ️ OBSERVATION
+- **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
+- **Dimension**: Plan Completeness
+- **Location**: Implementation Approach; brief (Key Decisions "Safety order" and Architecture / Approach)
+- **Detail**: The sentence added after the first review says a check that can fail a PR is switched on in its own commit after what it checks passes, and calls both rules valid "in every phase", but the named cases are Phases 1 and 2 only. Phase 3's coverage guard is part of the route-suite commit ("three commits ... the fake client with the route suite"), the Phase 4 contract suite and the Phase 5 RLS scenario are checks that can fail a PR too, and Phase 5 states no commit structure at all (the commit sentence covers Phases 1 to 4). A strict reading would make `/10x-impl-review` flag Phases 3 and 5. The first rule has the same shape ("every phase", one instance).
+- **Fix**: Reword to "Two rules apply where a phase needs them: code that no test covers (only the dashboard page, Phase 1) is edited only after its current answers are recorded, and enforcement that is not itself a test (the lint rule in Phase 1, the CI steps in Phase 2) is switched on in its own commit after what it checks passes", and make the brief's decisions row and Architecture sentence say "enforcement" instead of "each check that can fail a PR".
+- **Decision**: FIXED (Fix in plan: the two rules apply where a phase needs them and rule 2 is limited to enforcement that is not a test; the brief's decisions row and Architecture sentence are aligned)
+
+### F5 — The guard spec leaves two details to the implementer
 
 - **Severity**: ℹ️ OBSERVATION
 - **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
 - **Dimension**: Plan Completeness
 - **Location**: Phase 2 — changes 1 and 2
-- **Detail**: `allowJs` is on (`node_modules/astro/tsconfigs/base.json:27`), so a `.ts` test can import the `.mjs` script, but the test is linted with `strictTypeChecked` while `scripts/**/*.mjs` have type checking disabled (`eslint.config.js:76-81`); untyped exports trip the `no-unsafe-*` rules. No test imports from `scripts/` today. The end-to-end test commits in a throwaway repository, and a CI runner has no git identity [I], so that `git commit` fails unless the test sets one.
-- **Fix**: Type the exports with JSDoc, and set a git identity (`-c user.name`, `-c user.email` or `GIT_AUTHOR_*` and `GIT_COMMITTER_*`) inside the temporary repository.
-- **Decision**: FIXED (Fix in plan: JSDoc typing and a git identity added to the Phase 2 contracts)
+- **Detail**: (a) The fixture test runs "over the real seven migrations ... stable because merged migrations are immutable". That holds for a fixed list of the seven names; a directory glob is not stable, because the first later migration that is flagged and carries a marker would turn the test red and the next author would loosen it. (b) `--entry` "prints the allowlist line" without saying what the reason text is; a helpful placeholder of 20 or more characters (for example "TODO explain why this edit is needed") passes the length rule when left unedited, which empties the owner's anti-abuse requirement. The unit tests list a short reason but not an unedited placeholder.
+- **Fix**: State that the fixture uses a fixed list of the seven file names (the migrations at `c9f6451`), and that `--entry` ends the line with the literal `<reason>` (under 20 characters), with a unit case that an unedited line fails.
+- **Decision**: FIXED (Fix in plan: a fixed list of the seven names for the fixture, the `<reason>` placeholder in `--entry` and a unit case for the unedited line)
 
-### F7 — Dashboard event suffixes vs the README definition
-
-- **Severity**: ℹ️ OBSERVATION
-- **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
-- **Dimension**: Plan Completeness
-- **Location**: Phase 1 — changes 1 and 3
-- **Detail**: `README.md:287` defines `.failed` as a returned Supabase error and `.exception` as a thrown one. The dashboard sees only rejections, because the data helpers rethrow returned errors (`src/lib/groups.ts:22`, `src/lib/tasks.ts:20`). The plan names all five events `.failed`, the compute throw included, while saying it follows the convention; the README sentence it adds can settle it.
-- **Fix**: Keep the five names; make the added README sentence say that dashboard events are all `.failed` because the data helpers rethrow returned errors.
-- **Decision**: FIXED (Fix in plan: the README sentence is specified in Phase 1)
-
-### F8 — Two "Automated" rows need an open PR; two diff rows use a moving base
+### F6 — The reason given for not editing CLAUDE.md is no longer true
 
 - **Severity**: ℹ️ OBSERVATION
 - **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
 - **Dimension**: Plan Completeness
-- **Location**: Rows 2.6 and 5.5; rows 3.3 and 4.4
-- **Detail**: Per `context/foundation/lessons.md:105-110` the PR is opened only after the phase commit, the SHA write-back and the impl review, so `gh pr checks` (rows 2.6 and 5.5) cannot run when the phase closes, and `/10x-goal-implement` ticks only `#### Automated` rows. None of the S-06, S-07 and S-08 plans has such a row. Rows 3.3 and 4.4 (`git diff --stat origin/master -- src`) compare with a moving `origin/master` and give a false alarm if master gains a `src` change.
-- **Fix**: Move 2.6 and 5.5 to Manual ("after the PR is open: all checks pass") and use `git diff --stat origin/master...HEAD -- src` in rows 3.3 and 4.4.
-- **Decision**: FIXED (Fix in plan: the PR-check rows moved to Manual as 2.10 and 5.8; rows 3.3 and 4.4 use `origin/master...HEAD`)
+- **Location**: What We're NOT Doing
+- **Detail**: The bullet says `CLAUDE.md` "carries unrelated uncommitted edits". They were committed on the planning branch as `54ab68d` at the owner's request, so the stated reason is false. The decision itself still stands: `CLAUDE.md` defers scripts and CI jobs to the README ("don't duplicate that here"), and Phase 2 updates the README.
+- **Fix**: Replace the parenthetical with the current reason: `CLAUDE.md` defers CI jobs and scripts to the README, which Phase 2 updates.
+- **Decision**: FIXED (Fix in plan: the parenthetical now gives the current reason)
