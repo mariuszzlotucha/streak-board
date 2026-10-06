@@ -105,6 +105,22 @@ describe("GET /auth/callback", () => {
     });
   });
 
+  it("logs an info line, not an error, when the exchange is rate limited", async () => {
+    exchangeCodeForSession.mockResolvedValue({ data: {}, error: { code: "over_request_rate_limit", status: 429 } });
+
+    expectRedirect(await callback("?code=abc"), "/auth/signin?error=link_expired");
+
+    expect(errorSpy).not.toHaveBeenCalled();
+    expect(infoSpy).toHaveBeenCalledOnce();
+    expect(infoSpy.mock.calls[0][0]).toMatchObject({
+      level: "info",
+      event: "auth.callback.rate_limited",
+      route: "/auth/callback",
+      code: "over_request_rate_limit",
+      status: 429,
+    });
+  });
+
   it("logs an error line when the exchange fails with an unexpected error", async () => {
     exchangeCodeForSession.mockResolvedValue({
       data: {},

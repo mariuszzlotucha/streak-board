@@ -7,8 +7,8 @@ export const prerender = false;
 
 // Landing for the e-mail confirmation link (PKCE): exchange the `code` for a session and continue to the app.
 // Any failure ends on the sign-in page with a fixed message; the link works only in the browser that signed up
-// (the code verifier cookie is set there), and a reused link fails the exchange. Those expected failures are an info
-// line, anything else an error report.
+// (the code verifier cookie is set there), and a reused link fails the exchange. Those expected failures and a rate
+// limit are an info line, anything else an error report.
 export const GET: APIRoute = async (context) => {
   const supabase = createClient(context.request.headers, context.cookies);
   if (!supabase) {
@@ -26,6 +26,8 @@ export const GET: APIRoute = async (context) => {
     if (error) {
       if (isStaleExchangeError(error)) {
         reportInfo("auth.callback.stale", { ...requestFields(context), code: error.code, status: error.status });
+      } else if (error.code === "over_request_rate_limit") {
+        reportInfo("auth.callback.rate_limited", { ...requestFields(context), code: error.code, status: error.status });
       } else {
         reportError("auth.callback.failed", error, { ...requestFields(context), status: error.status });
       }

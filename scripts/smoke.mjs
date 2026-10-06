@@ -146,6 +146,12 @@ function alertMessage(text) {
   return new RegExp(`data-slot="alert-description"[^>]*>\\s*${escapeRegExp(text)}`);
 }
 
+// The message inside a rendered field error (`<p id="<field>-error" role="alert">`, an icon first). The island's
+// serialized props repeat the text too, so this is the check that needs the element itself.
+function fieldError(field, text) {
+  return new RegExp(`id="${escapeRegExp(field)}-error"[^>]*>(?:<svg[\\s\\S]*?</svg>)?\\s*${escapeRegExp(text)}`);
+}
+
 // A member row (<li>) that contains the given email and, after it, a form posting to the remove-member route.
 function rowWithRemoveControl(memberEmail) {
   return new RegExp(
@@ -471,12 +477,15 @@ const steps = [
     // The button also says "Continue with Google", so only the hint's own wording proves the message changed.
     "signin page adds the Google hint to the invalid-credentials message",
     () => request("/auth/signin?error=invalid_credentials", { cookie: "" }),
-    { status: 200, bodyIncludes: "If you signed up with Google" },
+    { status: 200, bodyMatches: [alertMessage("Invalid email or password. If you signed up with Google")] },
   ],
   [
     "signup page adds the Google hint to the duplicate-email message",
     () => request("/auth/signup?error=email_taken", { cookie: "" }),
-    { status: 200, bodyIncludes: "if you signed up with it" },
+    {
+      status: 200,
+      bodyMatches: [fieldError("email", "An account with this email already exists. Sign in instead, or use Continue")],
+    },
   ],
   [
     "signin page offers Continue with Google through a form posting to the start route",

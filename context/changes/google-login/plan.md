@@ -322,4 +322,4 @@ No schema change and no migration. Existing users and their foreign keys are unt
 - [x] 2.15 On production, e-mail+password sign-in and sign-out still work — 827cb19
 - [x] 2.16 The flows above leave no error-level `auth.google.*` line and no new Sentry issue, and Workers Logs show no `auth.google.callback.returned` line with `providerError=server_error` — 827cb19
 - [x] 2.17 The Phase 12 section of `deployment-plan.md` records the release result and the manual results, owner-reported rows tagged, and whether the user created by 2.12 was kept or deleted — 827cb19
-- [ ] 2.18 The closing docs PR is merged
+- [x] 2.18 The closing docs PR is merged — 62e010e
