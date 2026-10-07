@@ -6,7 +6,7 @@ type: architect-report
 
 # Raport architektoniczny z modułu 4: StreakBoard
 
-Fakty i rekomendacje mają odwołania do artefaktów (etykiety w §1), [I] oznacza wniosek, moje decyzje są w §6, a braki oznaczam „BRAK artefaktu”.
+Fakty i rekomendacje mają odwołania do artefaktów (etykiety w §1), [I] oznacza wniosek, moje decyzje są w §6, a braki oznaczam „BRAK artefaktu”. Identyfikatory (V11, D12, OPP-2 itd.) pochodzą z artefaktów, a 02 D-2 to decyzja D-2 z L5-02.
 
 ## 1. Opisane projekty
 
@@ -17,7 +17,7 @@ Wszystkie wejścia powstały na jednym repozytorium, **StreakBoard** (`streak-bo
 - **L4** (`c9f6451`): `context/changes/refactor-opportunities/`: `research.md` (L4-research), `plan-brief.md` (L4-brief), `plan.md` (L4-plan), `reviews/plan-review.md` (L4-review).
 - **L5** (`dd2dee0`): `context/domain/`: `01-domain-distillation.md` (L5-01), `02-invariant-aggregate-refactor.md` (L5-02), `03-anti-corruption-layer.md` (L5-03), `glossary.md` (L5-gl).
 
-**Stack:** Astro SSR z wyspami React na Cloudflare Workers, Supabase (Auth, Postgres z RLS) (L2 §1). **Skala:** 144 moduły w grafie importów i 16 endpointów API (`artifact-2`), 5 tabel (L3 „Summary”). **Kontekst:** 192 commity nie-merge jednego autora w ok. 3 tygodnie, czyli aktywność, nie trend (L2 §1, §5, §7).
+**Stack:** Astro SSR z wyspami React na Cloudflare Workers, Supabase (Auth, Postgres z RLS) (L2 §1). **Skala:** 144 moduły w grafie importów i 16 endpointów API (`artifact-2`), 5 tabel (L3 „Summary”).
 
 ## 2. Mapa projektu (L2)
 
@@ -28,11 +28,11 @@ Wszystkie wejścia powstały na jednym repozytorium, **StreakBoard** (`streak-bo
 
 ## 3. Analiza ficzera (L3)
 
-**Przepływ** „data-access” to strefa ryzyka (2), czyli obok sesji miejsce, gdzie według L2 najbardziej „boli”: tam „reguły dostępu żyją w SQL, którego żadne narzędzie nie widzi” (L2 §1, §4). L3 rozpisuje te reguły na trasy, operacje w bazie i mechanizmy autoryzacji (L3 „Research Question”, §1.3). **Wejście** to 13 tras POST, głównie z formularzy HTML (V4, V20). **Autoryzacja:** aplikacja waliduje kształt danych i bierze grupę z członkostwa, nie z requestu (V6), a o tym, kto może zmienić który wiersz, decyduje baza (L3 §1.1a). **Stan** zmieniają trasy, a niejawnie triggery i kaskady w bazie: wyjście z grupy kasuje uczestnictwa i odznaczenia (L3 §1.1a). **Wraca** przekierowanie (przy odznaczeniu JSON) albo `?error=<kod>`, a 0 wierszy z UPDATE lub DELETE daje `?error=forbidden` bez logu (L3 §1.1a).
+**Przepływ** „data-access” to strefa ryzyka (2), czyli obok sesji miejsce, gdzie według L2 najbardziej „boli”: tam „reguły dostępu żyją w SQL, którego żadne narzędzie nie widzi” (L2 §1, §4). L3 rozpisuje te reguły na trasy, operacje w bazie i mechanizmy autoryzacji (L3 „Research Question”, §1.3), a w §1.1a streszcza przepływ w czterech pytaniach. **Wejście** to 13 tras POST, głównie z formularzy HTML (V4, V20; V to wiersze weryfikacji z §4.1). **Autoryzacja:** aplikacja waliduje kształt danych i bierze grupę z członkostwa, nie z requestu (V6), a o tym, kto może zmienić który wiersz, decyduje baza. **Stan** zmieniają trasy, a niejawnie triggery i kaskady w bazie: wyjście z grupy kasuje uczestnictwa i odznaczenia. **Wraca** przekierowanie (przy odznaczeniu JSON) albo `?error=<kod>`, a 0 wierszy z UPDATE lub DELETE daje `?error=forbidden` bez logu.
 
-**Dług** (L3 §2.1; V to wiersze weryfikacji z §4.1):
+**Dług** (L3 §2.1):
 
-1. **Wydanie (D12, pierwszy w rankingu L3):** `db push --yes` biegnie przed `wrangler deploy`, a zgodności wstecznej pilnuje tylko proza (V24, V26), więc migracja może odebrać uprawnienie działającemu jeszcze Workerowi, a to dotyka każdej ścieżki odczytu i zapisu [I].
+1. **Wydanie i blast radius (D12, pierwszy w rankingu L3):** `db push --yes` biegnie przed `wrangler deploy`, a zgodności wstecznej pilnuje tylko proza (V24, V26), więc migracja może zawęzić politykę RLS albo odebrać uprawnienie działającemu jeszcze Workerowi [I]. Dotknie to każdej ścieżki odczytu i zapisu, bo wszystkie przechodzą przez polityki RLS [I].
 2. **Ciche awarie (D4, D5):** 6 tras z pustym wynikiem bez raportu (V7), `dashboard.astro` tylko z `console.error` (V11); pierwszym sygnałem jest skarga użytkownika [I].
 3. **Luka testowa (D8, D7):** 11 z 13 handlerów i 6 modułów `lib` bez importu w testach (V14, V15); zmiany odpowiedzi trasy nie zauważy żaden test [I].
 
@@ -69,13 +69,13 @@ Ryzyka 2 i 3 sprawdził ast-grep z kontrolą grepem (L3 §4.2; V11, V15 „confi
 
 - **Fakt** (L5-02 §3.2, §3.5): klient wysyła tylko `task_id`, okres wyznacza zegar Workera, a baza wymusza tylko unikalność, uczestnictwo i okno dat; wyspa porównuje widziany okres ze zwróconym dopiero po zapisie (INV-14), więc kliknięcie po północy zapisuje następny dzień (scenariusz V4 wyprowadzony z kodu, §3.6).
 - **Projekt L5-02 (niewdrożony):** agregat **`Participation`** (uczestnictwo z odznaczeniami, reguły P1–P8) ma żyć w funkcjach SQL `check_off` i `uncheck`, bo baza widzi każdą ścieżkę zapisu, a jedno wywołanie to jedna transakcja. To decyzja architektoniczna L5-02 (opcja C); agregat w TS (opcje A i B) odrzucono (§4.1). Żądanie ma nieść `expected_period`; gdy nie jest bieżący (P6), funkcja ma zgłosić błąd domenowy `SB409`, adapter ma go przetłumaczyć na `StalePeriodError`, a trasa zwrócić HTTP 409, bez zapisu (§4.4–§4.6).
-- **Moja decyzja** (§6): tylko bieżący okres (02 D-2) i odrzucanie odznaczenia z nieaktualnego okresu (02 D-1), czyli zmiana widoczna dla użytkownika (L5-02 D-1), nie neutralny refaktor z L4.
+- **Moja decyzja** (§6): tylko bieżący okres (02 D-2) i odrzucanie odznaczenia z nieaktualnego okresu (02 D-1), czyli zmiana widoczna dla użytkownika, nie neutralny refaktor z L4.
 
-**ACL** (L5-03 §1.2, §2): przecieka **Supabase**: zna go 5 warstw (middleware, HTTP, strony, biblioteka, raportowanie) i 36 plików `src/`. L5-03 wybiera go, bo przecieka najszerzej i jako jedyny wnosi swój typ do kontraktu domeny, a Sentry ma już fasadę (`log.ts`), lock-in Astro zaś jest zaakceptowany. Najgroźniejszy jest ręczny kontrakt „odmowa RLS = zero wierszy, bez błędu” w tych samych 6 trasach co D4 w L3 (L5-03 §3.4). L5-03 rekomenduje Fazy 1–3 i 6 m.in. dlatego, że zamykają ten kontrakt w jednym miejscu (03 D-1), a trasy mają w nich przechodzić na ACL dopiero z siecią testów z Fazy 3 L4 (§6.3).
+**ACL** (L5-03 §1.2, §2): przecieka **Supabase**: zna go 5 warstw (middleware, HTTP, strony, biblioteka, raportowanie) i 36 plików `src/`. L5-03 wybiera go, bo przecieka najszerzej i jako jedyny wnosi swój typ do kontraktu domeny, a Sentry ma już fasadę (`log.ts`), lock-in Astro zaś jest zaakceptowany. Za najgroźniejszy L5-03 (§2, §3.4) uznaje ręczny kontrakt „odmowa RLS = zero wierszy, bez błędu” w tych samych 6 trasach co D4 w L3. L5-03 rekomenduje Fazy 1–3 i 6 m.in. dlatego, że zamykają ten kontrakt w jednym miejscu (03 D-1), a trasy mają w nich przechodzić na ACL dopiero z siecią testów z Fazy 3 L4 (L5-03 §6.3).
 
 ## 6. Decyzje, które należą do mnie
 
-Z L4: research tylko uszeregował 10 okazji (L4-research §11), a ja wziąłem pięć pierwszych, z 7 zaproponowanych faz zostawiłem 5, bo chciałem grubszych jednostek, i rozstrzygnąłem trzy guardy OPP-3, styl testów OPP-1, jednorazowy wyjątek od niezmienności migracji oraz kształt OPP-4 (powody: L4-brief, „Key Decisions Made”); kolejność faz ustawił sam plan. Z L5 rozstrzygnąłem cztery sprawy zgodnie z tym, co L5 rekomenduje lub proponuje: zamykam okno dat, więc funkcje SQL mają zapisywać tylko bieżący okres (02 D-2; R-08 zniknie dopiero po Fazie 3 planu 02, czyli Migracji B, L5-02 §6); odznaczenie albo jego cofnięcie ma być odrzucane bez zapisu (HTTP 409), gdy widziany okres nie jest już bieżący (02 D-1); robię Fazy 1–3 i 6 ACL, a Fazy 4–5 czekają (03 D-1); spadek streaka „połowa, w dół” jest ostateczny, więc poprawić trzeba PRD, nie kod (Q-01). L5 podaje przy tych sprawach tylko rekomendacje i nadal pokazuje je jako otwarte, więc to moje rozstrzygnięcia, a nie fakty z artefaktów. Dlaczego rozstrzygnąłem te cztery sprawy tak, a nie inaczej: BRAK artefaktu, bo L5 zapisuje tylko powody swoich rekomendacji. Otwarte zostają 02 D-3 i D-4, 03 D-2…D-6, Q-02…Q-09 (w tym Q-04), Fix B z L4-review F3 oraz dwie kwestie dla właściciela produktu: reguła okresu, której PRD nie podaje, choć mają ją kod i L5 (N-19, B-07), i komunikat przy konflikcie 409 (L5-02 §4.6 przewiduje tylko przeładowanie).
+Z L4: research tylko uszeregował 10 okazji (L4-research §11), a ja wziąłem pięć pierwszych, bo z założenia nie zmieniają zachowania i cofają się osobno; z 7 zaproponowanych faz zostawiłem 5, bo chciałem grubszych jednostek, i rozstrzygnąłem trzy guardy OPP-3, styl testów OPP-1, jednorazowy wyjątek od niezmienności migracji oraz kształt OPP-4 (powody: L4-brief, „Key Decisions Made”); kolejność faz ustawił sam plan. Z L5 rozstrzygnąłem cztery sprawy zgodnie z tym, co L5 rekomenduje lub proponuje: zamykam okno dat, więc funkcje SQL mają zapisywać tylko bieżący okres (02 D-2; R-08 zniknie dopiero po Fazie 3 planu 02, czyli Migracji B, L5-02 §6); odznaczenie albo jego cofnięcie ma być odrzucane bez zapisu (HTTP 409), gdy widziany okres nie jest już bieżący (02 D-1); robię Fazy 1–3 i 6 ACL, a Fazy 4–5 czekają (03 D-1); spadek streaka „połowa, w dół” jest ostateczny, więc poprawić trzeba PRD, nie kod (Q-01). L5 podaje przy tych sprawach tylko rekomendacje i nadal pokazuje je jako otwarte, więc to moje rozstrzygnięcia, a nie fakty z artefaktów. Dlaczego rozstrzygnąłem te cztery sprawy tak, a nie inaczej: BRAK artefaktu, bo L5 zapisuje tylko powody swoich rekomendacji. Otwarte zostają 02 D-3 i D-4, 03 D-2…D-6, Q-02…Q-09 (w tym Q-04), Fix B z L4-review F3 oraz dwie kwestie dla właściciela produktu: reguła okresu, której PRD nie podaje, choć mają ją kod i L5 (N-19, B-07), i komunikat przy konflikcie 409 (L5-02 §4.6 przewiduje tylko przeładowanie).
 
 ## Luki
 
