@@ -54,7 +54,7 @@ Grono znajomych korzystało wcześniej ze wspólnego arkusza Google, w którym r
 | S-08 | observability-swallowed-errors | (jakościowy) awaria w krytycznym przepływie nie jest połykana ani zamieniana na sukces: trafia do odpowiedzi API i do monitoringu                        | —                                                       | — (jakościowe; MS-05)              | done     |
 | S-09 | landing-page                   | zobaczyć jako niezalogowany stronę startową, która tłumaczy, czym jest aplikacja, i prowadzi do rejestracji lub logowania                                | S-06, S-07                                              | — (UI; MS-03)                      | done     |
 | S-10 | test-coverage                  | (jakościowy) zmiany w aplikacji są chronione testami wybranymi według ryzyka, a jakość testów jednostkowych jest mierzona mutacjami                      | —                                                       | — (jakościowe; MS-02)              | ready    |
-| S-11 | dashboard-ui                   | korzystać z czytelniejszego, spójnego wizualnie widoku grupy, tasków i tablicy wyników                                                                   | S-08, S-10                                              | — (UI; MS-04)                      | proposed |
+| S-11 | dashboard-ui                   | korzystać z czytelniejszego, spójnego wizualnie widoku grupy, tasków i tablicy wyników                                                                   | S-08                                                    | — (UI; MS-04)                      | ready    |
 | S-12 | refactor-opportunities         | (jakościowy) znane ciche luki są zamknięte: raportowanie błędów dashboardu, strażnicy migracji i typów w CI, testy tras i reguł, jawne uprawnienia tabel | —                                                       | — (jakościowe; MS-07)              | planning |
 | S-13 | checkoff-grid                  | zobaczyć siatkę odznaczeń grupy: kto wykonał task w każdym z ostatnich okresów                                                                           | S-11                                                    | — (UI; MS-08)                      | proposed |
 
@@ -65,8 +65,9 @@ Pomoc nawigacyjna — grupuje pozycje ze wspólnym łańcuchem Prerequisites. Ka
 | Stream | Theme                   | Chain                    | Note                                                                                                                                        |
 | ------ | ----------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | A      | Wejście dla nowych osób | `S-06` → `S-07` → `S-09` | Adres, logowanie bez hasła i strona startowa składają się na ścieżkę nowej osoby do dashboardu: to wejście do informacji zwrotnej od rynku. |
-| B      | Siatka testów i widok   | `S-10` → `S-11` → `S-13` | Testy przed zmianą wyglądu; `S-11` dołącza do strumienia C w `S-08`; siatka odznaczeń powstaje już w nowym widoku.                          |
-| C      | Widoczność awarii       | `S-08` → `S-12`          | Domknięcie cichych luk po S-08; `S-12` jest niezależny technicznie i może iść równolegle z `S-10`.                                          |
+| B      | Widok i siatka          | `S-11` → `S-13`          | Najpierw nowy wygląd (decyzja 2026-10-08), potem siatka odznaczeń w nowym widoku; `S-11` dołącza do strumienia C w `S-08`.                  |
+| D      | Siatka testów           | `S-10`                   | Na końcu M-2: testy dobrane według ryzyka i e2e pod nowy wygląd.                                                                            |
+| C      | Widoczność awarii       | `S-08` → `S-12`          | Domknięcie cichych luk po S-08; `S-12` jest niezależny technicznie i może iść równolegle z `S-11` i `S-10`.                                 |
 
 ## Baseline
 
@@ -156,12 +157,12 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Change ID:** test-coverage
 - **PRD refs:** — (jakościowe; MS-02)
 - **Prerequisites:** —
-- **Parallel with:** S-06, S-07, S-08, S-09
+- **Parallel with:** S-11, S-12, S-13
 - **Blockers:** —
 - **Unknowns:**
   - Jak uzgodnić `test-plan.md` z decyzją o e2e: §4 mówi dziś „e2e: none — not planned", a wejście wprost wlicza e2e kluczowych przepływów (Playwright jest już skonfigurowany) — odświeżyć test-plan przed planowaniem czy uzgodnić to w planie wycinka? — Owner: user. Block: no — rozstrzyga `/10x-frame`.
 - **Źródło zakresu:** `context/foundation/roadmap-input-next-slices.md`, sekcja „2. test-coverage" (testy jednostkowe dla logiki bez testów, testy mutacyjne na modułach z regułami, e2e kluczowych przepływów zamiast wszystkiego; UI poza testami DOM wg test-planu §7).
-- **Risk:** Najszerszy wycinek M-2 i zakres bez granic: plan musi wybrać etapy z test-planu (niezrealizowane są etap 2, bramka kolejności wydania, i etap 3, granice auth i walidacja), zapisać, czego nie testuje, i może rozpaść się na kilka zmian (status przesuwa tylko pierwsza). Stoi przed S-11 jako siatka bezpieczeństwa przed zmianą wyglądu, a przed S-09 nie musi, bo strona startowa zastępuje szablon sprawdzany dziś tylko statusem 200; nie ma zależności technicznych, więc może iść równolegle z wcześniejszymi wycinkami.
+- **Risk:** Najszerszy wycinek M-2 i zakres bez granic: plan musi wybrać etapy z test-planu (niezrealizowane są etap 2, bramka kolejności wydania, i etap 3, granice auth i walidacja), zapisać, czego nie testuje, i może rozpaść się na kilka zmian (status przesuwa tylko pierwsza). Idzie na końcu M-2 (decyzja właściciela 2026-10-08), po S-11 i S-13, więc e2e kluczowych przepływów powstaje pod nowy wygląd; nie ma zależności technicznych, więc może też iść równolegle.
 - **Status:** ready
 
 ### S-11: Czytelniejszy widok grupy, tasków i tablicy wyników
@@ -169,14 +170,14 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Outcome:** zalogowany użytkownik korzysta z czytelniejszego, spójnego wizualnie widoku grupy, tasków i tablicy wyników.
 - **Change ID:** dashboard-ui
 - **PRD refs:** — (UI; MS-04)
-- **Prerequisites:** S-08, S-10
-- **Parallel with:** S-06, S-07, S-09
+- **Prerequisites:** S-08
+- **Parallel with:** S-10, S-12
 - **Blockers:** —
 - **Unknowns:** —
 - **Źródło zakresu:** `context/foundation/roadmap-input-next-slices.md`, sekcja „4. dashboard-ui" (praca nad widokiem, który już się renderuje, więc `/10x-ui`; przepisanie asercji smoke i sprawdzenie e2e należą do zakresu tego wycinka).
 - **Stan wejściowy (2026-10-08):** `dashboard.astro` jest już podzielony (PR `refactor/split-dashboard`): ładowanie danych to `loadDashboard` w `src/lib/dashboard-data.ts` z testami jednostkowymi (`tests/unit/dashboard-data.test.ts`), a karty to komponenty w `src/components/dashboard/` (`GroupHeaderCard`, `MembersCard`, `TasksCard`, `TaskRow`, `OwnerActions`, `LeaveGroupCard`, `PendingInviteCard`, `NoGroupCards`, `AccountCard`). HTML strony został bez zmian (porównany w 7 stanach), więc smoke nie wymagał zmian. Restyling robi się na tych komponentach, a stany degradacji są przypięte testami.
-- **Risk:** Zależności od S-10 (siatka bezpieczeństwa) i S-08 (kontrakt odpowiedzi na błąd ustalony przed przebudową stanów błędu) są kolejnościowe, nie techniczne; zamiana z S-10 jest dopuszczalna, jeśli UI jest pilniejszy niż testy (wtedy e2e powstaje już pod nowy wygląd). Rozbudowany smoke (ponad 1600 linii) dopasowuje dzisiejszy markup, więc zmiana wyglądu łamie go, dopóki asercje nie zostaną przepisane (to część tego wycinka); wyspy optymistyczne muszą zachować zgodność HTML serwera z pierwszym renderem klienta, a PRD wymaga pełnej użyteczności na smartfonie i natychmiastowego odznaczania.
-- **Status:** proposed
+- **Risk:** Idzie pierwszy w pozostałej części M-2 (decyzja właściciela 2026-10-08: to zmiana wyglądu, a UI jest pilniejszy niż testy), więc S-10 przestało być wymaganiem; e2e z S-10 powstaje już pod nowy wygląd. Zależność od S-08 (kontrakt odpowiedzi na błąd ustalony przed przebudową stanów błędu) jest spełniona. Siatką bezpieczeństwa są testy `loadDashboard`, testy integracyjne i smoke. Rozbudowany smoke (ponad 1600 linii) dopasowuje dzisiejszy markup, więc zmiana wyglądu łamie go, dopóki asercje nie zostaną przepisane (to część tego wycinka); wyspy optymistyczne muszą zachować zgodność HTML serwera z pierwszym renderem klienta, a PRD wymaga pełnej użyteczności na smartfonie i natychmiastowego odznaczania.
+- **Status:** ready
 
 ### S-12: Okazje refaktoryzacji z analizy data-access
 
@@ -184,12 +185,12 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Change ID:** refactor-opportunities
 - **PRD refs:** — (jakościowe; MS-07)
 - **Prerequisites:** —
-- **Parallel with:** S-09, S-10
+- **Parallel with:** S-10, S-11
 - **Blockers:** —
 - **Unknowns:** —
 - **Źródło zakresu:** `context/changes/refactor-opportunities/` (research z rankingiem dziesięciu okazji i plan pięciu faz, `plan_reviewed`); zmiana powstała 2026-10-06 poza roadmapą i stała się wycinkiem decyzją użytkownika 2026-10-08.
 - **Stan wejściowy (2026-10-08):** po podziale `dashboard.astro` pięć wywołań `console.error`, które zmienia faza 1, jest w `loadDashboard` (`src/lib/dashboard-data.ts`), nie we frontmatterze strony. Faza 1 może więc pokryć zdarzenia `dashboard.*.failed` testami jednostkowymi (`tests/unit/dashboard-data.test.ts` już mockuje każdy odczyt), zamiast opierać się tylko na ręcznym wstrzykiwaniu awarii; plan trzeba odpowiednio zaktualizować przed `/10x-implement`. Ryzyko konfliktu z S-11 w `dashboard.astro` zniknęło.
-- **Risk:** Plan już jest, więc to najkrótsza droga do zamkniętego wycinka. Faza 1 zmienia raportowanie błędów dashboardu, więc lepiej skończyć S-12 przed S-11: S-11 dostaje wtedy awarie widoczne w monitoringu i testy tras. Bramka kolejności wydania i e2e zostają w S-10, a ostatnia faza (uprawnienia) wymaga właściciela i wydania na produkcję.
+- **Risk:** Plan już jest, więc to najkrótsza droga do zamkniętego wycinka. Po podziale dashboardu faza 1 zmienia tylko `src/lib/dashboard-data.ts`, nie komponenty widoku, więc S-12 nie koliduje z S-11 i może iść przed nim, po nim albo równolegle. Bramka kolejności wydania i e2e zostają w S-10, a ostatnia faza (uprawnienia) wymaga właściciela i wydania na produkcję.
 - **Status:** planning
 
 ### S-13: Siatka odznaczeń grupy
@@ -198,7 +199,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Change ID:** checkoff-grid
 - **PRD refs:** — (UI; MS-08)
 - **Prerequisites:** S-11
-- **Parallel with:** S-12
+- **Parallel with:** S-10, S-12
 - **Blockers:** —
 - **Unknowns:**
   - Ile okresów pokazuje siatka (np. 7 dni / 4 tygodnie) i czy zależy to od tasku `daily`/`weekly`? — Owner: user. Block: no — rozstrzyga `/10x-frame`.
@@ -216,9 +217,9 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-07       | google-login                   | Logowanie kontem Google: konfiguracja dostawcy, trasa startowa, przycisk, callback          | yes                   | S-06 jest zrobione, więc adresy przekierowań i ekran zgody konfiguruje się na docelowej domenie. Zwykły łańcuch od `/10x-frame`; kroki ręczne właściciela po stronie Google i Supabase.                                       |
 | S-08       | observability-swallowed-errors | Awarie krytycznego przepływu trafiają do odpowiedzi API i do monitoringu                    | yes                   | Niezależny, może ruszyć od razu. Najpierw `/10x-observability-audit` (raport w `context/audits/observability/`), potem Run `/10x-plan observability-swallowed-errors` (po `/10x-new` i `/10x-research`); część B opcjonalna.  |
 | S-09       | landing-page                   | Strona startowa dla niezalogowanych użytkowników                                            | yes                   | S-06 i S-07 zrobione. Frame: `context/archive/2026-10-08-landing-page/frame.md` (obietnica z PRD, polityka prywatności, zalogowany → `/dashboard`, flaga Safe Browsing). Run `/10x-research`, potem `/10x-plan landing-page`. |
-| S-10       | test-coverage                  | Testy dobrane według ryzyka: jednostkowe, mutacyjne i e2e kluczowych przepływów             | yes                   | Niezależny; musi się skończyć przed S-11. Run `/10x-plan test-coverage` (po `/10x-new` i `/10x-research`); plan oparty o `test-plan.md` (etapy 2 i 3 nierozpoczęte), granice zakresu zapisane w planie.                       |
-| S-11       | dashboard-ui                   | Czytelniejszy widok grupy, tasków i tablicy wyników                                         | no                    | Czeka na S-08 i S-10 (kolejność). Widok już się renderuje, więc `/10x-ui`; przepisanie asercji smoke w zakresie.                                                                                                              |
-| S-12       | refactor-opportunities         | Okazje refaktoryzacji: raportowanie dashboardu, strażnicy CI, testy tras, jawne uprawnienia | yes                   | Plan gotowy (`plan_reviewed`): Run `/10x-implement refactor-opportunities`. Najlepiej przed S-11. Faza 1 do aktualizacji po podziale dashboardu (kod w `src/lib/dashboard-data.ts`).                                          |
+| S-10       | test-coverage                  | Testy dobrane według ryzyka: jednostkowe, mutacyjne i e2e kluczowych przepływów             | yes                   | Niezależny; idzie na końcu M-2, po S-11 i S-13. Run `/10x-plan test-coverage` (po `/10x-new` i `/10x-research`); plan oparty o `test-plan.md` (etapy 2 i 3 nierozpoczęte), granice zakresu zapisane w planie.                 |
+| S-11       | dashboard-ui                   | Czytelniejszy widok grupy, tasków i tablicy wyników                                         | yes                   | Następny w kolejce (decyzja 2026-10-08). Widok już się renderuje i jest podzielony na komponenty, więc `/10x-new dashboard-ui`, potem `/10x-ui`; przepisanie asercji smoke w zakresie.                                        |
+| S-12       | refactor-opportunities         | Okazje refaktoryzacji: raportowanie dashboardu, strażnicy CI, testy tras, jawne uprawnienia | yes                   | Plan gotowy (`plan_reviewed`): Run `/10x-implement refactor-opportunities`. Niezależny od S-11. Faza 1 do aktualizacji po podziale dashboardu (kod w `src/lib/dashboard-data.ts`).                                            |
 | S-13       | checkoff-grid                  | Siatka odznaczeń grupy: uczestnicy × ostatnie okresy                                        | no                    | Czeka na S-11. Zwykły łańcuch od `/10x-frame`; aktualizacja PRD, słownika i polityki prywatności w zakresie.                                                                                                                  |
 
 ## Open Roadmap Questions
