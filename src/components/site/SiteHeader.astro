@@ -1,0 +1,15 @@
+---
+// No signed-in variant: a signed-in visitor who follows the brand link to `/` is sent on to `/dashboard`.
+---
+
+<header class="border-b border-border bg-background">
+  <div class="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 py-3">
+    <a href="/" class="flex items-center gap-2 font-heading text-lg font-semibold text-foreground">
+      <img src="/favicon.svg" alt="" width="28" height="28" class="size-7" />
+      StreakBoard
+    </a>
+    <div class="flex items-center gap-2">
+      <slot name="actions" />
+    </div>
+  </div>
+</header>

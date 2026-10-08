@@ -8,6 +8,8 @@ export function createClient(requestHeaders: Headers, cookies: AstroCookies) {
     return null;
   }
   return createServerClient<Database>(SUPABASE_URL, SUPABASE_KEY, {
+    // Merged over the library defaults: every session and verifier cookie is HTTPS-only in a production build.
+    cookieOptions: { secure: import.meta.env.PROD },
     cookies: {
       getAll() {
         return parseCookieHeader(requestHeaders.get("Cookie") ?? "");

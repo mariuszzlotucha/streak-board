@@ -21,6 +21,8 @@ export default defineConfig({
     schema: {
       SUPABASE_URL: envField.string({ context: "server", access: "secret", optional: true }),
       SUPABASE_KEY: envField.string({ context: "server", access: "secret", optional: true }),
+      // Not a secret (the privacy policy publishes it), but read at runtime so the address stays out of the repo.
+      CONTACT_EMAIL: envField.string({ context: "server", access: "secret", optional: true }),
     },
   },
 });

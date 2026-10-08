@@ -1,0 +1,24 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import SiteFooter from "@/components/site/SiteFooter.astro";
+import SiteHeader from "@/components/site/SiteHeader.astro";
+
+interface Props {
+  title?: string;
+}
+
+const { title } = Astro.props;
+---
+
+{/* The frame of every public page: brand header, the page's own content, then the footer with the policy link. */}
+<Layout title={title}>
+  <div class="flex min-h-screen flex-col bg-muted">
+    <SiteHeader>
+      <slot name="actions" slot="actions" />
+    </SiteHeader>
+    <main class="flex flex-1 flex-col">
+      <slot />
+    </main>
+    <SiteFooter class="border-t border-border bg-background" />
+  </div>
+</Layout>

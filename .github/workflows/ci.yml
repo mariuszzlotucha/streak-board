@@ -76,6 +76,8 @@ jobs:
         run: |
           source supabase.env
           printf 'SUPABASE_URL=%s\nSUPABASE_KEY=%s\n' "$API_URL" "$ANON_KEY" > .env
+          # The privacy policy's contact address is runtime configuration; smoke only checks that a mailto: link renders.
+          printf 'CONTACT_EMAIL=contact@example.com\n' >> .env
           cp .env .dev.vars
       - run: npm run build
       - name: Run smoke test against production preview
@@ -167,6 +169,30 @@ jobs:
             sleep 3
           done
           [ "$root" = "200" ] || { echo "Expected 200 from $base/, got $root"; exit 1; }
+          # The privacy policy and its link on `/` exist only in the new Worker version (the previous one also answers `/`
+          # with 200 above), so both are retried together: up to 10 tries, 3 s apart. The policy must also keep its plain
+          # mailto: contact link, which Cloudflare's e-mail obfuscation would rewrite to /cdn-cgi/l/email-protection.
+          privacy=""
+          linked=""
+          contact=""
+          for i in $(seq 1 10); do
+            privacy=$(curl -s -o /dev/null -w '%{http_code}' "$base/privacy" || true)
+            home=$(curl -s "$base/" || true)
+            case "$home" in
+              *'href="/privacy"'*) linked="yes" ;;
+              *) linked="no" ;;
+            esac
+            policy=$(curl -s "$base/privacy" || true)
+            case "$policy" in
+              *'href="mailto:'*) contact="yes" ;;
+              *) contact="no" ;;
+            esac
+            [ "$privacy" = "200" ] && [ "$linked" = "yes" ] && [ "$contact" = "yes" ] && break
+            sleep 3
+          done
+          [ "$privacy" = "200" ] || { echo "Expected 200 from $base/privacy, got $privacy"; exit 1; }
+          [ "$linked" = "yes" ] || { echo "Expected $base/ to link the privacy policy (href=\"/privacy\"), the link is missing"; exit 1; }
+          [ "$contact" = "yes" ] || { echo "Expected $base/privacy to carry a plain mailto: contact link (href=\"mailto:\"), it is missing or rewritten"; exit 1; }
           read -r code location < <(curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' "$base/dashboard")
           [ "$code" = "302" ] || { echo "Expected 302 from $base/dashboard, got $code"; exit 1; }
           case "$location" in

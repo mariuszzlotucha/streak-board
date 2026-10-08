@@ -1,0 +1,18 @@
+---
+import { contactEmail } from "@/lib/site";
+
+interface Props {
+  class?: string;
+}
+
+const { class: className } = Astro.props;
+const email = contactEmail();
+---
+
+{email ? (
+  <a href={`mailto:${email}`} class:list={className}>
+    {email}
+  </a>
+) : (
+  <span>[contact address not configured]</span>
+)}
