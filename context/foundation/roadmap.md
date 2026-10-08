@@ -24,7 +24,7 @@ milestone_status: open
 
 - **Intent:** Po zamknięciu pierwszego pełnego cyklu (M-1) doprowadzić wdrożone MVP do stanu, w którym można je pokazać realnym użytkownikom i zbierać od nich informację zwrotną: własny adres, łatwe logowanie kontem Google, strona startowa tłumacząca produkt, czytelniejszy widok grupy, testy chroniące zmiany oraz awarie, które nie giną po cichu.
 - **Source materials:** `context/foundation/roadmap-input-next-slices.md` (MS-01 do MS-05, zakres uzgodniony z użytkownikiem po zamknięciu wszystkich pozycji M-1), późniejszy opis użytkownika (MS-06) oraz FR-001 z PRD v1 („email/OAuth/passwordless"), na którym opiera się MS-06. Poza FR-001 ten kamień milowy nie realizuje nowych FR-ów.
-- **Done when:** każdy S-06 do S-11 poniżej ma status `done`.
+- **Done when:** każdy S-06 do S-13 poniżej ma status `done`.
 - **Scope anchors:** źródło nie ma własnych identyfikatorów, więc zakres jest zapisany jako kotwice `MS-NN`, po jednej na wycinek: MS-01 do MS-05 z wyników opisanych w pliku wejściowym, MS-06 z późniejszego opisu użytkownika:
   - MS-01: użytkownik wchodzi na aplikację pod własną domeną właściciela, a rejestracja, logowanie i link potwierdzający działają na tej domenie.
   - MS-02: (jakościowy) zmiany w aplikacji są chronione testami wybranymi według ryzyka, a jakość testów jednostkowych jest mierzona mutacjami.
@@ -32,6 +32,8 @@ milestone_status: open
   - MS-04: zalogowany użytkownik korzysta z czytelniejszego, spójnego wizualnie widoku grupy, tasków i tablicy wyników.
   - MS-05: (jakościowy) awaria w krytycznym przepływie aplikacji nie jest połykana ani zamieniana na sukces: trafia do odpowiedzi API i do monitoringu.
   - MS-06: użytkownik może zalogować się kontem Google (logowanie bez hasła); to ta część FR-001 z PRD (OAuth/passwordless), która nie weszła do M-1.
+  - MS-07: (jakościowy) wybrane okazje refaktoryzacji z analizy data-access są wdrożone bez zmiany zachowania widocznego dla użytkownika (decyzja użytkownika 2026-10-08: istniejąca zmiana `refactor-opportunities` staje się wycinkiem).
+  - MS-08: członek grupy widzi siatkę odznaczeń: uczestnicy × ostatnie okresy tasku, wykonane i niewykonane (decyzja użytkownika 2026-10-08: odparkowanie historii w zakresie prostej siatki, bez wykresów i statystyk).
 
 ## Vision recap
 
@@ -45,14 +47,16 @@ Grono znajomych korzystało wcześniej ze wspólnego arkusza Google, w którym r
 
 ## At a glance
 
-| ID   | Change ID                      | Outcome (user can …)                                                                                                                | Prerequisites                                           | PRD refs                           | Status      |
-| ---- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ---------------------------------- | ----------- |
-| S-06 | custom-domain                  | wejść na aplikację pod domeną `streakboard.app`; rejestracja, logowanie i link potwierdzający działają na tej domenie               | domena `streakboard.app` w Cloudflare (Registrar i DNS) | — (operacyjne; MS-01)              | done        |
-| S-07 | google-login                   | zarejestrować się i zalogować kontem Google, bez ustawiania hasła                                                                   | S-06                                                    | FR-001 (OAuth/passwordless); MS-06 | done        |
-| S-08 | observability-swallowed-errors | (jakościowy) awaria w krytycznym przepływie nie jest połykana ani zamieniana na sukces: trafia do odpowiedzi API i do monitoringu   | —                                                       | — (jakościowe; MS-05)              | done        |
-| S-09 | landing-page                   | zobaczyć jako niezalogowany stronę startową, która tłumaczy, czym jest aplikacja, i prowadzi do rejestracji lub logowania           | S-06, S-07                                              | — (UI; MS-03)                      | in-progress |
-| S-10 | test-coverage                  | (jakościowy) zmiany w aplikacji są chronione testami wybranymi według ryzyka, a jakość testów jednostkowych jest mierzona mutacjami | —                                                       | — (jakościowe; MS-02)              | ready       |
-| S-11 | dashboard-ui                   | korzystać z czytelniejszego, spójnego wizualnie widoku grupy, tasków i tablicy wyników                                              | S-08, S-10                                              | — (UI; MS-04)                      | proposed    |
+| ID   | Change ID                      | Outcome (user can …)                                                                                                                                     | Prerequisites                                           | PRD refs                           | Status      |
+| ---- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ---------------------------------- | ----------- |
+| S-06 | custom-domain                  | wejść na aplikację pod domeną `streakboard.app`; rejestracja, logowanie i link potwierdzający działają na tej domenie                                    | domena `streakboard.app` w Cloudflare (Registrar i DNS) | — (operacyjne; MS-01)              | done        |
+| S-07 | google-login                   | zarejestrować się i zalogować kontem Google, bez ustawiania hasła                                                                                        | S-06                                                    | FR-001 (OAuth/passwordless); MS-06 | done        |
+| S-08 | observability-swallowed-errors | (jakościowy) awaria w krytycznym przepływie nie jest połykana ani zamieniana na sukces: trafia do odpowiedzi API i do monitoringu                        | —                                                       | — (jakościowe; MS-05)              | done        |
+| S-09 | landing-page                   | zobaczyć jako niezalogowany stronę startową, która tłumaczy, czym jest aplikacja, i prowadzi do rejestracji lub logowania                                | S-06, S-07                                              | — (UI; MS-03)                      | in-progress |
+| S-10 | test-coverage                  | (jakościowy) zmiany w aplikacji są chronione testami wybranymi według ryzyka, a jakość testów jednostkowych jest mierzona mutacjami                      | —                                                       | — (jakościowe; MS-02)              | ready       |
+| S-11 | dashboard-ui                   | korzystać z czytelniejszego, spójnego wizualnie widoku grupy, tasków i tablicy wyników                                                                   | S-08, S-10                                              | — (UI; MS-04)                      | proposed    |
+| S-12 | refactor-opportunities         | (jakościowy) znane ciche luki są zamknięte: raportowanie błędów dashboardu, strażnicy migracji i typów w CI, testy tras i reguł, jawne uprawnienia tabel | —                                                       | — (jakościowe; MS-07)              | planning    |
+| S-13 | checkoff-grid                  | zobaczyć siatkę odznaczeń grupy: kto wykonał task w każdym z ostatnich okresów                                                                           | S-11                                                    | — (UI; MS-08)                      | proposed    |
 
 ## Streams
 
@@ -61,8 +65,8 @@ Pomoc nawigacyjna — grupuje pozycje ze wspólnym łańcuchem Prerequisites. Ka
 | Stream | Theme                   | Chain                    | Note                                                                                                                                        |
 | ------ | ----------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | A      | Wejście dla nowych osób | `S-06` → `S-07` → `S-09` | Adres, logowanie bez hasła i strona startowa składają się na ścieżkę nowej osoby do dashboardu: to wejście do informacji zwrotnej od rynku. |
-| B      | Siatka testów i widok   | `S-10` → `S-11`          | Testy przed zmianą wyglądu; `S-11` dołącza do strumienia C w `S-08` (wspólny kontrakt błędów i smoke).                                      |
-| C      | Widoczność awarii       | `S-08`                   | Samodzielny, może ruszyć od razu, równolegle z `S-06`; musi się skończyć przed `S-11`.                                                      |
+| B      | Siatka testów i widok   | `S-10` → `S-11` → `S-13` | Testy przed zmianą wyglądu; `S-11` dołącza do strumienia C w `S-08`; siatka odznaczeń powstaje już w nowym widoku.                          |
+| C      | Widoczność awarii       | `S-08` → `S-12`          | Domknięcie cichych luk po S-08; `S-12` jest niezależny technicznie i może iść równolegle z `S-10`.                                          |
 
 ## Baseline
 
@@ -173,16 +177,46 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Risk:** Zależności od S-10 (siatka bezpieczeństwa) i S-08 (kontrakt odpowiedzi na błąd ustalony przed przebudową stanów błędu) są kolejnościowe, nie techniczne; zamiana z S-10 jest dopuszczalna, jeśli UI jest pilniejszy niż testy (wtedy e2e powstaje już pod nowy wygląd). Rozbudowany smoke (ponad 1600 linii) dopasowuje dzisiejszy markup, więc zmiana wyglądu łamie go, dopóki asercje nie zostaną przepisane (to część tego wycinka); wyspy optymistyczne muszą zachować zgodność HTML serwera z pierwszym renderem klienta, a PRD wymaga pełnej użyteczności na smartfonie i natychmiastowego odznaczania.
 - **Status:** proposed
 
+### S-12: Okazje refaktoryzacji z analizy data-access
+
+- **Outcome:** (jakościowy) znane ciche luki są zamknięte bez zmiany zachowania: błędy dashboardu trafiają do raportowania, CI pilnuje niezmienności migracji i aktualności typów, trasy i reguły mają testy charakteryzujące, a uprawnienia tabel są jawne w migracji.
+- **Change ID:** refactor-opportunities
+- **PRD refs:** — (jakościowe; MS-07)
+- **Prerequisites:** —
+- **Parallel with:** S-09, S-10
+- **Blockers:** —
+- **Unknowns:** —
+- **Źródło zakresu:** `context/changes/refactor-opportunities/` (research z rankingiem dziesięciu okazji i plan pięciu faz, `plan_reviewed`); zmiana powstała 2026-10-06 poza roadmapą i stała się wycinkiem decyzją użytkownika 2026-10-08.
+- **Risk:** Plan już jest, więc to najkrótsza droga do zamkniętego wycinka. Faza 1 zmienia raportowanie w `dashboard.astro`, który przebudowuje S-11, więc lepiej skończyć S-12 przed S-11 (inaczej konflikt w tym samym pliku). Bramka kolejności wydania i e2e zostają w S-10, a ostatnia faza (uprawnienia) wymaga właściciela i wydania na produkcję.
+- **Status:** planning
+
+### S-13: Siatka odznaczeń grupy
+
+- **Outcome:** członek grupy widzi dla każdego tasku siatkę: uczestnicy × ostatnie okresy, z zaznaczeniem, kto w danym okresie wykonał task, a kto nie.
+- **Change ID:** checkoff-grid
+- **PRD refs:** — (UI; MS-08)
+- **Prerequisites:** S-11
+- **Parallel with:** S-12
+- **Blockers:** —
+- **Unknowns:**
+  - Ile okresów pokazuje siatka (np. 7 dni / 4 tygodnie) i czy zależy to od tasku `daily`/`weekly`? — Owner: user. Block: no — rozstrzyga `/10x-frame`.
+  - PRD wyklucza dziś „historię/statystyki długoterminowe”: zaktualizować PRD (wyłączenie tylko wykresów i statystyk) przed planem czy w planie wycinka? — Owner: user. Block: no.
+- **Źródło zakresu:** decyzja użytkownika 2026-10-08 (odparkowanie z `## Parked`, pozycja „Historia/statystyki długoterminowe”, w zakresie samej siatki). PRD §Vision opisuje siatkę zielono-czerwoną jako pierwotną wartość produktu.
+- **Risk:** Dane już są (`task_checkoffs` per okres), więc to głównie nowy odczyt i widok. Idzie po S-11, żeby nie stylować siatki dwa razy. Zmienia, co członkowie grupy widzą o sobie nawzajem (historia zamiast bieżącego okresu), więc w tej samej zmianie trzeba zaktualizować politykę prywatności, słownik (`glossary.md` dziś zalicza historię do rzeczy, których aplikacja nie obiecuje) i PRD. Odczyt wielu okresów dokłada pracy do `/dashboard`, którego czas CPU nie był mierzony (otwarte ryzyko po S-04).
+- **Status:** proposed
+
 ## Backlog Handoff
 
-| Roadmap ID | Change ID                      | Suggested issue title                                                              | Ready for `/10x-plan` | Notes                                                                                                                                                                                                                        |
-| ---------- | ------------------------------ | ---------------------------------------------------------------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| S-06       | custom-domain                  | Własna domena produktu: wiązanie, Supabase Site URL i Redirect URLs, dokumentacja  | yes                   | Gwiazda przewodnia. Run `/10x-plan custom-domain` (po `/10x-frame` w sprawie adresu `workers.dev`, `/10x-new` i `/10x-research`); zamknięcie wg lekcji o wydaniu.                                                            |
-| S-07       | google-login                   | Logowanie kontem Google: konfiguracja dostawcy, trasa startowa, przycisk, callback | yes                   | S-06 jest zrobione, więc adresy przekierowań i ekran zgody konfiguruje się na docelowej domenie. Zwykły łańcuch od `/10x-frame`; kroki ręczne właściciela po stronie Google i Supabase.                                      |
-| S-08       | observability-swallowed-errors | Awarie krytycznego przepływu trafiają do odpowiedzi API i do monitoringu           | yes                   | Niezależny, może ruszyć od razu. Najpierw `/10x-observability-audit` (raport w `context/audits/observability/`), potem Run `/10x-plan observability-swallowed-errors` (po `/10x-new` i `/10x-research`); część B opcjonalna. |
-| S-09       | landing-page                   | Strona startowa dla niezalogowanych użytkowników                                   | yes                   | S-06 i S-07 zrobione. Frame: `context/changes/landing-page/frame.md` (obietnica z PRD, polityka prywatności, zalogowany → `/dashboard`, flaga Safe Browsing). Run `/10x-research`, potem `/10x-plan landing-page`.           |
-| S-10       | test-coverage                  | Testy dobrane według ryzyka: jednostkowe, mutacyjne i e2e kluczowych przepływów    | yes                   | Niezależny; musi się skończyć przed S-11. Run `/10x-plan test-coverage` (po `/10x-new` i `/10x-research`); plan oparty o `test-plan.md` (etapy 2 i 3 nierozpoczęte), granice zakresu zapisane w planie.                      |
-| S-11       | dashboard-ui                   | Czytelniejszy widok grupy, tasków i tablicy wyników                                | no                    | Czeka na S-08 i S-10 (kolejność). Widok już się renderuje, więc `/10x-ui`; przepisanie asercji smoke w zakresie.                                                                                                             |
+| Roadmap ID | Change ID                      | Suggested issue title                                                                       | Ready for `/10x-plan` | Notes                                                                                                                                                                                                                        |
+| ---------- | ------------------------------ | ------------------------------------------------------------------------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| S-06       | custom-domain                  | Własna domena produktu: wiązanie, Supabase Site URL i Redirect URLs, dokumentacja           | yes                   | Gwiazda przewodnia. Run `/10x-plan custom-domain` (po `/10x-frame` w sprawie adresu `workers.dev`, `/10x-new` i `/10x-research`); zamknięcie wg lekcji o wydaniu.                                                            |
+| S-07       | google-login                   | Logowanie kontem Google: konfiguracja dostawcy, trasa startowa, przycisk, callback          | yes                   | S-06 jest zrobione, więc adresy przekierowań i ekran zgody konfiguruje się na docelowej domenie. Zwykły łańcuch od `/10x-frame`; kroki ręczne właściciela po stronie Google i Supabase.                                      |
+| S-08       | observability-swallowed-errors | Awarie krytycznego przepływu trafiają do odpowiedzi API i do monitoringu                    | yes                   | Niezależny, może ruszyć od razu. Najpierw `/10x-observability-audit` (raport w `context/audits/observability/`), potem Run `/10x-plan observability-swallowed-errors` (po `/10x-new` i `/10x-research`); część B opcjonalna. |
+| S-09       | landing-page                   | Strona startowa dla niezalogowanych użytkowników                                            | yes                   | S-06 i S-07 zrobione. Frame: `context/changes/landing-page/frame.md` (obietnica z PRD, polityka prywatności, zalogowany → `/dashboard`, flaga Safe Browsing). Run `/10x-research`, potem `/10x-plan landing-page`.           |
+| S-10       | test-coverage                  | Testy dobrane według ryzyka: jednostkowe, mutacyjne i e2e kluczowych przepływów             | yes                   | Niezależny; musi się skończyć przed S-11. Run `/10x-plan test-coverage` (po `/10x-new` i `/10x-research`); plan oparty o `test-plan.md` (etapy 2 i 3 nierozpoczęte), granice zakresu zapisane w planie.                      |
+| S-11       | dashboard-ui                   | Czytelniejszy widok grupy, tasków i tablicy wyników                                         | no                    | Czeka na S-08 i S-10 (kolejność). Widok już się renderuje, więc `/10x-ui`; przepisanie asercji smoke w zakresie.                                                                                                             |
+| S-12       | refactor-opportunities         | Okazje refaktoryzacji: raportowanie dashboardu, strażnicy CI, testy tras, jawne uprawnienia | yes                   | Plan gotowy (`plan_reviewed`): Run `/10x-implement refactor-opportunities`. Najlepiej przed S-11 (wspólny plik `dashboard.astro`).                                                                                           |
+| S-13       | checkoff-grid                  | Siatka odznaczeń grupy: uczestnicy × ostatnie okresy                                        | no                    | Czeka na S-11. Zwykły łańcuch od `/10x-frame`; aktualizacja PRD, słownika i polityki prywatności w zakresie.                                                                                                                 |
 
 ## Open Roadmap Questions
 
@@ -195,7 +229,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Weryfikacja/anti-cheat wykonania tasku** — Why parked: PRD §Non-Goals; system oparty na zaufaniu w gronie znajomych.
 - **Działanie offline** — Why parked: PRD §Non-Goals; aplikacja wymaga połączenia z internetem na MVP.
 - **Powiadomienia/przypomnienia o niewykonanym tasku** — Why parked: PRD §Success Criteria Secondary; poza pierwszym widocznym przepływem.
-- **Historia/statystyki długoterminowe (wykresy streaków w czasie)** — Why parked: PRD §Success Criteria Secondary.
+- **Historia/statystyki długoterminowe (wykresy streaków w czasie)** — Why parked: PRD §Success Criteria Secondary. Częściowo odparkowane 2026-10-08: prosta siatka odznaczeń trafiła do S-13 (`checkoff-grid`); wykresy, statystyki i rekordy streaka zostają zaparkowane.
 - ~~**Automatyczny deploy na merge (CI/CD)**~~ — Unparked 2026-09-25: Workers Builds i tak wdraża `master`, a automatyzacja migracji trafiła do S-05 (`release-automation-and-auth-hardening`).
 - ~~**Domena własna / środowisko staging**~~ — Unparked 2026-10-02: domena własna trafiła do S-06 (`custom-domain`); środowisko staging zostaje zaparkowane (osobna pozycja poniżej).
 - **Środowisko staging** — Why parked: `context/foundation/infrastructure.md` i deployment-plan.md — poza zakresem; wydzielone z pozycji „Domena własna / środowisko staging" przy odparkowaniu domeny 2026-10-02.
