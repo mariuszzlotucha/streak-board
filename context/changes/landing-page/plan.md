@@ -598,7 +598,7 @@ No database migration. Rollback: `npx wrangler rollback` restores the previous W
 - [x] 1.5 Smoke passes against the production preview, including the new steps and the Secure check — 903a89b
 - [x] 1.6 Playwright suite passes against the production preview — 903a89b
 - [x] 1.7 No starter leftover is referenced — 903a89b
-- [ ] 1.8 CI jobs ci, smoke and integration pass on the PR
+- [x] 1.8 CI jobs ci, smoke and integration pass on the PR — 4036a7c
 
 #### Manual
 
