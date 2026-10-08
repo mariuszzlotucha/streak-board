@@ -5,7 +5,7 @@
 
 ## What & Why
 
-The research ranked ten refactor opportunities from the debt recorded in `context/changes/data-access/research.md` and left the choice to planning. This plan chooses the five that change nothing a user or an HTTP client can observe and that do not depend on each other, and implements them as five reversible phases. The aim is to close known silent gaps (dashboard failures, hosted-versus-repo drift, untested routes, duplicated rules, implicit grants) cheaply, and to leave the expensive structural steps for when a trigger fires.
+The research ranked ten refactor opportunities from the debt recorded in `context/archive/2026-10-05-data-access/research.md` and left the choice to planning. This plan chooses the five that change nothing a user or an HTTP client can observe and that do not depend on each other, and implements them as five reversible phases. The aim is to close known silent gaps (dashboard failures, hosted-versus-repo drift, untested routes, duplicated rules, implicit grants) cheaply, and to leave the expensive structural steps for when a trigger fires.
 
 ## Starting Point
 

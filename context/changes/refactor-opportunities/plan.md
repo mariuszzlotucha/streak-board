@@ -2,7 +2,7 @@
 
 ## Overview
 
-`context/changes/refactor-opportunities/research.md` ranked ten refactor opportunities from the technical debt recorded in `context/changes/data-access/research.md` and left the decision to this plan. The decision: implement the five behaviour-neutral, pairwise independent opportunities (OPP-2, OPP-3, OPP-1, OPP-5, OPP-4) as five reversible phases, and leave the structural chain (route skeleton, zero-row trace, one client per request), the fail-closed `/api/*` gate and the release-order gate out, each with a revisit trigger. No phase changes what a user or an HTTP client can observe: Phase 1 adds telemetry on failure paths only, Phases 2 to 4 add CI checks and tests, Phase 5 grants privileges the deployed code already uses.
+`context/changes/refactor-opportunities/research.md` ranked ten refactor opportunities from the technical debt recorded in `context/archive/2026-10-05-data-access/research.md` and left the decision to this plan. The decision: implement the five behaviour-neutral, pairwise independent opportunities (OPP-2, OPP-3, OPP-1, OPP-5, OPP-4) as five reversible phases, and leave the structural chain (route skeleton, zero-row trace, one client per request), the fail-closed `/api/*` gate and the release-order gate out, each with a revisit trigger. No phase changes what a user or an HTTP client can observe: Phase 1 adds telemetry on failure paths only, Phases 2 to 4 add CI checks and tests, Phase 5 grants privileges the deployed code already uses.
 
 ## Current State Analysis
 
@@ -386,7 +386,7 @@ Only Phase 5 touches the database: one additive `grant` that works with the code
 ## References
 
 - Related research: `context/changes/refactor-opportunities/research.md` (ranking, verification table V1-V28, Open Questions)
-- Input analysis: `context/changes/data-access/research.md` (D1-D22, T1-T13)
+- Input analysis: `context/archive/2026-10-05-data-access/research.md` (D1-D22, T1-T13)
 - Deferred decisions: `context/archive/2026-10-02-observability-swallowed-errors/plan.md:39,42,43,45`
 - Release path and ruleset: `.github/workflows/ci.yml:17-40,89-110,141-209`, `gh api repos/mariuszzlotucha/streak-board/rulesets/24254172`
 - Rules: `context/foundation/lessons.md:77-82,133-145`, `context/foundation/test-plan.md:80,120-127,160-179`, `context/foundation/roadmap.md:148-173`
