@@ -623,6 +623,8 @@ No database migration. Rollback: `npx wrangler rollback` restores the previous W
 
 ### Phase 3: Google review outcome
 
+> Not done in this change: the owner archived it on 2026-10-08 while Google's review was pending. The verdict is recorded in `context/changes/deployment/deployment-plan.md` (Phase 13); a rejection is fixed in a new change.
+
 #### Automated
 
 - [ ] 3.1 Transparency Report shows no flag for streakboard.app
