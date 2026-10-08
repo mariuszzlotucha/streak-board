@@ -7,7 +7,7 @@
 ## Current State Analysis
 
 - The baseline at `c9f6451` is green: `npm run lint` exit 0, `npx astro check` 0 errors, `npm test` 27 files and 385 tests in 6.4 s, `npm run test:rls` 293 assertions. Smoke and Playwright were not run.
-- Five `console.error` calls remain outside `src/lib/log.ts`, all in `src/pages/dashboard.astro:68,77,82,101,126`; `no-console` is `"warn"` (`eslint.config.js:25`), so nothing fails on a new one. The S-08 plan deferred them on purpose (`context/archive/2026-10-02-observability-swallowed-errors/plan.md:45`).
+- Five `console.error` calls remain outside `src/lib/log.ts`, all in `src/lib/dashboard-data.ts:87,96,101,120,145` (`loadDashboard`, split out of `src/pages/dashboard.astro` on 2026-10-08 and covered by 14 unit tests in `tests/unit/dashboard-data.test.ts`); `no-console` is `"warn"` (`eslint.config.js:25`), so nothing fails on a new one. The S-08 plan deferred them on purpose (`context/archive/2026-10-02-observability-swallowed-errors/plan.md:45`).
 - "Applied migrations are immutable" and the backward-compatibility rule (`lessons.md:77-82`) exist as prose only. `src/types.ts` has no freshness check. The only required check on `master` is `integration` and the ruleset has no bypass actor, so a guard is enforceable only if it fails that job.
 - 2 of the 13 data routes are imported by a test; no test imports the group and task error mappers, `group-rules`, `join-code` or `checkoff-response`; six anonymous assertions in `tests/integration/group-isolation.test.ts` accept more than the database does.
 - Group name, task title, recurrence list and join-code format exist in SQL and in TS; the recurrence list is checked by a regex over a migration file (`tests/unit/task-rules.test.ts:52-61`).
@@ -53,7 +53,7 @@
 
 ## Implementation Approach
 
-Five phases, independent in code and ordered only by their criteria (Phase 5's rows 5.3 and 5.4 use scripts that Phase 2 adds), each reverted by reverting its merge. The order is by self-containment and value, not by cost: OPP-2 first (small, fully self-contained, a deferred gap), then the CI guards (costlier than Phases 4 and 5 [I], but the only items that cut a production-side risk, and from Phase 2 on they check every later PR, the Phase 5 migration included), then the two test phases, then the grants, which are cheap but the least self-contained (the only phase that ships a migration and needs the owner's hosted query, a release approval and, for two rows, the Phase 2 scripts). The order differs from the research ranking, which put OPP-1 second because it gates the structural chain; with that chain deferred the argument no longer applies and value puts the guards first. Phases 3 and 4 only add tests, so `src` stays untouched there (a criterion checks it); behaviour is pinned as it is today, including the quiet zero-row branches. Two rules apply where a phase needs them: code that no test covers (only the dashboard page, in Phase 1) is edited only after its current answers are recorded, and enforcement that is not itself a test (the lint rule in Phase 1, the CI steps in Phase 2) is switched on in its own commit after what it checks passes; the tests of Phases 3 to 5 are checks of their own and need no separate switch.
+Five phases, independent in code and ordered only by their criteria (Phase 5's rows 5.3 and 5.4 use scripts that Phase 2 adds), each reverted by reverting its merge. The order is by self-containment and value, not by cost: OPP-2 first (small, fully self-contained, a deferred gap), then the CI guards (costlier than Phases 4 and 5 [I], but the only items that cut a production-side risk, and from Phase 2 on they check every later PR, the Phase 5 migration included), then the two test phases, then the grants, which are cheap but the least self-contained (the only phase that ships a migration and needs the owner's hosted query, a release approval and, for two rows, the Phase 2 scripts). The order differs from the research ranking, which put OPP-1 second because it gates the structural chain; with that chain deferred the argument no longer applies and value puts the guards first. Phases 3 and 4 only add tests, so `src` stays untouched there (a criterion checks it); behaviour is pinned as it is today, including the quiet zero-row branches. Two rules apply where a phase needs them: enforcement that is not itself a test (the lint rule in Phase 1, the CI steps in Phase 2) is switched on in its own commit after what it checks passes; the tests of Phases 3 to 5 are checks of their own and need no separate switch.
 
 Per `context/foundation/lessons.md`: each phase runs on its own branch `refactor-opportunities/phase-<N>` cut from a fresh `master` (no roadmap id), commits are in English, `/10x-impl-review refactor-opportunities phase <N>` is triaged before the branch is pushed, and the PR is opened with `gh pr create`. Inside Phases 1 to 4 every logical step is its own commit, so a step can be reverted separately; a step that later ones depend on (the page before the lint rule, a script before its CI step) is reverted after them. Run the phases one at a time: every phase uses the local stack for tests or manual checks and only one session may run database-backed commands at a time (`context/foundation/lessons.md:119-124`), and Phase 2 is the only one that edits `ci.yml`. Every merge to `master` queues a `release` run that waits for approval in `production` (`.github/workflows/ci.yml:112-118`): approve it for Phases 1 and 5, which change what is deployed; for Phases 2 to 4 (the same Worker) approve it or let a newer push supersede it (`README.md:211`).
 
@@ -67,25 +67,17 @@ Per `context/foundation/lessons.md`: each phase runs on its own branch `refactor
 
 ### Overview
 
-Report the five failed dashboard loads through `src/lib/log.ts` instead of bare `console.error`, so they reach the Workers log and Sentry with request ids, and make `no-console` an error so the convention is enforced. The HTTP response stays the same: 200 with the same banners and degraded sections. No automated test can cover the page, so what it answers today is recorded first (item 0) and the manual rows compare against that baseline. Three commits in this order: the page, the lint rule (it turns the convention on only after nothing violates it, and is reverted before the page), the docs.
+Report the five failed dashboard loads through `src/lib/log.ts` instead of bare `console.error`, so they reach the Workers log and Sentry with request ids, and make `no-console` an error so the convention is enforced. The HTTP response stays the same: 200 with the same banners and degraded sections. The loads live in `loadDashboard` (`src/lib/dashboard-data.ts`), which already has unit tests that pin every flag and message the page reads, so the events are asserted there and only one manual check against the real stack remains. Three commits in this order: the loader with its tests, the lint rule (it turns the convention on only after nothing violates it, and is reverted before the loader), the docs.
 
 ### Changes Required:
 
-#### 0. Baseline of the page (before the first edit)
+#### 1. Dashboard loader and page
 
-**File**: none (the captures stay outside the repository, for example in a scratch directory)
+**Files**: `src/lib/dashboard-data.ts`, `src/pages/dashboard.astro`, `tests/unit/dashboard-data.test.ts`
 
-**Intent**: Pin what `/dashboard` answers today in every state this phase touches, because no automated test can cover an `.astro` frontmatter; the manual rows then compare against recorded output instead of memory.
+**Intent**: Replace each `console.error` in `loadDashboard` with `reportError` and drop the five `eslint-disable-next-line no-console` comments; the fields it returns (`tasksFailed`, `participantsFailed`, `checkoffsFailed`, `loadFailed`, `error`, `board`) stay exactly as they are.
 
-**Contract**: on the fresh phase branch, before `dashboard.astro` is edited, with the local stack up, no other session using it and a signed-in test user who is in a group with at least one task (the secondary reads run only for a group member, `src/pages/dashboard.astro:53`), save the status code and the HTML of `GET /dashboard` in five states: all reads healthy; PostgREST stopped; `select` revoked on `public.tasks`; on `public.task_participants`; on the view `public.task_checkoff_periods` (the injections of rows 1.6 and 1.7, each undone before the next one is applied; the `tasks` revoke also fails the participants and check-off reads, because their policies and the security-invoker view read `tasks`, so that state shows all three secondary reads down). After the edit repeat the same five captures and `diff` each against its baseline, on the same Warsaw day because the board is computed from `new Date()` (`src/pages/dashboard.astro:94`). Equal means an empty diff; a value that differs on every run (for instance a cache-busting query string from the dev server [I]) is masked identically in both runs and named in the PR; any other difference is a regression of this phase.
-
-#### 1. Dashboard frontmatter
-
-**File**: `src/pages/dashboard.astro`
-
-**Intent**: Replace each `console.error` with `reportError` and drop the five `eslint-disable-next-line no-console` comments; the flags and messages the page sets (`tasksFailed`, `participantsFailed`, `checkoffsFailed`, `loadFailed`, `error`) stay exactly as they are.
-
-**Contract**: `reportError(event, cause, requestFields(Astro))` with events `dashboard.tasks.failed` (`tasksResult.reason`), `dashboard.participants.failed` (`participantsResult.reason`), `dashboard.checkoffs.failed` (`checkoffsResult.reason`), `dashboard.leaderboard.failed` (`boardError`, the compute throw) and `dashboard.load.failed` (`loadError` in the outer catch), following the `<area>.<action>.<outcome>` convention of the README. Nothing but the helper's own fields goes into the context: no e-mail, cookie, body or invite code (`pendingCode` is not passed). `Astro` satisfies the helper's structural parameter because `AstroGlobal extends APIContext` (`node_modules/astro/dist/types/public/context.d.ts:14,422,583`); if `astro check` disagrees, pass `{ request: Astro.request, routePattern: Astro.routePattern, locals: Astro.locals }`. A failed members read or any unexpected throw ends in the outer catch and reports `dashboard.load.failed` once; the three secondary reads report independently, at most one event each per request, and `dashboard.leaderboard.failed` can only fire when all three succeeded.
+**Contract**: `DashboardInput` gains `log: ReportContext`, and the page passes `log: requestFields(Astro)` (`AstroGlobal extends APIContext`, `node_modules/astro/dist/types/public/context.d.ts:14,422,583`; if `astro check` disagrees, pass `{ request: Astro.request, routePattern: Astro.routePattern, locals: Astro.locals }`). `loadDashboard` calls `reportError(event, cause, log)` with events `dashboard.tasks.failed` (`tasksResult.reason`), `dashboard.participants.failed` (`participantsResult.reason`), `dashboard.checkoffs.failed` (`checkoffsResult.reason`), `dashboard.leaderboard.failed` (`boardError`, the compute or ranking throw) and `dashboard.load.failed` (`loadError` in the outer catch), following the `<area>.<action>.<outcome>` convention of the README. Nothing but `log` goes into the context: no e-mail, cookie, body or invite code (`pendingCode` is not passed). A failed members read or any unexpected throw ends in the outer catch and reports `dashboard.load.failed` once; the three secondary reads report independently, at most one event each per request, and `dashboard.leaderboard.failed` can only fire when all three succeeded. The unit tests mock `@/lib/log` (`reportError` only, `requestFields` is not used by the loader), replace the `console.error` spy, and assert, per existing failure case, exactly the matching `reportError(event, cause, log)` calls and nothing else; the healthy case and the pending-invite cases assert no call; the existing assertions on the returned fields stay unchanged, which is what pins the unchanged response.
 
 #### 2. Lint rule
 
@@ -101,7 +93,7 @@ Report the five failed dashboard loads through `src/lib/log.ts` instead of bare 
 
 **Intent**: Say that the dashboard reports through the helper with `dashboard.*` events and that a bare `console` call in `src` now fails lint.
 
-**Contract**: one added sentence in each of the "Event names" and "Adding a Supabase call" bullets; no other section changes. The first says that dashboard events are all `.failed` because the data helpers rethrow returned errors (`src/lib/groups.ts:22`, `src/lib/tasks.ts:20`), so the page cannot tell them from thrown ones; the second says that a bare `console` call in `src` now fails lint.
+**Contract**: one added sentence in each of the "Event names" and "Adding a Supabase call" bullets; no other section changes. The first says that dashboard events are all `.failed` because the data helpers rethrow returned errors (`src/lib/groups.ts:22`, `src/lib/tasks.ts:20`), so the loader cannot tell them from thrown ones; the second says that a bare `console` call in `src` now fails lint.
 
 ### Success Criteria:
 
@@ -110,17 +102,15 @@ Report the five failed dashboard loads through `src/lib/log.ts` instead of bare 
 - No bare console call remains outside the helper: `grep -rnE 'console\.(error|warn|log|info|debug)' src --include='*.ts' --include='*.tsx' --include='*.astro' | grep -v 'src/lib/log.ts'` prints nothing
 - Lint passes with `no-console` as an error: `npm run lint`
 - Type check passes, which confirms `requestFields(Astro)` compiles: `npx astro check`
-- Existing suites stay green: `npm test`
+- The loader tests assert each of the five events with its cause and the passed `log`, no event in the healthy and invite cases, and unchanged returned fields; the suites stay green: `npm test`
 - Production build succeeds: `npm run build`
 
 #### Manual Verification:
 
-- With the local stack up, the baseline of item 0 recorded and no other session using the stack, stop PostgREST (`docker stop supabase_rest_10x-astro-starter`) and load `/dashboard` as the same test user: the status code and the HTML equal the baseline of that state (the same "Something went wrong" banner as before), and the dev server output carries exactly one `dashboard.load.failed` error line with `route`, `userId`, `ray` and the cause; start the container again and see the page equal the healthy baseline
-- For each secondary read in turn, as the same test user (a group member, because the secondary reads run only for one), run `revoke select on public.tasks from authenticated`, then the same for `public.task_participants` and the view `public.task_checkoff_periods`, reload `/dashboard` and see the matching `dashboard.tasks.failed`, `dashboard.participants.failed` or `dashboard.checkoffs.failed` line with code `42501` (the `tasks` revoke fails all three reads, because the policies of `task_participants` and `task_checkoffs` and the security-invoker view read `tasks`, so expect all three lines there and the Tasks card hidden; the other two revokes fail only their own read) and a status code and HTML equal to the baseline of that state; restore each grant right after (`grant select on … to authenticated`) and see the page equal the healthy baseline
-- No e-mail, cookie, request body or invite code appears in any of the new lines, and `dashboard.leaderboard.failed` is checked by reading the call site unless some real data makes the compute throw (record which in the PR)
+- With the local stack up and no other session using it, stop PostgREST (`docker stop supabase_rest_10x-astro-starter`) and load `/dashboard` as a signed-in test user: status 200 with the "Something went wrong" banner as before, and the dev server output carries exactly one `dashboard.load.failed` error line with `route`, `userId`, `ray` and the cause, and no e-mail, cookie, request body or invite code; start the container again and see the page load normally
 - After the merge and the owner's approval of the `release` run, `/dashboard` loads on the production URL for a signed-in user as before (the new events appear only when a read fails)
 
-**Implementation Note**: No automated test can cover an `.astro` frontmatter in the current stack, the same limit the S-08 plan accepted; the baseline of item 0, recorded before the first edit, and the manual fault injection above are the verification. After the automated checks pass, pause for the human to confirm the manual ones. Row 1.9 needs this PR's own merge and release, so it is not confirmed with the others: it is ticked after the release, in a small closing docs PR (as rows 5.9 to 5.11 are) or in the next phase's PR, never before the production check.
+**Implementation Note**: The per-read events (tasks, participants, check-offs, leaderboard) are covered by the unit tests, so no grant is revoked by hand; the one manual row checks that the real request reaches the helper with its ids. After the automated checks pass, pause for the human to confirm it. Row 1.7 needs this PR's own merge and release, so it is not confirmed with the others: it is ticked after the release, in a small closing docs PR (as rows 5.9 to 5.11 are) or in the next phase's PR, never before the production check.
 
 ---
 
@@ -371,7 +361,7 @@ Move the table-level privileges the app already depends on from platform default
 
 ### Manual Testing Steps:
 
-1. Phase 1: record the baseline of the page before the first edit, then inject faults on the dashboard reads (stop PostgREST, revoke one read grant at a time), compare each state with its baseline, read the log lines, restore.
+1. Phase 1: stop PostgREST once, read the `dashboard.load.failed` line and the banner, start it again (the per-read events are unit-tested).
 2. Phases 2 to 4: break-and-restore checks, scratch-branch guard demos, and, with the owner's go-ahead, one draft PR that shows a red guard.
 3. Phase 5: the hosted privilege query by the owner, the release approval and a production check of sign-in, the dashboard and one tick with its undo.
 
@@ -391,7 +381,7 @@ Only Phase 5 touches the database: one additive `grant` that works with the code
 - Release path and ruleset: `.github/workflows/ci.yml:17-40,89-110,141-209`, `gh api repos/mariuszzlotucha/streak-board/rulesets/24254172`
 - Rules: `context/foundation/lessons.md:77-82,133-145`, `context/foundation/test-plan.md:80,120-127,160-179`, `context/foundation/roadmap.md:148-173`
 - Patterns: `tests/integration/groups-join-route.test.ts:7-35`, `tests/unit/checkoffs-reporting.test.ts:13-21`, `supabase/checks/rls-scenarios.sql:89-142`
-- Code touched: `src/pages/dashboard.astro:68,77,82,101,126`, `eslint.config.js:25`, `src/lib/log.ts:88-130`, `supabase/migrations/20261001120000_harden_table_privileges.sql:16-17`
+- Code touched: `src/lib/dashboard-data.ts:21-28,87,96,101,120,145`, `src/pages/dashboard.astro:33-38`, `tests/unit/dashboard-data.test.ts`, `eslint.config.js:25`, `src/lib/log.ts:88-130`, `supabase/migrations/20261001120000_harden_table_privileges.sql:16-17`
 
 ## Progress
 
@@ -404,15 +394,13 @@ Only Phase 5 touches the database: one additive `grant` that works with the code
 - [ ] 1.1 No bare console call remains outside the helper: `grep -rnE 'console\.(error|warn|log|info|debug)' src --include='*.ts' --include='*.tsx' --include='*.astro' | grep -v 'src/lib/log.ts'` prints nothing
 - [ ] 1.2 Lint passes with `no-console` as an error: `npm run lint`
 - [ ] 1.3 Type check passes, which confirms `requestFields(Astro)` compiles: `npx astro check`
-- [ ] 1.4 Existing suites stay green: `npm test`
+- [ ] 1.4 The loader tests assert each of the five events with its cause and the passed `log`, no event in the healthy and invite cases, and unchanged returned fields; the suites stay green: `npm test`
 - [ ] 1.5 Production build succeeds: `npm run build`
 
 #### Manual
 
-- [ ] 1.6 With the local stack up, the baseline of item 0 recorded and no other session using the stack, stop PostgREST (`docker stop supabase_rest_10x-astro-starter`) and load `/dashboard` as the same test user: the status code and the HTML equal the baseline of that state (the same "Something went wrong" banner as before), and the dev server output carries exactly one `dashboard.load.failed` error line with `route`, `userId`, `ray` and the cause; start the container again and see the page equal the healthy baseline
-- [ ] 1.7 For each secondary read in turn, as the same test user (a group member, because the secondary reads run only for one), run `revoke select on public.tasks from authenticated`, then the same for `public.task_participants` and the view `public.task_checkoff_periods`, reload `/dashboard` and see the matching `dashboard.tasks.failed`, `dashboard.participants.failed` or `dashboard.checkoffs.failed` line with code `42501` (the `tasks` revoke fails all three reads, because the policies of `task_participants` and `task_checkoffs` and the security-invoker view read `tasks`, so expect all three lines there and the Tasks card hidden; the other two revokes fail only their own read) and a status code and HTML equal to the baseline of that state; restore each grant right after (`grant select on … to authenticated`) and see the page equal the healthy baseline
-- [ ] 1.8 No e-mail, cookie, request body or invite code appears in any of the new lines, and `dashboard.leaderboard.failed` is checked by reading the call site unless some real data makes the compute throw (record which in the PR)
-- [ ] 1.9 After the merge and the owner's approval of the `release` run, `/dashboard` loads on the production URL for a signed-in user as before (the new events appear only when a read fails)
+- [ ] 1.6 With the local stack up and no other session using it, stop PostgREST (`docker stop supabase_rest_10x-astro-starter`) and load `/dashboard` as a signed-in test user: status 200 with the "Something went wrong" banner as before, and the dev server output carries exactly one `dashboard.load.failed` error line with `route`, `userId`, `ray` and the cause, and no e-mail, cookie, request body or invite code; start the container again and see the page load normally
+- [ ] 1.7 After the merge and the owner's approval of the `release` run, `/dashboard` loads on the production URL for a signed-in user as before (the new events appear only when a read fails)
 
 ### Phase 2: CI guards for the migration and code seam (OPP-3)
 
