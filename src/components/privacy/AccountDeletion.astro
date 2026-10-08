@@ -1,0 +1,23 @@
+---
+import ContactEmail from "@/components/site/ContactEmail.astro";
+import PolicySection from "./PolicySection.astro";
+import { link, ul } from "./styles";
+---
+
+<PolicySection title="Deleting your account">
+  <ul class:list={ul}>
+    <li>
+      There is no delete button yet. Write to <ContactEmail class:list={link} /> from your account's e-mail address, and
+      your account and the data kept until deletion (see "How long we keep it") are deleted within one month.
+    </li>
+    <li>
+      If you own a group, the group is deleted with all its tasks and every member's participation and the days or weeks
+      they marked done in it; the other members keep their accounts.
+    </li>
+    <li>
+      Tasks you created in someone else's group are deleted together with the other members' participation and the days
+      or weeks they marked done on them.
+    </li>
+    <li>Leaving a group keeps your account.</li>
+  </ul>
+</PolicySection>

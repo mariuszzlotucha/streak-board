@@ -1,41 +1,13 @@
 ---
-import { ListChecks, Trophy, Users } from "lucide-react";
 import PublicLayout from "@/layouts/PublicLayout.astro";
+import Hero from "@/components/landing/Hero.astro";
+import HowItWorks from "@/components/landing/HowItWorks.astro";
+import SpreadsheetPitch from "@/components/landing/SpreadsheetPitch.astro";
 import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { landingRedirect } from "@/lib/landing";
 
-// A signed-in visitor goes straight to their dashboard, also with a flow-state code (a second click on "Continue with
-// Google" comes back with flow_state_already_used), so this check stays first. During an Auth outage the user is null
-// and the landing page renders.
-if (Astro.locals.user) return Astro.redirect("/dashboard");
-
-// Supabase sends the browser to the Site URL root when a Google sign-in's flow state is unknown or older than five
-// minutes (bad_oauth_state), missing (bad_oauth_callback) or already used (flow_state_already_used). An anonymous
-// visitor gets the failure message on the sign-in page instead; any other query renders the landing page as usual.
-const FLOW_STATE_ERRORS = ["bad_oauth_state", "bad_oauth_callback", "flow_state_already_used"];
-const errorCode = Astro.url.searchParams.get("error_code");
-if (errorCode !== null && FLOW_STATE_ERRORS.includes(errorCode)) {
-  return Astro.redirect("/auth/signin?error=oauth_failed");
-}
-
-// The icons are React components rendered on the server only (no `client:` directive), so they ship no JavaScript.
-const steps = [
-  {
-    icon: Users,
-    title: "Start a group",
-    text: "Create a group and share its invite link with your friends.",
-  },
-  {
-    icon: ListChecks,
-    title: "Add shared tasks",
-    text: "Anyone in the group can add a task — daily, weekly or once — and everyone joins the ones they want to keep up with.",
-  },
-  {
-    icon: Trophy,
-    title: "Mark done and compare",
-    text: "Mark a task done when you've done it. Every day or week you keep up adds one to your streak, and the leaderboard ranks the group by everyone's total.",
-  },
-];
+const redirectTo = landingRedirect(Astro.locals.user !== null, Astro.url);
+if (redirectTo) return Astro.redirect(redirectTo);
 ---
 
 <PublicLayout>
@@ -49,58 +21,8 @@ const steps = [
   </Fragment>
 
   <div class="mx-auto w-full max-w-5xl space-y-16 px-4 py-14 sm:py-20">
-    <section class="text-center">
-      <h1 class="font-heading text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
-        Keep each other on track.
-      </h1>
-      <p class="mx-auto mt-5 max-w-2xl text-lg leading-relaxed text-muted-foreground">
-        StreakBoard is a habit tracker for a group of friends. You track the same tasks, mark them done every day or
-        week, and see each other's streaks on one shared leaderboard.
-      </p>
-      <div class="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:items-center">
-        <a href="/auth/signup" class:list={buttonVariants({ size: "lg" })}>
-          Sign up
-        </a>
-        <a href="/auth/signin" class:list={buttonVariants({ variant: "outline", size: "lg" })}>
-          Sign in
-        </a>
-      </div>
-    </section>
-
-    <section aria-labelledby="how-it-works">
-      <h2 id="how-it-works" class="font-heading text-center text-2xl font-semibold text-foreground">
-        How it works
-      </h2>
-      <ol class="mt-8 grid gap-4 sm:grid-cols-3">
-        {steps.map(({ icon: Icon, title, text }) => (
-          <li class="flex">
-            <Card className="w-full">
-              <CardHeader>
-                <span class="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                  <Icon className="size-5" aria-hidden="true" />
-                </span>
-                <h3 class="font-heading text-lg font-semibold text-foreground">{title}</h3>
-              </CardHeader>
-              <CardContent className="leading-relaxed text-muted-foreground">{text}</CardContent>
-            </Card>
-          </li>
-        ))}
-      </ol>
-    </section>
-
-    <section aria-labelledby="shared-spreadsheet">
-      <Card className="mx-auto max-w-3xl">
-        <CardContent className="space-y-3 text-center">
-          <h2 id="shared-spreadsheet" class="font-heading text-2xl font-semibold text-foreground">
-            The shared spreadsheet, without the upkeep
-          </h2>
-          <p class="text-base leading-relaxed text-muted-foreground">
-            If your group ever colored a shared sheet green and red, this is that sheet, kept for you. Miss a day — or a
-            week, on a weekly task — and your streak is halved (rounded down), not reset, so one bad day doesn't end the
-            run.
-          </p>
-        </CardContent>
-      </Card>
-    </section>
+    <Hero />
+    <HowItWorks />
+    <SpreadsheetPitch />
   </div>
 </PublicLayout>

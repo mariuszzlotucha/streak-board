@@ -1,0 +1,44 @@
+---
+import { ListChecks, Trophy, Users } from "lucide-react";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+
+// The icons are React components rendered on the server only (no `client:` directive), so they ship no JavaScript.
+const steps = [
+  {
+    icon: Users,
+    title: "Start a group",
+    text: "Create a group and share its invite link with your friends.",
+  },
+  {
+    icon: ListChecks,
+    title: "Add shared tasks",
+    text: "Anyone in the group can add a task — daily, weekly or once — and everyone joins the ones they want to keep up with.",
+  },
+  {
+    icon: Trophy,
+    title: "Mark done and compare",
+    text: "Mark a task done when you've done it. Every day or week you keep up adds one to your streak, and the leaderboard ranks the group by everyone's total.",
+  },
+];
+---
+
+<section aria-labelledby="how-it-works">
+  <h2 id="how-it-works" class="font-heading text-center text-2xl font-semibold text-foreground">
+    How it works
+  </h2>
+  <ol class="mt-8 grid gap-4 sm:grid-cols-3">
+    {steps.map(({ icon: Icon, title, text }) => (
+      <li class="flex">
+        <Card className="w-full">
+          <CardHeader>
+            <span class="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <Icon className="size-5" aria-hidden="true" />
+            </span>
+            <h3 class="font-heading text-lg font-semibold text-foreground">{title}</h3>
+          </CardHeader>
+          <CardContent className="leading-relaxed text-muted-foreground">{text}</CardContent>
+        </Card>
+      </li>
+    ))}
+  </ol>
+</section>

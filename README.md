@@ -144,10 +144,10 @@ Users can then sign in immediately after sign-up without clicking a confirmation
 
 ### Public pages
 
-| Route      | Description                                                                                                                                                                                                                                                  |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `/`        | Landing page (`src/pages/index.astro`); a signed-in visitor is redirected to `/dashboard`, and an anonymous visitor with a flow-state `error_code` (`bad_oauth_state`, `bad_oauth_callback`, `flow_state_already_used`) to `/auth/signin?error=oauth_failed` |
-| `/privacy` | The privacy policy (`src/pages/privacy.astro`), the same for every visitor                                                                                                                                                                                   |
+| Route      | Description                                                                                                                                                                                                                                                                                     |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`        | Landing page (`src/pages/index.astro`, redirects in `src/lib/landing.ts`); a signed-in visitor is redirected to `/dashboard`, and an anonymous visitor with a flow-state `error_code` (`bad_oauth_state`, `bad_oauth_callback`, `flow_state_already_used`) to `/auth/signin?error=oauth_failed` |
+| `/privacy` | The privacy policy (`src/pages/privacy.astro`, sections in `src/components/privacy/`), the same for every visitor                                                                                                                                                                               |
 
 Both pages, and the auth pages below, share `src/layouts/PublicLayout.astro`: a header with the StreakBoard name and a footer that names the operator and links the policy and the contact address. The dashboard shows the same footer.
 

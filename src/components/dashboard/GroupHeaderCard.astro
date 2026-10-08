@@ -1,0 +1,24 @@
+---
+import CopyInviteLink from "@/components/groups/CopyInviteLink";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+interface Props {
+  name: string;
+  inviteLink: string;
+}
+
+const { name, inviteLink } = Astro.props;
+---
+
+<Card>
+  <CardHeader>
+    <CardDescription>Your group</CardDescription>
+    <CardTitle>
+      <h1 class="font-heading text-2xl font-semibold break-words">{name}</h1>
+    </CardTitle>
+  </CardHeader>
+  <CardContent className="space-y-2">
+    <p class="text-sm text-muted-foreground">Share this invite link to add people to your group.</p>
+    <CopyInviteLink client:load url={inviteLink} />
+  </CardContent>
+</Card>

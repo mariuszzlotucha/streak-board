@@ -1,0 +1,56 @@
+---
+import ConfirmAction from "@/components/groups/ConfirmAction";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import type { GroupMember } from "@/lib/groups";
+import { UNKNOWN_MEMBER } from "@/lib/leaderboard-rules";
+
+interface Props {
+  members: GroupMember[];
+  groupName: string;
+  viewerId: string | undefined;
+  /** The owner sees a Remove action on every other member. */
+  isOwner: boolean;
+}
+
+const { members, groupName, viewerId, isOwner } = Astro.props;
+---
+
+<Card>
+  <CardHeader>
+    <CardTitle>
+      <h2 class="font-heading text-xl font-semibold">Members</h2>
+    </CardTitle>
+    <CardDescription>{`${members.length} ${members.length === 1 ? "member" : "members"}`}</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <ul class="divide-y">
+      {members.map((member) => (
+        <li class="flex flex-wrap items-center gap-x-2 gap-y-1 py-2 first:pt-0 last:pb-0">
+          <span class="min-w-0 text-sm break-all">{member.email ?? UNKNOWN_MEMBER}</span>
+          {member.is_owner && (
+            <span class="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+              Owner
+            </span>
+          )}
+          {member.user_id === viewerId && (
+            <span class="rounded-full border px-2 py-0.5 text-xs font-medium text-muted-foreground">You</span>
+          )}
+          {isOwner && member.user_id !== viewerId && (
+            <div class="ml-auto">
+              <ConfirmAction
+                client:load
+                action="/api/groups/remove-member"
+                fields={{ user_id: member.user_id }}
+                triggerLabel="Remove"
+                triggerAriaLabel={`Remove ${member.email ?? "this member"} from the group`}
+                title="Remove this member?"
+                description={`${member.email ?? "This member"} will lose access to ${groupName}, and their streaks in its tasks will be lost. They can rejoin later with the invite link.`}
+                confirmLabel="Remove member"
+              />
+            </div>
+          )}
+        </li>
+      ))}
+    </ul>
+  </CardContent>
+</Card>

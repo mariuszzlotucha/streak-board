@@ -1,0 +1,55 @@
+---
+import CreateTaskForm from "@/components/tasks/CreateTaskForm";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { participantsResolver } from "@/lib/dashboard-data";
+import type { GroupMember } from "@/lib/groups";
+import type { Board } from "@/lib/leaderboard-rules";
+import type { GroupTask } from "@/lib/tasks";
+import TaskRow from "./TaskRow.astro";
+
+interface Props {
+  tasks: GroupTask[];
+  members: GroupMember[];
+  participantsByTask: Map<string, string[]>;
+  participantsFailed: boolean;
+  checkoffsFailed: boolean;
+  board: Board | null;
+  viewerId: string | undefined;
+}
+
+const { tasks, members, participantsByTask, participantsFailed, checkoffsFailed, board, viewerId } = Astro.props;
+const participantsOf = participantsResolver(participantsByTask, members, viewerId);
+---
+
+<Card>
+  <CardHeader>
+    <CardTitle>
+      <h2 class="font-heading text-xl font-semibold">Tasks</h2>
+    </CardTitle>
+    <CardDescription>{`${tasks.length} ${tasks.length === 1 ? "task" : "tasks"}`}</CardDescription>
+  </CardHeader>
+  <CardContent className="space-y-4">
+    {tasks.length === 0 ? (
+      <p class="text-sm text-muted-foreground">No tasks yet. Create the first one below.</p>
+    ) : (
+      <ul class="divide-y">
+        {tasks.map((task) => (
+          <TaskRow
+            task={task}
+            participants={participantsOf(task.id)}
+            participantsFailed={participantsFailed}
+            viewerTask={board?.viewerTasks.get(task.id)}
+            viewerId={viewerId}
+          />
+        ))}
+      </ul>
+    )}
+    {participantsFailed && (
+      <p class="text-xs text-muted-foreground">Participants are unavailable right now. Reload to try again.</p>
+    )}
+    {checkoffsFailed && (
+      <p class="text-xs text-muted-foreground">Scores are unavailable right now. Reload to try again.</p>
+    )}
+    <CreateTaskForm client:load />
+  </CardContent>
+</Card>

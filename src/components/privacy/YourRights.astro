@@ -1,0 +1,30 @@
+---
+import ContactEmail from "@/components/site/ContactEmail.astro";
+import PolicySection from "./PolicySection.astro";
+import { link, p } from "./styles";
+
+// Kept in one expression so the name the smoke test pins can never be split by reformatting.
+const SUPERVISORY_AUTHORITY = "Prezes Urzędu Ochrony Danych Osobowych";
+---
+
+<PolicySection title="Your rights">
+  <p class:list={p}>
+    You have the right to access your data, to have it corrected or erased, to restrict its processing and to receive it
+    in a portable form.
+  </p>
+  <p class:list={p}>
+    <strong class="text-foreground">Right to object.</strong> You have the right to object at any time to the processing
+    of your data based on our legitimate interests (Art. 21 GDPR).
+  </p>
+  <p class:list={p}>
+    To use any of these rights, write to <ContactEmail class:list={link} /> and you get an answer within one month.
+  </p>
+  <p class:list={p}>
+    You can also complain to the Polish supervisory authority, the {SUPERVISORY_AUTHORITY}, ul. Stawki 2, 00-193
+    Warszawa, by post or through the{" "}
+    <a href="https://uodo.gov.pl" class:list={link}>
+      uodo.gov.pl
+    </a>{" "}
+    website.
+  </p>
+</PolicySection>

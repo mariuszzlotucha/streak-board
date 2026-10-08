@@ -1,0 +1,29 @@
+---
+import ConfirmAction from "@/components/groups/ConfirmAction";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+interface Props {
+  groupName: string;
+}
+
+const { groupName } = Astro.props;
+---
+
+<Card>
+  <CardHeader>
+    <CardTitle>
+      <h2 class="font-heading text-xl font-semibold">Leave group</h2>
+    </CardTitle>
+    <CardDescription>You will lose access to this group. You can rejoin with the invite link.</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <ConfirmAction
+      client:load
+      action="/api/groups/leave"
+      triggerLabel="Leave group"
+      title="Leave this group?"
+      description={`You will no longer be a member of ${groupName}, and your streaks in its tasks will be lost. You can rejoin later with the invite link.`}
+      confirmLabel="Leave group"
+    />
+  </CardContent>
+</Card>

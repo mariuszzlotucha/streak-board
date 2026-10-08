@@ -1,0 +1,43 @@
+---
+import ConfirmAction from "@/components/groups/ConfirmAction";
+import RenameGroupForm from "@/components/groups/RenameGroupForm";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+interface Props {
+  groupName: string;
+}
+
+const { groupName } = Astro.props;
+---
+
+<Card>
+  <CardHeader>
+    <CardTitle>
+      <h2 class="font-heading text-xl font-semibold">Rename group</h2>
+    </CardTitle>
+  </CardHeader>
+  <CardContent>
+    <RenameGroupForm client:load name={groupName} />
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle>
+      <h2 class="font-heading text-xl font-semibold">Delete group</h2>
+    </CardTitle>
+    <CardDescription>
+      Permanently delete this group. Every member loses it and the invite link stops working.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <ConfirmAction
+      client:load
+      action="/api/groups/delete"
+      triggerLabel="Delete group"
+      title="Delete this group?"
+      description={`${groupName} will be deleted permanently and all of its members will lose it. This cannot be undone.`}
+      confirmLabel="Delete group"
+    />
+  </CardContent>
+</Card>
