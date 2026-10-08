@@ -611,15 +611,15 @@ No database migration. Rollback: `npx wrangler rollback` restores the previous W
 
 #### Automated
 
-- [x] 2.1 Release run succeeds with the new live checks
-- [x] 2.2 Plain HTTP redirects to HTTPS on production
-- [x] 2.3 Production pages match the smoke expectations
+- [x] 2.1 Release run succeeds with the new live checks — de85172
+- [x] 2.2 Plain HTTP redirects to HTTPS on production — de85172
+- [x] 2.3 Production pages match the smoke expectations — de85172
 
 #### Manual
 
-- [x] 2.4 Owner's production check passes
-- [x] 2.5 Search Console review requested and recorded
-- [x] 2.6 Branding URLs saved and recorded
+- [x] 2.4 Owner's production check passes — de85172
+- [x] 2.5 Search Console review requested and recorded — de85172
+- [x] 2.6 Branding URLs saved and recorded — de85172
 
 ### Phase 3: Google review outcome
 
