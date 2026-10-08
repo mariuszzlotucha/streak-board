@@ -1,0 +1,107 @@
+---
+import ConfirmAction from "@/components/groups/ConfirmAction";
+import CheckoffControl from "@/components/tasks/CheckoffControl";
+import EditTaskForm from "@/components/tasks/EditTaskForm";
+import { Button } from "@/components/ui/button";
+import type { TaskParticipant } from "@/lib/dashboard-data";
+import type { Board } from "@/lib/leaderboard-rules";
+import { RECURRENCE_LABELS } from "@/lib/task-rules";
+import type { GroupTask } from "@/lib/tasks";
+
+type ViewerTask = NonNullable<ReturnType<Board["viewerTasks"]["get"]>>;
+
+interface Props {
+  task: GroupTask;
+  participants: TaskParticipant[];
+  /** When the participants failed to load the row shows no participant line and no Join/Leave. */
+  participantsFailed: boolean;
+  /** Present only for a task the viewer takes part in, and only when the board was computed. */
+  viewerTask: ViewerTask | undefined;
+  viewerId: string | undefined;
+}
+
+const { task, participants, participantsFailed, viewerTask, viewerId } = Astro.props;
+// The participant line gets list semantics from ARIA roles (`contents` keeps its flex layout), not a nested <li>:
+// the smoke row regexes stop at the first </li>.
+const joined = participants.some((participant) => participant.isYou);
+---
+
+<li class="flex flex-wrap items-center gap-x-2 gap-y-2 py-2 first:pt-0 last:pb-0">
+  {task.created_by === viewerId ? (
+    <>
+      <EditTaskForm client:load taskId={task.id} title={task.title} />
+      <span class="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+        {RECURRENCE_LABELS[task.recurrence]}
+      </span>
+      <ConfirmAction
+        client:load
+        action="/api/tasks/delete"
+        fields={{ task_id: task.id }}
+        triggerLabel="Delete"
+        triggerAriaLabel={`Delete ${task.title}`}
+        title="Delete this task?"
+        description={`${task.title} will be deleted permanently. This cannot be undone.`}
+        confirmLabel="Delete task"
+      />
+    </>
+  ) : (
+    <>
+      <span class="min-w-0 flex-1 text-sm break-words">{task.title}</span>
+      <span class="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+        {RECURRENCE_LABELS[task.recurrence]}
+      </span>
+    </>
+  )}
+  {!participantsFailed && (
+    <div class="flex basis-full flex-wrap items-center gap-x-2 gap-y-2">
+      <div class="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+        <span>Participants:</span>
+        {participants.length === 0 ? (
+          <span>No participants yet</span>
+        ) : (
+          <span role="list" aria-label={`Participants of ${task.title}`} class="contents">
+            {participants.map((participant) => (
+              <span role="listitem" class="inline-flex min-w-0 items-center gap-1">
+                <span class="break-all text-foreground">{participant.email}</span>
+                {participant.isYou && (
+                  <span class="rounded-full border px-2 py-0.5 text-xs font-medium text-muted-foreground">You</span>
+                )}
+              </span>
+            ))}
+          </span>
+        )}
+      </div>
+      {joined ? (
+        <ConfirmAction
+          client:load
+          action="/api/tasks/leave"
+          fields={{ task_id: task.id }}
+          triggerLabel="Leave"
+          triggerAriaLabel={`Leave ${task.title}`}
+          title="Leave this task?"
+          description={`You will no longer take part in ${task.title}, and your streak on it will be lost. You can join again later.`}
+          confirmLabel="Leave task"
+          variant="outline"
+        />
+      ) : (
+        <form method="POST" action="/api/tasks/join">
+          <input type="hidden" name="task_id" value={task.id} />
+          <Button type="submit" size="sm" aria-label={`Join ${task.title}`}>
+            Join
+          </Button>
+        </form>
+      )}
+    </div>
+  )}
+  {viewerTask && viewerId && (
+    <CheckoffControl
+      client:load
+      taskId={task.id}
+      title={task.title}
+      recurrence={task.recurrence}
+      snapshot={viewerTask.snapshot}
+      currentPeriod={viewerTask.currentPeriod}
+      viewerId={viewerId}
+    />
+  )}
+</li>

@@ -1,0 +1,14 @@
+---
+import { h2 } from "./styles";
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<section>
+  <h2 class:list={h2}>{title}</h2>
+  <slot />
+</section>

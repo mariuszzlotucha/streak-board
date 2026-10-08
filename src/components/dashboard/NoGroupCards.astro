@@ -1,0 +1,29 @@
+---
+import CreateGroupForm from "@/components/groups/CreateGroupForm";
+import JoinGroupForm from "@/components/groups/JoinGroupForm";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+---
+
+<Card>
+  <CardHeader>
+    <CardTitle>
+      <h1 class="font-heading text-xl font-semibold">Create a group</h1>
+    </CardTitle>
+    <CardDescription>Start a group and invite others with a link.</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <CreateGroupForm client:load />
+  </CardContent>
+</Card>
+
+<Card>
+  <CardHeader>
+    <CardTitle>
+      <h2 class="font-heading text-xl font-semibold">Join a group</h2>
+    </CardTitle>
+    <CardDescription>Have an invite? Paste the link or code.</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <JoinGroupForm client:load />
+  </CardContent>
+</Card>

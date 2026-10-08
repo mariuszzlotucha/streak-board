@@ -1,0 +1,30 @@
+---
+import PolicySection from "./PolicySection.astro";
+import { p, ul } from "./styles";
+---
+
+<PolicySection title="Service providers and transfers">
+  <ul class:list={ul}>
+    <li>
+      <strong class="text-foreground">Cloudflare:</strong> hosting, the domain, DNS and request logs.
+    </li>
+    <li>
+      <strong class="text-foreground">Supabase:</strong> the database and sign-in. The database is in the EU (Ireland);
+      the contracting party is Supabase Pte. Ltd. (Singapore), under Standard Contractual Clauses.
+    </li>
+    <li>
+      <strong class="text-foreground">Resend:</strong> sends the confirmation e-mail and keeps account data, e-mail
+      metadata and logs in the United States.
+    </li>
+    <li>
+      <strong class="text-foreground">Sentry:</strong> error reports; it may process data in the United States.
+    </li>
+    <li>
+      <strong class="text-foreground">Google:</strong> acts under its own terms when you choose "Continue with Google".
+    </li>
+  </ul>
+  <p class:list={p}>
+    Transfers outside the European Economic Area rely on the EU–US Data Privacy Framework and/or Standard Contractual
+    Clauses.
+  </p>
+</PolicySection>

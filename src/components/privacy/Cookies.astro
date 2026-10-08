@@ -1,0 +1,26 @@
+---
+import PolicySection from "./PolicySection.astro";
+import { p, ul } from "./styles";
+---
+
+<PolicySection title="Cookies">
+  <p class:list={p}>StreakBoard sets only strictly necessary cookies:</p>
+  <ul class:list={ul}>
+    <li>
+      the session cookie (<code>sb-…-auth-token</code>, possibly split into numbered parts) keeps you signed in; it is
+      removed when you sign out and otherwise lasts up to 400 days after it was last refreshed;
+    </li>
+    <li>
+      a sign-in check cookie (<code>sb-…-code-verifier</code>) is used during e-mail sign-up and Google sign-in;
+    </li>
+    <li>
+      <code>join_code</code> (1 hour) remembers an invite while you sign in;
+    </li>
+    <li>
+      <code>auth_email</code> (60 seconds) refills the e-mail field after a failed attempt.
+    </li>
+  </ul>
+  <p class:list={p}>
+    We do not ask for consent, because none of these cookies is used for anything but the service you asked for.
+  </p>
+</PolicySection>

@@ -1,0 +1,23 @@
+---
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+
+interface Props {
+  email: string | undefined;
+}
+
+const { email } = Astro.props;
+---
+
+<Card size="sm">
+  <CardContent className="flex flex-wrap items-center justify-between gap-3">
+    <p class="text-sm text-muted-foreground">
+      Signed in as <span class="font-semibold text-foreground break-all">{email}</span>
+    </p>
+    <form method="POST" action="/api/auth/signout">
+      <Button type="submit" variant="outline" size="sm">
+        Sign out
+      </Button>
+    </form>
+  </CardContent>
+</Card>

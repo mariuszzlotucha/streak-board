@@ -1,133 +1,41 @@
 ---
 import Layout from "@/layouts/Layout.astro";
-import CreateGroupForm from "@/components/groups/CreateGroupForm";
-import JoinGroupForm from "@/components/groups/JoinGroupForm";
-import CopyInviteLink from "@/components/groups/CopyInviteLink";
-import ConfirmAction from "@/components/groups/ConfirmAction";
-import RenameGroupForm from "@/components/groups/RenameGroupForm";
-import CheckoffControl from "@/components/tasks/CheckoffControl";
-import CreateTaskForm from "@/components/tasks/CreateTaskForm";
-import EditTaskForm from "@/components/tasks/EditTaskForm";
+import AccountCard from "@/components/dashboard/AccountCard.astro";
+import GroupHeaderCard from "@/components/dashboard/GroupHeaderCard.astro";
+import LeaveGroupCard from "@/components/dashboard/LeaveGroupCard.astro";
+import MembersCard from "@/components/dashboard/MembersCard.astro";
+import NoGroupCards from "@/components/dashboard/NoGroupCards.astro";
+import OwnerActions from "@/components/dashboard/OwnerActions.astro";
+import PendingInviteCard from "@/components/dashboard/PendingInviteCard.astro";
+import TasksCard from "@/components/dashboard/TasksCard.astro";
 import Leaderboard from "@/components/tasks/Leaderboard";
 import SiteFooter from "@/components/site/SiteFooter.astro";
 import { CircleAlert } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { listCheckoffPeriods } from "@/lib/checkoffs";
+import { loadDashboard } from "@/lib/dashboard-data";
 import { createClient } from "@/lib/supabase";
-import { groupErrorMessage, resolveGroupError } from "@/lib/group-errors";
-import { getMyGroup, listGroupMembers, previewGroup, type GroupMember, type MyGroup } from "@/lib/groups";
-import { clearJoinCode, peekJoinCode } from "@/lib/join-code";
-import {
-  buildBoard,
-  groupPeriodsByEnrolment,
-  rankStandings,
-  UNKNOWN_MEMBER,
-  type Board,
-} from "@/lib/leaderboard-rules";
-import { resolveTaskError } from "@/lib/task-errors";
-import { RECURRENCE_LABELS, groupParticipantsByTask } from "@/lib/task-rules";
-import { listGroupTasks, listTaskParticipants, type GroupTask } from "@/lib/tasks";
 
 const { user } = Astro.locals;
 
-const errorParam = Astro.url.searchParams.get("error");
-let error = resolveGroupError(errorParam) ?? resolveTaskError(errorParam);
-let group: MyGroup | null = null;
-let members: GroupMember[] = [];
-let tasks: GroupTask[] = [];
-let participantsByTask = new Map<string, string[]>();
-let pendingCode: string | null = null;
-let pendingGroupName: string | null = null;
-let loadFailed = false;
-let tasksFailed = false;
-let participantsFailed = false;
-let checkoffsFailed = false;
-// Set only when tasks, participants and check-offs all loaded and the board could be computed.
-let board: Board | null = null;
-
-try {
-  const supabase = createClient(Astro.request.headers, Astro.cookies);
-  if (supabase) {
-    group = await getMyGroup(supabase);
-    if (group) {
-      // The four reads do not depend on each other (RLS scopes each to the caller's group), so they run concurrently.
-      const [membersResult, tasksResult, participantsResult, checkoffsResult] = await Promise.allSettled([
-        listGroupMembers(supabase, group.id),
-        listGroupTasks(supabase, group.id),
-        listTaskParticipants(supabase),
-        listCheckoffPeriods(supabase),
-      ]);
-      // Members are essential: a failure takes the outer catch (`loadFailed`), as when it was awaited on its own.
-      if (membersResult.status === "rejected") throw membersResult.reason;
-      members = membersResult.value;
-      if (tasksResult.status === "fulfilled") {
-        tasks = tasksResult.value;
-      } else {
-        // eslint-disable-next-line no-console -- server-side log; the user only sees the fixed message
-        console.error("Loading the tasks failed", tasksResult.reason);
-        tasksFailed = true;
-      }
-      // Participants and check-offs are secondary: a failure (or the row cap) degrades the rows, it must not hide task
-      // management. When the tasks failed the Tasks card is hidden and these results go unused.
-      if (participantsResult.status === "fulfilled") {
-        participantsByTask = groupParticipantsByTask(participantsResult.value);
-      } else {
-        // eslint-disable-next-line no-console -- server-side log; the user only sees the fixed note
-        console.error("Loading the task participants failed", participantsResult.reason);
-        participantsFailed = true;
-      }
-      if (checkoffsResult.status === "rejected") {
-        // eslint-disable-next-line no-console -- server-side log; the user only sees the fixed note
-        console.error("Loading the check-offs failed", checkoffsResult.reason);
-        checkoffsFailed = true;
-      } else if (user && !tasksFailed && !participantsFailed) {
-        // The slice's riskiest code gets its own try/catch: a throw degrades the scores like a failed read and must not
-        // reach the outer catch, which would hide Members and group management.
-        try {
-          const computed = buildBoard({
-            members,
-            tasks,
-            participantsByTask,
-            periodsByEnrolment: groupPeriodsByEnrolment(checkoffsResult.value),
-            viewerId: user.id,
-            now: new Date(),
-          });
-          // The Leaderboard ranks again on render; ranking here first keeps a throw inside this try.
-          rankStandings(computed.totals, user.id);
-          board = computed;
-        } catch (boardError) {
-          // eslint-disable-next-line no-console -- server-side log; the user only sees the fixed note
-          console.error("Computing the leaderboard failed", boardError);
-          checkoffsFailed = true;
-        }
-      }
-    }
-    const code = peekJoinCode(Astro.cookies);
-    if (code) {
-      if (group) {
-        // Already in a group: the pending invite cannot be used.
-        clearJoinCode(Astro.cookies);
-        error = groupErrorMessage("already_in_group");
-      } else {
-        const name = await previewGroup(supabase, code);
-        if (name === null) {
-          clearJoinCode(Astro.cookies);
-          error = groupErrorMessage("invalid_code");
-        } else {
-          pendingCode = code;
-          pendingGroupName = name;
-        }
-      }
-    }
-  }
-} catch (loadError) {
-  // eslint-disable-next-line no-console -- server-side log; the user only sees the fixed message
-  console.error("Loading the dashboard failed", loadError);
-  error = groupErrorMessage("unknown");
-  loadFailed = true;
-}
+const {
+  error,
+  group,
+  members,
+  tasks,
+  participantsByTask,
+  pendingCode,
+  pendingGroupName,
+  loadFailed,
+  tasksFailed,
+  participantsFailed,
+  checkoffsFailed,
+  board,
+} = await loadDashboard({
+  createSupabase: () => createClient(Astro.request.headers, Astro.cookies),
+  cookies: Astro.cookies,
+  user,
+  errorParam: Astro.url.searchParams.get("error"),
+});
 
 const inviteLink = group ? `${Astro.url.origin}/join/${group.join_code}` : null;
 const isOwner = group !== null && group.owner_id === user?.id;
@@ -137,18 +45,6 @@ const showGroupForms = !group && !loadFailed;
 const showMembers = group !== null && !loadFailed;
 // A failed task load hides only the Tasks card (not an empty list); members, rename and delete still render.
 const showTasks = group !== null && !loadFailed && !tasksFailed;
-if (tasksFailed && !error) error = groupErrorMessage("unknown");
-
-// The participant line gets list semantics from ARIA roles (`contents` keeps its flex layout), not a nested <li>:
-// the smoke row regexes stop at the first </li>.
-// Participants render by email; someone without a matching member row (e.g. a stale participation) is "Unknown member".
-const emailByUserId = new Map(members.map((member) => [member.user_id, member.email]));
-function participantsOf(taskId: string) {
-  return (participantsByTask.get(taskId) ?? []).map((userId) => ({
-    email: emailByUserId.get(userId) ?? UNKNOWN_MEMBER,
-    isYou: userId === user?.id,
-  }));
-}
 ---
 
 <Layout title="Dashboard">
@@ -161,296 +57,35 @@ function participantsOf(taskId: string) {
         </Alert>
       )}
 
-      {group && inviteLink && (
-        <Card>
-          <CardHeader>
-            <CardDescription>Your group</CardDescription>
-            <CardTitle>
-              <h1 class="font-heading text-2xl font-semibold break-words">{group.name}</h1>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <p class="text-sm text-muted-foreground">Share this invite link to add people to your group.</p>
-            <CopyInviteLink client:load url={inviteLink} />
-          </CardContent>
-        </Card>
-      )}
+      {group && inviteLink && <GroupHeaderCard name={group.name} inviteLink={inviteLink} />}
 
-      {showMembers && (
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <h2 class="font-heading text-xl font-semibold">Members</h2>
-            </CardTitle>
-            <CardDescription>{`${members.length} ${members.length === 1 ? "member" : "members"}`}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul class="divide-y">
-              {members.map((member) => (
-                <li class="flex flex-wrap items-center gap-x-2 gap-y-1 py-2 first:pt-0 last:pb-0">
-                  <span class="min-w-0 text-sm break-all">{member.email ?? UNKNOWN_MEMBER}</span>
-                  {member.is_owner && (
-                    <span class="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
-                      Owner
-                    </span>
-                  )}
-                  {member.user_id === user?.id && (
-                    <span class="rounded-full border px-2 py-0.5 text-xs font-medium text-muted-foreground">You</span>
-                  )}
-                  {isOwner && group && member.user_id !== user.id && (
-                    <div class="ml-auto">
-                      <ConfirmAction
-                        client:load
-                        action="/api/groups/remove-member"
-                        fields={{ user_id: member.user_id }}
-                        triggerLabel="Remove"
-                        triggerAriaLabel={`Remove ${member.email ?? "this member"} from the group`}
-                        title="Remove this member?"
-                        description={`${member.email ?? "This member"} will lose access to ${group.name}, and their streaks in its tasks will be lost. They can rejoin later with the invite link.`}
-                        confirmLabel="Remove member"
-                      />
-                    </div>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      )}
+      {showMembers && <MembersCard members={members} groupName={group.name} viewerId={user?.id} isOwner={isOwner} />}
 
       {showTasks && (
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <h2 class="font-heading text-xl font-semibold">Tasks</h2>
-            </CardTitle>
-            <CardDescription>{`${tasks.length} ${tasks.length === 1 ? "task" : "tasks"}`}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {tasks.length === 0 ? (
-              <p class="text-sm text-muted-foreground">No tasks yet. Create the first one below.</p>
-            ) : (
-              <ul class="divide-y">
-                {tasks.map((task) => {
-                  const participants = participantsOf(task.id);
-                  const joined = participants.some((participant) => participant.isYou);
-                  // Only tasks the viewer takes part in have an entry, and only when the board was computed.
-                  const viewerTask = board?.viewerTasks.get(task.id);
-                  return (
-                    <li class="flex flex-wrap items-center gap-x-2 gap-y-2 py-2 first:pt-0 last:pb-0">
-                      {task.created_by === user?.id ? (
-                        <>
-                          <EditTaskForm client:load taskId={task.id} title={task.title} />
-                          <span class="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
-                            {RECURRENCE_LABELS[task.recurrence]}
-                          </span>
-                          <ConfirmAction
-                            client:load
-                            action="/api/tasks/delete"
-                            fields={{ task_id: task.id }}
-                            triggerLabel="Delete"
-                            triggerAriaLabel={`Delete ${task.title}`}
-                            title="Delete this task?"
-                            description={`${task.title} will be deleted permanently. This cannot be undone.`}
-                            confirmLabel="Delete task"
-                          />
-                        </>
-                      ) : (
-                        <>
-                          <span class="min-w-0 flex-1 text-sm break-words">{task.title}</span>
-                          <span class="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
-                            {RECURRENCE_LABELS[task.recurrence]}
-                          </span>
-                        </>
-                      )}
-                      {!participantsFailed && (
-                        <div class="flex basis-full flex-wrap items-center gap-x-2 gap-y-2">
-                          <div class="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                            <span>Participants:</span>
-                            {participants.length === 0 ? (
-                              <span>No participants yet</span>
-                            ) : (
-                              <span role="list" aria-label={`Participants of ${task.title}`} class="contents">
-                                {participants.map((participant) => (
-                                  <span role="listitem" class="inline-flex min-w-0 items-center gap-1">
-                                    <span class="break-all text-foreground">{participant.email}</span>
-                                    {participant.isYou && (
-                                      <span class="rounded-full border px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                                        You
-                                      </span>
-                                    )}
-                                  </span>
-                                ))}
-                              </span>
-                            )}
-                          </div>
-                          {joined ? (
-                            <ConfirmAction
-                              client:load
-                              action="/api/tasks/leave"
-                              fields={{ task_id: task.id }}
-                              triggerLabel="Leave"
-                              triggerAriaLabel={`Leave ${task.title}`}
-                              title="Leave this task?"
-                              description={`You will no longer take part in ${task.title}, and your streak on it will be lost. You can join again later.`}
-                              confirmLabel="Leave task"
-                              variant="outline"
-                            />
-                          ) : (
-                            <form method="POST" action="/api/tasks/join">
-                              <input type="hidden" name="task_id" value={task.id} />
-                              <Button type="submit" size="sm" aria-label={`Join ${task.title}`}>
-                                Join
-                              </Button>
-                            </form>
-                          )}
-                        </div>
-                      )}
-                      {viewerTask && user && (
-                        <CheckoffControl
-                          client:load
-                          taskId={task.id}
-                          title={task.title}
-                          recurrence={task.recurrence}
-                          snapshot={viewerTask.snapshot}
-                          currentPeriod={viewerTask.currentPeriod}
-                          viewerId={user.id}
-                        />
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-            {participantsFailed && (
-              <p class="text-xs text-muted-foreground">Participants are unavailable right now. Reload to try again.</p>
-            )}
-            {checkoffsFailed && (
-              <p class="text-xs text-muted-foreground">Scores are unavailable right now. Reload to try again.</p>
-            )}
-            <CreateTaskForm client:load />
-          </CardContent>
-        </Card>
+        <TasksCard
+          tasks={tasks}
+          members={members}
+          participantsByTask={participantsByTask}
+          participantsFailed={participantsFailed}
+          checkoffsFailed={checkoffsFailed}
+          board={board}
+          viewerId={user?.id}
+        />
       )}
 
       {showTasks && board && user && <Leaderboard client:load rows={board.totals} viewerId={user.id} />}
 
-      {group && isOwner && (
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <h2 class="font-heading text-xl font-semibold">Rename group</h2>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <RenameGroupForm client:load name={group.name} />
-          </CardContent>
-        </Card>
-      )}
+      {group && isOwner && <OwnerActions groupName={group.name} />}
 
-      {group && isOwner && (
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <h2 class="font-heading text-xl font-semibold">Delete group</h2>
-            </CardTitle>
-            <CardDescription>
-              Permanently delete this group. Every member loses it and the invite link stops working.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ConfirmAction
-              client:load
-              action="/api/groups/delete"
-              triggerLabel="Delete group"
-              title="Delete this group?"
-              description={`${group.name} will be deleted permanently and all of its members will lose it. This cannot be undone.`}
-              confirmLabel="Delete group"
-            />
-          </CardContent>
-        </Card>
-      )}
-
-      {group && !isOwner && (
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <h2 class="font-heading text-xl font-semibold">Leave group</h2>
-            </CardTitle>
-            <CardDescription>You will lose access to this group. You can rejoin with the invite link.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ConfirmAction
-              client:load
-              action="/api/groups/leave"
-              triggerLabel="Leave group"
-              title="Leave this group?"
-              description={`You will no longer be a member of ${group.name}, and your streaks in its tasks will be lost. You can rejoin later with the invite link.`}
-              confirmLabel="Leave group"
-            />
-          </CardContent>
-        </Card>
-      )}
+      {group && !isOwner && <LeaveGroupCard groupName={group.name} />}
 
       {!group && pendingCode && pendingGroupName !== null && (
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <h2 class="font-heading text-xl font-semibold break-words">Join {pendingGroupName}?</h2>
-            </CardTitle>
-            <CardDescription>You were invited with a link. Confirm to become a member.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form method="POST" action="/api/groups/join">
-              <input type="hidden" name="code" value={pendingCode} />
-              <Button type="submit" className="w-full">
-                Join group
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+        <PendingInviteCard code={pendingCode} groupName={pendingGroupName} />
       )}
 
-      {showGroupForms && (
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <h1 class="font-heading text-xl font-semibold">Create a group</h1>
-            </CardTitle>
-            <CardDescription>Start a group and invite others with a link.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <CreateGroupForm client:load />
-          </CardContent>
-        </Card>
-      )}
+      {showGroupForms && <NoGroupCards />}
 
-      {showGroupForms && (
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <h2 class="font-heading text-xl font-semibold">Join a group</h2>
-            </CardTitle>
-            <CardDescription>Have an invite? Paste the link or code.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <JoinGroupForm client:load />
-          </CardContent>
-        </Card>
-      )}
-
-      <Card size="sm">
-        <CardContent className="flex flex-wrap items-center justify-between gap-3">
-          <p class="text-sm text-muted-foreground">
-            Signed in as <span class="font-semibold text-foreground break-all">{user?.email}</span>
-          </p>
-          <form method="POST" action="/api/auth/signout">
-            <Button type="submit" variant="outline" size="sm">
-              Sign out
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+      <AccountCard email={user?.email} />
 
       <SiteFooter class="px-0 py-2" />
     </div>

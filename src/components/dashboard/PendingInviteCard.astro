@@ -1,0 +1,28 @@
+---
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+interface Props {
+  code: string;
+  groupName: string;
+}
+
+const { code, groupName } = Astro.props;
+---
+
+<Card>
+  <CardHeader>
+    <CardTitle>
+      <h2 class="font-heading text-xl font-semibold break-words">Join {groupName}?</h2>
+    </CardTitle>
+    <CardDescription>You were invited with a link. Confirm to become a member.</CardDescription>
+  </CardHeader>
+  <CardContent>
+    <form method="POST" action="/api/groups/join">
+      <input type="hidden" name="code" value={code} />
+      <Button type="submit" className="w-full">
+        Join group
+      </Button>
+    </form>
+  </CardContent>
+</Card>

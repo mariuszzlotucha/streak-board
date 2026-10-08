@@ -1,0 +1,15 @@
+---
+import PolicySection from "./PolicySection.astro";
+import { ul } from "./styles";
+---
+
+<PolicySection title="How long we keep it">
+  <ul class:list={ul}>
+    <li>Your account, what you create, session data and the security log: until your account is deleted.</li>
+    <li>Request logs, ours and Cloudflare's: up to 7 days.</li>
+    <li>Error reports: up to 90 days (30 days on Sentry's free plan, 90 days while an organization trial runs).</li>
+    <li>E-mail delivery logs: 30 days.</li>
+    <li>Supabase platform logs: 1 day.</li>
+    <li>Cookies: see the next section.</li>
+  </ul>
+</PolicySection>

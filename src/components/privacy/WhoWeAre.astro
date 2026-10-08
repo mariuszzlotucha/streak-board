@@ -1,0 +1,16 @@
+---
+import ContactEmail from "@/components/site/ContactEmail.astro";
+import PolicySection from "./PolicySection.astro";
+import { link, ul } from "./styles";
+import { SITE_OPERATOR } from "@/lib/site";
+---
+
+<PolicySection title="Who we are">
+  <ul class:list={ul}>
+    <li>StreakBoard is run by {SITE_OPERATOR}, a private individual, who is the controller of your personal data.</li>
+    <li>
+      Contact: <ContactEmail class:list={link} />
+    </li>
+    <li>There is no data protection officer.</li>
+  </ul>
+</PolicySection>

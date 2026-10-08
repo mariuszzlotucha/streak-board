@@ -1,0 +1,44 @@
+---
+import PolicySection from "./PolicySection.astro";
+import { ul } from "./styles";
+---
+
+<PolicySection title="What we collect">
+  <ul class:list={ul}>
+    <li>
+      <strong class="text-foreground">Your account:</strong> your e-mail address, a hash of your password kept by our
+      sign-in provider, Supabase Auth (the app itself never stores your password), and when you signed up and last
+      signed in.
+    </li>
+    <li>
+      <strong class="text-foreground">With "Continue with Google":</strong> the name, e-mail address and profile picture
+      that Google shares. The app uses only the e-mail address.
+    </li>
+    <li>
+      <strong class="text-foreground">Your sessions:</strong> for each signed-in session, the IP address and the browser
+      you use (user agent), plus a security log of account events (such as sign-ins) with the IP address, kept by
+      Supabase Auth.
+    </li>
+    <li>
+      <strong class="text-foreground">What you create:</strong> your group's name, task titles (free text, so please
+      keep anything sensitive out of them), memberships, the tasks you join and the days or weeks you mark done.
+    </li>
+    <li>
+      <strong class="text-foreground">Technical data:</strong>
+      <ul class:list={ul}>
+        <li>our own log entries: the route, your user id, a request id and the time;</li>
+        <li>
+          error reports, which identify you only by your user id and never contain cookies, headers, request bodies or
+          query strings;
+        </li>
+        <li>our own log entries and error reports mask e-mail addresses and invite codes;</li>
+        <li>
+          Cloudflare, which hosts the site, processes your IP address and request details to serve it, and its request
+          logs record each address you request (an invite link contains its code) with request details such as your IP
+          address.
+        </li>
+      </ul>
+    </li>
+    <li>No analytics, no advertising and no tracking scripts.</li>
+  </ul>
+</PolicySection>
