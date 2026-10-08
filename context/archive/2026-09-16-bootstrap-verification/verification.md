@@ -40,10 +40,10 @@ StreakBoard is a small-scale, solo/after-hours web-app MVP due in 3 weeks with a
 
 ## Pre-scaffold verification
 
-| Signal      | Value                                                          | Severity | Notes                                                              |
-| ----------- | --------------------------------------------------------------- | -------- | ------------------------------------------------------------------- |
-| npm package | not run                                                          | n/a      | `cmd_template` starts with `git clone`; npm recency check skipped   |
-| GitHub repo | `przeprogramowani/10x-astro-starter` last pushed 2026-09-12T21:16:08Z | fresh    | from card `docs_url`, checked 2026-09-16                            |
+| Signal      | Value                                                                 | Severity | Notes                                                             |
+| ----------- | --------------------------------------------------------------------- | -------- | ----------------------------------------------------------------- |
+| npm package | not run                                                               | n/a      | `cmd_template` starts with `git clone`; npm recency check skipped |
+| GitHub repo | `przeprogramowani/10x-astro-starter` last pushed 2026-09-12T21:16:08Z | fresh    | from card `docs_url`, checked 2026-09-16                          |
 
 ## Scaffold log
 
@@ -65,27 +65,28 @@ No findings to list.
 
 ## Hints recorded but not acted on
 
-| Hint                     | Value             |
-| ------------------------ | ------------------ |
-| bootstrapper_confidence  | first-class         |
-| quality_override         | false               |
-| path_taken               | standard            |
-| self_check_answers       | null                |
-| team_size                | solo                |
-| deployment_target        | cloudflare-pages    |
-| ci_provider              | github-actions      |
-| ci_default_flow          | auto-deploy-on-merge|
-| has_auth                 | true                |
-| has_payments             | false               |
-| has_realtime             | false               |
-| has_ai                   | false               |
-| has_background_jobs      | false               |
+| Hint                    | Value                |
+| ----------------------- | -------------------- |
+| bootstrapper_confidence | first-class          |
+| quality_override        | false                |
+| path_taken              | standard             |
+| self_check_answers      | null                 |
+| team_size               | solo                 |
+| deployment_target       | cloudflare-pages     |
+| ci_provider             | github-actions       |
+| ci_default_flow         | auto-deploy-on-merge |
+| has_auth                | true                 |
+| has_payments            | false                |
+| has_realtime            | false                |
+| has_ai                  | false                |
+| has_background_jobs     | false                |
 
 ## Next steps
 
 Next: a future skill will set up agent context (CLAUDE.md, AGENTS.md). For now, your project is scaffolded and verified — happy hacking.
 
 Useful manual steps in the meantime:
+
 - `git init` (if you have not already) to start your own repo history.
 - Review any `.scaffold` siblings the conflict policy created and decide which version of each file to keep. `CLAUDE.md.scaffold` in particular carries the starter's own agent-context content — worth comparing against your existing `CLAUDE.md` before deciding what to keep.
 - Address audit findings per your project's risk tolerance — the full breakdown is in this log (none found this run).
