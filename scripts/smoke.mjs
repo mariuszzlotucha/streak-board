@@ -444,6 +444,7 @@ const steps = [
         "code_challenge=",
       ],
       setCookie: "-code-verifier=",
+      ...(PRODUCTION_BUILD ? { secureCookies: "sb-" } : {}),
     },
   ],
   [

@@ -2,7 +2,7 @@
 import { ListChecks, Trophy, Users } from "lucide-react";
 import PublicLayout from "@/layouts/PublicLayout.astro";
 import { buttonVariants } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 // A signed-in visitor goes straight to their dashboard, also with a flow-state code (a second click on "Continue with
 // Google" comes back with flow_state_already_used), so this check stays first. During an Auth outage the user is null
@@ -79,9 +79,7 @@ const steps = [
                 <span class="flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <Icon className="size-5" aria-hidden="true" />
                 </span>
-                <CardTitle>
-                  <h3 class="font-heading text-lg font-semibold text-foreground">{title}</h3>
-                </CardTitle>
+                <h3 class="font-heading text-lg font-semibold text-foreground">{title}</h3>
               </CardHeader>
               <CardContent className="leading-relaxed text-muted-foreground">{text}</CardContent>
             </Card>

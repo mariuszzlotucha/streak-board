@@ -13,6 +13,8 @@ const rememberedEmail = takeRememberedEmail(Astro.cookies);
 const serverError = error && !error.field ? error.message : null;
 const serverFieldErrors = error?.field ? { [error.field]: error.message } : {};
 const policyLink = "font-medium text-primary underline-offset-4 hover:underline";
+// Kept in one expression so the phrase the smoke test pins can never be split by reformatting.
+const EMAIL_VISIBILITY = "Members of your group will see your e-mail address.";
 ---
 
 <PublicLayout title="Sign up">
@@ -30,7 +32,7 @@ const policyLink = "font-medium text-primary underline-offset-4 hover:underline"
           client:load
         />
         <p class="mt-4 text-center text-sm text-muted-foreground">
-          Members of your group will see your e-mail address. Our{" "}
+          {EMAIL_VISIBILITY} Our{" "}
           <a href="/privacy" class:list={policyLink}>
             Privacy Policy
           </a>{" "}
