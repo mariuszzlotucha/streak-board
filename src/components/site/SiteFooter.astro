@@ -1,5 +1,5 @@
 ---
-import { CONTACT_EMAIL, SITE_OPERATOR } from "@/lib/site";
+import { contactEmail, SITE_OPERATOR } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -7,6 +7,7 @@ interface Props {
 }
 
 const { class: className } = Astro.props;
+const email = contactEmail();
 const linkClass = "underline-offset-4 hover:text-foreground hover:underline";
 ---
 
@@ -17,9 +18,11 @@ const linkClass = "underline-offset-4 hover:text-foreground hover:underline";
       <a href="/privacy" class:list={linkClass}>
         Privacy Policy
       </a>
-      <a href={`mailto:${CONTACT_EMAIL}`} class:list={linkClass}>
-        Contact
-      </a>
+      {email && (
+        <a href={`mailto:${email}`} class:list={linkClass}>
+          Contact
+        </a>
+      )}
     </nav>
   </div>
 </footer>

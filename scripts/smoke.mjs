@@ -268,6 +268,10 @@ const BRAND_LINK = /<a\s[^>]*href="\/"[^>]*>(?:(?!<\/a>)[\s\S])*StreakBoard(?:(?
 const LANDING_HEADING = /<h1[^>]*>\s*Keep each other on track\.\s*<\/h1>/;
 const PRIVACY_HEADING = /<h1[^>]*>\s*Privacy Policy\s*<\/h1>/;
 
+// A mailto: link to a configured contact address (CONTACT_EMAIL is runtime configuration, so smoke pins its shape only;
+// the "not configured" notice or an obfuscated /cdn-cgi/ link would not match).
+const CONTACT_LINK = /<a\s[^>]*href="mailto:[^"@\s]+@[^"@\s]+\.[^"@\s]+"/;
+
 // The Set-Cookie headers whose cookie name starts with `prefix`, as names and whether each carries `Secure`. Only the
 // names are ever printed: a value may be a session or a code verifier.
 function cookiesNamed(setCookies, prefix) {
@@ -529,12 +533,8 @@ const steps = [
     () => request("/privacy", { cookie: "" }),
     {
       status: 200,
-      bodyMatches: [PRIVACY_HEADING, BRAND_LINK],
-      bodyIncludes: [
-        "Mariusz Złotucha",
-        'href="mailto:mariusz.zlotucha@gmail.com"',
-        "Prezes Urzędu Ochrony Danych Osobowych",
-      ],
+      bodyMatches: [PRIVACY_HEADING, BRAND_LINK, CONTACT_LINK],
+      bodyIncludes: ["Mariusz Złotucha", "Prezes Urzędu Ochrony Danych Osobowych"],
     },
   ],
   [

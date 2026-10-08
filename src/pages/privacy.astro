@@ -1,11 +1,11 @@
 ---
 import PublicLayout from "@/layouts/PublicLayout.astro";
 import { Card, CardContent } from "@/components/ui/card";
-import { CONTACT_EMAIL, SITE_OPERATOR } from "@/lib/site";
+import ContactEmail from "@/components/site/ContactEmail.astro";
+import { SITE_OPERATOR } from "@/lib/site";
 
 // Every statement below must stay true for the code as it is: a change to the data model, to who sees what, to
 // deletion, to the cookies or to the providers updates this page in the same change (CLAUDE.md, Conventions).
-const contactHref = `mailto:${CONTACT_EMAIL}`;
 // Kept in one expression so the name the smoke test pins can never be split by reformatting.
 const SUPERVISORY_AUTHORITY = "Prezes Urzędu Ochrony Danych Osobowych";
 const h2 = "font-heading mt-10 text-xl font-semibold text-foreground";
@@ -34,10 +34,7 @@ const link = "font-medium text-primary underline-offset-4 hover:underline";
               StreakBoard is run by {SITE_OPERATOR}, a private individual, who is the controller of your personal data.
             </li>
             <li>
-              Contact:{" "}
-              <a href={contactHref} class:list={link}>
-                {CONTACT_EMAIL}
-              </a>
+              Contact: <ContactEmail class:list={link} />
             </li>
             <li>There is no data protection officer.</li>
           </ul>
@@ -193,11 +190,8 @@ const link = "font-medium text-primary underline-offset-4 hover:underline";
             processing of your data based on our legitimate interests (Art. 21 GDPR).
           </p>
           <p class:list={p}>
-            To use any of these rights, write to{" "}
-            <a href={contactHref} class:list={link}>
-              {CONTACT_EMAIL}
-            </a>{" "}
-            and you get an answer within one month.
+            To use any of these rights, write to <ContactEmail class:list={link} /> and you get an answer within one
+            month.
           </p>
           <p class:list={p}>
             You can also complain to the Polish supervisory authority, the {SUPERVISORY_AUTHORITY}, ul. Stawki 2, 00-193
@@ -213,12 +207,9 @@ const link = "font-medium text-primary underline-offset-4 hover:underline";
           <h2 class:list={h2}>Deleting your account</h2>
           <ul class:list={ul}>
             <li>
-              There is no delete button yet. Write to{" "}
-              <a href={contactHref} class:list={link}>
-                {CONTACT_EMAIL}
-              </a>{" "}
-              from your account's e-mail address, and your account and the data kept until deletion (see "How long we
-              keep it") are deleted within one month.
+              There is no delete button yet. Write to <ContactEmail class:list={link} /> from your account's e-mail
+              address, and your account and the data kept until deletion (see "How long we keep it") are deleted within
+              one month.
             </li>
             <li>
               If you own a group, the group is deleted with all its tasks and every member's participation and the days

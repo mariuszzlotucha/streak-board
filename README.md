@@ -230,12 +230,15 @@ Required configuration of the GitHub `production` environment (Settings → Envi
 | Variable | `SUPABASE_PROJECT_REF`  | Hosted project ref used by `supabase link`                                                              |
 | Variable | `PRODUCTION_URL`        | Production host, e.g. `https://streakboard.app` (no trailing slash); base URL for the post-deploy check |
 
-The Worker's runtime secrets (`SUPABASE_URL`, `SUPABASE_KEY`) are set once on the Worker itself (or whenever they change):
+The Worker's runtime secrets (`SUPABASE_URL`, `SUPABASE_KEY`, `CONTACT_EMAIL`) are set once on the Worker itself (or whenever they change):
 
 ```bash
 npx wrangler secret put SUPABASE_URL
 npx wrangler secret put SUPABASE_KEY
+npx wrangler secret put CONTACT_EMAIL
 ```
+
+`CONTACT_EMAIL` is the controller's contact address that the privacy policy and the footer publish. It is not secret, but it is read at runtime so the address stays out of the repo and the bundle; locally put it in `.dev.vars` (and `.env`). Unset, the footer drops its Contact link and the policy shows "[contact address not configured]", which smoke and the release live check report as a missing `mailto:` link.
 
 **Migrations must be backward compatible.** The schema ships before the code and a code rollback does not roll the schema back, so every migration has to work with the code version that is currently deployed (add columns and tables first, remove or rename in a later release). There are no automated down-migrations.
 

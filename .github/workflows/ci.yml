@@ -76,6 +76,8 @@ jobs:
         run: |
           source supabase.env
           printf 'SUPABASE_URL=%s\nSUPABASE_KEY=%s\n' "$API_URL" "$ANON_KEY" > .env
+          # The privacy policy's contact address is runtime configuration; smoke only checks that a mailto: link renders.
+          printf 'CONTACT_EMAIL=contact@example.com\n' >> .env
           cp .env .dev.vars
       - run: npm run build
       - name: Run smoke test against production preview
