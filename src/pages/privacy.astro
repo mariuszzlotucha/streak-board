@@ -1,0 +1,253 @@
+---
+import PublicLayout from "@/layouts/PublicLayout.astro";
+import { Card, CardContent } from "@/components/ui/card";
+import { CONTACT_EMAIL, SITE_OPERATOR } from "@/lib/site";
+
+// Every statement below must stay true for the code as it is: a change to the data model, to who sees what, to
+// deletion, to the cookies or to the providers updates this page in the same change (CLAUDE.md, Conventions).
+const contactHref = `mailto:${CONTACT_EMAIL}`;
+// Kept in one expression so the name the smoke test pins can never be split by reformatting.
+const SUPERVISORY_AUTHORITY = "Prezes Urzędu Ochrony Danych Osobowych";
+const h2 = "font-heading mt-10 text-xl font-semibold text-foreground";
+const p = "mt-3 leading-relaxed";
+const ul = "mt-3 list-disc space-y-2 pl-5 leading-relaxed";
+const link = "font-medium text-primary underline-offset-4 hover:underline";
+---
+
+<PublicLayout title="Privacy Policy">
+  <div class="mx-auto w-full max-w-3xl px-4 py-10 sm:py-14">
+    <Card>
+      <CardContent className="text-base text-muted-foreground">
+        <h1 class="font-heading text-3xl font-semibold text-foreground">Privacy Policy</h1>
+        <p class="mt-2 text-sm">
+          Last updated: <time datetime="2026-10-08">8 October 2026</time>
+        </p>
+        <p class:list={p}>
+          This page explains what StreakBoard collects about you, why, who can see it, how long it is kept and what you
+          can ask us to do with it.
+        </p>
+
+        <section>
+          <h2 class:list={h2}>Who we are</h2>
+          <ul class:list={ul}>
+            <li>
+              StreakBoard is run by {SITE_OPERATOR}, a private individual, who is the controller of your personal data.
+            </li>
+            <li>
+              Contact:{" "}
+              <a href={contactHref} class:list={link}>
+                {CONTACT_EMAIL}
+              </a>
+            </li>
+            <li>There is no data protection officer.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2 class:list={h2}>What we collect</h2>
+          <ul class:list={ul}>
+            <li>
+              <strong class="text-foreground">Your account:</strong> your e-mail address, a hash of your password kept
+              by our sign-in provider, Supabase Auth (the app itself never stores your password), and when you signed up
+              and last signed in.
+            </li>
+            <li>
+              <strong class="text-foreground">With "Continue with Google":</strong> the name, e-mail address and profile
+              picture that Google shares. The app uses only the e-mail address.
+            </li>
+            <li>
+              <strong class="text-foreground">Your sessions:</strong> for each signed-in session, the IP address and the
+              browser you use (user agent), plus a security log of account events (such as sign-ins) with the IP
+              address, kept by Supabase Auth.
+            </li>
+            <li>
+              <strong class="text-foreground">What you create:</strong> your group's name, task titles (free text, so
+              please keep anything sensitive out of them), memberships, the tasks you join and the days or weeks you
+              mark done.
+            </li>
+            <li>
+              <strong class="text-foreground">Technical data:</strong>
+              <ul class:list={ul}>
+                <li>our own log entries: the route, your user id, a request id and the time;</li>
+                <li>
+                  error reports, which identify you only by your user id and never contain cookies, headers, request
+                  bodies or query strings;
+                </li>
+                <li>our own log entries and error reports mask e-mail addresses and invite codes;</li>
+                <li>
+                  Cloudflare, which hosts the site, processes your IP address and request details to serve it, and its
+                  request logs record each address you request (an invite link contains its code) with request details
+                  such as your IP address.
+                </li>
+              </ul>
+            </li>
+            <li>No analytics, no advertising and no tracking scripts.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2 class:list={h2}>Why we use it and on what legal basis</h2>
+          <ul class:list={ul}>
+            <li>
+              To run your account and the group features (creating and joining a group, tasks, marking them done,
+              streaks and the leaderboard) and to send the sign-up confirmation e-mail: performance of the contract,
+              which is your use of StreakBoard (Art. 6(1)(b) GDPR).
+            </li>
+            <li>
+              To keep the service secure and to find and fix errors (request logs, error reports, session data and the
+              security log): our legitimate interest in a working and secure service (Art. 6(1)(f) GDPR).
+            </li>
+          </ul>
+        </section>
+
+        <section>
+          <h2 class:list={h2}>Who can see your data</h2>
+          <ul class:list={ul}>
+            <li>
+              The other members of your group see your e-mail address, the tasks you create and join, the days or weeks
+              you mark done, your streaks and your place on the leaderboard.
+            </li>
+            <li>Anyone signed in who has your group's invite link can see the group's name before joining.</li>
+            <li>
+              When you leave a group, or its owner removes you, your participation and the days or weeks you marked done
+              in its tasks are deleted and the group no longer shows your e-mail address. Tasks you created stay in the
+              group.
+            </li>
+            <li>Nobody else sees your e-mail address in the app.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2 class:list={h2}>Service providers and transfers</h2>
+          <ul class:list={ul}>
+            <li>
+              <strong class="text-foreground">Cloudflare:</strong> hosting, the domain, DNS and request logs.
+            </li>
+            <li>
+              <strong class="text-foreground">Supabase:</strong> the database and sign-in. The database is in the EU
+              (Ireland); the contracting party is Supabase Pte. Ltd. (Singapore), under Standard Contractual Clauses.
+            </li>
+            <li>
+              <strong class="text-foreground">Resend:</strong> sends the confirmation e-mail and keeps account data,
+              e-mail metadata and logs in the United States.
+            </li>
+            <li>
+              <strong class="text-foreground">Sentry:</strong> error reports; it may process data in the United States.
+            </li>
+            <li>
+              <strong class="text-foreground">Google:</strong> acts under its own terms when you choose "Continue with
+              Google".
+            </li>
+          </ul>
+          <p class:list={p}>
+            Transfers outside the European Economic Area rely on the EU–US Data Privacy Framework and/or Standard
+            Contractual Clauses.
+          </p>
+        </section>
+
+        <section>
+          <h2 class:list={h2}>How long we keep it</h2>
+          <ul class:list={ul}>
+            <li>Your account, what you create, session data and the security log: until your account is deleted.</li>
+            <li>Request logs, ours and Cloudflare's: up to 7 days.</li>
+            <li>
+              Error reports: up to 90 days (30 days on Sentry's free plan, 90 days while an organization trial runs).
+            </li>
+            <li>E-mail delivery logs: 30 days.</li>
+            <li>Supabase platform logs: 1 day.</li>
+            <li>Cookies: see the next section.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2 class:list={h2}>Cookies</h2>
+          <p class:list={p}>StreakBoard sets only strictly necessary cookies:</p>
+          <ul class:list={ul}>
+            <li>
+              the session cookie (<code>sb-…-auth-token</code>, possibly split into numbered parts) keeps you signed in;
+              it is removed when you sign out and otherwise lasts up to 400 days after it was last refreshed;
+            </li>
+            <li>
+              a sign-in check cookie (<code>sb-…-code-verifier</code>) is used during e-mail sign-up and Google sign-in;
+            </li>
+            <li>
+              <code>join_code</code> (1 hour) remembers an invite while you sign in;
+            </li>
+            <li>
+              <code>auth_email</code> (60 seconds) refills the e-mail field after a failed attempt.
+            </li>
+          </ul>
+          <p class:list={p}>
+            We do not ask for consent, because none of these cookies is used for anything but the service you asked for.
+          </p>
+        </section>
+
+        <section>
+          <h2 class:list={h2}>Your rights</h2>
+          <p class:list={p}>
+            You have the right to access your data, to have it corrected or erased, to restrict its processing and to
+            receive it in a portable form.
+          </p>
+          <p class:list={p}>
+            <strong class="text-foreground">Right to object.</strong> You have the right to object at any time to the
+            processing of your data based on our legitimate interests (Art. 21 GDPR).
+          </p>
+          <p class:list={p}>
+            To use any of these rights, write to{" "}
+            <a href={contactHref} class:list={link}>
+              {CONTACT_EMAIL}
+            </a>{" "}
+            and you get an answer within one month.
+          </p>
+          <p class:list={p}>
+            You can also complain to the Polish supervisory authority, the {SUPERVISORY_AUTHORITY}, ul. Stawki 2, 00-193
+            Warszawa, by post or through the{" "}
+            <a href="https://uodo.gov.pl" class:list={link}>
+              uodo.gov.pl
+            </a>{" "}
+            website.
+          </p>
+        </section>
+
+        <section>
+          <h2 class:list={h2}>Deleting your account</h2>
+          <ul class:list={ul}>
+            <li>
+              There is no delete button yet. Write to{" "}
+              <a href={contactHref} class:list={link}>
+                {CONTACT_EMAIL}
+              </a>{" "}
+              from your account's e-mail address, and your account and the data kept until deletion (see "How long we
+              keep it") are deleted within one month.
+            </li>
+            <li>
+              If you own a group, the group is deleted with all its tasks and every member's participation and the days
+              or weeks they marked done in it; the other members keep their accounts.
+            </li>
+            <li>
+              Tasks you created in someone else's group are deleted together with the other members' participation and
+              the days or weeks they marked done on them.
+            </li>
+            <li>Leaving a group keeps your account.</li>
+          </ul>
+        </section>
+
+        <section>
+          <h2 class:list={h2}>Do you have to give us your data</h2>
+          <ul class:list={ul}>
+            <li>An e-mail address is needed to create an account; without it the service cannot work.</li>
+            <li>
+              There are no automated decisions with legal or similarly significant effects; the leaderboard only adds up
+              streaks.
+            </li>
+          </ul>
+        </section>
+
+        <section>
+          <h2 class:list={h2}>Changes</h2>
+          <p class:list={p}>Changes to this policy are published on this page with a new date.</p>
+        </section>
+      </CardContent>
+    </Card>
+  </div>
+</PublicLayout>

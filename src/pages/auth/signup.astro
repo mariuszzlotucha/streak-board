@@ -1,5 +1,5 @@
 ---
-import Layout from "@/layouts/Layout.astro";
+import PublicLayout from "@/layouts/PublicLayout.astro";
 import SignUpForm from "@/components/auth/SignUpForm";
 import GoogleButton from "@/components/auth/GoogleButton.astro";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
@@ -12,10 +12,11 @@ const error = resolveSignUpError(Astro.url.searchParams.get("error"));
 const rememberedEmail = takeRememberedEmail(Astro.cookies);
 const serverError = error && !error.field ? error.message : null;
 const serverFieldErrors = error?.field ? { [error.field]: error.message } : {};
+const policyLink = "font-medium text-primary underline-offset-4 hover:underline";
 ---
 
-<Layout title="Sign up">
-  <div class="flex min-h-screen items-center justify-center bg-muted p-4">
+<PublicLayout title="Sign up">
+  <div class="flex flex-1 items-center justify-center p-4">
     <Card className="w-full max-w-sm">
       <CardHeader>
         <h1 class="font-heading text-center text-2xl font-semibold">Sign up</h1>
@@ -28,6 +29,13 @@ const serverFieldErrors = error?.field ? { [error.field]: error.message } : {};
           defaultEmail={error ? rememberedEmail : ""}
           client:load
         />
+        <p class="mt-4 text-center text-sm text-muted-foreground">
+          Members of your group will see your e-mail address. Our{" "}
+          <a href="/privacy" class:list={policyLink}>
+            Privacy Policy
+          </a>{" "}
+          explains who sees what.
+        </p>
       </CardContent>
       <CardFooter className="justify-center text-sm text-muted-foreground">
         Already have an account?
@@ -37,4 +45,4 @@ const serverFieldErrors = error?.field ? { [error.field]: error.message } : {};
       </CardFooter>
     </Card>
   </div>
-</Layout>
+</PublicLayout>

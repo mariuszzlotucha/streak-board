@@ -167,6 +167,22 @@ jobs:
             sleep 3
           done
           [ "$root" = "200" ] || { echo "Expected 200 from $base/, got $root"; exit 1; }
+          # The privacy policy and its link on `/` exist only in the new Worker version (the previous one also answers `/`
+          # with 200 above), so both are retried together: up to 10 tries, 3 s apart.
+          privacy=""
+          linked=""
+          for i in $(seq 1 10); do
+            privacy=$(curl -s -o /dev/null -w '%{http_code}' "$base/privacy" || true)
+            home=$(curl -s "$base/" || true)
+            case "$home" in
+              *'href="/privacy"'*) linked="yes" ;;
+              *) linked="no" ;;
+            esac
+            [ "$privacy" = "200" ] && [ "$linked" = "yes" ] && break
+            sleep 3
+          done
+          [ "$privacy" = "200" ] || { echo "Expected 200 from $base/privacy, got $privacy"; exit 1; }
+          [ "$linked" = "yes" ] || { echo "Expected $base/ to link the privacy policy (href=\"/privacy\"), the link is missing"; exit 1; }
           read -r code location < <(curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' "$base/dashboard")
           [ "$code" = "302" ] || { echo "Expected 302 from $base/dashboard, got $code"; exit 1; }
           case "$location" in

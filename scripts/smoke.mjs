@@ -256,6 +256,35 @@ const SUBMIT_IN_DESTRUCTIVE_FORM =
 // The Tasks card heading (an error alert or another card would not match).
 const TASKS_HEADING = /<h2[^>]*>\s*Tasks\s*<\/h2>/;
 
+// An <a> element whose href is exactly `href` (the closing quote rules out a longer path with the same start).
+function linkTo(href) {
+  return new RegExp(`<a\\s[^>]*href="${escapeRegExp(href)}"`);
+}
+
+// The header's brand link: an <a href="/"> whose own content holds the name (the <title> or a bare link would not match).
+const BRAND_LINK = /<a\s[^>]*href="\/"[^>]*>(?:(?!<\/a>)[\s\S])*StreakBoard(?:(?!<\/a>)[\s\S])*<\/a>/;
+
+// The headings of the landing page and the privacy policy (an error page or another page would not match).
+const LANDING_HEADING = /<h1[^>]*>\s*Keep each other on track\.\s*<\/h1>/;
+const PRIVACY_HEADING = /<h1[^>]*>\s*Privacy Policy\s*<\/h1>/;
+
+// The Set-Cookie headers whose cookie name starts with `prefix`, as names and whether each carries `Secure`. Only the
+// names are ever printed: a value may be a session or a code verifier.
+function cookiesNamed(setCookies, prefix) {
+  return setCookies
+    .map((raw) => {
+      const [pair, ...attrs] = raw.split(";");
+      return { name: pair.split("=")[0].trim(), secure: attrs.some((attr) => /^secure$/i.test(attr.trim())) };
+    })
+    .filter(({ name }) => name.startsWith(prefix));
+}
+
+// At least one such cookie is set, and every one of them is HTTPS-only.
+function allSecure(setCookies, prefix) {
+  const cookies = cookiesNamed(setCookies, prefix);
+  return cookies.length > 0 && cookies.every(({ secure }) => secure);
+}
+
 // A task row (<li>) holding the title followed by the recurrence badge.
 function taskRowWithBadge(title, badge) {
   return new RegExp(`<li[^>]*>(?:(?!</li>)[\\s\\S])*${escapeRegExp(title)}(?:(?!</li>)[\\s\\S])*>\\s*${badge}\\s*<`);
@@ -342,11 +371,43 @@ const B_TICKED = {
   bodyExcludes: NO_ERROR_ALERT,
 };
 
+// The build mode decides whether the Secure check applies: `/dev/signin-kitchen-sink` answers 404 in a production build
+// and renders in dev. Any other answer stops the run, so the check is never skipped or applied by mistake.
+async function probeProductionBuild() {
+  const { status } = await request("/dev/signin-kitchen-sink", { cookie: "" });
+  if (status === 404) return true;
+  if (status === 200) return false;
+  console.log(
+    `FAIL  build-mode probe: expected 404 (production build) or 200 (dev) from /dev/signin-kitchen-sink, got ${status}`,
+  );
+  process.exit(1);
+}
+
+const PRODUCTION_BUILD = await probeProductionBuild();
+console.log(
+  `INFO  ${PRODUCTION_BUILD ? "production build: sb- cookies must carry Secure" : "dev server: no Secure check"}`,
+);
+
 const steps = [
-  ["home renders", () => request("/"), { status: 200 }],
+  [
+    "home renders",
+    () => request("/"),
+    {
+      status: 200,
+      bodyMatches: [LANDING_HEADING, BRAND_LINK, linkTo("/auth/signup"), linkTo("/auth/signin"), linkTo("/privacy")],
+    },
+  ],
   ["dashboard redirects anonymous user", () => request("/dashboard"), { status: 302, location: "/auth/signin" }],
-  ["signin page renders for anonymous user", () => request("/auth/signin"), { status: 200 }],
-  ["signup page renders for anonymous user", () => request("/auth/signup"), { status: 200 }],
+  [
+    "signin page renders for anonymous user",
+    () => request("/auth/signin"),
+    { status: 200, bodyMatches: [BRAND_LINK, linkTo("/privacy")] },
+  ],
+  [
+    "signup page renders for anonymous user",
+    () => request("/auth/signup"),
+    { status: 200, bodyIncludes: "will see your e-mail address", bodyMatches: [BRAND_LINK, linkTo("/privacy")] },
+  ],
   [
     "signup page does not reflect a foreign error",
     () => request("/auth/signup?error=Injected%20message"),
@@ -455,9 +516,33 @@ const steps = [
     // Only the three flow-state codes redirect; the landing page keeps answering for any other query.
     "home with an unrelated error_code still renders",
     () => request("/?error_code=something_else", { cookie: "" }),
-    { status: 200 },
+    { status: 200, bodyMatches: [LANDING_HEADING] },
   ],
-  ["home without a query still renders", () => request("/", { cookie: "" }), { status: 200 }],
+  [
+    "home without a query still renders",
+    () => request("/", { cookie: "" }),
+    { status: 200, bodyMatches: [LANDING_HEADING] },
+  ],
+  [
+    "privacy page renders the policy",
+    () => request("/privacy", { cookie: "" }),
+    {
+      status: 200,
+      bodyMatches: [PRIVACY_HEADING, BRAND_LINK],
+      bodyIncludes: [
+        "Mariusz Złotucha",
+        'href="mailto:mariusz.zlotucha@gmail.com"',
+        "Prezes Urzędu Ochrony Danych Osobowych",
+      ],
+    },
+  ],
+  [
+    "confirm-email page shows the brand and the policy link",
+    () => request("/auth/confirm-email", { cookie: "" }),
+    { status: 200, bodyMatches: [BRAND_LINK, linkTo("/privacy"), linkTo("/auth/signin")] },
+  ],
+  ["starter banner is not served", () => request("/template.png", { cookie: "" }), { status: 404 }],
+  ["brand favicon is served", () => request("/favicon.svg", { cookie: "" }), { status: 200, bodyIncludes: "<svg" }],
   [
     "signin page shows the cancelled message",
     () => request("/auth/signin?error=oauth_cancelled", { cookie: "" }),
@@ -540,9 +625,26 @@ const steps = [
   [
     "signin accepts correct password",
     () => request("/api/auth/signin", { method: "POST", form: { email, password } }),
-    { status: 302, location: "/dashboard" },
+    // A production build serves the session over HTTPS only; the dev server and this script's jar ignore the flag.
+    { status: 302, location: "/dashboard", ...(PRODUCTION_BUILD ? { secureCookies: "sb-" } : {}) },
   ],
-  ["dashboard renders for signed-in user", () => request("/dashboard"), { status: 200 }],
+  [
+    "dashboard renders for signed-in user",
+    () => request("/dashboard"),
+    { status: 200, bodyMatches: [linkTo("/privacy")] },
+  ],
+  ["home redirects signed-in user to dashboard", () => request("/"), { status: 302, locationExact: "/dashboard" }],
+  [
+    // The signed-in check runs before the flow-state check, so a second click on "Continue with Google" lands directly.
+    "home with a flow-state error_code redirects signed-in user to dashboard",
+    () => request("/?error_code=flow_state_already_used"),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "privacy page stays public for signed-in user",
+    () => request("/privacy"),
+    { status: 200, bodyMatches: [PRIVACY_HEADING] },
+  ],
   [
     "anonymous group create redirects to signin",
     () => request("/api/groups/create", { method: "POST", form: { name: groupName }, jar: jarB }),
@@ -1771,6 +1873,7 @@ for (const [name, run, expectation] of steps) {
     [expected.locationIncludes ?? []].flat().every((text) => actual.location.includes(text)) &&
     (expected.setCookie === undefined || actual.setCookies.some((c) => c.includes(expected.setCookie))) &&
     [expected.setCookieExcludes ?? []].flat().every((text) => !actual.setCookies.some((c) => c.includes(text))) &&
+    (expected.secureCookies === undefined || allSecure(actual.setCookies, expected.secureCookies)) &&
     (expected.header === undefined ||
       (actual.headers.get(expected.header.name) ?? "")
         .toLowerCase()
@@ -1789,6 +1892,9 @@ for (const [name, run, expectation] of steps) {
         // Only the cookie names are printed: a value may be a session or a code verifier.
         (expected.setCookieExcludes
           ? ` no Set-Cookie including ${JSON.stringify(expected.setCookieExcludes)} (got names ${JSON.stringify(actual.setCookies.map((c) => c.split("=")[0]))})`
+          : "") +
+        (expected.secureCookies
+          ? ` at least one ${expected.secureCookies}* Set-Cookie, every one with Secure (got ${JSON.stringify(cookiesNamed(actual.setCookies, expected.secureCookies).map(({ name, secure }) => `${name}${secure ? " Secure" : " without Secure"}`))})`
           : "") +
         (expected.header
           ? ` header ${expected.header.name} including "${expected.header.includes}" (got "${actual.headers.get(expected.header.name) ?? ""}")`

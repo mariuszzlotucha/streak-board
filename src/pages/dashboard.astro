@@ -9,6 +9,7 @@ import CheckoffControl from "@/components/tasks/CheckoffControl";
 import CreateTaskForm from "@/components/tasks/CreateTaskForm";
 import EditTaskForm from "@/components/tasks/EditTaskForm";
 import Leaderboard from "@/components/tasks/Leaderboard";
+import SiteFooter from "@/components/site/SiteFooter.astro";
 import { CircleAlert } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -450,6 +451,8 @@ function participantsOf(taskId: string) {
           </form>
         </CardContent>
       </Card>
+
+      <SiteFooter class="px-0 py-2" />
     </div>
   </div>
 </Layout>

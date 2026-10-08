@@ -591,21 +591,21 @@ No database migration. Rollback: `npx wrangler rollback` restores the previous W
 
 #### Automated
 
-- [ ] 1.1 Lint passes
-- [ ] 1.2 Astro check passes
-- [ ] 1.3 Production build passes
-- [ ] 1.4 Vitest suite passes
-- [ ] 1.5 Smoke passes against the production preview, including the new steps and the Secure check
-- [ ] 1.6 Playwright suite passes against the production preview
-- [ ] 1.7 No starter leftover is referenced
+- [x] 1.1 Lint passes
+- [x] 1.2 Astro check passes
+- [x] 1.3 Production build passes
+- [x] 1.4 Vitest suite passes
+- [x] 1.5 Smoke passes against the production preview, including the new steps and the Secure check
+- [x] 1.6 Playwright suite passes against the production preview
+- [x] 1.7 No starter leftover is referenced
 - [ ] 1.8 CI jobs ci, smoke and integration pass on the PR
 
 #### Manual
 
-- [ ] 1.9 Owner confirms every statement of the privacy policy
-- [ ] 1.10 Landing page reads well on desktop and at phone width
-- [ ] 1.11 Auth pages show the header, footer, sign-up notice and new favicon
-- [ ] 1.12 Signed-in browser flow on the preview: dashboard redirect, footer link, sign-out
+- [x] 1.9 Owner confirms every statement of the privacy policy
+- [x] 1.10 Landing page reads well on desktop and at phone width
+- [x] 1.11 Auth pages show the header, footer, sign-up notice and new favicon
+- [x] 1.12 Signed-in browser flow on the preview: dashboard redirect, footer link, sign-out
 
 ### Phase 2: Production release, HTTPS and Google submissions
 
