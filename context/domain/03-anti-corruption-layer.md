@@ -25,19 +25,19 @@ Oznaczenia: **[E]** zweryfikowane przeze mnie w tej sesji, **[I]** wnioskowanie,
 
 ### Co przeczytałem
 
-| Źródło                                                                                                       | Po co                                                                                                     |
-| ------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
-| `CLAUDE.md:7-9`, `:25-26`                                                                                    | Architektura, „Auth flow”, konwencja typów w `src/types.ts`                                               |
-| `README.md:15`, `:78-80`, `:285-294`                                                                         | Stos, konfiguracja Supabase, konwencje raportowania (m.in. „Adding a Supabase call”, `:293`)              |
-| `context/foundation/prd.md`                                                                                  | Nie wymienia Supabase (zgodnie z otwartością stosu); FR-001 mówi tylko „email/OAuth/passwordless” (`:50`) |
-| `context/foundation/tech-stack.md:24`                                                                        | Uzasadnienie stosu: Supabase daje „auth, PostgreSQL, and row-level access control out of the box”         |
-| `context/foundation/shape-notes.md:145`                                                                      | Preferencja użytkownika: „frontend w React, backend w NestJS” (oznaczona jako informacyjna)               |
-| `context/foundation/infrastructure.md:59`                                                                    | Zaakceptowane ryzyko lock-inu, ale **Cloudflare**, nie Supabase                                           |
-| `context/foundation/lessons.md:133-138`                                                                      | Reguła „każdy zwrócony `{ error }` Supabase jest raportowany”                                             |
-| `context/domain/01-domain-distillation.md:230`, `glossary.md:46`                                             | Ranking #5 („Warstwa tłumacząca błędy Supabase”), termin „Użytkownik”                                     |
-| `context/domain/02-invariant-aggregate-refactor.md` §4.4–4.5                                                 | `ParticipationRepository` i błędy `SB4xx`: nakłada się na ten plan (§6.3)                                 |
-| `context/changes/data-access/research.md`, `context/changes/refactor-opportunities/{research,plan-brief}.md` | D4, D8, D16, D19; OPP-1, OPP-6, OPP-7, OPP-8                                                              |
-| `context/archive/*/plan.md` (3 pliki, §3.3)                                                                  | Deklarowane intencje „one place”                                                                          |
+| Źródło                                                                                                                  | Po co                                                                                                     |
+| ----------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `CLAUDE.md:7-9`, `:25-26`                                                                                               | Architektura, „Auth flow”, konwencja typów w `src/types.ts`                                               |
+| `README.md:15`, `:78-80`, `:285-294`                                                                                    | Stos, konfiguracja Supabase, konwencje raportowania (m.in. „Adding a Supabase call”, `:293`)              |
+| `context/foundation/prd.md`                                                                                             | Nie wymienia Supabase (zgodnie z otwartością stosu); FR-001 mówi tylko „email/OAuth/passwordless” (`:50`) |
+| `context/foundation/tech-stack.md:24`                                                                                   | Uzasadnienie stosu: Supabase daje „auth, PostgreSQL, and row-level access control out of the box”         |
+| `context/foundation/shape-notes.md:145`                                                                                 | Preferencja użytkownika: „frontend w React, backend w NestJS” (oznaczona jako informacyjna)               |
+| `context/foundation/infrastructure.md:59`                                                                               | Zaakceptowane ryzyko lock-inu, ale **Cloudflare**, nie Supabase                                           |
+| `context/foundation/lessons.md:133-138`                                                                                 | Reguła „każdy zwrócony `{ error }` Supabase jest raportowany”                                             |
+| `context/domain/01-domain-distillation.md:230`, `glossary.md:46`                                                        | Ranking #5 („Warstwa tłumacząca błędy Supabase”), termin „Użytkownik”                                     |
+| `context/domain/02-invariant-aggregate-refactor.md` §4.4–4.5                                                            | `ParticipationRepository` i błędy `SB4xx`: nakłada się na ten plan (§6.3)                                 |
+| `context/archive/2026-10-05-data-access/research.md`, `context/changes/refactor-opportunities/{research,plan-brief}.md` | D4, D8, D16, D19; OPP-1, OPP-6, OPP-7, OPP-8                                                              |
+| `context/archive/*/plan.md` (3 pliki, §3.3)                                                                             | Deklarowane intencje „one place”                                                                          |
 
 Wybór przecieku wyprowadziłem od nowa z kodu (§1–§2). Zbiega się z pozycją #5 destylacji, ale ją poszerza: #5 dotyczy samego tłumaczenia błędów, a to jedna z kilku powierzchni tej samej zależności.
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-`context/changes/refactor-opportunities/research.md` ranked ten refactor opportunities from the technical debt recorded in `context/changes/data-access/research.md` and left the decision to this plan. The decision: implement the five behaviour-neutral, pairwise independent opportunities (OPP-2, OPP-3, OPP-1, OPP-5, OPP-4) as five reversible phases, and leave the structural chain (route skeleton, zero-row trace, one client per request), the fail-closed `/api/*` gate and the release-order gate out, each with a revisit trigger. No phase changes what a user or an HTTP client can observe: Phase 1 adds telemetry on failure paths only, Phases 2 to 4 add CI checks and tests, Phase 5 grants privileges the deployed code already uses.
+`context/changes/refactor-opportunities/research.md` ranked ten refactor opportunities from the technical debt recorded in `context/archive/2026-10-05-data-access/research.md` and left the decision to this plan. The decision: implement the five behaviour-neutral, pairwise independent opportunities (OPP-2, OPP-3, OPP-1, OPP-5, OPP-4) as five reversible phases, and leave the structural chain (route skeleton, zero-row trace, one client per request), the fail-closed `/api/*` gate and the release-order gate out, each with a revisit trigger. No phase changes what a user or an HTTP client can observe: Phase 1 adds telemetry on failure paths only, Phases 2 to 4 add CI checks and tests, Phase 5 grants privileges the deployed code already uses.
 
 ## Current State Analysis
 
@@ -330,7 +330,7 @@ Move the table-level privileges the app already depends on from platform default
 
 **Intent**: Record what the scenarios now assert and the production result of this phase.
 
-**Contract**: the `README.md` paragraph on RLS scenario checks (`README.md:192`) lists the privilege table; `deployment-plan.md` gets a `Phase 13` entry in the format of Phases 11 and 12 with the date, the applied migration, the owner's hosted query result and the live check.
+**Contract**: the `README.md` paragraph on RLS scenario checks (`README.md:192`) lists the privilege table; `deployment-plan.md` gets a `Phase 14` entry in the format of Phases 11 and 12 with the date, the applied migration, the owner's hosted query result and the live check.
 
 ### Success Criteria:
 
@@ -349,7 +349,7 @@ Move the table-level privileges the app already depends on from platform default
 - After the PR is open, its CI run, which starts a fresh stack and applies every migration, is green: `gh pr checks`
 - Release: after the merge, check that `supabase/migrations/` of the merge commit lists exactly the new migration, approve the `release` run in the `production` environment, and see the live check pass
 - On the production URL: sign in, the dashboard shows the group and its tasks, tick a task and undo it
-- Date, applied migration and result are noted in `context/changes/deployment/deployment-plan.md` as Phase 13
+- Date, applied migration and result are noted in `context/changes/deployment/deployment-plan.md` as Phase 14
 - Optional: the owner reads Project Settings, API, Max rows on the hosted project and records it in the PR (no change is planned)
 
 **Implementation Note**: After the automated checks pass, pause for the human to confirm the manual ones, including the hosted query before the merge and the release approval after it. Rows 5.9 to 5.11 need this PR's own release, so they are ticked, together with the `deployment-plan.md` entry, in a small closing docs PR after the release (the pattern of `context/foundation/lessons.md:77-82` and the goal-run lesson).
@@ -386,7 +386,7 @@ Only Phase 5 touches the database: one additive `grant` that works with the code
 ## References
 
 - Related research: `context/changes/refactor-opportunities/research.md` (ranking, verification table V1-V28, Open Questions)
-- Input analysis: `context/changes/data-access/research.md` (D1-D22, T1-T13)
+- Input analysis: `context/archive/2026-10-05-data-access/research.md` (D1-D22, T1-T13)
 - Deferred decisions: `context/archive/2026-10-02-observability-swallowed-errors/plan.md:39,42,43,45`
 - Release path and ruleset: `.github/workflows/ci.yml:17-40,89-110,141-209`, `gh api repos/mariuszzlotucha/streak-board/rulesets/24254172`
 - Rules: `context/foundation/lessons.md:77-82,133-145`, `context/foundation/test-plan.md:80,120-127,160-179`, `context/foundation/roadmap.md:148-173`
@@ -477,5 +477,5 @@ Only Phase 5 touches the database: one additive `grant` that works with the code
 - [ ] 5.8 After the PR is open, its CI run, which starts a fresh stack and applies every migration, is green: `gh pr checks`
 - [ ] 5.9 Release: after the merge, check that `supabase/migrations/` of the merge commit lists exactly the new migration, approve the `release` run in the `production` environment, and see the live check pass
 - [ ] 5.10 On the production URL: sign in, the dashboard shows the group and its tasks, tick a task and undo it
-- [ ] 5.11 Date, applied migration and result are noted in `context/changes/deployment/deployment-plan.md` as Phase 13
+- [ ] 5.11 Date, applied migration and result are noted in `context/changes/deployment/deployment-plan.md` as Phase 14
 - [ ] 5.12 Optional: the owner reads Project Settings, API, Max rows on the hosted project and records it in the PR (no change is planned)

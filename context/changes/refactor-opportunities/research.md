@@ -4,7 +4,7 @@ researcher: Claude (Sonnet 5.5) for Mariusz Złotucha
 git_commit: c9f64514e65e7dc8657ae5afeaf7dc302e45c32d
 branch: refactor-opportunities/plan
 repository: streak-board
-topic: "refactor-opportunities: which of the technical-debt items recorded in context/changes/data-access/research.md are worth refactoring, in what target shape and in what order; exploration only, ranked options with trade-offs, no decision"
+topic: "refactor-opportunities: which of the technical-debt items recorded in context/archive/2026-10-05-data-access/research.md are worth refactoring, in what target shape and in what order; exploration only, ranked options with trade-offs, no decision"
 tags:
   [
     research,
@@ -37,7 +37,7 @@ verification_commit: c9f64514e65e7dc8657ae5afeaf7dc302e45c32d
 
 ## Research Question
 
-`context/changes/data-access/research.md` records technical debt on the path "access to group and task data" and deliberately recommends nothing. This change asks the question it left open: **which** of the recorded problems are worth fixing, in **what target shape**, and in **what order**. The verbatim intent (Polish) is in `change.md`, `## Notes`.
+`context/archive/2026-10-05-data-access/research.md` records technical debt on the path "access to group and task data" and deliberately recommends nothing. This change asks the question it left open: **which** of the recorded problems are worth fixing, in **what target shape**, and in **what order**. The verbatim intent (Polish) is in `change.md`, `## Notes`.
 
 Each recorded problem (D1-D22, plus the test gaps T1-T13 and the one adjacent observation) is examined from three read-only perspectives: (1) current shape at HEAD, (2) decision history (was it deliberate?), (3) migration feasibility (target options, reversible steps, safety net, blast radius). The document ends with ranked options and their trade-offs. **No refactor happens and no decision is taken here**; the decision belongs to `/10x-plan`.
 
@@ -383,7 +383,7 @@ Scored per sentence; "supported" means I read the quoted source.
 
 ## 9. Related Research
 
-- `context/changes/data-access/research.md` - the input; all IDs (D1-D22, T1-T13, V1-V28) refer to it.
+- `context/archive/2026-10-05-data-access/research.md` - the input; all IDs (D1-D22, T1-T13, V1-V28) refer to it.
 - `context/audits/observability/2026-10-02_check-off-and-uncheck-join-group.md` and its verify report - G5, G11 and the probe harness.
 - `context/archive/2026-10-02-observability-swallowed-errors/research.md` - earlier research on swallowed errors (not read in full here).
 - `context/map/repo-map.md` - risk zone #2 that framed the data-access research (not re-read).
