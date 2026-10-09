@@ -83,14 +83,28 @@ Przecieka **Supabase**: 5 warstw (middleware, HTTP, strony, biblioteka, raportow
 
 ## 6. Decyzje, które należą do mnie
 
-Wybrałem zakres L4: OPP-2, OPP-3, OPP-1, OPP-5 i OPP-4, bo nie zmieniają zachowania, są parami niezależne i każda cofa się osobno (L4-brief, Key Decisions Made: „Scope”, źródło „Plan (owner)”). Z siedmiu proponowanych faz zostawiłem pięć, bo chciałem grubszych jednostek (L4-brief: „Phases”). W OPP-3 wybrałem niezmienność migracji, świeżość typów i znacznik `-- compat:`, z jednorazowym wyjątkiem związanym z hashem, żeby poprawka była możliwa, ale nie weszła w nawyk (L4-brief: „OPP-3 scope”, „Immutability exception”). Testy OPP-1 mają być jedną tabelą ze strażnikiem pokrycia, żeby trasa bez wierszy wywalała CI, a granty OPP-4 wchodzą migracją z moim zapytaniem do hostowanej bazy, żeby były odtwarzalne (L4-brief: „OPP-1 style”, „OPP-4”).
+#### 1. Dlaczego wybrałem przepływ „data-access”?
 
-> DO UZUPEŁNIENIA PRZEZ CZŁOWIEKA:
->
-> - Dlaczego wybrałem ten przepływ?
-> - Które rekomendacje agenta zaakceptowałem?
-> - Które odrzuciłem lub odłożyłem i dlaczego?
-> - Czego nie zmieniam w tej iteracji?
+Wybrałem „data-access”, ponieważ jest to „czarne pudełko” systemu. Dane z L2 i L3 jasno wskazują, że to tutaj skupia się największa złożoność (RLS, polityki SQL, definery) i tutaj statystyki raportują najwięcej błędów po review. Nie chcę wdrażać nowych funkcji, dopóki nie będę mieć pewności, że operacje zapisu (`POST`) w grupach i zadaniach nie powodują cichych awarii („ciche 403”), które uderzają w użytkownika końcowego bez żadnego śladu w logach.
+
+#### 2. Które rekomendacje agenta zaakceptowałem?
+
+- **Wdrożenie pełnego ACL (L5-03):** Uznałem za konieczne, by wyeliminować „wyciek” Supabase SDK do warstwy widoku.
+- **Fazy 1–5 z L4-plan:** Zaakceptowałem priorytetyzację „bezpieczeństwa przez obserwację” (console.error → reportError) oraz automatyzację testów kontraktowych, ponieważ bez nich refaktoryzacja bazy danych byłaby „strzelaniem w ciemno”.
+- **Migracje jako kod:** Zgadzam się z rygorem migracji z `--compat` – to jedyny sposób na uniknięcie konfliktów między Workerem a bazą podczas deployu.
+
+#### 3. Które rekomendacje odrzuciłem/odłożyłem i dlaczego?
+
+- **Odrzuciłem OPP-10 (fail-closed `/api/*`):** W obecnej fazie zmiana kodu odpowiedzi (404 zamiast redirect) wymusiłaby rewizję wszystkich front-endowych form-handlerów. Uważam to za zbyt dużą ingerencję w UX przy obecnym długu technicznym; priorytetem jest stabilność, a nie czystość API.
+- **Odłożyłem OPP-6 (szkielet tras):** Zgadzam się z analizą, że jest to „droższy łańcuch”. Zostanie on zrealizowany w kolejnym sprincie, gdy zakończymy proces „hermetyzacji” bazy (Faza 4).
+
+#### 4. Czego nie zmieniam w tej iteracji?
+
+Świadomie nie ruszam **logiki czasu w `streakValue`** (L5-01 R-01). Mimo wykrytych rozjazdów w dokumentacji (UTC vs Warszawa), zmiana algorytmu obliczeń streaka bez wcześniejszego pokrycia testami regresyjnymi grozi nieodwracalnym zepsuciem danych historycznych użytkowników. Najpierw testy (Faza 3), potem poprawka algorytmu.
+
+#### 5. Stanowisko wobec decyzji otwartych (L5-02/D-1…D-4)
+
+Zatwierdzam kierunek projektowania agregatu `Participation` w SQL, ale wstrzymuję się z finalną implementacją do momentu weryfikacji „cichych awarii” RLS na produkcji. Wszystkie pytania (Q-01…Q-09) traktuję jako hipotezy, które zweryfikuję po uruchomieniu pełnego logowania błędów z Fazy 1.
 
 ## Kontrola kompletności
 
