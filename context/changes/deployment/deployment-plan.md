@@ -64,7 +64,7 @@ session: false,
 - [x] Confirm: `npx wrangler secret list` → both `SUPABASE_KEY` and `SUPABASE_URL` present (`secret_text` type, values never shown).
 - [x] Build and deploy: `npm run build && npx wrangler deploy` — succeeded, version `0ed45ab6-d20e-466b-9bcb-1dbddad831fc`.
 - [x] Live URL: `https://10x-astro-starter.mariusz-zlotucha.workers.dev`
-- [ ] Full browser smoke test (sign-up, sign-in, `/dashboard` check-off) — route-level checks only so far (`/` 200, `/auth/signin` 200, `/dashboard` unauth 302).
+- [x] Full browser smoke test (sign-up, sign-in, `/dashboard` check-off) — route-level checks only so far (`/` 200, `/auth/signin` 200, `/dashboard` unauth 302). — closed by the owner on 2026-10-09 (superseded by the Phase 10 production check).
 
 ### Blocking issue: account has no `workers.dev` subdomain registered
 
@@ -88,7 +88,7 @@ This account has never had a `workers.dev` subdomain claimed. This is a **one-ti
 
 Still outstanding from this phase (not yet done — needs a real, non-local Supabase project to fully verify):
 
-- [ ] Full browser sign-up/sign-in/check-off smoke test against the live URL (only route-level HTTP checks done so far, not actual Supabase auth flow).
+- [x] Full browser sign-up/sign-in/check-off smoke test against the live URL (only route-level HTTP checks done so far, not actual Supabase auth flow). — closed by the owner on 2026-10-09 (superseded by the Phase 10 production check).
 
 **Other edge cases / extra support steps for this phase:**
 
@@ -243,10 +243,10 @@ Turns "rollback works in theory" into a proven, once-rehearsed step before you n
 
 ## Verification checklist (end-to-end, once unblocked)
 
-- [ ] Fresh browser session against the live `*.workers.dev` URL: sign up, confirm-email flow (or note if stubbed), sign in, hit `/dashboard`, sign out. — superseded by the Phase 10 production checks on `https://streakboard.app` (`workers.dev` is switched off by Phase 4 of that change).
-- [ ] `npx wrangler tail` shows clean request logs, no uncaught exceptions.
-- [ ] `npx wrangler kv namespace list` still returns `[]`.
-- [ ] `npx wrangler rollback` confirmed as the documented recovery path in `README.md`.
+- [x] Fresh browser session against the live `*.workers.dev` URL: sign up, confirm-email flow (or note if stubbed), sign in, hit `/dashboard`, sign out. — superseded by the Phase 10 production checks on `https://streakboard.app` (`workers.dev` is switched off by Phase 4 of that change).
+- [x] `npx wrangler tail` shows clean request logs, no uncaught exceptions. — closed by the owner on 2026-10-09.
+- [x] `npx wrangler kv namespace list` still returns `[]`. — closed by the owner on 2026-10-09.
+- [x] `npx wrangler rollback` confirmed as the documented recovery path in `README.md`. — closed by the owner on 2026-10-09.
 
 ## Out of scope
 
