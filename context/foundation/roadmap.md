@@ -224,7 +224,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ## Open Roadmap Questions
 
-1. **Czy Google zdjął flagę Safe Browsing z `streakboard.app` po prośbie o przegląd z 2026-10-08?** — Owner: user. Block: no (S-09 zarchiwizowany decyzją właściciela 2026-10-08 przed werdyktem). Źródłem werdyktu jest Search Console; sprawdzać co 2-3 dni do około 22 października i zapisać wynik w `context/changes/deployment/deployment-plan.md` (Phase 13, ostatni wiersz). Odrzucenie: poprawki w nowej zmianie, bez cofania stron publicznych. Po zapisaniu wyniku usuń to pytanie.
+Brak otwartych pytań. (Flaga Safe Browsing zdjęta: Google zaakceptował prośbę o przegląd, zgłoszone przez właściciela 2026-10-09; wynik w `context/changes/deployment/deployment-plan.md`, Phase 13.)
 
 ## Parked
 
