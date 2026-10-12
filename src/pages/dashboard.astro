@@ -1,5 +1,5 @@
 ---
-import Layout from "@/layouts/Layout.astro";
+import AppLayout from "@/layouts/AppLayout.astro";
 import DashboardView from "@/components/dashboard/DashboardView.astro";
 import { loadDashboard } from "@/lib/dashboard-data";
 import { createClient } from "@/lib/supabase";
@@ -26,10 +26,13 @@ const {
   errorParam: Astro.url.searchParams.get("error"),
 });
 
+// G5: a dashboard that could not be loaded answers 503 (with the error page); the partial failures stay 200.
+if (loadFailed) Astro.response.status = 503;
+
 const inviteLink = group ? `${Astro.url.origin}/join/${group.join_code}` : null;
 ---
 
-<Layout title="Dashboard">
+<AppLayout title="Dashboard" email={user?.email} current="dashboard">
   <DashboardView
     error={error}
     group={group}
@@ -45,6 +48,16 @@ const inviteLink = group ? `${Astro.url.origin}/join/${group.join_code}` : null;
     board={board}
     viewerId={user?.id}
     inviteLink={inviteLink}
-    email={user?.email}
   />
-</Layout>
+  {/* Inline so the server HTML carries it (the site sends no CSP). The `?error=` alert shows once: removing the code
+      from the address keeps a reload or a shared link from repeating it; other parameters and the hash stay. */}
+  <script is:inline>
+    {
+      const url = new URL(window.location.href);
+      if (url.searchParams.has("error")) {
+        url.searchParams.delete("error");
+        window.history.replaceState(window.history.state, "", url);
+      }
+    }
+  </script>
+</AppLayout>

@@ -50,7 +50,7 @@ export default function CreateTaskForm() {
       />
       <div>
         <Label htmlFor="new-task-recurrence" className="mb-1.5">
-          Repeats
+          How often
         </Label>
         <NativeSelect id="new-task-recurrence" name="recurrence" defaultValue="once" className="w-full">
           {TASK_RECURRENCES.map((kind) => (

@@ -1,0 +1,21 @@
+---
+import AppLayout from "@/layouts/AppLayout.astro";
+import SettingsView from "@/components/dashboard/SettingsView.astro";
+import { requestFields } from "@/lib/log";
+import { loadSettings } from "@/lib/settings-data";
+import { createClient } from "@/lib/supabase";
+
+const { user } = Astro.locals;
+
+const { group, loadFailed, error } = await loadSettings({
+  createSupabase: () => createClient(Astro.request.headers, Astro.cookies),
+  log: requestFields(Astro),
+});
+
+// As on the dashboard: a page that could not be loaded answers 503 with its error page.
+if (loadFailed) Astro.response.status = 503;
+---
+
+<AppLayout title="Settings" email={user?.email} current="settings">
+  <SettingsView group={group} viewerId={user?.id} loadFailed={loadFailed} error={error} />
+</AppLayout>

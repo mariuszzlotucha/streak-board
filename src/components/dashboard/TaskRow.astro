@@ -22,35 +22,51 @@ interface Props {
 }
 
 const { task, participants, participantsFailed, viewerTask, viewerId } = Astro.props;
+const recurrenceLabel = RECURRENCE_LABELS[task.recurrence];
 // The participant line gets list semantics from ARIA roles (`contents` keeps its flex layout), not a nested <li>:
 // the smoke row regexes stop at the first </li>.
 const joined = participants.some((participant) => participant.isYou);
 ---
 
-<li class="flex flex-wrap items-center gap-x-2 gap-y-2 py-2 first:pt-0 last:pb-0">
-  {task.created_by === viewerId ? (
-    <>
-      <EditTaskForm client:load taskId={task.id} title={task.title} />
-      <Badge variant="secondary">{RECURRENCE_LABELS[task.recurrence]}</Badge>
-      <ConfirmAction
-        client:load
-        action="/api/tasks/delete"
-        fields={{ task_id: task.id }}
-        triggerLabel="Delete"
-        triggerAriaLabel={`Delete ${task.title}`}
-        title="Delete this task?"
-        description={`${task.title} will be deleted permanently. This cannot be undone.`}
-        confirmLabel="Delete task"
-      />
-    </>
-  ) : (
-    <>
-      <span class="min-w-0 flex-1 text-sm break-words">{task.title}</span>
-      <Badge variant="secondary">{RECURRENCE_LABELS[task.recurrence]}</Badge>
-    </>
+{/* Three lines, the daily action first after the title: title and how often (with the creator's quiet Edit and Delete),
+    then the viewer's check-off and streak, then the participants with Join or Leave. */}
+<li class="flex flex-col gap-2 py-3 first:pt-0 last:pb-0">
+  <div class="flex flex-wrap items-center gap-x-1 gap-y-1">
+    {task.created_by === viewerId ? (
+      <>
+        <EditTaskForm client:load taskId={task.id} title={task.title} recurrenceLabel={recurrenceLabel} />
+        <ConfirmAction
+          client:load
+          action="/api/tasks/delete"
+          fields={{ task_id: task.id }}
+          triggerLabel="Delete"
+          triggerAriaLabel={`Delete ${task.title}`}
+          title="Delete this task?"
+          description={`${task.title} will be deleted permanently. This cannot be undone.`}
+          confirmLabel="Delete task"
+          triggerVariant="ghost"
+        />
+      </>
+    ) : (
+      <div class="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
+        <span class="min-w-0 text-sm font-medium break-words">{task.title}</span>
+        <Badge variant="secondary">{recurrenceLabel}</Badge>
+      </div>
+    )}
+  </div>
+  {viewerTask && viewerId && (
+    <CheckoffControl
+      client:load
+      taskId={task.id}
+      title={task.title}
+      recurrence={task.recurrence}
+      snapshot={viewerTask.snapshot}
+      currentPeriod={viewerTask.currentPeriod}
+      viewerId={viewerId}
+    />
   )}
   {!participantsFailed && (
-    <div class="flex basis-full flex-wrap items-center gap-x-2 gap-y-2">
+    <div class="flex flex-wrap items-center gap-x-2 gap-y-2">
       <div class="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
         <span>Participants:</span>
         {participants.length === 0 ? (
@@ -81,22 +97,11 @@ const joined = participants.some((participant) => participant.isYou);
       ) : (
         <form method="POST" action="/api/tasks/join">
           <input type="hidden" name="task_id" value={task.id} />
-          <Button type="submit" size="sm" aria-label={`Join ${task.title}`}>
+          <Button type="submit" variant="outline" size="sm" aria-label={`Join ${task.title}`}>
             Join
           </Button>
         </form>
       )}
     </div>
-  )}
-  {viewerTask && viewerId && (
-    <CheckoffControl
-      client:load
-      taskId={task.id}
-      title={task.title}
-      recurrence={task.recurrence}
-      snapshot={viewerTask.snapshot}
-      currentPeriod={viewerTask.currentPeriod}
-      viewerId={viewerId}
-    />
   )}
 </li>

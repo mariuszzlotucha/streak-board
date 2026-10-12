@@ -1,5 +1,6 @@
 ---
 import ConfirmAction from "@/components/groups/ConfirmAction";
+import CopyInviteLink from "@/components/groups/CopyInviteLink";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { GroupMember } from "@/lib/groups";
@@ -11,9 +12,12 @@ interface Props {
   viewerId: string | undefined;
   /** The owner sees a Remove action on every other member. */
   isOwner: boolean;
+  inviteLink: string;
 }
 
-const { members, groupName, viewerId, isOwner } = Astro.props;
+const { members, groupName, viewerId, isOwner, inviteLink } = Astro.props;
+// Alone in the group, the invite is the next step: its sentence says so and the Copy button is the filled one.
+const soleMember = members.length === 1;
 ---
 
 <Card>
@@ -21,7 +25,7 @@ const { members, groupName, viewerId, isOwner } = Astro.props;
     <CardTitle as="h2">Members</CardTitle>
     <CardDescription>{`${members.length} ${members.length === 1 ? "member" : "members"}`}</CardDescription>
   </CardHeader>
-  <CardContent>
+  <CardContent className="space-y-4">
     <ul class="divide-y">
       {members.map((member) => (
         <li class="flex flex-wrap items-center gap-x-2 gap-y-1 py-2 first:pt-0 last:pb-0">
@@ -39,11 +43,22 @@ const { members, groupName, viewerId, isOwner } = Astro.props;
                 title="Remove this member?"
                 description={`${member.email ?? "This member"} will lose access to ${groupName}, and their streaks in its tasks will be lost. They can rejoin later with the invite link.`}
                 confirmLabel="Remove member"
+                triggerVariant="ghost"
               />
             </div>
           )}
         </li>
       ))}
     </ul>
+    <div class="space-y-2 border-t pt-4">
+      {soleMember ? (
+        <p class="text-sm text-muted-foreground">
+          You're the only member so far. Share this invite link so others can join.
+        </p>
+      ) : (
+        <p class="text-sm text-muted-foreground">Share this invite link to add people to your group.</p>
+      )}
+      <CopyInviteLink client:load url={inviteLink} emphasis={soleMember} />
+    </div>
   </CardContent>
 </Card>

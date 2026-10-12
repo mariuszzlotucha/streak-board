@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { CircleCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { sendCheckoff } from "@/lib/checkoff-client";
 import { publishDelta } from "@/lib/checkoff-sync";
@@ -26,7 +27,7 @@ interface CheckoffControlProps {
   recurrence: TaskRecurrence;
   snapshot: StreakSnapshot;
   currentPeriod: PeriodKey;
-  /** Whose score the tap changes on the Leaderboard. */
+  /** Whose total the tap changes on the Leaderboard. */
   viewerId: string;
 }
 
@@ -102,10 +103,14 @@ export default function CheckoffControl({
   }
 
   return (
-    <div className="flex basis-full flex-wrap items-center gap-x-2 gap-y-2">
+    <div className="flex flex-wrap items-center gap-x-2 gap-y-2">
       {checked ? (
         <>
-          <span className="text-sm font-medium">{DONE_LABELS[recurrence]}</span>
+          {/* The label stays the element's only text: the icon is an svg, never a text glyph. */}
+          <span className="text-success inline-flex items-center gap-1 text-sm font-medium">
+            <CircleCheck className="size-4" aria-hidden="true" />
+            {DONE_LABELS[recurrence]}
+          </span>
           <form method="POST" action="/api/tasks/uncheck" onSubmit={handleSubmit}>
             <input type="hidden" name="task_id" value={taskId} />
             <Button
@@ -137,9 +142,9 @@ export default function CheckoffControl({
         </form>
       )}
       {recurrence !== "once" && (
-        <div className="text-muted-foreground ml-auto flex items-baseline gap-1 text-xs">
+        <div className="text-muted-foreground ml-auto flex items-baseline gap-1.5 text-xs">
           <span>Streak</span>
-          <span className="text-foreground text-sm font-semibold">{streak}</span>
+          <span className="text-foreground text-lg font-semibold tabular-nums">{streak}</span>
         </div>
       )}
       {message && (

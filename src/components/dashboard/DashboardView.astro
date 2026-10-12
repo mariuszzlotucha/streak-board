@@ -1,25 +1,21 @@
 ---
-import AccountCard from "@/components/dashboard/AccountCard.astro";
-import GroupHeaderCard from "@/components/dashboard/GroupHeaderCard.astro";
-import LeaveGroupCard from "@/components/dashboard/LeaveGroupCard.astro";
 import MembersCard from "@/components/dashboard/MembersCard.astro";
 import NoGroupCards from "@/components/dashboard/NoGroupCards.astro";
-import OwnerActions from "@/components/dashboard/OwnerActions.astro";
+import PageHeading from "@/components/dashboard/PageHeading.astro";
 import PendingInviteCard from "@/components/dashboard/PendingInviteCard.astro";
 import TasksCard from "@/components/dashboard/TasksCard.astro";
 import Leaderboard from "@/components/tasks/Leaderboard";
-import SiteFooter from "@/components/site/SiteFooter.astro";
-import { CircleAlert } from "lucide-react";
+import { CircleAlert, TriangleAlert } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { buttonVariants } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { DashboardData } from "@/lib/dashboard-data";
 
-// The dashboard's body, rendered by `/dashboard` from `loadDashboard` and by the dev kitchen sink from fixtures, so the
-// visual gate shows the real view.
+// The dashboard's body, rendered inside `AppLayout` by `/dashboard` from `loadDashboard` and by the dev kitchen sink from
+// fixtures, so the visual gate shows the real view.
 interface Props extends DashboardData {
   viewerId: string | undefined;
   inviteLink: string | null;
-  /** Shown in the account card. */
-  email: string | undefined;
 }
 
 const {
@@ -37,20 +33,21 @@ const {
   board,
   viewerId,
   inviteLink,
-  email,
 } = Astro.props;
 
 const isOwner = group !== null && group.owner_id === viewerId;
-// After a failed load we cannot tell whether the user is in a group, so do not offer to create or join one.
-const showGroupForms = !group && !loadFailed;
-// The member list comes from the same load: after a failure show no list rather than "0 members".
-const showMembers = group !== null && !loadFailed;
-// A failed task load hides only the Tasks card (not an empty list); members, rename and delete still render.
-const showTasks = group !== null && !loadFailed && !tasksFailed;
 ---
 
-<div class="flex min-h-screen items-center justify-center bg-muted p-4">
-  <div class="w-full max-w-md space-y-4">
+{loadFailed ? (
+  <div class="space-y-4">
+    {/* After a failed load we cannot tell whether the user is in a group: only the failure and a way to retry. */}
+    <PageHeading title="The dashboard didn't load" description={error ?? undefined} />
+    <a href="/dashboard" class:list={buttonVariants()}>
+      Try again
+    </a>
+  </div>
+) : (
+  <div class="space-y-6">
     {error && (
       <Alert variant="destructive">
         <CircleAlert />
@@ -58,36 +55,66 @@ const showTasks = group !== null && !loadFailed && !tasksFailed;
       </Alert>
     )}
 
-    {group && inviteLink && <GroupHeaderCard name={group.name} inviteLink={inviteLink} />}
-
-    {showMembers && <MembersCard members={members} groupName={group.name} viewerId={viewerId} isOwner={isOwner} />}
-
-    {showTasks && (
-      <TasksCard
-        tasks={tasks}
-        members={members}
-        participantsByTask={participantsByTask}
-        participantsFailed={participantsFailed}
-        checkoffsFailed={checkoffsFailed}
-        board={board}
-        viewerId={viewerId}
-      />
+    {group && inviteLink ? (
+      <>
+        <PageHeading eyebrow="Your group" title={group.name} />
+        {/* The HTML order is the phone order: the main loop (Tasks, then the Leaderboard) before Members; group settings
+            are on `/settings`. From 1024 px Tasks takes three fifths and the right column two fifths. The columns space
+            their cards with `gap`: an island's wrapper is `display: contents`, so `space-y` would drop the margin after
+            the Leaderboard. */}
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-5">
+          <div class="flex min-w-0 flex-col gap-6 lg:col-span-3">
+            {/* A failed task load swaps only the Tasks card for this notice; the top alert keeps the generic message. */}
+            {tasksFailed ? (
+              <Card>
+                <CardHeader>
+                  <CardTitle as="h2">Tasks</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Alert variant="warning" role="status">
+                    <TriangleAlert />
+                    <AlertDescription>Tasks are unavailable right now. Reload to try again.</AlertDescription>
+                  </Alert>
+                </CardContent>
+              </Card>
+            ) : (
+              <TasksCard
+                tasks={tasks}
+                members={members}
+                participantsByTask={participantsByTask}
+                participantsFailed={participantsFailed}
+                checkoffsFailed={checkoffsFailed}
+                board={board}
+                viewerId={viewerId}
+              />
+            )}
+          </div>
+          <div class="flex min-w-0 flex-col gap-6 lg:col-span-2">
+            {board && viewerId && <Leaderboard client:load rows={board.totals} viewerId={viewerId} />}
+            <MembersCard
+              members={members}
+              groupName={group.name}
+              viewerId={viewerId}
+              isOwner={isOwner}
+              inviteLink={inviteLink}
+            />
+          </div>
+        </div>
+      </>
+    ) : pendingCode && pendingGroupName !== null ? (
+      <>
+        <PendingInviteCard code={pendingCode} groupName={pendingGroupName} />
+        <h2 class="font-heading text-xl font-semibold">Or start your own group</h2>
+        <NoGroupCards headingLevel={3} />
+      </>
+    ) : (
+      <>
+        <PageHeading
+          title="Start or join a group"
+          description="StreakBoard lets a group share tasks, mark them done every day or week, and compare streaks on a leaderboard."
+        />
+        <NoGroupCards headingLevel={2} />
+      </>
     )}
-
-    {showTasks && board && viewerId && <Leaderboard client:load rows={board.totals} viewerId={viewerId} />}
-
-    {group && isOwner && <OwnerActions groupName={group.name} />}
-
-    {group && !isOwner && <LeaveGroupCard groupName={group.name} />}
-
-    {!group && pendingCode && pendingGroupName !== null && (
-      <PendingInviteCard code={pendingCode} groupName={pendingGroupName} />
-    )}
-
-    {showGroupForms && <NoGroupCards />}
-
-    <AccountCard email={email} />
-
-    <SiteFooter class="px-0 py-2" />
   </div>
-</div>
+)}

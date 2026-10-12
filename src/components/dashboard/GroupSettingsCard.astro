@@ -1,0 +1,55 @@
+---
+import ConfirmAction from "@/components/groups/ConfirmAction";
+import RenameGroupForm from "@/components/groups/RenameGroupForm";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+interface Props {
+  groupName: string;
+  /** The owner renames and deletes the group; a member can only leave it. */
+  isOwner: boolean;
+}
+
+const { groupName, isOwner } = Astro.props;
+---
+
+{/* Group management on the settings page, with the dangerous action last. */}
+<Card>
+  <CardHeader>
+    <CardTitle as="h2">Group settings</CardTitle>
+    <CardDescription className="break-words">{groupName}</CardDescription>
+  </CardHeader>
+  <CardContent className="flex flex-col gap-6">
+    {isOwner ? (
+      <>
+        <RenameGroupForm client:load name={groupName} />
+        <div class="flex flex-col items-start gap-3 border-t pt-6">
+          <p class="text-sm text-muted-foreground">
+            Permanently delete this group. Every member loses it and the invite link stops working.
+          </p>
+          <ConfirmAction
+            client:load
+            action="/api/groups/delete"
+            triggerLabel="Delete group"
+            title="Delete this group?"
+            description={`${groupName} will be deleted permanently and all of its members will lose it. This cannot be undone.`}
+            confirmLabel="Delete group"
+          />
+        </div>
+      </>
+    ) : (
+      <div class="flex flex-col items-start gap-3">
+        <p class="text-sm text-muted-foreground">
+          You will lose access to this group. You can rejoin with the invite link.
+        </p>
+        <ConfirmAction
+          client:load
+          action="/api/groups/leave"
+          triggerLabel="Leave group"
+          title="Leave this group?"
+          description={`You will no longer be a member of ${groupName}, and your streaks in its tasks will be lost. You can rejoin later with the invite link.`}
+          confirmLabel="Leave group"
+        />
+      </div>
+    )}
+  </CardContent>
+</Card>

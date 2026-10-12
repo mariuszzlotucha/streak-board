@@ -50,7 +50,13 @@ export default function RenameGroupForm({ name: currentName }: RenameGroupFormPr
         error={error}
         icon={<Users className="size-4" />}
       />
-      <SubmitButton pending={submitting} pendingText="Saving..." icon={<Pencil className="size-4" />}>
+      <SubmitButton
+        pending={submitting}
+        pendingText="Saving..."
+        icon={<Pencil className="size-4" />}
+        variant="outline"
+        className="w-auto"
+      >
         Rename group
       </SubmitButton>
     </form>

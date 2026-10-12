@@ -10,9 +10,10 @@ interface Props {
 const { code, groupName } = Astro.props;
 ---
 
+{/* The page's one decision: its title is the <h1>, and its button is the only "Join group" on the page. */}
 <Card>
   <CardHeader>
-    <CardTitle as="h2" className="break-words">
+    <CardTitle as="h1" className="break-words">
       Join {groupName}?
     </CardTitle>
     <CardDescription>You were invited with a link. Confirm to become a member.</CardDescription>
@@ -20,7 +21,7 @@ const { code, groupName } = Astro.props;
   <CardContent>
     <form method="POST" action="/api/groups/join">
       <input type="hidden" name="code" value={code} />
-      <Button type="submit" className="w-full">
+      <Button type="submit" className="w-full sm:w-auto">
         Join group
       </Button>
     </form>

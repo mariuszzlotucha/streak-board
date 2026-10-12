@@ -344,12 +344,93 @@ const NO_ERROR_ALERT = 'role="alert"';
 // Only the rendered read-only input carries this label; the invite URL also sits in the island's serialised props.
 const INVITE_INPUT = 'aria-label="Invite link"';
 
+// The page's <h1> holding exactly `text` (a card title or an alert with the same words would not match).
+function pageHeading(text) {
+  return new RegExp(`<h1[^>]*>\\s*${escapeRegExp(text)}\\s*</h1>`);
+}
+
+// The quiet account line of the signed-in shell: the label and the address in one element right after it.
+function signedInAs(address) {
+  return new RegExp(`Signed in as\\s*<span[^>]*>\\s*${escapeRegExp(address)}\\s*</span>`);
+}
+
+// The header's Sign out: a plain form posting to the sign-out route with its submit button. Two "Sign out" anywhere
+// on the page fail the second pattern, so the button exists exactly once.
+const SIGN_OUT_FORM =
+  /<form[^>]*action="\/api\/auth\/signout"[^>]*>(?:(?!<\/form>)[\s\S])*<button[^>]*type="submit"[^>]*>\s*Sign out\s*<\/button>/;
+const TWO_SIGN_OUTS = /Sign out[\s\S]*Sign out/;
+
+// The sole member's invite sentence. Astro may write the apostrophe as an entity.
+const SOLE_MEMBER_INVITE =
+  /You(?:'|&#39;|&#x27;)re the only member so far\. Share this invite link so others can join\./;
+
+// The invite input sits in the Members card, the last card of the page: after its heading, with no other card heading
+// between it and the end of <main>.
+const INVITE_IN_MEMBERS =
+  /<h2[^>]*>\s*Members\s*<\/h2>(?:(?!<h2)[\s\S])*aria-label="Invite link"(?:(?!<h2|<\/main>)[\s\S])*<\/main>/;
+
+// The in-group page in the main-loop order: Tasks, the Leaderboard, then Members.
+const IN_GROUP_ORDER = /<h2[^>]*>\s*Tasks\s*<\/h2>[\s\S]*aria-label="Leaderboard"[\s\S]*<h2[^>]*>\s*Members\s*<\/h2>/;
+
+// Group management lives on /settings: none of its texts may be on the dashboard (the dialogs' island props included).
+const SETTINGS_ON_DASHBOARD = ["Group settings", "Rename group", "Delete group", "Leave group"];
+
+// The Main nav of the signed-in header: the current page's link carries aria-current="page" and the other one does not.
+function mainNav(current) {
+  const other = current === "/dashboard" ? "/settings" : "/dashboard";
+  return [
+    new RegExp(
+      `<nav[^>]*aria-label="Main"[^>]*>(?:(?!</nav>)[\\s\\S])*<a[^>]*href="${current}"[^>]*aria-current="page"[^>]*>\\s*${current === "/dashboard" ? "Dashboard" : "Settings"}\\s*</a>`,
+    ),
+    new RegExp(`<nav[^>]*aria-label="Main"[^>]*>(?:(?!</nav>)[\\s\\S])*<a(?![^>]*aria-current)[^>]*href="${other}"`),
+  ];
+}
+
+// The settings page's card heading, and a link to the dashboard inside <main> (the Main nav's link is in the header).
+const GROUP_SETTINGS_HEADING = /<h2[^>]*>\s*Group settings\s*<\/h2>/;
+// The settings card of the named group: its heading, then the group name as the card's description.
+function groupSettingsFor(name) {
+  return new RegExp(
+    `<h2[^>]*>\\s*Group settings\\s*</h2>\\s*<div[^>]*data-slot="card-description"[^>]*>\\s*${escapeRegExp(name)}\\s*</div>`,
+  );
+}
+const DASHBOARD_LINK_IN_MAIN = /<main[^>]*>(?:(?!<\/main>)[\s\S])*<a\s[^>]*href="\/dashboard"/;
+// Every group form; the no-group settings page has none of them.
+const GROUP_FORMS = ["create", "join", "rename", "delete", "leave"].map((action) =>
+  formPostingTo(`/api/groups/${action}`),
+);
+
+// The "Your group" eyebrow directly above the group's <h1>.
+function eyebrowAndGroupHeading(name) {
+  return new RegExp(`>\\s*Your group\\s*</p>\\s*<h1[^>]*>\\s*${escapeRegExp(name)}\\s*</h1>`);
+}
+
+// The pending invite's form: it posts to the join route with the invite's code in a hidden field and holds the page's
+// "Join group" button.
+function pendingInviteForm(code) {
+  return new RegExp(
+    `<form[^>]*action="/api/groups/join"[^>]*>(?:(?!</form>)[\\s\\S])*<input[^>]*name="code"[^>]*value="${escapeRegExp(code)}"(?:(?!</form>)[\\s\\S])*<button[^>]*>\\s*Join group\\s*</button>`,
+  );
+}
+const TWO_JOIN_GROUPS = /Join group[\s\S]*Join group/;
+
+// The action error comes first in the page content: inside <main>, before any <h1>, then the group's <h1> after it.
+function alertBeforeHeading(text, name) {
+  return new RegExp(
+    `<main[^>]*>(?:(?!<h1|</main>)[\\s\\S])*data-slot="alert-description"[^>]*>\\s*${escapeRegExp(text)}(?:(?!</main>)[\\s\\S])*<h1[^>]*>\\s*${escapeRegExp(name)}\\s*</h1>`,
+  );
+}
+
+// The inline script that drops `?error=` from the address after the page has shown the alert.
+const ERROR_PARAM_SCRIPT =
+  /<script[^>]*>(?:(?!<\/script>)[\s\S])*searchParams\.delete\("error"\)(?:(?!<\/script>)[\s\S])*history\.replaceState/;
+
 // B's dashboard while B takes part in the daily task and nothing is ticked: the row offers the tick with a streak of 0
-// and A, B and C all share position 1 with a total of 0. B's Leave dialogs (island props in the server HTML) warn that
-// leaving erases the streaks.
+// and A, B and C all share position 1 with a total of 0. B's task Leave dialog (island props in the server HTML) warns
+// that leaving erases the streak; the group Leave dialog's warning is on /settings.
 const B_NOTHING_TICKED = {
   status: 200,
-  bodyIncludes: ["and your streak on it will be lost", "and your streaks in its tasks will be lost"],
+  bodyIncludes: "and your streak on it will be lost",
   bodyMatches: [
     taskRowWithCheckoffForm(renamedTaskTitle, "/api/tasks/checkoff"),
     taskRowStreak(renamedTaskTitle, 0),
@@ -407,6 +488,7 @@ const steps = [
     },
   ],
   ["dashboard redirects anonymous user", () => request("/dashboard"), { status: 302, location: "/auth/signin" }],
+  ["settings redirects anonymous user", () => request("/settings"), { status: 302, locationExact: "/auth/signin" }],
   [
     "signin page renders for anonymous user",
     () => request("/auth/signin"),
@@ -644,9 +726,36 @@ const steps = [
     { status: 302, location: "/dashboard", ...(PRODUCTION_BUILD ? { secureCookies: "sb-" } : {}) },
   ],
   [
+    // User A has no group yet: the signed-in shell around the no-group page.
     "dashboard renders for signed-in user",
     () => request("/dashboard"),
-    { status: 200, bodyMatches: [linkTo("/privacy")] },
+    {
+      status: 200,
+      bodyMatches: [
+        BRAND_LINK,
+        /<main[\s>]/,
+        SIGN_OUT_FORM,
+        signedInAs(email),
+        pageHeading("Start or join a group"),
+        linkTo("/privacy"),
+        ...mainNav("/dashboard"),
+      ],
+      bodyNotMatches: [TWO_SIGN_OUTS],
+      // The join-by-code form says so; "Join group" is the pending invite's button only.
+      bodyIncludes: "Join with code",
+      bodyExcludes: ["Join group", NO_ERROR_ALERT],
+    },
+  ],
+  [
+    // Without a group, settings has nothing to manage: it points to the dashboard, where groups are created and joined.
+    "settings without a group links to the dashboard and offers no group forms",
+    () => request("/settings"),
+    {
+      status: 200,
+      bodyMatches: [pageHeading("Settings"), DASHBOARD_LINK_IN_MAIN, SIGN_OUT_FORM, ...mainNav("/settings")],
+      bodyNotMatches: [GROUP_SETTINGS_HEADING, TWO_SIGN_OUTS, ...GROUP_FORMS],
+      bodyExcludes: NO_ERROR_ALERT,
+    },
   ],
   ["home redirects signed-in user to dashboard", () => request("/"), { status: 302, locationExact: "/dashboard" }],
   [
@@ -772,7 +881,32 @@ const steps = [
       }
       return result;
     },
-    { status: 200, bodyIncludes: [groupName, "/join/"] },
+    {
+      status: 200,
+      bodyIncludes: [groupName, "/join/"],
+      // Alone in the new group, the owner is told the invite is the next step, in the Members card. Group management
+      // is on /settings, not here.
+      bodyMatches: [groupHeading(groupName), SOLE_MEMBER_INVITE, INVITE_IN_MEMBERS],
+      bodyExcludes: [...SETTINGS_ON_DASHBOARD, NO_ERROR_ALERT],
+    },
+  ],
+  [
+    "settings offers the owner rename and delete, and no leave",
+    () => request("/settings"),
+    {
+      status: 200,
+      bodyMatches: [
+        groupSettingsFor(groupName),
+        // The rename form itself (posting the `name` field), then the delete control through its dialog.
+        formPostingTo("/api/groups/rename"),
+        /<input[^>]*name="name"/,
+        formPostingTo("/api/groups/delete"),
+        dialogTrigger("Delete group"),
+        ...mainNav("/settings"),
+      ],
+      bodyNotMatches: [formPostingTo("/api/groups/leave"), SUBMIT_IN_DESTRUCTIVE_FORM],
+      bodyExcludes: ["Leave group", NO_ERROR_ALERT],
+    },
   ],
   [
     "second group create is rejected",
@@ -797,9 +931,20 @@ const steps = [
   [
     "dashboard previews the pending invite for user B",
     () => request("/dashboard", { jar: jarB }),
-    // The confirm button proves the join card rendered (the name alone would also appear next to an error);
-    // a non-member must not see the invite link.
-    { status: 200, bodyIncludes: [groupName, "Join group"], bodyExcludes: "/join/" },
+    // The invite is the page's one decision: its <h1>, and the only "Join group" in a form carrying the invite's code
+    // (the name alone would also appear next to an error). Create and join-by-code sit below under their own heading;
+    // a non-member must not see the invite link. A function, so the code read by an earlier step is used.
+    () => ({
+      status: 200,
+      bodyMatches: [
+        pageHeading(`Join ${groupName}?`),
+        pendingInviteForm(joinCode),
+        /<h2[^>]*>\s*Or start your own group\s*<\/h2>/,
+      ],
+      bodyNotMatches: [TWO_JOIN_GROUPS],
+      bodyIncludes: "Join with code",
+      bodyExcludes: ["/join/", NO_ERROR_ALERT],
+    }),
   ],
   [
     "join rejects a malformed code",
@@ -837,17 +982,33 @@ const steps = [
       status: 200,
       // The count is one string ("2 members"): Astro drops the space between two adjacent expressions.
       bodyIncludes: [email, emailB, INVITE_INPUT, "2 members"],
-      bodyMatches: [
-        memberRow(email, "Owner"),
-        memberRow(emailB, "You"),
-        groupHeading(groupName),
-        // The leave control itself, not just its card heading.
+      bodyMatches: [memberRow(email, "Owner"), memberRow(emailB, "You"), groupHeading(groupName)],
+      // The markers sit on the right rows only, and with two members the owner is no longer told they are alone.
+      // Leaving the group is on /settings.
+      bodyNotMatches: [
+        memberRow(email, "You"),
+        memberRow(emailB, "Owner"),
+        SOLE_MEMBER_INVITE,
         formPostingTo("/api/groups/leave"),
       ],
-      // The markers sit on the right rows only.
-      bodyNotMatches: [memberRow(email, "You"), memberRow(emailB, "Owner")],
-      // A member sees no owner controls and no error alert.
-      bodyExcludes: ["Rename group", NO_ERROR_ALERT],
+      bodyExcludes: [...SETTINGS_ON_DASHBOARD, NO_ERROR_ALERT],
+    },
+  ],
+  [
+    // A member manages only their own membership: the leave control through its dialog, which warns about the streaks.
+    "settings offers member B leave, with the streak warning, and no owner controls",
+    () => request("/settings", { jar: jarB }),
+    {
+      status: 200,
+      bodyIncludes: "and your streaks in its tasks will be lost",
+      bodyMatches: [
+        groupSettingsFor(groupName),
+        formPostingTo("/api/groups/leave"),
+        dialogTrigger("Leave group"),
+        ...mainNav("/settings"),
+      ],
+      bodyNotMatches: [formPostingTo("/api/groups/rename"), formPostingTo("/api/groups/delete")],
+      bodyExcludes: ["Rename group", "Delete group", NO_ERROR_ALERT],
     },
   ],
   [
@@ -876,16 +1037,19 @@ const steps = [
     {
       status: 200,
       bodyIncludes: [email, emailB, INVITE_INPUT],
-      bodyMatches: [
-        groupHeading(renamedGroupName),
-        memberRow(email, "Owner"),
-        memberRow(email, "You"),
-        // The rename form itself (posting the `name` field), not just its card heading.
-        formPostingTo("/api/groups/rename"),
-        /<input[^>]*name="name"/,
-      ],
+      bodyMatches: [groupHeading(renamedGroupName), memberRow(email, "Owner"), memberRow(email, "You")],
       // B is neither the owner nor the current user.
       bodyNotMatches: [memberRow(emailB, "You"), memberRow(emailB, "Owner")],
+      bodyExcludes: [groupName, ...SETTINGS_ON_DASHBOARD, NO_ERROR_ALERT],
+    },
+  ],
+  [
+    "settings shows the owner the new name with rename and delete, and no leave",
+    () => request("/settings"),
+    {
+      status: 200,
+      bodyMatches: [groupSettingsFor(renamedGroupName), formPostingTo("/api/groups/rename"), /<input[^>]*name="name"/],
+      bodyNotMatches: [formPostingTo("/api/groups/leave")],
       bodyExcludes: [groupName, "Leave group", NO_ERROR_ALERT],
     },
   ],
@@ -977,10 +1141,23 @@ const steps = [
         // Each control sits on its member's row and opens the confirmation dialog; the owner's own row has none.
         rowWithConfirmedRemoveControl(emailB),
         rowWithConfirmedRemoveControl(emailC),
+      ],
+      // Deleting the group is on /settings.
+      bodyNotMatches: [rowWithRemoveControl(email), SUBMIT_IN_DESTRUCTIVE_FORM, formPostingTo("/api/groups/delete")],
+      bodyExcludes: [...SETTINGS_ON_DASHBOARD, NO_ERROR_ALERT],
+    },
+  ],
+  [
+    "settings offers the owner of three members the delete control through its dialog",
+    () => request("/settings"),
+    {
+      status: 200,
+      bodyMatches: [
+        groupSettingsFor(renamedGroupName),
         formPostingTo("/api/groups/delete"),
         dialogTrigger("Delete group"),
       ],
-      bodyNotMatches: [rowWithRemoveControl(email), SUBMIT_IN_DESTRUCTIVE_FORM],
+      bodyNotMatches: [SUBMIT_IN_DESTRUCTIVE_FORM, formPostingTo("/api/groups/leave")],
       bodyExcludes: NO_ERROR_ALERT,
     },
   ],
@@ -989,10 +1166,39 @@ const steps = [
     () => request("/dashboard", { jar: jarB }),
     {
       status: 200,
-      // The leave control proves the member view rendered; the owner-only forms must be absent, not just unlabelled.
-      bodyMatches: [formPostingTo("/api/groups/leave")],
+      // B's own member row proves the member view rendered; the owner-only forms must be absent, not just unlabelled.
+      bodyMatches: [groupHeading(renamedGroupName), memberRow(emailB, "You")],
       bodyNotMatches: [formPostingTo("/api/groups/remove-member"), formPostingTo("/api/groups/delete")],
+      bodyExcludes: [...SETTINGS_ON_DASHBOARD, NO_ERROR_ALERT],
+    },
+  ],
+  [
+    "member settings offers leave and no delete control",
+    () => request("/settings", { jar: jarB }),
+    {
+      status: 200,
+      bodyMatches: [
+        groupSettingsFor(renamedGroupName),
+        formPostingTo("/api/groups/leave"),
+        dialogTrigger("Leave group"),
+      ],
+      bodyNotMatches: [formPostingTo("/api/groups/delete"), formPostingTo("/api/groups/remove-member")],
       bodyExcludes: ["Delete group", NO_ERROR_ALERT],
+    },
+  ],
+  [
+    // A rejected action lands here: its message is the first thing in the page content, and the page carries the
+    // script that drops the code from the address so a reload does not repeat it.
+    "member dashboard with ?error=forbidden shows the alert first and drops the code from the address",
+    () => request("/dashboard?error=forbidden", { jar: jarB }),
+    {
+      status: 200,
+      bodyMatches: [
+        alertBeforeHeading("You are not allowed to do that.", renamedGroupName),
+        ERROR_PARAM_SCRIPT,
+        // The member view itself rendered under the alert.
+        memberRow(emailB, "You"),
+      ],
     },
   ],
   [
@@ -1166,6 +1372,23 @@ const steps = [
       ],
       bodyNotMatches: [SUBMIT_IN_DESTRUCTIVE_FORM, taskRowListing(taskTitle, emailB)],
       bodyExcludes: NO_ERROR_ALERT,
+    },
+  ],
+  [
+    // With a task, every card of the owner's page renders: the main loop (Tasks, then the Leaderboard) comes before
+    // Members, under the group's own heading; group settings are on their own page.
+    "owner dashboard with a task orders the cards by the main loop",
+    () => request("/dashboard"),
+    {
+      status: 200,
+      bodyMatches: [
+        IN_GROUP_ORDER,
+        eyebrowAndGroupHeading(renamedGroupName),
+        INVITE_IN_MEMBERS,
+        ...mainNav("/dashboard"),
+      ],
+      bodyNotMatches: [SOLE_MEMBER_INVITE],
+      bodyExcludes: [...SETTINGS_ON_DASHBOARD, NO_ERROR_ALERT],
     },
   ],
   [
@@ -1438,6 +1661,17 @@ const steps = [
       return result;
     },
     B_NOTHING_TICKED,
+  ],
+  [
+    // B takes part in a task now: the group Leave dialog (island props in the server HTML) warns about the streaks.
+    "user B's settings warn that leaving the group erases the streaks",
+    () => request("/settings", { jar: jarB }),
+    {
+      status: 200,
+      bodyIncludes: "and your streaks in its tasks will be lost",
+      bodyMatches: [formPostingTo("/api/groups/leave"), dialogTrigger("Leave group")],
+      bodyExcludes: NO_ERROR_ALERT,
+    },
   ],
   [
     // C is a member of the group but never joined the task: no control at all (the Join form proves the row rendered).
@@ -1833,6 +2067,17 @@ const steps = [
       status: 200,
       bodyIncludes: ["Create a group", "Join a group"],
       bodyExcludes: ["Your group", renamedGroupName, "/join/", "Delete group", NO_ERROR_ALERT],
+    },
+  ],
+  [
+    // The group is gone, so settings falls back to the no-group state with no group controls left.
+    "owner settings show the no-group state after deleting the group",
+    () => request("/settings"),
+    {
+      status: 200,
+      bodyMatches: [pageHeading("Settings"), DASHBOARD_LINK_IN_MAIN],
+      bodyNotMatches: [GROUP_SETTINGS_HEADING, ...GROUP_FORMS],
+      bodyExcludes: [renamedGroupName, "Delete group", NO_ERROR_ALERT],
     },
   ],
   [

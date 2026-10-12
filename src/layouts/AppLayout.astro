@@ -1,0 +1,53 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import SiteFooter from "@/components/site/SiteFooter.astro";
+import SiteHeader from "@/components/site/SiteHeader.astro";
+import { Button, buttonVariants } from "@/components/ui/button";
+
+interface Props {
+  title?: string;
+  /** The signed-in user's address, shown in the "Signed in as" line. */
+  email: string | undefined;
+  /** The page the Main nav marks with `aria-current="page"`. */
+  current: "dashboard" | "settings";
+}
+
+const { title, email, current } = Astro.props;
+const NAV_LINKS = [
+  { id: "dashboard", href: "/dashboard", label: "Dashboard" },
+  { id: "settings", href: "/settings", label: "Settings" },
+] as const;
+---
+
+{/* The frame of the signed-in pages: brand header with the Main nav and the only Sign out, the page's own content, then who is signed in and the footer. */}
+<Layout title={title}>
+  <div class="flex min-h-screen flex-col bg-muted">
+    <SiteHeader compactBrand>
+      <nav aria-label="Main" slot="nav" class="flex items-center gap-1">
+        {NAV_LINKS.map((link) => (
+          <a
+            href={link.href}
+            aria-current={link.id === current ? "page" : undefined}
+            class:list={buttonVariants({ variant: link.id === current ? "secondary" : "ghost", size: "sm" })}
+          >
+            {link.label}
+          </a>
+        ))}
+      </nav>
+      <form method="POST" action="/api/auth/signout" slot="actions">
+        <Button type="submit" variant="outline" size="sm">
+          Sign out
+        </Button>
+      </form>
+    </SiteHeader>
+    <main class="flex-1">
+      <div class="mx-auto w-full max-w-5xl space-y-6 px-4 py-6 sm:py-8">
+        <slot />
+        <p class="text-sm text-muted-foreground">
+          Signed in as <span class="font-medium text-foreground wrap-anywhere">{email}</span>
+        </p>
+      </div>
+    </main>
+    <SiteFooter class="border-t border-border bg-background" />
+  </div>
+</Layout>
