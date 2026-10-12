@@ -3,7 +3,7 @@ change_id: refactor-opportunities
 title: Okazje refaktoryzacji — ranking problemów z analizy data-access
 status: plan_reviewed
 created: 2026-10-06
-updated: 2026-10-06
+updated: 2026-10-13
 archived_at: null
 ---
 
