@@ -1,5 +1,6 @@
 // Visual gate: captures the evidence of a UI change the same way in every phase (S-11 `dashboard-ui`).
-// Run against a running `astro dev` (the kitchen sink is dev-only): BASE_URL=http://localhost:4321 node scripts/ui-screenshots.mjs <prefix> <set...>
+// Run against a running `astro dev` (the kitchen sink is dev-only), into the change's own folder:
+// OUT_DIR=context/changes/<change-id>/screenshots BASE_URL=http://localhost:4321 node scripts/ui-screenshots.mjs <prefix> <set...>
 // Sets: `public` (the public pages), `states` (every kitchen-sink state of `/dashboard` and `/settings`), `controls`
 // (hover, focus-visible and the pending, failed and fallback states of representative controls). No baselines and no
 // comparison: the PNG files are reviewed by a person. Exits 1 when a page does not answer 200, renders empty, throws, or
@@ -11,7 +12,8 @@ import { URL } from "node:url";
 import { chromium } from "@playwright/test";
 
 const BASE_URL = process.env.BASE_URL ?? "http://localhost:4321";
-const OUT_DIR = process.env.OUT_DIR ?? "context/changes/dashboard-ui/screenshots";
+// No default: the PNGs belong to the change under review, and a fixed folder would outlive that change's archive.
+const OUT_DIR = process.env.OUT_DIR;
 const KITCHEN_SINK = "/dev/dashboard-kitchen-sink";
 
 const VIEWPORTS = {
@@ -237,10 +239,11 @@ const CONTROLS = [
     page: "owner",
     control: markDone,
     region: inRow,
-    run: async (page, control) => {
+    run: async (page, control, row) => {
       const release = await holdRequests(page, "**/api/tasks/checkoff");
       await control.click();
-      await page.locator('[aria-disabled="true"]').first().waitFor();
+      // In the tapped row, not anywhere on the page: the shot must show this row held.
+      await row.waitForSelector('[aria-disabled="true"]');
       return release;
     },
   },
@@ -402,11 +405,13 @@ async function shootControls(context, prefix, viewport) {
         await page.close();
         continue;
       }
-      const region = spec.region(control);
+      // Pinned before the action: a locator resolves again at capture time, and a tap that turns "Mark done" into
+      // "Undo" would move `inRow(markDone)` to the next row.
+      const region = await spec.region(control)?.elementHandle();
       if (region) await region.scrollIntoViewIfNeeded();
       let release;
       if (run) {
-        release = await run(page, control);
+        release = await run(page, control, region);
       } else if (mode === "hover") {
         await control.hover();
       } else {
@@ -426,8 +431,10 @@ async function shootControls(context, prefix, viewport) {
 
 const [prefix, ...sets] = process.argv.slice(2);
 const KNOWN_SETS = ["public", "states", "controls"];
-if (!prefix || sets.length === 0 || sets.some((set) => !KNOWN_SETS.includes(set))) {
-  console.log(`Usage: node scripts/ui-screenshots.mjs <prefix> <${KNOWN_SETS.join("|")}>...`);
+if (!OUT_DIR || !prefix || sets.length === 0 || sets.some((set) => !KNOWN_SETS.includes(set))) {
+  console.log(
+    `Usage: OUT_DIR=context/changes/<change-id>/screenshots node scripts/ui-screenshots.mjs <prefix> <${KNOWN_SETS.join("|")}>...`,
+  );
   process.exit(1);
 }
 

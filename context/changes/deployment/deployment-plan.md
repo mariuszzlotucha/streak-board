@@ -267,7 +267,7 @@ Turns "rollback works in theory" into a proven, once-rehearsed step before you n
   - `/`, `/privacy` and `/auth/signin` look as in `context/changes/dashboard-ui/screenshots/phase1-public-*`.
 - Handoff to S-12 (`refactor-opportunities`; plan reviewed, not implemented yet):
   - Since this release, a failed `/dashboard` load answers `503` with the dashboard's error page ("The dashboard didn't load", the message and "Try again"), not `200` with the banner. S-12's manual step 1.6 therefore needs `503`, and a note under its criterion says so (`context/changes/refactor-opportunities/plan.md:111`).
-  - The `loadDashboard({...})` call in `src/pages/dashboard.astro` is textually unchanged, so adding S-12's `log: requestFields(Astro)` causes at most a one-line conflict. It now sits at lines 22-27, not at the `:33-38` that S-12's plan cites (`refactor-opportunities/plan.md:385`).
+  - The `loadDashboard({...})` call in `src/pages/dashboard.astro` is textually unchanged, so adding S-12's `log: requestFields(Astro)` causes at most a one-line conflict. It now sits at lines 22-27, not at the `:33-38` that S-12's plan cites (`refactor-opportunities/plan.md:386`).
   - `/settings` already passes `log: requestFields(Astro)` to its own loader, `loadSettings`, which reports `settings.load.failed`; the page then answers `503`.
   - This entry took Phase 14, the number S-12's plan names for its own release record (`context/changes/refactor-opportunities/plan.md:324,343` and Progress row 5.11). S-12 records its release as Phase 15, and a note under its criterion says so.
 
