@@ -129,3 +129,7 @@ Przekazania:
     - po starcie kontenera „Try again” załadował stronę;
   - tabela sformułowań, wiersz „Participants failed” (decyzja z przeglądu implementacji fazy 2, F6, 2026-10-12): bez uczestników loader nie liczy tablicy wyników, więc znikają „Mark done” i Leaderboard. Komunikat mówi to teraz tak jak ten o odznaczeniach: „Participants are unavailable right now, so tasks can't be marked done and the leaderboard is hidden. Reload to try again.” (zamiast „unchanged text”).
 - **Polityka prywatności** nie mówi, na której stronie opuszcza się lub usuwa grupę, więc nie wymaga zmiany.
+
+## Faza 3: wydanie (2026-10-12)
+
+- **Kryterium 3.1** (przegląd fazy 3, F5): `gh` na tej maszynie to 2.4.0 i nie zna `gh run list --branch`. Zamiennik: `gh run list --workflow ci.yml --json databaseId,headBranch,headSha,conclusion` z filtrem `headBranch == "master"`, potem `gh run view <id>`.

@@ -241,6 +241,36 @@ Turns "rollback works in theory" into a proven, once-rehearsed step before you n
 - [x] Google Auth Platform → Branding (owner-reported, 2026-10-08): App home page `https://streakboard.app/`, privacy policy link `https://streakboard.app/privacy`, authorized domain `streakboard.app`. The app stays in Testing, so these are Draft Branding that users do not see.
 - [x] Google's verdict on the review request: **accepted** (owner-reported, 2026-10-09; the Safe Browsing flag is lifted) (Search Console and the Transparency Report): recorded here, in this row (the owner archived `landing-page` on 2026-10-08 while the review was pending, so its Phase 3 does not run). Search Console is the source of the verdict; check every 2-3 days until about 22 October. Passed: tick this row with the date, close the roadmap's Open Roadmap Question and update the status line above. Rejected: fix forward in a new change (`/10x-new`), never by reverting the public pages.
 
+## Phase 14 — Dashboard UI (change `dashboard-ui`, S-11)
+
+**Status: ✅ Done (2026-10-12)** — both code phases are released with no new migrations, and Claude's and the owner's production checks passed.
+
+- [x] Code shipped in one PR per code phase, as planned. Neither merge adds anything under `supabase/`, so there are no new migrations; the latest is still `20261002090000_create_task_checkoffs.sql`. The slice needs no new secret or variable; its only CI change is the `node scripts/token-contrast.mjs` step in the `ci` job.
+  - Phase 1 (design-system groundwork: token values, components, the kitchen sink and the lint guard): PR #102, merged 2026-10-12 08:20 UTC as merge commit `7ca7942`.
+  - Phase 2 (the dashboard view and its states, and the new protected page `/settings`): PR #103, merged 2026-10-12 16:29 UTC as merge commit `78a47e3`.
+- [x] `release` for PR #102: CI run 38222989341 on `master` (ci, smoke and integration `success`). The `release` job ran 08:24:59-08:25:54 UTC and finished `success` after the owner's approval; Link, List migrations, Apply pending migrations, Deploy Worker and Check the live deployment were all `success`. `db push` reported "Remote database is up to date.", and Deploy Worker printed version `7c1f193d-da5f-40ec-9f22-9819cdda62cd`. The pending `release` of the plan PR's merge (PR #101, `2ec358b`, run 38206570239) waited from 05:09 UTC and was cancelled at 08:20:47 UTC by the `release` concurrency group when this run queued; it held only documents.
+- [x] `release` for PR #103: CI run 38277781844 on `master` (ci, smoke and integration `success`). The `release` job ran 16:35:47-16:36:32 UTC and finished `success` after the owner's approval; the same five steps were all `success`. `db push` reported "Remote database is up to date.", and Deploy Worker printed version `e44e8175-676c-4ae9-afa1-ba7be8a224e6`.
+- Rollback covers the code only; the slice has no schema change.
+  - A bare `npx wrangler rollback` returns to the prior version, Phase 1's `7c1f193d-da5f-40ec-9f22-9819cdda62cd`, so it undoes Phase 2 only.
+  - Undoing the whole slice is `npx wrangler rollback <id>` with the version before `7c1f193d-da5f-40ec-9f22-9819cdda62cd` from `npx wrangler deployments list`. The last release before S-11 (run 37811849750, PR #89) deployed `ccd31a3f-a214-4d78-b2a8-7405317a9c1e`.
+  - Either way, revert the merged PR on `master` too, or the next approved `release` ships the code again.
+- [x] Claude's production check (2026-10-12, anonymous `curl` after the PR #103 release):
+  - `/`, `/privacy`, `/auth/signin` and `/auth/signup` answer `200`;
+  - `/dashboard` and the new `/settings` answer `302` to `https://streakboard.app/auth/signin`;
+  - `/dev/dashboard-kitchen-sink` answers `404`, with no `@example.test` in the body;
+  - the stylesheet linked from `/` carries the S-11 token values: `--ring` `oklch(45% .017 213.2)`, `--destructive` `oklch(44.4% .177 26.899)`, `--muted-foreground` `oklch(53% .021 213.5)`, and the new `--success` and `--warning` pairs, published as `--color-success` and `--color-warning`.
+- [x] Owner's production check on `https://streakboard.app`, on desktop and on a phone (owner-reported, 2026-10-12, in one answer to Claude's list of checks; no values or per-step details were recorded). Result: every check passed:
+  - the new layout renders;
+  - Mark done and Undo work and move the leaderboard;
+  - the invite link copies;
+  - Sign out in the header signs out;
+  - `/`, `/privacy` and `/auth/signin` look as in `context/changes/dashboard-ui/screenshots/phase1-public-*`.
+- Handoff to S-12 (`refactor-opportunities`; plan reviewed, not implemented yet):
+  - Since this release, a failed `/dashboard` load answers `503` with the dashboard's error page ("The dashboard didn't load", the message and "Try again"), not `200` with the banner. S-12's manual step 1.6 therefore needs `503`, and a note under its criterion says so (`context/changes/refactor-opportunities/plan.md:111`).
+  - The `loadDashboard({...})` call in `src/pages/dashboard.astro` is textually unchanged, so adding S-12's `log: requestFields(Astro)` causes at most a one-line conflict. It now sits at lines 22-27, not at the `:33-38` that S-12's plan cites (`refactor-opportunities/plan.md:385`).
+  - `/settings` already passes `log: requestFields(Astro)` to its own loader, `loadSettings`, which reports `settings.load.failed`; the page then answers `503`.
+  - This entry took Phase 14, the number S-12's plan names for its own release record (`context/changes/refactor-opportunities/plan.md:324,343` and Progress row 5.11). S-12 records its release as Phase 15, and a note under its criterion says so.
+
 ## Verification checklist (end-to-end, once unblocked)
 
 - [x] Fresh browser session against the live `*.workers.dev` URL: sign up, confirm-email flow (or note if stubbed), sign in, hit `/dashboard`, sign out. — superseded by the Phase 10 production checks on `https://streakboard.app` (`workers.dev` is switched off by Phase 4 of that change).

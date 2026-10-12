@@ -992,7 +992,7 @@ This is a docs-only PR on `s-11/dashboard-ui/phase-3`; the CI jobs skip at job l
 - [x] 1.9 Playwright suite passes against the production preview — d52fa40
 - [x] 1.10 Moved and removed files are not referenced — d52fa40
 - [x] 1.11 No heading is nested in a card title — d52fa40
-- [ ] 1.12 CI jobs ci, smoke and integration pass on the PR
+- [x] 1.12 CI jobs ci, smoke and integration pass on the PR — 3abd5fd
 
 #### Manual
 
@@ -1014,7 +1014,7 @@ This is a docs-only PR on `s-11/dashboard-ui/phase-3`; the CI jobs skip at job l
 - [x] 2.7 Smoke passes against the production preview with the rewritten and new dashboard steps — 2eba8e5
 - [x] 2.8 Playwright suite passes against the production preview — 2eba8e5
 - [x] 2.9 Removed pieces and old wording are gone — 2eba8e5
-- [ ] 2.10 CI jobs ci, smoke and integration pass on the PR
+- [x] 2.10 CI jobs ci, smoke and integration pass on the PR — b2e14f9
 
 #### Manual
 
@@ -1030,10 +1030,10 @@ This is a docs-only PR on `s-11/dashboard-ui/phase-3`; the CI jobs skip at job l
 
 #### Automated
 
-- [ ] 3.1 Release runs succeed for both phase merges
+- [x] 3.1 Release runs succeed for both phase merges
 
 #### Manual
 
-- [ ] 3.2 Production dashboard checked on desktop and phone
-- [ ] 3.3 Production public pages checked
-- [ ] 3.4 Release recorded in deployment-plan.md
+- [x] 3.2 Production dashboard checked on desktop and phone
+- [x] 3.3 Production public pages checked
+- [x] 3.4 Release recorded in deployment-plan.md
