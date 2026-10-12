@@ -38,7 +38,10 @@ const summaryClass = cn(buttonVariants({ variant: "outline" }), "list-none [&::-
     {participantsFailed && (
       <Alert variant="warning" role="status">
         <TriangleAlert />
-        <AlertDescription>Participants are unavailable right now. Reload to try again.</AlertDescription>
+        <AlertDescription>
+          Participants are unavailable right now, so tasks can't be marked done and the leaderboard is hidden. Reload to
+          try again.
+        </AlertDescription>
       </Alert>
     )}
     {checkoffsFailed && (

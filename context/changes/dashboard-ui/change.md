@@ -122,5 +122,10 @@ Przekazania:
   - decyzja właściciela 1 (układ desktopu): prawa kolumna to Leaderboard i Members, bez Group settings, w proporcji 3:2 zamiast około dwóch trzecich;
   - decyzja właściciela 10 (waga zarządzania): jedna karta „Group settings” jest na `/settings`, nie na końcu prawej kolumny dashboardu;
   - kontrola ręczna 2.12 (kolejność układu): na dashboardzie Tasks, potem Leaderboard i Members z linkiem zaproszenia; Group settings sprawdza się na `/settings`;
-  - macierz 7 stanów: komórki „KS owner/member” przycisków niszczących (Delete group, Leave group, potwierdzenia w dialogu) to teraz stany `settings-owner` i `settings-member`, a zrzuty `rename-group`, `delete-group`, `leave-group` i dialogów pochodzą z tych stanów; nowy zrzut `nav-link` pokrywa hover i focus linków Main nav.
+  - macierz 7 stanów: komórki „KS owner/member” przycisków niszczących (Delete group, Leave group, potwierdzenia w dialogu) to teraz stany `settings-owner` i `settings-member`, a zrzuty `rename-group`, `delete-group`, `leave-group` i dialogów pochodzą z tych stanów; nowy zrzut `nav-link` pokrywa hover i focus linków Main nav;
+  - kontrola ręczna 2.13 (503) obejmuje też `/settings`. Wynik z przeglądu implementacji fazy 2 (F5, 2026-10-12), na podglądzie produkcyjnym:
+    - przy zatrzymanym PostgREST zalogowany właściciel dostał 503 ze stroną „Settings didn't load” i „Try again”, a w logu raport `settings.load.failed`;
+    - `/dashboard` w tym samym czasie odpowiedział 503;
+    - po starcie kontenera „Try again” załadował stronę;
+  - tabela sformułowań, wiersz „Participants failed” (decyzja z przeglądu implementacji fazy 2, F6, 2026-10-12): bez uczestników loader nie liczy tablicy wyników, więc znikają „Mark done” i Leaderboard. Komunikat mówi to teraz tak jak ten o odznaczeniach: „Participants are unavailable right now, so tasks can't be marked done and the leaderboard is hidden. Reload to try again.” (zamiast „unchanged text”).
 - **Polityka prywatności** nie mówi, na której stronie opuszcza się lub usuwa grupę, więc nie wymaga zmiany.

@@ -68,4 +68,22 @@ describe("loadSettings", () => {
       error: { code: "PGRST000", status: 503 },
     });
   });
+
+  it("ends as loadFailed with one settings.load.failed report when creating the client throws", async () => {
+    const data = await loadSettings(
+      input({
+        createSupabase: () => {
+          throw new Error("boom");
+        },
+      }),
+    );
+    expect(data).toEqual({ group: null, loadFailed: true, error: groupErrorMessage("unknown") });
+    expect(groups.getMyGroup).not.toHaveBeenCalled();
+    expect(errorSpy).toHaveBeenCalledOnce();
+    expect(errorSpy.mock.calls[0][0]).toMatchObject({
+      level: "error",
+      event: "settings.load.failed",
+      route: "/settings",
+    });
+  });
 });

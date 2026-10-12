@@ -104,7 +104,7 @@ const isOwner = group !== null && group.owner_id === viewerId;
     ) : pendingCode && pendingGroupName !== null ? (
       <>
         <PendingInviteCard code={pendingCode} groupName={pendingGroupName} />
-        <h2 class="font-heading text-xl font-semibold">Or start your own group</h2>
+        <CardTitle as="h2">Or start your own group</CardTitle>
         <NoGroupCards headingLevel={3} />
       </>
     ) : (

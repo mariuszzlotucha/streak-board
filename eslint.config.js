@@ -86,6 +86,7 @@ const UI_LITERAL_MESSAGE =
 const viewLiteralsConfig = defineConfig({
   files: [
     "src/pages/dashboard.astro",
+    "src/pages/settings.astro",
     "src/pages/dev/**",
     "src/layouts/**",
     "src/components/{dashboard,tasks,groups,forms,site,dev}/**",

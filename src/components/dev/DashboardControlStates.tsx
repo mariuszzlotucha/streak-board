@@ -135,7 +135,10 @@ export default function DashboardControlStates() {
         </Alert>
         <Alert variant="warning" role="status">
           <TriangleAlert />
-          <AlertDescription>Participants are unavailable right now. Reload to try again.</AlertDescription>
+          <AlertDescription>
+            Participants are unavailable right now, so tasks can&apos;t be marked done and the leaderboard is hidden.
+            Reload to try again.
+          </AlertDescription>
         </Alert>
       </StateCard>
 

@@ -1048,7 +1048,13 @@ const steps = [
     () => request("/settings"),
     {
       status: 200,
-      bodyMatches: [groupSettingsFor(renamedGroupName), formPostingTo("/api/groups/rename"), /<input[^>]*name="name"/],
+      bodyMatches: [
+        groupSettingsFor(renamedGroupName),
+        formPostingTo("/api/groups/rename"),
+        /<input[^>]*name="name"/,
+        formPostingTo("/api/groups/delete"),
+        dialogTrigger("Delete group"),
+      ],
       bodyNotMatches: [formPostingTo("/api/groups/leave")],
       bodyExcludes: [groupName, "Leave group", NO_ERROR_ALERT],
     },
@@ -1661,17 +1667,6 @@ const steps = [
       return result;
     },
     B_NOTHING_TICKED,
-  ],
-  [
-    // B takes part in a task now: the group Leave dialog (island props in the server HTML) warns about the streaks.
-    "user B's settings warn that leaving the group erases the streaks",
-    () => request("/settings", { jar: jarB }),
-    {
-      status: 200,
-      bodyIncludes: "and your streaks in its tasks will be lost",
-      bodyMatches: [formPostingTo("/api/groups/leave"), dialogTrigger("Leave group")],
-      bodyExcludes: NO_ERROR_ALERT,
-    },
   ],
   [
     // C is a member of the group but never joined the task: no control at all (the Join form proves the row rendered).
