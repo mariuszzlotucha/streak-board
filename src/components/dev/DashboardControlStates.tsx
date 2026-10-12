@@ -167,7 +167,10 @@ export default function DashboardControlStates() {
         </div>
       </StateCard>
 
-      <StateCard title="Done state" description="A ticked daily and once task: the success colour, the icon and Undo">
+      <StateCard
+        title="Done state"
+        description="A checked-off daily and once task: the success colour, the icon and Undo"
+      >
         <CheckoffControl
           taskId={DEMO_TASK_ID}
           title="Water the plants"

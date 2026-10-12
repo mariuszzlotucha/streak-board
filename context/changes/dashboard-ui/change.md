@@ -1,7 +1,7 @@
 ---
 change_id: dashboard-ui
 title: Dashboard ui
-status: implemented
+status: impl_reviewed
 created: 2026-10-09
 updated: 2026-10-12
 archived_at: null
@@ -114,7 +114,7 @@ Przekazania:
 
 ### Decyzje właściciela po przeglądzie ręcznym fazy 2 (2026-10-12)
 
-- **Ustawienia grupy na osobnej stronie.** Karta „Group settings” opuszcza dashboard i jest na nowej chronionej stronie `/settings` (`src/pages/settings.astro`, widok `SettingsView.astro`, loader `loadSettings` w `src/lib/settings-data.ts`, który czyta tylko grupę i przy błędzie raportuje `settings.load.failed` i odpowiada 503). Właściciel ma tam Rename group, a na końcu Delete group; członek ma Leave group; bez grupy strona odsyła linkiem na `/dashboard`. Prawa kolumna dashboardu to teraz Leaderboard, potem Members z linkiem zaproszenia.
+- **Ustawienia grupy na osobnej stronie.** Karta „Group settings” opuszcza dashboard i jest na nowej chronionej stronie `/settings` (`src/pages/settings.astro`, widok `SettingsView.astro`, loader `loadSettings` w `src/lib/settings-data.ts`, który czyta tylko grupę i przy błędzie raportuje `settings.load.failed`; strona odpowiada wtedy 503). Właściciel ma tam Rename group, a na końcu Delete group; członek ma Leave group; bez grupy strona odsyła linkiem na `/dashboard`. Prawa kolumna dashboardu to teraz Leaderboard, potem Members z linkiem zaproszenia.
 - **Kontrakt S-08 bez zmian.** Rename, delete i leave nadal przekierowują na `/dashboard`; właściciel zaakceptował, że ich alert `?error=` pokazuje się na dashboardzie, nie na `/settings`.
 - **Nawigacja.** Nagłówek stron zalogowanych ma obok marki linki „Dashboard” i „Settings” (`<nav aria-label="Main">`, `aria-current="page"` na bieżącej stronie), a „Sign out” po prawej. Na telefonie napis marki jest ukryty wizualnie (`sr-only sm:not-sr-only`), ale zostaje w HTML, więc nazwa linku i `BRAND_LINK` w smoke się nie zmieniają.
 - **Szersza kolumna tablicy wyników.** Siatka od 1024 px ma pięć kolumn: Tasks trzy, prawa kolumna dwie.
