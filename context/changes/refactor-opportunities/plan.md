@@ -341,6 +341,7 @@ Move the table-level privileges the app already depends on from platform default
 - Release: after the merge, check that `supabase/migrations/` of the merge commit lists exactly the new migration, approve the `release` run in the `production` environment, and see the live check pass
 - On the production URL: sign in, the dashboard shows the group and its tasks, tick a task and undo it
 - Date, applied migration and result are noted in `context/changes/deployment/deployment-plan.md` as Phase 14
+  - S-11 (`dashboard-ui`) recorded its release as Phase 14, so this entry is Phase 15 (or the next free number). Row 5.11 keeps its title.
 - Optional: the owner reads Project Settings, API, Max rows on the hosted project and records it in the PR (no change is planned)
 
 **Implementation Note**: After the automated checks pass, pause for the human to confirm the manual ones, including the hosted query before the merge and the release approval after it. Rows 5.9 to 5.11 need this PR's own release, so they are ticked, together with the `deployment-plan.md` entry, in a small closing docs PR after the release (the pattern of `context/foundation/lessons.md:77-82` and the goal-run lesson).
