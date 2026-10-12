@@ -981,25 +981,25 @@ This is a docs-only PR on `s-11/dashboard-ui/phase-3`; the CI jobs skip at job l
 
 #### Automated
 
-- [ ] 1.1 Lint passes with the view-file literal guard
-- [ ] 1.2 Guard rejects a literal in a view file
-- [ ] 1.3 Literal scan of the view files prints nothing
-- [ ] 1.4 Token contrast gate passes
-- [ ] 1.5 Astro check passes
-- [ ] 1.6 Production build passes
-- [ ] 1.7 Vitest suite passes
-- [ ] 1.8 Smoke passes against the production preview with no existing expectation edited
-- [ ] 1.9 Playwright suite passes against the production preview
-- [ ] 1.10 Moved and removed files are not referenced
-- [ ] 1.11 No heading is nested in a card title
+- [x] 1.1 Lint passes with the view-file literal guard
+- [x] 1.2 Guard rejects a literal in a view file
+- [x] 1.3 Literal scan of the view files prints nothing
+- [x] 1.4 Token contrast gate passes
+- [x] 1.5 Astro check passes
+- [x] 1.6 Production build passes
+- [x] 1.7 Vitest suite passes
+- [x] 1.8 Smoke passes against the production preview with no existing expectation edited
+- [x] 1.9 Playwright suite passes against the production preview
+- [x] 1.10 Moved and removed files are not referenced
+- [x] 1.11 No heading is nested in a card title
 - [ ] 1.12 CI jobs ci, smoke and integration pass on the PR
 
 #### Manual
 
-- [ ] 1.13 Public pages before and after reviewed
-- [ ] 1.14 Kitchen sink shows all 11 states in dev, screenshots committed
-- [ ] 1.15 A task added in the browser keeps its recurrence
-- [ ] 1.16 Focus ring visible from the keyboard
+- [x] 1.13 Public pages before and after reviewed
+- [x] 1.14 Kitchen sink shows all 11 states in dev, screenshots committed
+- [x] 1.15 A task added in the browser keeps its recurrence
+- [x] 1.16 Focus ring visible from the keyboard
 
 ### Phase 2: The dashboard view and its states
 

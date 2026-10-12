@@ -23,9 +23,7 @@ const participantsOf = participantsResolver(participantsByTask, members, viewerI
 
 <Card>
   <CardHeader>
-    <CardTitle>
-      <h2 class="font-heading text-xl font-semibold">Tasks</h2>
-    </CardTitle>
+    <CardTitle as="h2">Tasks</CardTitle>
     <CardDescription>{`${tasks.length} ${tasks.length === 1 ? "task" : "tasks"}`}</CardDescription>
   </CardHeader>
   <CardContent className="space-y-4">

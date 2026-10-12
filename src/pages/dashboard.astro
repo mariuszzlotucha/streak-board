@@ -1,17 +1,6 @@
 ---
 import Layout from "@/layouts/Layout.astro";
-import AccountCard from "@/components/dashboard/AccountCard.astro";
-import GroupHeaderCard from "@/components/dashboard/GroupHeaderCard.astro";
-import LeaveGroupCard from "@/components/dashboard/LeaveGroupCard.astro";
-import MembersCard from "@/components/dashboard/MembersCard.astro";
-import NoGroupCards from "@/components/dashboard/NoGroupCards.astro";
-import OwnerActions from "@/components/dashboard/OwnerActions.astro";
-import PendingInviteCard from "@/components/dashboard/PendingInviteCard.astro";
-import TasksCard from "@/components/dashboard/TasksCard.astro";
-import Leaderboard from "@/components/tasks/Leaderboard";
-import SiteFooter from "@/components/site/SiteFooter.astro";
-import { CircleAlert } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import DashboardView from "@/components/dashboard/DashboardView.astro";
 import { loadDashboard } from "@/lib/dashboard-data";
 import { createClient } from "@/lib/supabase";
 
@@ -38,56 +27,24 @@ const {
 });
 
 const inviteLink = group ? `${Astro.url.origin}/join/${group.join_code}` : null;
-const isOwner = group !== null && group.owner_id === user?.id;
-// After a failed load we cannot tell whether the user is in a group, so do not offer to create or join one.
-const showGroupForms = !group && !loadFailed;
-// The member list comes from the same load: after a failure show no list rather than "0 members".
-const showMembers = group !== null && !loadFailed;
-// A failed task load hides only the Tasks card (not an empty list); members, rename and delete still render.
-const showTasks = group !== null && !loadFailed && !tasksFailed;
 ---
 
 <Layout title="Dashboard">
-  <div class="flex min-h-screen items-center justify-center bg-muted p-4">
-    <div class="w-full max-w-md space-y-4">
-      {error && (
-        <Alert variant="destructive">
-          <CircleAlert />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      {group && inviteLink && <GroupHeaderCard name={group.name} inviteLink={inviteLink} />}
-
-      {showMembers && <MembersCard members={members} groupName={group.name} viewerId={user?.id} isOwner={isOwner} />}
-
-      {showTasks && (
-        <TasksCard
-          tasks={tasks}
-          members={members}
-          participantsByTask={participantsByTask}
-          participantsFailed={participantsFailed}
-          checkoffsFailed={checkoffsFailed}
-          board={board}
-          viewerId={user?.id}
-        />
-      )}
-
-      {showTasks && board && user && <Leaderboard client:load rows={board.totals} viewerId={user.id} />}
-
-      {group && isOwner && <OwnerActions groupName={group.name} />}
-
-      {group && !isOwner && <LeaveGroupCard groupName={group.name} />}
-
-      {!group && pendingCode && pendingGroupName !== null && (
-        <PendingInviteCard code={pendingCode} groupName={pendingGroupName} />
-      )}
-
-      {showGroupForms && <NoGroupCards />}
-
-      <AccountCard email={user?.email} />
-
-      <SiteFooter class="px-0 py-2" />
-    </div>
-  </div>
+  <DashboardView
+    error={error}
+    group={group}
+    members={members}
+    tasks={tasks}
+    participantsByTask={participantsByTask}
+    pendingCode={pendingCode}
+    pendingGroupName={pendingGroupName}
+    loadFailed={loadFailed}
+    tasksFailed={tasksFailed}
+    participantsFailed={participantsFailed}
+    checkoffsFailed={checkoffsFailed}
+    board={board}
+    viewerId={user?.id}
+    inviteLink={inviteLink}
+    email={user?.email}
+  />
 </Layout>

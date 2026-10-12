@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { ListPlus, Plus } from "lucide-react";
-import { FormField } from "@/components/auth/FormField";
-import { SubmitButton } from "@/components/auth/SubmitButton";
+import { FormField } from "@/components/forms/FormField";
+import { SubmitButton } from "@/components/forms/SubmitButton";
 import { useFormSubmitting } from "@/components/hooks/useFormSubmitting";
 import { Label } from "@/components/ui/label";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { MAX_TASK_TITLE_LENGTH, normalizeTaskTitle, RECURRENCE_LABELS, TASK_RECURRENCES } from "@/lib/task-rules";
 
 export default function CreateTaskForm() {
@@ -51,18 +52,13 @@ export default function CreateTaskForm() {
         <Label htmlFor="new-task-recurrence" className="mb-1.5">
           Repeats
         </Label>
-        <select
-          id="new-task-recurrence"
-          name="recurrence"
-          defaultValue="once"
-          className="border-input bg-background focus-visible:border-ring focus-visible:ring-ring/50 h-9 w-full rounded-md border px-3 text-sm shadow-xs focus-visible:ring-[3px] focus-visible:outline-none"
-        >
+        <NativeSelect id="new-task-recurrence" name="recurrence" defaultValue="once" className="w-full">
           {TASK_RECURRENCES.map((kind) => (
-            <option key={kind} value={kind}>
+            <NativeSelectOption key={kind} value={kind}>
               {RECURRENCE_LABELS[kind]}
-            </option>
+            </NativeSelectOption>
           ))}
-        </select>
+        </NativeSelect>
       </div>
       <SubmitButton pending={submitting} pendingText="Adding..." icon={<Plus className="size-4" />}>
         Add task

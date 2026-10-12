@@ -13,8 +13,8 @@ const { name, inviteLink } = Astro.props;
 <Card>
   <CardHeader>
     <CardDescription>Your group</CardDescription>
-    <CardTitle>
-      <h1 class="font-heading text-2xl font-semibold break-words">{name}</h1>
+    <CardTitle as="h1" className="text-2xl break-words">
+      {name}
     </CardTitle>
   </CardHeader>
   <CardContent className="space-y-2">

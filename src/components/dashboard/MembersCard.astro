@@ -1,5 +1,6 @@
 ---
 import ConfirmAction from "@/components/groups/ConfirmAction";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { GroupMember } from "@/lib/groups";
 import { UNKNOWN_MEMBER } from "@/lib/leaderboard-rules";
@@ -17,9 +18,7 @@ const { members, groupName, viewerId, isOwner } = Astro.props;
 
 <Card>
   <CardHeader>
-    <CardTitle>
-      <h2 class="font-heading text-xl font-semibold">Members</h2>
-    </CardTitle>
+    <CardTitle as="h2">Members</CardTitle>
     <CardDescription>{`${members.length} ${members.length === 1 ? "member" : "members"}`}</CardDescription>
   </CardHeader>
   <CardContent>
@@ -27,14 +26,8 @@ const { members, groupName, viewerId, isOwner } = Astro.props;
       {members.map((member) => (
         <li class="flex flex-wrap items-center gap-x-2 gap-y-1 py-2 first:pt-0 last:pb-0">
           <span class="min-w-0 text-sm break-all">{member.email ?? UNKNOWN_MEMBER}</span>
-          {member.is_owner && (
-            <span class="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
-              Owner
-            </span>
-          )}
-          {member.user_id === viewerId && (
-            <span class="rounded-full border px-2 py-0.5 text-xs font-medium text-muted-foreground">You</span>
-          )}
+          {member.is_owner && <Badge variant="secondary">Owner</Badge>}
+          {member.user_id === viewerId && <Badge variant="outline">You</Badge>}
           {isOwner && member.user_id !== viewerId && (
             <div class="ml-auto">
               <ConfirmAction

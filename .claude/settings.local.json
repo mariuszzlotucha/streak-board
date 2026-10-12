@@ -1,0 +1,20 @@
+{
+  "skillOverrides": {
+    "10x-agents-md": "off",
+    "10x-ray": "off",
+    "10x-repo-map": "off",
+    "10x-bootstrapper": "off",
+    "10x-tech-stack-selector": "off",
+    "10x-idea-check": "off",
+    "10x-infra-research": "off",
+    "10x-prd": "off",
+    "10x-health-check": "off",
+    "10x-stack-assess": "off",
+    "10x-rule-review": "off",
+    "playwright-cli": "off",
+    "create-new-skill": "off",
+    "quizz-me": "off",
+    "10x-cli-setup": "off"
+  },
+  "permissions": { "defaultMode": "auto" }
+}

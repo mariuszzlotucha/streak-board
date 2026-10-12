@@ -12,9 +12,7 @@ const { groupName } = Astro.props;
 
 <Card>
   <CardHeader>
-    <CardTitle>
-      <h2 class="font-heading text-xl font-semibold">Rename group</h2>
-    </CardTitle>
+    <CardTitle as="h2">Rename group</CardTitle>
   </CardHeader>
   <CardContent>
     <RenameGroupForm client:load name={groupName} />
@@ -23,9 +21,7 @@ const { groupName } = Astro.props;
 
 <Card>
   <CardHeader>
-    <CardTitle>
-      <h2 class="font-heading text-xl font-semibold">Delete group</h2>
-    </CardTitle>
+    <CardTitle as="h2">Delete group</CardTitle>
     <CardDescription>
       Permanently delete this group. Every member loses it and the invite link stops working.
     </CardDescription>

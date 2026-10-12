@@ -1,0 +1,49 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import DashboardView from "@/components/dashboard/DashboardView.astro";
+import DashboardControlStates from "@/components/dev/DashboardControlStates";
+import { DASHBOARD_STATES, dashboardFixture, isDashboardStateId } from "@/components/dev/dashboard-fixtures";
+
+// Dev-only visual gate for `/dashboard`: in a production build the route answers 404 with an empty body.
+// `?state=<id>` renders one page state the way `/dashboard` renders it (same layout, same `DashboardView`) from fixture
+// data, with no Supabase call; without a known state the page lists the states and shows the control states.
+// The fixtures are built by a function call, and only in dev.
+const isDev = import.meta.env.DEV;
+if (!isDev) Astro.response.status = 404;
+const requested = Astro.url.searchParams.get("state");
+const state = isDev && isDashboardStateId(requested) ? requested : null;
+const fixture = state ? dashboardFixture(state, Astro.url.origin) : null;
+---
+
+{isDev &&
+  (fixture ? (
+    <Layout title={`Dashboard kitchen sink: ${state}`}>
+      <DashboardView {...fixture} />
+    </Layout>
+  ) : (
+    <Layout title="Dashboard kitchen sink">
+      <div class="min-h-screen space-y-8 bg-muted p-4 md:p-8">
+        <h1 class="font-heading text-2xl font-semibold">Dashboard kitchen sink</h1>
+        <section class="space-y-3">
+          <h2 class="font-heading text-xl font-semibold">Page states</h2>
+          <ul class="space-y-1 text-sm">
+            {DASHBOARD_STATES.map((entry) => (
+              <li>
+                <a href={`?state=${entry.id}`} class="font-medium underline underline-offset-4">
+                  {entry.label}
+                </a>
+                <span class="text-muted-foreground">
+                  {" "}
+                  ({entry.id}): {entry.description}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+        <section class="space-y-3">
+          <h2 class="font-heading text-xl font-semibold">Control states</h2>
+          <DashboardControlStates client:load />
+        </section>
+      </div>
+    </Layout>
+  ))}

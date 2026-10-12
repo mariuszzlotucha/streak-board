@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Mail, Lock, LogIn } from "lucide-react";
-import { FormField } from "@/components/auth/FormField";
+import { FormField } from "@/components/forms/FormField";
 import { PasswordToggle } from "@/components/auth/PasswordToggle";
 import { ServerError } from "@/components/auth/ServerError";
-import { SubmitButton } from "@/components/auth/SubmitButton";
+import { SubmitButton } from "@/components/forms/SubmitButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";

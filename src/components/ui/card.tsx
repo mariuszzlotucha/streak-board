@@ -28,8 +28,14 @@ function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
-function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
-  return <div data-slot="card-title" className={cn("font-heading text-base font-medium", className)} {...props} />;
+// `as` renders the heading element itself: `asChild` cannot reach a React component from an `.astro` file (Astro hands
+// it the children as static HTML), so a nested heading would keep its own classes.
+function CardTitle({
+  className,
+  as: Comp = "div",
+  ...props
+}: React.ComponentProps<"div"> & { as?: "div" | "h1" | "h2" | "h3" }) {
+  return <Comp data-slot="card-title" className={cn("font-heading text-xl font-semibold", className)} {...props} />;
 }
 
 function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
