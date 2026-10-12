@@ -1030,10 +1030,10 @@ This is a docs-only PR on `s-11/dashboard-ui/phase-3`; the CI jobs skip at job l
 
 #### Automated
 
-- [x] 3.1 Release runs succeed for both phase merges
+- [x] 3.1 Release runs succeed for both phase merges — fe33841
 
 #### Manual
 
-- [x] 3.2 Production dashboard checked on desktop and phone
-- [x] 3.3 Production public pages checked
-- [x] 3.4 Release recorded in deployment-plan.md
+- [x] 3.2 Production dashboard checked on desktop and phone — fe33841
+- [x] 3.3 Production public pages checked — fe33841
+- [x] 3.4 Release recorded in deployment-plan.md — fe33841
