@@ -1005,26 +1005,26 @@ This is a docs-only PR on `s-11/dashboard-ui/phase-3`; the CI jobs skip at job l
 
 #### Automated
 
-- [ ] 2.1 Lint passes
-- [ ] 2.2 Literal scan of the view files prints nothing
-- [ ] 2.3 Token contrast gate passes
-- [ ] 2.4 Astro check passes
-- [ ] 2.5 Production build passes
-- [ ] 2.6 Vitest suite passes
-- [ ] 2.7 Smoke passes against the production preview with the rewritten and new dashboard steps
-- [ ] 2.8 Playwright suite passes against the production preview
-- [ ] 2.9 Removed pieces and old wording are gone
+- [x] 2.1 Lint passes — 2eba8e5
+- [x] 2.2 Literal scan of the view files prints nothing — 2eba8e5
+- [x] 2.3 Token contrast gate passes — 2eba8e5
+- [x] 2.4 Astro check passes — 2eba8e5
+- [x] 2.5 Production build passes — 2eba8e5
+- [x] 2.6 Vitest suite passes — 2eba8e5
+- [x] 2.7 Smoke passes against the production preview with the rewritten and new dashboard steps — 2eba8e5
+- [x] 2.8 Playwright suite passes against the production preview — 2eba8e5
+- [x] 2.9 Removed pieces and old wording are gone — 2eba8e5
 - [ ] 2.10 CI jobs ci, smoke and integration pass on the PR
 
 #### Manual
 
-- [ ] 2.11 Every cell of the 7-state matrix is shown or N/A with its reason
-- [ ] 2.12 Layout reads in the main-loop order on desktop and phone
-- [ ] 2.13 A failed load answers 503 with the error page
-- [ ] 2.14 An action error shows once and leaves the address
-- [ ] 2.15 Keyboard and screen-reader pass
-- [ ] 2.16 Pending invite is a single decision
-- [ ] 2.17 Charges, deferrals and handoffs recorded in change.md
+- [x] 2.11 Every cell of the 7-state matrix is shown or N/A with its reason — 2eba8e5
+- [x] 2.12 Layout reads in the main-loop order on desktop and phone — 2eba8e5
+- [x] 2.13 A failed load answers 503 with the error page — 2eba8e5
+- [x] 2.14 An action error shows once and leaves the address — 2eba8e5
+- [x] 2.15 Keyboard and screen-reader pass — 2eba8e5
+- [x] 2.16 Pending invite is a single decision — 2eba8e5
+- [x] 2.17 Charges, deferrals and handoffs recorded in change.md — 2eba8e5
 
 ### Phase 3: Production release and records
 

@@ -1,13 +1,24 @@
 ---
-// No signed-in variant: a signed-in visitor who follows the brand link to `/` is sent on to `/dashboard`.
+// The brand header of both layouts. `PublicLayout` passes a public page's links into `actions`; `AppLayout` passes the
+// Main nav into `nav` (right after the brand) and the Sign out form into `actions`, and sets `compactBrand` so that brand,
+// nav and Sign out fit one row at 375 px. The brand link goes to `/`, which sends a signed-in visitor on to `/dashboard`.
+interface Props {
+  /** Below `sm` the wordmark is visually hidden; it stays in the HTML, so the link keeps its accessible name. */
+  compactBrand?: boolean;
+}
+
+const { compactBrand = false } = Astro.props;
 ---
 
 <header class="border-b border-border bg-background">
   <div class="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 py-3">
-    <a href="/" class="flex items-center gap-2 font-heading text-lg font-semibold text-foreground">
-      <img src="/favicon.svg" alt="" width="28" height="28" class="size-7" />
-      StreakBoard
-    </a>
+    <div class="flex min-w-0 items-center gap-2 sm:gap-4">
+      <a href="/" class="flex shrink-0 items-center gap-2 font-heading text-lg font-semibold text-foreground">
+        <img src="/favicon.svg" alt="" width="28" height="28" class="size-7" />
+        {compactBrand ? <span class="sr-only sm:not-sr-only">StreakBoard</span> : "StreakBoard"}
+      </a>
+      <slot name="nav" />
+    </div>
     <div class="flex items-center gap-2">
       <slot name="actions" />
     </div>

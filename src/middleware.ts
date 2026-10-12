@@ -5,7 +5,7 @@ import { reportError, requestFields } from "@/lib/log";
 import { runWithSentry } from "@/lib/sentry";
 import { createClient } from "@/lib/supabase";
 
-const PROTECTED_ROUTES = ["/dashboard", "/api/groups", "/api/tasks"];
+const PROTECTED_ROUTES = ["/dashboard", "/settings", "/api/groups", "/api/tasks"];
 const AUTH_ROUTES = ["/auth/signin", "/auth/signup"];
 
 // Missing configuration is the same on every request, so it is reported once per isolate.

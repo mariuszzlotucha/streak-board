@@ -22,7 +22,10 @@ interface ConfirmActionProps {
   title: string;
   description: string;
   confirmLabel: string;
+  /** The confirm button's variant, and the trigger's unless `triggerVariant` says otherwise. */
   variant?: "destructive" | "outline";
+  /** A quiet trigger (`ghost`) for row-level actions that still confirm in the `variant` colour. */
+  triggerVariant?: "destructive" | "outline" | "ghost";
 }
 
 /**
@@ -39,6 +42,7 @@ export default function ConfirmAction({
   description,
   confirmLabel,
   variant = "destructive",
+  triggerVariant = variant,
 }: ConfirmActionProps) {
   const formId = useId();
   const [submitting, setSubmitting] = useFormSubmitting();
@@ -56,7 +60,7 @@ export default function ConfirmAction({
       </form>
       <AlertDialog>
         <AlertDialogTrigger asChild>
-          <Button type="button" variant={variant} size="sm" aria-label={triggerAriaLabel}>
+          <Button type="button" variant={triggerVariant} size="sm" aria-label={triggerAriaLabel}>
             {triggerLabel}
           </Button>
         </AlertDialogTrigger>

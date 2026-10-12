@@ -108,6 +108,7 @@ Report the five failed dashboard loads through `src/lib/log.ts` instead of bare 
 #### Manual Verification:
 
 - With the local stack up and no other session using it, stop PostgREST (`docker stop supabase_rest_10x-astro-starter`) and load `/dashboard` as a signed-in test user: status 200 with the "Something went wrong" banner as before, and the dev server output carries exactly one `dashboard.load.failed` error line with `route`, `userId`, `ray` and the cause, and no e-mail, cookie, request body or invite code; start the container again and see the page load normally
+  - After S-11 (`dashboard-ui`), a failed load answers 503 with the dashboard error page, not 200 with the banner.
 - After the merge and the owner's approval of the `release` run, `/dashboard` loads on the production URL for a signed-in user as before (the new events appear only when a read fails)
 
 **Implementation Note**: The per-read events (tasks, participants, check-offs, leaderboard) are covered by the unit tests, so no grant is revoked by hand; the one manual row checks that the real request reaches the helper with its ids. After the automated checks pass, pause for the human to confirm it. Row 1.7 needs this PR's own merge and release, so it is not confirmed with the others: it is ticked after the release, in a small closing docs PR (as rows 5.9 to 5.11 are) or in the next phase's PR, never before the production check.

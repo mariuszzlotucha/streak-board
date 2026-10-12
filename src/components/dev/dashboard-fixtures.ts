@@ -8,7 +8,7 @@ import { buildBoard, groupPeriodsByEnrolment, rankStandings, type EnrolmentPerio
 import { groupParticipantsByTask } from "@/lib/task-rules";
 import type { GroupTask } from "@/lib/tasks";
 
-/** What `DashboardView` takes: the loaded data plus the viewer. */
+/** What a state page renders: `DashboardView`'s props (the loaded data plus the viewer) and the e-mail `AppLayout` shows. */
 export interface DashboardViewProps extends DashboardData {
   viewerId: string | undefined;
   inviteLink: string | null;
@@ -37,6 +37,29 @@ export type DashboardStateId = (typeof DASHBOARD_STATES)[number]["id"];
 
 export function isDashboardStateId(value: string | null): value is DashboardStateId {
   return DASHBOARD_STATES.some((state) => state.id === value);
+}
+
+// The states of `/settings` (`SettingsView`); ids start with `settings-` so one `?state=` names either page.
+export const SETTINGS_STATES = [
+  { id: "settings-owner", label: "Owner", description: "Rename the group, then delete it last" },
+  { id: "settings-member", label: "Member", description: "Leave the group" },
+  { id: "settings-no-group", label: "No group", description: "Not in a group: a link to the dashboard" },
+  { id: "settings-load-failed", label: "Load failed", description: "The group could not be read" },
+] as const;
+
+export type SettingsStateId = (typeof SETTINGS_STATES)[number]["id"];
+
+export function isSettingsStateId(value: string | null): value is SettingsStateId {
+  return SETTINGS_STATES.some((state) => state.id === value);
+}
+
+/** What a settings state page renders: `SettingsView`'s props and the e-mail `AppLayout` shows. */
+export interface SettingsViewProps {
+  group: MyGroup | null;
+  viewerId: string | undefined;
+  loadFailed: boolean;
+  error: string | null;
+  email: string | undefined;
 }
 
 // A fixed instant (a Sunday in Warsaw), so the current day and week, and with them every streak, never change.
@@ -234,5 +257,26 @@ export function dashboardFixture(id: DashboardStateId, origin: string): Dashboar
           tasks: [{ ...TASKS[0], title: LONG_TASK_TITLE }, ...TASKS.slice(1)],
         },
       );
+  }
+}
+
+/** The props `SettingsView` gets in one state. Builds fresh objects on every call. */
+export function settingsFixture(id: SettingsStateId): SettingsViewProps {
+  const healthy = { loadFailed: false, error: null };
+  switch (id) {
+    case "settings-owner":
+      return { ...healthy, group: { ...MORNING_CREW }, viewerId: OWNER_ID, email: OWNER_EMAIL };
+    case "settings-member":
+      return { ...healthy, group: { ...MORNING_CREW }, viewerId: MEMBER_ID, email: MEMBER_EMAIL };
+    case "settings-no-group":
+      return { ...healthy, group: null, viewerId: OUTSIDER_ID, email: OUTSIDER_EMAIL };
+    case "settings-load-failed":
+      return {
+        group: null,
+        viewerId: OWNER_ID,
+        email: OWNER_EMAIL,
+        loadFailed: true,
+        error: groupErrorMessage("unknown"),
+      };
   }
 }

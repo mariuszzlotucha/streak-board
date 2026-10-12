@@ -3,15 +3,18 @@ import { ListPlus, Pencil } from "lucide-react";
 import { FormField } from "@/components/forms/FormField";
 import { SubmitButton } from "@/components/forms/SubmitButton";
 import { useFormSubmitting } from "@/components/hooks/useFormSubmitting";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { MAX_TASK_TITLE_LENGTH, normalizeTaskTitle } from "@/lib/task-rules";
 
 interface EditTaskFormProps {
   taskId: string;
   title: string;
+  /** The how-often badge after the title; hidden with the title while it is edited. */
+  recurrenceLabel: string;
 }
 
-export default function EditTaskForm({ taskId, title: currentTitle }: EditTaskFormProps) {
+export default function EditTaskForm({ taskId, title: currentTitle, recurrenceLabel }: EditTaskFormProps) {
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(currentTitle);
   const [error, setError] = useState<string | undefined>();
@@ -61,13 +64,15 @@ export default function EditTaskForm({ taskId, title: currentTitle }: EditTaskFo
 
   if (!editing) {
     return (
-      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
-        <span className="min-w-0 text-sm break-words">{currentTitle}</span>
+      <div className="flex min-w-0 flex-1 items-center gap-x-1">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-2 gap-y-1">
+          <span className="min-w-0 text-sm font-medium break-words">{currentTitle}</span>
+          <Badge variant="secondary">{recurrenceLabel}</Badge>
+        </div>
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           size="sm"
-          className="ml-auto"
           ref={editButtonRef}
           aria-label={`Edit ${currentTitle}`}
           onClick={() => {

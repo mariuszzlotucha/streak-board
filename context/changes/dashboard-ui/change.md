@@ -87,3 +87,45 @@ Wynik trafia do `research.md`:
 - ograniczenia dla planu (smoke, e2e, hydracja, mobile).
 
 Fazy planu: środowisko/biblioteka → wartości tokenów → jeden widok → stany.
+
+## Wynik zarzutów, odroczenia i przekazania (faza 2, 2026-10-12)
+
+Zarzuty z `research.md` (`## Charges`):
+
+- **C1 (układ) — naprawiony w fazie 2.** Dashboard ma własną powłokę `src/layouts/AppLayout.astro`: nagłówek z marką, nawigacją Main („Dashboard”, „Settings”) i jedynym „Sign out”, `<main>` o szerokości `max-w-5xl`, cicha linia „Signed in as” i stopka. Kolejność odpowiada głównej pętli: w grupie `<h1>` z nazwą grupy (eyebrow „Your group”), od 1024 px dwie kolumny (Tasks po lewej, trzy piąte; Leaderboard i Members z linkiem zaproszenia po prawej, dwie piąte), a na telefonie ta sama kolejność w jednej kolumnie. Wiersz tasku ma trzy linie: tytuł z etykietą „How often” i cichymi Edit/Delete twórcy, potem odznaczenie i streak, potem uczestnicy. Zarządzanie grupą jest w jednej karcie „Group settings” na osobnej stronie `/settings`, z akcją niebezpieczną na końcu (decyzje właściciela z 2026-10-12, niżej).
+- **C2 (komponenty) — naprawiony w fazie 1, użyty w fazie 2.** `Badge`, `NativeSelect`, `CardTitle as`, `FormField`/`SubmitButton` w `src/components/forms/`; faza 2 dokłada `PageHeading` (jedyne miejsce typografii `<h1>`), wariant `warning` w `ui/alert.tsx` i `triggerVariant` w `ConfirmAction`.
+- **C3 (tokeny) — wartości w fazie 1, użycie w fazie 2.** Stan „Done today” to `text-success` z ikoną `svg` i Undo; streak ma cyfrę `text-lg`; notki o częściowych awariach używają `--warning`.
+- **C4 (błędy i stany) — naprawiony w fazie 2, bez zmiany kontraktu S-08.** Alert `?error=` jest pierwszy w `<main>`, a skrypt inline usuwa `error` z adresu (`history.replaceState`, inne parametry i hash zostają). `participantsFailed` i `checkoffsFailed` to ostrzeżenia `role="status"` nad listą, `tasksFailed` zamienia kartę Tasks na kartę z ostrzeżeniem. Nieudane ładowanie to strona z `<h1>` „The dashboard didn't load”, komunikatem i „Try again”, ze statusem 503 (G5). Oczekujące zaproszenie to jedna decyzja: `<h1>` „Join {group}?” z jedynym „Join group”, a tworzenie i dołączanie kodem pod „Or start your own group” (`JoinGroupForm` mówi „Join with code”).
+- **C5 (reguły agenta) — naprawiony w fazie 1.** Sekcja `## UI` w `CLAUDE.md` i strażnik ESLint literałów w plikach widoku; faza 2 dopisuje `AppLayout` w Architecture.
+
+Odroczone:
+
+- **D1 — `Banner.astro`:** nie renderuje się na `/dashboard` (bez konfiguracji Supabase ścieżka chroniona przekierowuje przed renderem); należy do zmiany stron publicznych.
+- **D2 — strona 503 przy awarii Auth** (`src/lib/auth-state.ts`): osobna, rzadka odpowiedź bez layoutu, poza „jednym widokiem”.
+- **D3 — dark mode:** nic nie włącza `.dark`; blok dostał tylko wartości nowych tokenów, bez bramki.
+- **D4 — obramowanie pól** (`--input` na `--card`, 1,25:1): pola mają wypełnienie i etykiety, to cecha presetu.
+- **D5 — nieaktualna linia źródła w `global.css`:** naprawiona w fazie 1.
+- **D6 — hover przycisku primary** (`hover:bg-primary/80`, 3,51:1): dotyczy każdej strony i nie jest parą, którą właściciel kazał poprawić.
+
+Przekazania:
+
+- **S-12 (`refactor-opportunities`):** krok ręczny 1.6 jego planu oczekuje statusu 200 z banerem „Something went wrong” przy nieudanym ładowaniu; po S-11 to 503 ze stroną błędu dashboardu. Notka jest pod kryterium w fazie 1 planu S-12 (`plan.md:110`); tytuł wiersza 1.6 w Progress zostaje. Linie wywołania `loadDashboard({...})` w `dashboard.astro` są bez zmian, więc dopisanie `log: requestFields(Astro)` da najwyżej konflikt jednej linii.
+- **S-13 (siatka odznaczeń):** para tokenów stanu „odznaczone” to `--success`/`--success-foreground` (stan „Done …” w `CheckoffControl.tsx`: `text-success`, ikona `svg` i sam tekst etykiety w elemencie). Smoke wiąże wiersz tasku helperami `taskRowWithBadge`, `taskRowWithCheckoffForm`, `taskRowWithStatus`, `taskRowStreak`, `taskRowListing` i `leaderboardRow`: jeden `<li>` na task bez zagnieżdżonych `<li>`, tytuł pierwszy, `<span>Streak</span>` tuż przed `<span>N</span>`, e-mail uczestnika tuż przed etykietą „You”. Struktura wiersza (`TaskRow.astro`): linia 1 tytuł i etykieta „How often” (dla twórcy w `EditTaskForm`) z Edit/Delete, linia 2 `CheckoffControl`, linia 3 uczestnicy z Join/Leave.
+
+### Decyzje właściciela po przeglądzie ręcznym fazy 2 (2026-10-12)
+
+- **Ustawienia grupy na osobnej stronie.** Karta „Group settings” opuszcza dashboard i jest na nowej chronionej stronie `/settings` (`src/pages/settings.astro`, widok `SettingsView.astro`, loader `loadSettings` w `src/lib/settings-data.ts`, który czyta tylko grupę i przy błędzie raportuje `settings.load.failed` i odpowiada 503). Właściciel ma tam Rename group, a na końcu Delete group; członek ma Leave group; bez grupy strona odsyła linkiem na `/dashboard`. Prawa kolumna dashboardu to teraz Leaderboard, potem Members z linkiem zaproszenia.
+- **Kontrakt S-08 bez zmian.** Rename, delete i leave nadal przekierowują na `/dashboard`; właściciel zaakceptował, że ich alert `?error=` pokazuje się na dashboardzie, nie na `/settings`.
+- **Nawigacja.** Nagłówek stron zalogowanych ma obok marki linki „Dashboard” i „Settings” (`<nav aria-label="Main">`, `aria-current="page"` na bieżącej stronie), a „Sign out” po prawej. Na telefonie napis marki jest ukryty wizualnie (`sr-only sm:not-sr-only`), ale zostaje w HTML, więc nazwa linku i `BRAND_LINK` w smoke się nie zmieniają.
+- **Szersza kolumna tablicy wyników.** Siatka od 1024 px ma pięć kolumn: Tasks trzy, prawa kolumna dwie.
+- **Co to zmienia w planie** (`plan.md` zostaje bez zmian, zmiany zapisane tutaj):
+  - decyzja właściciela 1 (układ desktopu): prawa kolumna to Leaderboard i Members, bez Group settings, w proporcji 3:2 zamiast około dwóch trzecich;
+  - decyzja właściciela 10 (waga zarządzania): jedna karta „Group settings” jest na `/settings`, nie na końcu prawej kolumny dashboardu;
+  - kontrola ręczna 2.12 (kolejność układu): na dashboardzie Tasks, potem Leaderboard i Members z linkiem zaproszenia; Group settings sprawdza się na `/settings`;
+  - macierz 7 stanów: komórki „KS owner/member” przycisków niszczących (Delete group, Leave group, potwierdzenia w dialogu) to teraz stany `settings-owner` i `settings-member`, a zrzuty `rename-group`, `delete-group`, `leave-group` i dialogów pochodzą z tych stanów; nowy zrzut `nav-link` pokrywa hover i focus linków Main nav;
+  - kontrola ręczna 2.13 (503) obejmuje też `/settings`. Wynik z przeglądu implementacji fazy 2 (F5, 2026-10-12), na podglądzie produkcyjnym:
+    - przy zatrzymanym PostgREST zalogowany właściciel dostał 503 ze stroną „Settings didn't load” i „Try again”, a w logu raport `settings.load.failed`;
+    - `/dashboard` w tym samym czasie odpowiedział 503;
+    - po starcie kontenera „Try again” załadował stronę;
+  - tabela sformułowań, wiersz „Participants failed” (decyzja z przeglądu implementacji fazy 2, F6, 2026-10-12): bez uczestników loader nie liczy tablicy wyników, więc znikają „Mark done” i Leaderboard. Komunikat mówi to teraz tak jak ten o odznaczeniach: „Participants are unavailable right now, so tasks can't be marked done and the leaderboard is hidden. Reload to try again.” (zamiast „unchanged text”).
+- **Polityka prywatności** nie mówi, na której stronie opuszcza się lub usuwa grupę, więc nie wymaga zmiany.

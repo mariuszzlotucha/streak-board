@@ -1,0 +1,45 @@
+---
+import GroupSettingsCard from "@/components/dashboard/GroupSettingsCard.astro";
+import PageHeading from "@/components/dashboard/PageHeading.astro";
+import { buttonVariants } from "@/components/ui/button";
+import type { MyGroup } from "@/lib/groups";
+
+// The settings page's body, rendered inside `AppLayout` by `/settings` from `loadSettings` and by the dev kitchen sink
+// from fixtures. Rename, delete and leave still redirect to `/dashboard`, where their `?error=` alert shows.
+interface Props {
+  group: MyGroup | null;
+  viewerId: string | undefined;
+  loadFailed: boolean;
+  /** The fixed message of a failed load. */
+  error: string | null;
+}
+
+const { group, viewerId, loadFailed, error } = Astro.props;
+---
+
+{loadFailed ? (
+  <div class="space-y-4">
+    {/* After a failed load we cannot tell whether the user is in a group: only the failure and a way to retry. */}
+    <PageHeading title="Settings didn't load" description={error ?? undefined} />
+    <a href="/settings" class:list={buttonVariants()}>
+      Try again
+    </a>
+  </div>
+) : (
+  <div class="space-y-6">
+    <PageHeading title="Settings" />
+    <div class="max-w-xl">
+      {group ? (
+        <GroupSettingsCard groupName={group.name} isOwner={group.owner_id === viewerId} />
+      ) : (
+        <p class="text-muted-foreground">
+          You are not in a group yet.{" "}
+          <a href="/dashboard" class="font-medium text-foreground underline underline-offset-4">
+            Create or join a group
+          </a>{" "}
+          on your dashboard.
+        </p>
+      )}
+    </div>
+  </div>
+)}

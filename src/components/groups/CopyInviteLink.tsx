@@ -13,9 +13,11 @@ const STATUS_TEXT = {
 
 interface CopyInviteLinkProps {
   url: string;
+  /** The filled Copy button, for when the invite is the viewer's next step (they are the only member). */
+  emphasis?: boolean;
 }
 
-export default function CopyInviteLink({ url }: CopyInviteLinkProps) {
+export default function CopyInviteLink({ url, emphasis = false }: CopyInviteLinkProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<"idle" | "copied" | "manual">("idle");
 
@@ -58,7 +60,7 @@ export default function CopyInviteLink({ url }: CopyInviteLinkProps) {
             e.currentTarget.select();
           }}
         />
-        <Button type="button" variant="outline" onClick={() => void handleCopy()}>
+        <Button type="button" variant={emphasis ? "default" : "outline"} onClick={() => void handleCopy()}>
           {status === "copied" ? <Check className="size-4" /> : <Copy className="size-4" />}
           {status === "copied" ? "Copied" : "Copy"}
         </Button>

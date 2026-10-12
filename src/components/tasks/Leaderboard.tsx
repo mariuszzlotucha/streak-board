@@ -22,7 +22,7 @@ export default function Leaderboard({ rows, viewerId }: LeaderboardProps) {
     <Card>
       <CardHeader>
         <CardTitle as="h2">Leaderboard</CardTitle>
-        <CardDescription>Total streak points in your group</CardDescription>
+        <CardDescription>{"Each member's streaks, added up"}</CardDescription>
       </CardHeader>
       <CardContent>
         <ol aria-label="Leaderboard" className="divide-y">

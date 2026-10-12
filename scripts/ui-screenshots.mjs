@@ -1,9 +1,9 @@
 // Visual gate: captures the evidence of a UI change the same way in every phase (S-11 `dashboard-ui`).
 // Run against a running `astro dev` (the kitchen sink is dev-only): BASE_URL=http://localhost:4321 node scripts/ui-screenshots.mjs <prefix> <set...>
-// Sets: `public` (the public pages), `states` (every kitchen-sink state), `controls` (hover, focus-visible and the
-// pending, failed and fallback states of representative controls). No baselines and no comparison: the PNG files are
-// reviewed by a person. Exits 1 when a page does not answer 200, renders empty, throws, or logs a console error while it
-// loads, or when a listed control is missing.
+// Sets: `public` (the public pages), `states` (every kitchen-sink state of `/dashboard` and `/settings`), `controls`
+// (hover, focus-visible and the pending, failed and fallback states of representative controls). No baselines and no
+// comparison: the PNG files are reviewed by a person. Exits 1 when a page does not answer 200, renders empty, throws, or
+// logs a console error while it loads, or when a listed control is missing.
 
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
@@ -34,19 +34,51 @@ const SETTLE_MS = 300;
 // --- Controls: the one list of what the `controls` set captures. -----------------------------------------------------
 // `page` is the kitchen-sink state (or a path) the control is taken from; `control` finds it; `region` is what the PNG
 // shows (by default the control's task row or card); `modes` are the states captured; `run` replaces the modes for a
-// state that needs a held or failed request. Phase 2 adds the controls that only exist after it (see its plan).
+// state that needs an open dialog or a held or failed request. Together they cover the "shot" cells of the 7-state
+// matrix in the plan (Phase 2, change 12).
 
 const inRow = (control) => control.locator("xpath=ancestor::li[1]");
 const inCard = (control) => control.locator("xpath=ancestor::*[@data-slot='card'][1]");
+const inHeader = (control) => control.locator("xpath=ancestor::header[1]");
+const leaderboardCard = (control) =>
+  control.page().getByRole("list", { name: "Leaderboard" }).locator("xpath=ancestor::*[@data-slot='card'][1]");
+const markDone = (p) => p.getByRole("button", { name: /^Mark done / }).first();
+const deleteGroup = (p) => p.getByRole("button", { name: "Delete group", exact: true });
 
 const CONTROLS = [
+  // Default (filled) buttons.
+  { name: "mark-done", page: "owner", control: markDone, region: inRow, modes: ["hover", "focus"] },
   {
-    name: "mark-done",
-    page: "owner",
-    control: (p) => p.getByRole("button", { name: /^Mark done / }).first(),
-    region: inRow,
+    // The add-task form is in view where the disclosure is open: no tasks yet.
+    name: "add-task",
+    page: "sole-member",
+    control: (p) => p.getByRole("button", { name: "Add task", exact: true }),
+    region: inCard,
     modes: ["hover", "focus"],
   },
+  {
+    name: "join-group",
+    page: "pending-invite",
+    control: (p) => p.getByRole("button", { name: "Join group", exact: true }),
+    region: inCard,
+    modes: ["hover", "focus"],
+  },
+  {
+    name: "join-with-code",
+    page: "no-group",
+    control: (p) => p.getByRole("button", { name: "Join with code", exact: true }),
+    region: inCard,
+    modes: ["hover", "focus"],
+  },
+  {
+    // The sole member's Copy is the filled one: the invite is their next step.
+    name: "copy-emphasis",
+    page: "sole-member",
+    control: (p) => p.getByRole("button", { name: "Copy", exact: true }),
+    region: inCard,
+    modes: ["hover", "focus"],
+  },
+  // Outline buttons.
   {
     name: "undo",
     page: "owner",
@@ -68,6 +100,28 @@ const CONTROLS = [
     region: inRow,
     modes: ["hover", "focus"],
   },
+  {
+    name: "copy",
+    page: "owner",
+    control: (p) => p.getByRole("button", { name: "Copy", exact: true }),
+    region: inCard,
+    modes: ["hover", "focus"],
+  },
+  {
+    name: "sign-out",
+    page: "owner",
+    control: (p) => p.getByRole("banner").getByRole("button", { name: "Sign out" }),
+    region: inHeader,
+    modes: ["hover", "focus"],
+  },
+  {
+    name: "rename-group",
+    page: "settings-owner",
+    control: (p) => p.getByRole("button", { name: "Rename group", exact: true }),
+    region: inCard,
+    modes: ["hover", "focus"],
+  },
+  // Ghost buttons: the quiet row triggers.
   {
     name: "task-edit",
     page: "owner",
@@ -93,48 +147,67 @@ const CONTROLS = [
     region: inRow,
     modes: ["hover", "focus"],
   },
+  // Destructive buttons.
+  { name: "delete-group", page: "settings-owner", control: deleteGroup, region: inCard, modes: ["hover", "focus"] },
   {
-    name: "copy",
-    page: "owner",
-    control: (p) => p.getByRole("button", { name: "Copy", exact: true }),
+    name: "leave-group",
+    page: "settings-member",
+    control: (p) => p.getByRole("button", { name: "Leave group", exact: true }),
     region: inCard,
     modes: ["hover", "focus"],
   },
   {
-    name: "add-task",
-    page: "owner",
-    control: (p) => p.getByRole("button", { name: "Add task", exact: true }),
-    region: inCard,
-    modes: ["hover", "focus"],
+    // The dialog's destructive confirm under the pointer.
+    name: "dialog-confirm-hover",
+    page: "settings-owner",
+    control: deleteGroup,
+    region: () => null,
+    run: async (page, control) => {
+      await control.click();
+      const dialog = page.getByRole("alertdialog");
+      await dialog.waitFor();
+      await dialog.getByRole("button", { name: "Delete group" }).hover();
+    },
   },
   {
-    name: "rename-group",
-    page: "owner",
-    control: (p) => p.getByRole("button", { name: "Rename group", exact: true }),
-    region: inCard,
-    modes: ["hover", "focus"],
+    // Opened from the keyboard, the dialog focuses Cancel; Tab moves the visible focus to the confirm button.
+    name: "dialog-focus",
+    page: "settings-owner",
+    control: deleteGroup,
+    region: () => null,
+    run: async (page, control) => {
+      await control.focus();
+      await page.keyboard.press("Enter");
+      const dialog = page.getByRole("alertdialog");
+      await dialog.waitFor();
+      await page.keyboard.press("Tab");
+      await dialog.getByRole("button", { name: "Delete group" }).and(page.locator(":focus")).waitFor();
+    },
   },
+  // The "Add a task" disclosure, closed.
   {
-    name: "delete-group",
+    name: "add-task-summary",
     page: "owner",
-    control: (p) => p.getByRole("button", { name: "Delete group", exact: true }),
+    control: (p) => p.locator("summary", { hasText: "Add a task" }),
     region: inCard,
     modes: ["hover", "focus"],
   },
+  // Fields.
   {
     name: "task-title-field",
-    page: "owner",
+    page: "sole-member",
     control: (p) => p.getByLabel("Task title"),
     region: inCard,
     modes: ["focus"],
   },
   {
     name: "recurrence-field",
-    page: "owner",
-    control: (p) => p.locator("#new-task-recurrence"),
+    page: "sole-member",
+    control: (p) => p.getByLabel("How often"),
     region: inCard,
     modes: ["focus"],
   },
+  // Links.
   {
     name: "footer-link",
     page: "owner",
@@ -143,18 +216,40 @@ const CONTROLS = [
     modes: ["hover", "focus"],
   },
   {
-    name: "header-link",
-    page: "/auth/signin",
-    control: (p) => p.getByRole("banner").getByRole("link", { name: "StreakBoard" }),
-    region: (control) => control.locator("xpath=ancestor::header[1]"),
+    // The Main nav's link to the other page (the current one is the secondary button).
+    name: "nav-link",
+    page: "owner",
+    control: (p) => p.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Settings" }),
+    region: inHeader,
     modes: ["hover", "focus"],
   },
+  {
+    name: "header-link",
+    page: "owner",
+    control: (p) => p.getByRole("banner").getByRole("link", { name: "StreakBoard" }),
+    region: inHeader,
+    modes: ["hover", "focus"],
+  },
+  // Held and failed requests.
   {
     // The tap flips the row at once and dims the new button while the request is held.
     name: "checkoff-pending",
     page: "owner",
-    control: (p) => p.getByRole("button", { name: /^Mark done / }).first(),
+    control: markDone,
     region: inRow,
+    run: async (page, control) => {
+      const release = await holdRequests(page, "**/api/tasks/checkoff");
+      await control.click();
+      await page.locator('[aria-disabled="true"]').first().waitFor();
+      return release;
+    },
+  },
+  {
+    // The same held tap seen on the Leaderboard: the viewer's total moves before the server answers.
+    name: "leaderboard-pending",
+    page: "owner",
+    control: markDone,
+    region: leaderboardCard,
     run: async (page, control) => {
       const release = await holdRequests(page, "**/api/tasks/checkoff");
       await control.click();
@@ -166,7 +261,7 @@ const CONTROLS = [
     // A server error rolls the row back and shows the message next to the control.
     name: "checkoff-failed",
     page: "owner",
-    control: (p) => p.getByRole("button", { name: /^Mark done / }).first(),
+    control: markDone,
     region: inRow,
     run: async (page, control) => {
       await page.route("**/api/tasks/checkoff", (route) => route.fulfill({ status: 500, body: "" }));
@@ -177,15 +272,15 @@ const CONTROLS = [
   {
     // The confirm button shows its spinner and Cancel is disabled while the native POST is under way.
     name: "dialog-submitting",
-    page: "owner",
-    control: (p) => p.getByRole("button", { name: "Delete group", exact: true }),
+    page: "settings-owner",
+    control: deleteGroup,
     region: () => null,
     run: async (page, control) => {
       await control.click();
       const dialog = page.getByRole("alertdialog");
       await dialog.waitFor();
-      // The native POST is cancelled in the page (a held navigation would block every Playwright wait); the island's
-      // submit handler still runs, so the dialog shows exactly its submitting state.
+      // The native POST is cancelled in the page (a held navigation would block every Playwright wait); the kitchen
+      // sink cancels it too. The island's submit handler still runs, so the dialog shows exactly its submitting state.
       await page.evaluate("window.addEventListener('submit', (event) => event.preventDefault(), true)");
       await dialog.getByRole("button", { name: "Delete group" }).click();
       await dialog.getByRole("button", { name: "Cancel" }).and(page.locator("[disabled]")).waitFor();

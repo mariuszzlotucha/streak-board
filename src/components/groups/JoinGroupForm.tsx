@@ -45,7 +45,7 @@ export default function JoinGroupForm() {
         icon={<KeyRound className="size-4" />}
       />
       <SubmitButton pending={submitting} pendingText="Joining..." icon={<LogIn className="size-4" />}>
-        Join group
+        Join with code
       </SubmitButton>
     </form>
   );

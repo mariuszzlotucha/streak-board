@@ -1,0 +1,17 @@
+---
+interface Props {
+  /** A short label above the title, such as "Your group". */
+  eyebrow?: string;
+  title: string;
+  description?: string;
+}
+
+const { eyebrow, title, description } = Astro.props;
+---
+
+{/* The page's one <h1>: the only place for the page heading's typography. Long titles wrap. */}
+<div class="space-y-1">
+  {eyebrow && <p class="text-sm font-medium text-muted-foreground">{eyebrow}</p>}
+  <h1 class="font-heading text-2xl font-semibold break-words sm:text-3xl">{title}</h1>
+  {description && <p class="max-w-prose text-muted-foreground">{description}</p>}
+</div>
