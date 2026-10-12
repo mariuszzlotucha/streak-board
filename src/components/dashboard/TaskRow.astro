@@ -2,6 +2,7 @@
 import ConfirmAction from "@/components/groups/ConfirmAction";
 import CheckoffControl from "@/components/tasks/CheckoffControl";
 import EditTaskForm from "@/components/tasks/EditTaskForm";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { TaskParticipant } from "@/lib/dashboard-data";
 import type { Board } from "@/lib/leaderboard-rules";
@@ -30,9 +31,7 @@ const joined = participants.some((participant) => participant.isYou);
   {task.created_by === viewerId ? (
     <>
       <EditTaskForm client:load taskId={task.id} title={task.title} />
-      <span class="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
-        {RECURRENCE_LABELS[task.recurrence]}
-      </span>
+      <Badge variant="secondary">{RECURRENCE_LABELS[task.recurrence]}</Badge>
       <ConfirmAction
         client:load
         action="/api/tasks/delete"
@@ -47,9 +46,7 @@ const joined = participants.some((participant) => participant.isYou);
   ) : (
     <>
       <span class="min-w-0 flex-1 text-sm break-words">{task.title}</span>
-      <span class="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
-        {RECURRENCE_LABELS[task.recurrence]}
-      </span>
+      <Badge variant="secondary">{RECURRENCE_LABELS[task.recurrence]}</Badge>
     </>
   )}
   {!participantsFailed && (
@@ -63,9 +60,7 @@ const joined = participants.some((participant) => participant.isYou);
             {participants.map((participant) => (
               <span role="listitem" class="inline-flex min-w-0 items-center gap-1">
                 <span class="break-all text-foreground">{participant.email}</span>
-                {participant.isYou && (
-                  <span class="rounded-full border px-2 py-0.5 text-xs font-medium text-muted-foreground">You</span>
-                )}
+                {participant.isYou && <Badge variant="outline">You</Badge>}
               </span>
             ))}
           </span>

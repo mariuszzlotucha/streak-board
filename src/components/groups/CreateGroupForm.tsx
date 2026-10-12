@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Plus, Users } from "lucide-react";
-import { FormField } from "@/components/auth/FormField";
-import { SubmitButton } from "@/components/auth/SubmitButton";
+import { FormField } from "@/components/forms/FormField";
+import { SubmitButton } from "@/components/forms/SubmitButton";
 import { useFormSubmitting } from "@/components/hooks/useFormSubmitting";
 import { MAX_GROUP_NAME_LENGTH, normalizeGroupName, trimGroupName } from "@/lib/group-rules";
 

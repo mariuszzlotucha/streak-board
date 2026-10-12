@@ -12,8 +12,8 @@ const { code, groupName } = Astro.props;
 
 <Card>
   <CardHeader>
-    <CardTitle>
-      <h2 class="font-heading text-xl font-semibold break-words">Join {groupName}?</h2>
+    <CardTitle as="h2" className="break-words">
+      Join {groupName}?
     </CardTitle>
     <CardDescription>You were invited with a link. Confirm to become a member.</CardDescription>
   </CardHeader>

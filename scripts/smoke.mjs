@@ -256,6 +256,11 @@ const SUBMIT_IN_DESTRUCTIVE_FORM =
 // The Tasks card heading (an error alert or another card would not match).
 const TASKS_HEADING = /<h2[^>]*>\s*Tasks\s*<\/h2>/;
 
+// The add-task form posts a native `recurrence` select with `once` preselected; without the field every add would end
+// in `?error=invalid_recurrence`.
+const RECURRENCE_FIELD =
+  /<form[^>]*action="\/api\/tasks\/create"[^>]*>(?:(?!<\/form>)[\s\S])*<select[^>]*name="recurrence"[^>]*>(?:(?!<\/select>)[\s\S])*<option[^>]*value="once"[^>]*selected/;
+
 // An <a> element whose href is exactly `href` (the closing quote rules out a longer path with the same start).
 function linkTo(href) {
   return new RegExp(`<a\\s[^>]*href="${escapeRegExp(href)}"`);
@@ -543,6 +548,15 @@ const steps = [
     { status: 200, bodyMatches: [BRAND_LINK, linkTo("/privacy"), linkTo("/auth/signin")] },
   ],
   ["starter banner is not served", () => request("/template.png", { cookie: "" }), { status: 404 }],
+  [
+    `dashboard kitchen sink ${PRODUCTION_BUILD ? "is closed in a production build" : "renders fixture data in dev"}`,
+    () => request("/dev/dashboard-kitchen-sink?state=owner", { cookie: "" }),
+    // A state page renders fixture data with `@example.test` e-mails in dev (the positive control that shows the body
+    // check can fail); a production build answers 404 with neither the fixtures nor the gallery's title.
+    PRODUCTION_BUILD
+      ? { status: 404, bodyExcludes: ["@example.test", "Dashboard kitchen sink"] }
+      : { status: 200, bodyIncludes: "@example.test" },
+  ],
   ["brand favicon is served", () => request("/favicon.svg", { cookie: "" }), { status: 200, bodyIncludes: "<svg" }],
   [
     "signin page shows the cancelled message",
@@ -1146,6 +1160,7 @@ const steps = [
         editControl(taskTitle),
         taskRowWithConfirmedDelete(taskTitle),
         formPostingTo("/api/tasks/create"),
+        RECURRENCE_FIELD,
         // The creator is enrolled at task insert, so the fresh row already lists them, marked as the viewer.
         taskRowListing(taskTitle, email, { you: true }),
       ],

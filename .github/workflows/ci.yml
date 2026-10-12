@@ -48,6 +48,8 @@ jobs:
       - run: npm ci
       - run: npx astro sync
       - run: npm run lint
+      # Fails when a design-token change drops a gating colour pair below its WCAG threshold.
+      - run: node scripts/token-contrast.mjs
       - run: npx astro check
       - run: npm run build
         env:

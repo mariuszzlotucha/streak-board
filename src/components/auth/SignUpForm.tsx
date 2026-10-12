@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Mail, Lock, UserPlus } from "lucide-react";
-import { FormField } from "@/components/auth/FormField";
+import { FormField } from "@/components/forms/FormField";
 import { PasswordToggle } from "@/components/auth/PasswordToggle";
-import { SubmitButton } from "@/components/auth/SubmitButton";
+import { SubmitButton } from "@/components/forms/SubmitButton";
 import { ServerError } from "@/components/auth/ServerError";
 import { useFormSubmitting } from "@/components/hooks/useFormSubmitting";
 import { MIN_PASSWORD_LENGTH, MAX_PASSWORD_LENGTH } from "@/lib/auth-rules";

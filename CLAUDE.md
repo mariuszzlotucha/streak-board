@@ -20,12 +20,21 @@ Astro 7 SSR app (`output: "server"` in `astro.config.mjs`) with React 19 islands
 - Path alias `@/*` → `./src/*` (tsconfig).
 - Astro components for static content/layout; React only where interactivity is needed.
 - Merge Tailwind classes with `cn()` from `@/lib/utils` (clsx + tailwind-merge) rather than concatenating class strings.
-- shadcn/ui components live in `src/components/ui/` ("new-york" style, `lucide` icons). Add new ones with `npx shadcn@latest add [name]`.
+- shadcn/ui components live in `src/components/ui/` (`radix-maia` style, `lucide` icons). Add new ones with `npx shadcn@latest add [name]` (see UI below).
 - API routes use uppercase `GET`/`POST` exports.
 - No Next.js directives in React components (no `"use client"`); extract hooks to `src/components/hooks/`.
 - Services/helpers go in `src/lib/`; shared types (entities, DTOs) belong in `src/types.ts` (generated from the local database schema with `npx supabase gen types typescript --local`; do not hand-edit).
 - The privacy policy (`src/pages/privacy.astro`, one component per section in `src/components/privacy/`) states facts about the data model, who sees what, deletion, cookies and providers; a change to any of them updates the policy in the same change.
 - Supabase migrations go in `supabase/migrations/` named `YYYYMMDDHHmmss_short_description.sql`, with RLS enabled and granular per-operation/per-role policies on every new table. The schema currently consists of `groups`, `group_members`, `tasks`, `task_participants` and `task_checkoffs` (read through the `task_checkoff_periods` view) plus Supabase Auth's built-in `auth.users`.
+
+## UI
+
+- **Tokens.** Colours, radii and fonts live in `src/styles/global.css`: values in `:root` and `.dark`, published to Tailwind by `@theme inline`. A new token goes into all three blocks, with its raw value and source in the change's `tokens-source/` folder, and `node scripts/token-contrast.mjs` must pass (CI runs it after lint).
+- **Components.** They live in `src/components/ui/` (`radix-maia`, lucide icons). Check there before creating one, and add a missing one with `npx shadcn@latest add <name>` (preview with `--dry-run`). The registry imports `cn` from the npm package `cn`: point the new file at `@/lib/utils` and restore the package files (`git checkout -- package.json package-lock.json && npm ci`); ESLint rejects the `cn` package import. Shared form pieces (`FormField`, `SubmitButton`) live in `src/components/forms/`.
+- **No literals.** No literal colours or arbitrary values in views; use tokens. In the dashboard view files (`src/pages/dashboard.astro`, `src/pages/dev/`, `src/layouts/`, `src/components/{dashboard,tasks,groups,forms,site,dev}/`) ESLint rejects hex colours, colour functions, Tailwind palette classes and arbitrary px/rem values; other arbitrary values (`%`, `calc()`, `var()`) are left to review. When prose trips the rule, reword it; do not weaken the rule.
+- **No `asChild` from `.astro`.** Astro hands a React component its `.astro` children as static HTML, so `asChild` loses the child's props. Use `CardTitle as="h2"` for card headings, and `<a class:list={buttonVariants(...)}>` for link buttons.
+- **Smoke binds the markup.** `scripts/smoke.mjs` binds the dashboard markup with regular expressions (one `<li>` per task, exact `<h2>` card headings, badges and buttons holding only their text, `role="alert"` only for errors): keep its invariants, or change smoke in the same change.
+- **The gate.** The dev-only kitchen sink `/dev/dashboard-kitchen-sink` renders the real `DashboardView` from fixtures (`src/components/dev/dashboard-fixtures.ts`) in every page state, plus the control states. `scripts/ui-screenshots.mjs` captures them against a running `astro dev` (see `@README.md`, Smoke test).
 
 ## Parallel work (git worktrees)
 
