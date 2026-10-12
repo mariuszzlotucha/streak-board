@@ -549,10 +549,13 @@ const steps = [
   ],
   ["starter banner is not served", () => request("/template.png", { cookie: "" }), { status: 404 }],
   [
-    `dashboard kitchen sink ${PRODUCTION_BUILD ? "is closed in a production build" : "renders in dev"}`,
-    () => request("/dev/dashboard-kitchen-sink", { cookie: "" }),
-    // The dev-only gate renders fixture data with `@example.test` e-mails; a production build answers 404 without it.
-    PRODUCTION_BUILD ? { status: 404, bodyExcludes: "@example.test" } : { status: 200 },
+    `dashboard kitchen sink ${PRODUCTION_BUILD ? "is closed in a production build" : "renders fixture data in dev"}`,
+    () => request("/dev/dashboard-kitchen-sink?state=owner", { cookie: "" }),
+    // A state page renders fixture data with `@example.test` e-mails in dev (the positive control that shows the body
+    // check can fail); a production build answers 404 with neither the fixtures nor the gallery's title.
+    PRODUCTION_BUILD
+      ? { status: 404, bodyExcludes: ["@example.test", "Dashboard kitchen sink"] }
+      : { status: 200, bodyIncludes: "@example.test" },
   ],
   ["brand favicon is served", () => request("/favicon.svg", { cookie: "" }), { status: 200, bodyIncludes: "<svg" }],
   [

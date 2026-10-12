@@ -74,12 +74,12 @@ const astroConfig = defineConfig({
 });
 
 // Views read colours and sizes from the design tokens (src/styles/global.css) and the components in src/components/ui/;
-// a literal colour or arbitrary value in a view file is an error. Wording that looks like a class name in prose is
-// reworded, not allowed through.
+// a hex colour, colour function, palette class or arbitrary px/rem value in a view file is an error. Wording that looks
+// like a class name in prose is reworded, not allowed through.
 const PALETTE =
   "red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose|slate|gray|zinc|neutral|stone|mauve|olive|mist|taupe|white|black";
 // esquery regex: no "/" inside; the lookahead keeps `href="#add-task"` out.
-const UI_LITERAL = `/#[0-9a-fA-F]{3,8}(?![\\w-])|\\b(?:rgba?|hsla?|oklch|oklab|lab|lch|hwb)\\(|-\\[[0-9.]+(?:px|rem)\\]|\\b(?:bg|text|border|ring|outline|from|via|to|fill|stroke|shadow|divide)-(?:${PALETTE})\\b/`;
+const UI_LITERAL = `/#[0-9a-fA-F]{3,8}(?![\\w-])|\\b(?:rgba?|hsla?|oklch|oklab|lab|lch|hwb)\\(|-\\[[0-9.]+(?:px|rem)\\]|\\b(?:bg|text|border(?:-[trblxyse])?|ring(?:-offset)?|outline|from|via|to|fill|stroke|shadow|divide|decoration|accent|caret|placeholder)-(?:${PALETTE})\\b/`;
 const UI_LITERAL_MESSAGE =
   "No literal colours, colour functions, arbitrary px/rem values or palette classes in view files: use a design token (src/styles/global.css) or a component from src/components/ui/.";
 

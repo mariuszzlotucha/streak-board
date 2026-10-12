@@ -35,10 +35,13 @@ const PAIRS = [
   ["primary-foreground on the 80 % hover tint (D6)", "primary-foreground", "primary/80", 4.5, false],
 ];
 
-/** The `--name: oklch(L C H [/ A])` declarations of the first `:root` block, as { name: [L, C, H, alpha] }. */
+/** The `--name: oklch(L C H [/ A])` declarations of the `:root` block, as { name: [L, C, H, alpha] }. */
 function rootTokens(css) {
-  const block = css.match(/:root\s*\{([^}]*)\}/)?.[1];
-  if (!block) throw new Error("no :root block in src/styles/global.css");
+  // Comments go first: a commented-out declaration must not override the live one, and a `}` in a comment must not
+  // end the block early. A second `:root` block would override the first in the browser, so it is refused.
+  const blocks = [...css.replace(/\/\*[\s\S]*?\*\//g, "").matchAll(/:root\s*\{([^}]*)\}/g)];
+  if (blocks.length !== 1) throw new Error(`expected one :root block in src/styles/global.css, found ${blocks.length}`);
+  const block = blocks[0][1];
   const tokens = {};
   const declaration = /--([\w-]+):\s*oklch\(\s*([\d.]+%?)\s+([\d.]+)\s+([\d.]+)\s*(?:\/\s*([\d.]+%?))?\s*\)/g;
   for (const [, name, l, c, h, a] of block.matchAll(declaration)) {

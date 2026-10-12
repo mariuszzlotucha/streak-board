@@ -2,7 +2,8 @@
 // Run against a running `astro dev` (the kitchen sink is dev-only): BASE_URL=http://localhost:4321 node scripts/ui-screenshots.mjs <prefix> <set...>
 // Sets: `public` (the public pages), `states` (every kitchen-sink state), `controls` (hover, focus-visible and the
 // pending, failed and fallback states of representative controls). No baselines and no comparison: the PNG files are
-// reviewed by a person. Exits 1 when a page does not answer 200 or a listed control is missing.
+// reviewed by a person. Exits 1 when a page does not answer 200, renders empty, throws, or logs a console error while it
+// loads, or when a listed control is missing.
 
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
@@ -230,9 +231,18 @@ async function holdRequests(page, pattern) {
 }
 
 // Loads a page and waits until it is hydrated, its fonts are in and the dev toolbar is hidden. Null when it is not 200.
+// An uncaught error on the page, or a console error while it loads and hydrates, fails the run: a hydration error would
+// otherwise still yield a PNG. Console errors after `open` (a control's deliberately failed request) do not count.
 async function open(context, target) {
   const page = await context.newPage();
   const url = BASE_URL + pathFor(target);
+  const size = page.viewportSize();
+  const where = `${url} at ${size?.width}×${size?.height}`;
+  page.on("pageerror", (error) => fail(`${where}: uncaught ${error.message}`));
+  const onConsole = (message) => {
+    if (message.type() === "error") fail(`${where}: console error while loading: ${message.text()}`);
+  };
+  page.on("console", onConsole);
   const response = await page.goto(url, { waitUntil: "networkidle" });
   const status = response?.status();
   if (status !== 200) {
@@ -240,10 +250,17 @@ async function open(context, target) {
     await page.close();
     return null;
   }
+  // A cold `astro dev` can answer an empty 200 while Vite re-optimizes its dependencies.
+  if ((await page.locator("body > *").count()) === 0) {
+    fail(`${where} rendered an empty page`);
+    await page.close();
+    return null;
+  }
   await page.addStyleTag({ content: HIDE_DEV_TOOLBAR });
   // Astro removes the `ssr` attribute once an island has hydrated.
   await page.waitForFunction("!document.querySelector('astro-island[ssr]')");
   await page.evaluate("document.fonts.ready");
+  page.off("console", onConsole);
   return page;
 }
 
