@@ -239,15 +239,15 @@ Each review is capped at `DEFAULT_MAX_STEPS = 2` model calls and `DEFAULT_MAX_OU
 
 #### Automated
 
-- [x] 1.1 No reference to the old module remains
-- [x] 1.2 Type checking passes with no errors under packages/
-- [x] 1.3 Linting passes with 0 errors
-- [x] 1.4 The barrel imports without side effects and exposes the API
-- [x] 1.6 REVIEW_JSON_SCHEMA identical to the pre-change output
+- [x] 1.1 No reference to the old module remains — 664163d
+- [x] 1.2 Type checking passes with no errors under packages/ — 664163d
+- [x] 1.3 Linting passes with 0 errors — 664163d
+- [x] 1.4 The barrel imports without side effects and exposes the API — 664163d
+- [x] 1.6 REVIEW_JSON_SCHEMA identical to the pre-change output — 664163d
 
 #### Manual
 
-- [x] 1.5 npm run review prints a valid ReviewResult JSON, same shape as before
+- [x] 1.5 npm run review prints a valid ReviewResult JSON, same shape as before — 664163d
 
 ### Phase 2: CLI, Demos and Docs
 
