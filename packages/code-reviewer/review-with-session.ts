@@ -1,25 +1,23 @@
-import "dotenv/config";
-import { ToolLoopAgent, Output, stepCountIs, type ModelMessage } from "ai";
+import { ToolLoopAgent, isStepCount, type ModelMessage } from "ai";
 import { openrouter } from "@openrouter/ai-sdk-provider";
-import { REVIEWER_INSTRUCTIONS } from "./prompts/reviewer";
-import { ReviewResult } from "./schemas/review-result";
-import { readDiff } from "./utils";
+import { createReviewer } from "./agent";
+import { resolveReviewerModel } from "./config";
+import { buildReviewPrompt } from "./prompts/reviewer";
+import { loadEnv, readDiff } from "./utils";
 
-const structuredReviewer = new ToolLoopAgent({
-  model: openrouter("z-ai/glm-5.1"),
-  instructions: REVIEWER_INSTRUCTIONS,
-  output: Output.object({ schema: ReviewResult }),
-  stopWhen: stepCountIs(2),
-});
+loadEnv();
+const model = resolveReviewerModel();
+const structuredReviewer = createReviewer({ model });
 
 const recaller = new ToolLoopAgent({
-  model: openrouter("z-ai/glm-5.1"),
+  model: openrouter(model),
   instructions: "Jesteś tym samym recenzentem. Odpowiadaj zwięźle, zwykłym tekstem, korzystając z historii rozmowy.",
-  stopWhen: stepCountIs(1),
+  stopWhen: isStepCount(1),
 });
 
 const diff = await readDiff();
-const messages: ModelMessage[] = [{ role: "user", content: `Zrecenzuj ten diff:\n\n${diff}` }];
+if (diff === undefined) process.exit(1);
+const messages: ModelMessage[] = [{ role: "user", content: buildReviewPrompt(diff) }];
 
 const first = await structuredReviewer.generate({ messages });
 messages.push(...first.responseMessages);

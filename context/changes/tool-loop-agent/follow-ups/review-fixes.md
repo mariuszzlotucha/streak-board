@@ -26,3 +26,11 @@ Queued by `/10x-impl-review tool-loop-agent phase 1` (reviews/impl-review-phase-
 ## F5 — queued for Phase 2 (README)
 
 - Add a data-egress note to the README: the whole diff goes to OpenRouter and its upstream provider, so do not review diffs that contain secrets (`.env`, keys in fixtures); mention OpenRouter's `provider.data_collection: "deny"` as an option.
+
+# Phase 2 review
+
+Queued by `/10x-impl-review tool-loop-agent phase 2` (reviews/impl-review-phase-2.md).
+
+## F2 — queued for the eval/CI-gate change (Fix B)
+
+- `review-with-session.ts` calls `generate()` directly, not `reviewDiff`: `DEFAULT_MAX_DIFF_CHARS` does not apply, a truncated answer ends in an uncaught `NoObjectGeneratedError`, and neither its two calls nor the recaller (no `maxOutputTokens`) log usage. Bring it under the diff cap and print one stderr usage line per call when the eval/CI-gate change touches the demos.

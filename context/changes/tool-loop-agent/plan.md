@@ -231,6 +231,13 @@ Each review is capped at `DEFAULT_MAX_STEPS = 2` model calls and `DEFAULT_MAX_OU
 - AI SDK agent docs: `node_modules/ai/docs/03-agents/02-building-agents.mdx`, `node_modules/ai/docs/03-agents/04-loop-control.mdx`
 - Rules: `CLAUDE.md` (M5L2 hard rules)
 
+## Addenda
+
+- **2026-10-14 — Phase 1 review triage (reviews/impl-review-phase-1.md).** `reviewDiff` wraps `NoObjectGeneratedError` / `NoOutputGeneratedError` in an exported `ReviewRunError` carrying `usage`, `costUsd`, `model` and `finishReason` (the SDK error as `cause`), replacing "errors from the SDK propagate unchanged" for those two errors; a cut-off answer therefore normally surfaces as `ReviewRunError` with `finishReason: "length"`, and manual check 2.5 ("finishReason stop, not length") reads as "the run succeeds, no `ReviewRunError`". `DEFAULT_MAX_DIFF_CHARS = 200_000` in `config.ts` (exported from the barrel) and a `maxDiffChars` option on `reviewDiff` reject a longer diff before any model call. `resolveOptions()` treats an empty model id as unset and requires `maxSteps` to be an integer >= 1. The README gained a data-egress section.
+- **2026-10-14 — Phase 2: root `review` npm script removed (user decision).** The script was `git diff | tsx packages/code-reviewer/review.ts`: it ran its own `git diff` and ignored piped input, so `git diff HEAD~1 | npm run review` reviewed the working tree instead. The CLI is now invoked directly as `git diff | npx tsx packages/code-reviewer/review.ts`, `readDiff()` prints `error: no diff on stdin (usage: git diff | npx tsx packages/code-reviewer/review.ts)`, and every `npm run review` in this plan (Migration Notes, the Phase 2 contract, the manual checks and the Progress titles 1.5, 2.5) reads as that command. Manual checks 2.5–2.6 were run that way.
+- **2026-10-14 — Phase 2 review triage (reviews/impl-review-phase-2.md).** `readDiff()` stops after `4 × DEFAULT_MAX_DIFF_CHARS` bytes on stdin (`error: diff too large`); the CLI sets `process.exitCode` instead of calling `process.exit`; ESLint makes `no-console` an error in the package's library modules and turns it off for the CLI and demos; `packages/code-reviewer/cost.json` is git-ignored.
+- **2026-10-14 — Full-plan review triage (reviews/impl-review.md).** `.env` is loaded with Node's `process.loadEnvFile` through `loadEnv()` in `utils.ts` (CLI and demos) instead of the transitive `dotenv/config` import the Phase 2 contract named. `maxDiffChars` must be an integer >= 1 or `Infinity`, and `maxOutputTokens` an integer >= 1 (`null` counts as unset). `readDiff()` accepts string chunks and strips only trailing newlines. Docs: with no tools a review is one model call, so `maxSteps` only matters once tools exist; a cut-off answer that still parses is returned as a `ReviewRun`. The empty `context/changes/simple-code-reviewer/` scaffold committed with Phase 1 was removed.
+
 ## Progress
 
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles. See `references/progress-format.md`.
@@ -253,14 +260,14 @@ Each review is capped at `DEFAULT_MAX_STEPS = 2` model calls and `DEFAULT_MAX_OU
 
 #### Automated
 
-- [ ] 2.1 Type checking passes with no errors under packages/
-- [ ] 2.2 Linting passes with 0 errors
-- [ ] 2.3 No hard-coded model id outside config
-- [ ] 2.4 Empty input fails fast with the new message
+- [x] 2.1 Type checking passes with no errors under packages/ — dbf752b
+- [x] 2.2 Linting passes with 0 errors — dbf752b
+- [x] 2.3 No hard-coded model id outside config — dbf752b
+- [x] 2.4 Empty input fails fast with the new message — dbf752b
 
 #### Manual
 
-- [ ] 2.5 npm run review prints JSON on stdout and one usage/cost line on stderr, finishReason stop
-- [ ] 2.6 REVIEWER_MODEL override is used
-- [ ] 2.7 Demos behave as before; rules-inject fails with the same pre-existing ENOENT
-- [ ] 2.8 README matches the exported API
+- [x] 2.5 npm run review prints JSON on stdout and one usage/cost line on stderr, finishReason stop — dbf752b
+- [x] 2.6 REVIEWER_MODEL override is used — dbf752b
+- [x] 2.7 Demos behave as before; rules-inject fails with the same pre-existing ENOENT — dbf752b
+- [x] 2.8 README matches the exported API — dbf752b
