@@ -1,11 +1,11 @@
-import "dotenv/config";
 import { ToolLoopAgent, isStepCount, type ModelMessage } from "ai";
 import { openrouter } from "@openrouter/ai-sdk-provider";
 import { createReviewer } from "./agent";
 import { resolveReviewerModel } from "./config";
 import { buildReviewPrompt } from "./prompts/reviewer";
-import { readDiff } from "./utils";
+import { loadEnv, readDiff } from "./utils";
 
+loadEnv();
 const model = resolveReviewerModel();
 const structuredReviewer = createReviewer({ model });
 

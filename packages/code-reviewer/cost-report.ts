@@ -1,10 +1,11 @@
-import "dotenv/config";
 import { ToolLoopAgent, isStepCount } from "ai";
 import { openrouter } from "@openrouter/ai-sdk-provider";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { resolveReviewerModel } from "./config";
+import { loadEnv } from "./utils";
 
+loadEnv();
 const model = resolveReviewerModel();
 
 const agent = new ToolLoopAgent({

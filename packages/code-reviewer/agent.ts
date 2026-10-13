@@ -35,9 +35,10 @@ export interface ReviewRun {
   /** The OpenRouter model id the run used. */
   model: string;
   /**
-   * Finish reason of the final step. A returned run ended normally: an answer
-   * cut off by the token ceiling is invalid JSON, so it throws `ReviewRunError`
-   * with `finishReason: "length"` instead.
+   * Finish reason of the final step, normally `"stop"`. An answer cut off by the
+   * token ceiling is normally invalid JSON and throws `ReviewRunError` with
+   * `finishReason: "length"`; a cut-off answer that still parses is returned,
+   * so check this field.
    */
   finishReason: FinishReason;
 }
@@ -96,8 +97,8 @@ export function createReviewer(options: ReviewerOptions = {}) {
 
 /**
  * Reviews one diff and returns the verdict with its usage and cost. Throws for
- * an empty or whitespace-only diff, or one longer than `maxDiffChars` (default
- * `DEFAULT_MAX_DIFF_CHARS`), before any model call, and `ReviewRunError`
+ * an empty or whitespace-only diff, one longer than `maxDiffChars` (default
+ * `DEFAULT_MAX_DIFF_CHARS`) or an invalid `maxDiffChars`, before any model call, and `ReviewRunError`
  * when the model produced no valid `ReviewResult`; other SDK errors (API and
  * network failures) propagate unchanged.
  */
@@ -107,6 +108,10 @@ export async function reviewDiff(
 ): Promise<ReviewRun> {
   if (diff.trim() === "") throw new Error("reviewDiff: the diff is empty");
   const { abortSignal, maxDiffChars = DEFAULT_MAX_DIFF_CHARS, ...reviewerOptions } = options;
+  // `diff.length > NaN` is always false, so an unchecked NaN would disable the cap.
+  if (maxDiffChars !== Infinity && (!Number.isInteger(maxDiffChars) || maxDiffChars < 1)) {
+    throw new Error(`reviewDiff: maxDiffChars must be an integer >= 1 or Infinity, got ${maxDiffChars}`);
+  }
   if (diff.length > maxDiffChars) {
     throw new Error(`reviewDiff: the diff is ${diff.length} characters, over the ${maxDiffChars} limit (maxDiffChars)`);
   }
@@ -140,14 +145,21 @@ export async function reviewDiff(
 }
 
 /**
- * Applies the config defaults to `options`. An empty or whitespace-only model id
- * counts as unset; `maxSteps` must be an integer >= 1, since `isStepCount`
- * compares exactly and any other value would never stop the loop.
+ * Applies the config defaults to `options`; `null` from an untyped caller counts
+ * as unset, like an empty or whitespace-only model id. `maxSteps` must be an
+ * integer >= 1, since `isStepCount` compares exactly and any other value would
+ * never stop the loop once the agent has tools (with `tools: {}` a review is a
+ * single model call). `maxOutputTokens` must be an integer >= 1 so the ceiling
+ * cannot be dropped.
  */
 function resolveOptions(options: ReviewerOptions): Required<ReviewerOptions> {
-  const { maxSteps = DEFAULT_MAX_STEPS, maxOutputTokens = DEFAULT_MAX_OUTPUT_TOKENS } = options;
+  const maxSteps = options.maxSteps ?? DEFAULT_MAX_STEPS;
+  const maxOutputTokens = options.maxOutputTokens ?? DEFAULT_MAX_OUTPUT_TOKENS;
   if (!Number.isInteger(maxSteps) || maxSteps < 1) {
     throw new Error(`createReviewer: maxSteps must be an integer >= 1, got ${maxSteps}`);
+  }
+  if (!Number.isInteger(maxOutputTokens) || maxOutputTokens < 1) {
+    throw new Error(`createReviewer: maxOutputTokens must be an integer >= 1, got ${maxOutputTokens}`);
   }
   const model = options.model?.trim();
   // An empty id counts as unset, so a destructuring default or `??` is not enough.
@@ -169,10 +181,13 @@ function sumStepCosts(steps: readonly { providerMetadata: unknown }[]): number |
   return total;
 }
 
-/** Sums token usage over the steps, field by field; a field stays `undefined` when no step reports it. */
+/**
+ * Sums token usage over the steps, field by field; a field stays `undefined` when
+ * no step reports it (`null` counts as unreported, as in the SDK's own sum).
+ */
 function sumStepUsage(steps: readonly ReviewStep[]): LanguageModelUsage {
   const add = (a: number | undefined, b: number | undefined) =>
-    a === undefined && b === undefined ? undefined : (a ?? 0) + (b ?? 0);
+    a == null && b == null ? undefined : (a ?? 0) + (b ?? 0);
   const total: LanguageModelUsage = {
     inputTokens: undefined,
     inputTokenDetails: { noCacheTokens: undefined, cacheReadTokens: undefined, cacheWriteTokens: undefined },

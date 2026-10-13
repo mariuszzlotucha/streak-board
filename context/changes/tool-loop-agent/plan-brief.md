@@ -12,7 +12,7 @@ Turn `packages/code-reviewer` into a well-organized code-review agent on the AI 
 
 ## Desired End State
 
-`schemas/review-result.ts`, `prompts/reviewer.ts`, `config.ts`, `agent.ts` (`createReviewer`, `reviewDiff`) and a side-effect-free `index.ts` barrel. `git diff | npm run review` prints the same `ReviewResult` JSON as today, plus a usage/cost line on stderr; `REVIEWER_MODEL` switches the model; the demos run on the shared modules.
+`schemas/review-result.ts`, `prompts/reviewer.ts`, `config.ts`, `agent.ts` (`createReviewer`, `reviewDiff`) and a side-effect-free `index.ts` barrel. `git diff | npx tsx packages/code-reviewer/review.ts` prints the same `ReviewResult` JSON as today, plus a usage/cost line on stderr; `REVIEWER_MODEL` switches the model; the demos run on the shared modules.
 
 ## Key Decisions Made
 
@@ -65,6 +65,6 @@ Turn `packages/code-reviewer` into a well-organized code-review agent on the AI 
 
 ## Success Criteria (Summary)
 
-- `npm run review` output is unchanged on stdout and gains a usage/cost line on stderr.
+- The CLI's output (`npx tsx packages/code-reviewer/review.ts`) is unchanged on stdout and gains a usage/cost line on stderr.
 - `import { reviewDiff } from "packages/code-reviewer"` works with no side effects.
 - `tsc` and ESLint are clean for the package; no hard-coded model id outside `config.ts`.

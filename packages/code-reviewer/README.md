@@ -27,7 +27,7 @@ git diff --staged | npx tsx packages/code-reviewer/review.ts  # staged changes
 git diff HEAD~1 | npx tsx packages/code-reviewer/review.ts    # the last commit
 ```
 
-Environment (loaded from `.env` in the current directory by `dotenv`, or taken from the shell):
+Environment (loaded from `.env` in the current directory with Node's `process.loadEnvFile`, or taken from the shell; a variable set in the shell wins):
 
 - `OPENROUTER_API_KEY` (required): the OpenRouter API key, read by `@openrouter/ai-sdk-provider`.
 - `REVIEWER_MODEL` (optional): an OpenRouter model id. Empty or unset means `DEFAULT_REVIEWER_MODEL` (`z-ai/glm-5.1`).
@@ -58,7 +58,7 @@ try {
 }
 ```
 
-The library does not read `.env`: `OPENROUTER_API_KEY` must already be in `process.env` (the caller loads `dotenv` if it wants to), and `REVIEWER_MODEL` is used only when the caller passes `resolveReviewerModel()` as `model`. Omitted options fall back to the `config.ts` defaults, never to the environment.
+The library does not read `.env`: `OPENROUTER_API_KEY` must already be in `process.env` (the caller loads `.env` if it wants to), and `REVIEWER_MODEL` is used only when the caller passes `resolveReviewerModel()` as `model`. Omitted options fall back to the `config.ts` defaults, never to the environment.
 
 `reviewDiff(diff, options)` takes the `ReviewerOptions` (`model`, `maxSteps`, `maxOutputTokens`) plus `abortSignal` and `maxDiffChars`, and resolves to a `ReviewRun`:
 
@@ -68,13 +68,13 @@ The library does not read `.env`: `OPENROUTER_API_KEY` must already be in `proce
 | `usage`        | Token usage (`LanguageModelUsage`) summed over every step of the run           |
 | `costUsd`      | OpenRouter cost in USD summed over the steps; `null` when no step reported one |
 | `model`        | The OpenRouter model id the run used                                           |
-| `finishReason` | Finish reason of the final step                                                |
+| `finishReason` | Finish reason of the final step, normally `stop`                               |
 
 `reviewDiff` throws:
 
 - an `Error` for an empty or whitespace-only diff, or one longer than `maxDiffChars`, before any model call;
-- an `Error` when `maxSteps` is not an integer >= 1;
-- `ReviewRunError` when the model answered but produced no valid `ReviewResult` (unparseable, schema-invalid or missing output). It carries `usage`, `costUsd`, `model` and `finishReason` (the last step that ended, or `undefined` when none did), with the SDK error as `cause`. A run cut off by the token ceiling surfaces this way, with `finishReason: "length"`, never as a returned `ReviewRun`;
+- an `Error` when `maxSteps` or `maxOutputTokens` is not an integer >= 1, or `maxDiffChars` is neither an integer >= 1 nor `Infinity`;
+- `ReviewRunError` when the model answered but produced no valid `ReviewResult` (unparseable, schema-invalid or missing output). It carries `usage`, `costUsd`, `model` and `finishReason` (the last step that ended, or `undefined` when none did), with the SDK error as `cause`. A run cut off by the token ceiling normally surfaces this way, with `finishReason: "length"`; a cut-off answer that still parses as a valid `ReviewResult` is returned, so check `finishReason` on a returned run;
 - API and network errors from the SDK, unchanged.
 
 `createReviewer(options)` returns the plain `ToolLoopAgent`, for callers that need `messages` instead of a single prompt (see `review-with-session.ts`). It does not sum the cost or wrap errors; `reviewDiff` does.
@@ -83,13 +83,13 @@ The library does not read `.env`: `OPENROUTER_API_KEY` must already be in `proce
 
 Every run is capped by the defaults in `config.ts`, each overridable per call:
 
-| Limit                       | Default   | Option            | Effect                                                                                                                                                                        |
-| --------------------------- | --------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DEFAULT_MAX_STEPS`         | `2`       | `maxSteps`        | At most this many model calls per review (`stopWhen: isStepCount(maxSteps)`)                                                                                                  |
-| `DEFAULT_MAX_OUTPUT_TOKENS` | `16384`   | `maxOutputTokens` | Ceiling on generated tokens per call (reasoning tokens may count towards it); an answer cut off at it makes `reviewDiff` throw `ReviewRunError` with `finishReason: "length"` |
-| `DEFAULT_MAX_DIFF_CHARS`    | `200_000` | `maxDiffChars`    | `reviewDiff` throws before any model call for a longer diff (option of `reviewDiff` only)                                                                                     |
+| Limit                       | Default   | Option            | Effect                                                                                                                                                                                 |
+| --------------------------- | --------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DEFAULT_MAX_STEPS`         | `2`       | `maxSteps`        | Step cap for the agent loop (`stopWhen: isStepCount(maxSteps)`). With no tools a review is always one model call, so it only matters once tools are added                              |
+| `DEFAULT_MAX_OUTPUT_TOKENS` | `16384`   | `maxOutputTokens` | Ceiling on generated tokens per call (reasoning tokens may count towards it); an answer cut off at it normally makes `reviewDiff` throw `ReviewRunError` with `finishReason: "length"` |
+| `DEFAULT_MAX_DIFF_CHARS`    | `200_000` | `maxDiffChars`    | `reviewDiff` throws before any model call for a longer diff (option of `reviewDiff` only)                                                                                              |
 
-The cost of every run is logged: the CLI prints the usage line on stderr for each review, successful or failed with a `ReviewRunError`, and programmatic callers get `usage` and `costUsd` on the `ReviewRun` or the `ReviewRunError`. There is no hard USD limit; a cost gate belongs to the CI gate and the evals.
+The cost of every run is logged: the CLI prints the usage line on stderr for each review, successful or failed with a `ReviewRunError`, and programmatic callers get `usage` and `costUsd` on the `ReviewRun` or the `ReviewRunError`. The AI SDK also retries a failed call up to twice by default (`maxRetries: 2`, on rate limits and server errors), so one model call can mean up to three HTTP requests. There is no hard USD limit; a cost gate belongs to the CI gate and the evals.
 
 ## Data egress
 

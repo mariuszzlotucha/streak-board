@@ -1,9 +1,11 @@
-import "dotenv/config";
 import { ToolLoopAgent, isStepCount } from "ai";
 import { openrouter } from "@openrouter/ai-sdk-provider";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { resolveReviewerModel } from "./config";
+import { loadEnv } from "./utils";
+
+loadEnv();
 
 const skillPath = join(import.meta.dirname, "..", "anthropic", ".claude", "skills", "greeting", "SKILL.md");
 const skill = readFileSync(skillPath, "utf8");

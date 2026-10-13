@@ -3,11 +3,12 @@
  * `ReviewResult` JSON on stdout (so it stays pipeable) and one usage/cost line
  * on stderr; exits 1 on missing input or a failed review.
  */
-import "dotenv/config";
 import type { FinishReason } from "ai";
 import { reviewDiff, ReviewRunError, type ReviewRun } from "./agent";
 import { resolveReviewerModel } from "./config";
-import { readDiff } from "./utils";
+import { loadEnv, readDiff } from "./utils";
+
+loadEnv();
 
 /** The run fields the usage line reports; a failed run may lack a finish reason. */
 interface UsageLineRun extends Pick<ReviewRun, "model" | "usage" | "costUsd"> {
