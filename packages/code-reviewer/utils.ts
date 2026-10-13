@@ -1,3 +1,7 @@
+/**
+ * Reads the diff piped on stdin. Returns `undefined` and prints a usage error
+ * on stderr when stdin is a terminal or the piped input is empty.
+ */
 export async function readDiff(): Promise<string | undefined> {
   if (!process.stdin.isTTY) {
     const chunks: Buffer[] = [];
@@ -5,5 +9,5 @@ export async function readDiff(): Promise<string | undefined> {
     const piped = Buffer.concat(chunks).toString("utf8").trim();
     if (piped) return piped + "\n";
   }
-  console.error("error");
+  console.error("error: no diff on stdin (usage: git diff | npx tsx packages/code-reviewer/review.ts)");
 }

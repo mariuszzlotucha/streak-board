@@ -1,13 +1,16 @@
 import "dotenv/config";
-import { ToolLoopAgent, stepCountIs } from "ai";
+import { ToolLoopAgent, isStepCount } from "ai";
 import { openrouter } from "@openrouter/ai-sdk-provider";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { resolveReviewerModel } from "./config";
+
+const model = resolveReviewerModel();
 
 const agent = new ToolLoopAgent({
-  model: openrouter("z-ai/glm-5.1", { usage: { include: true } }),
+  model: openrouter(model, { usage: { include: true } }),
   instructions: "Jesteś zwięzły. Odpowiadaj jednym zdaniem.",
-  stopWhen: stepCountIs(1),
+  stopWhen: isStepCount(1),
 });
 
 const { text, usage, finalStep } = await agent.generate({
@@ -28,7 +31,7 @@ const report = {
     outputTokens: usage.outputTokens,
     totalTokens: usage.totalTokens,
   },
-  model: "z-ai/glm-5.1",
+  model,
 };
 
 const outPath = join(import.meta.dirname, "cost.json");

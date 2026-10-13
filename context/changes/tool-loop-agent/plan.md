@@ -253,14 +253,14 @@ Each review is capped at `DEFAULT_MAX_STEPS = 2` model calls and `DEFAULT_MAX_OU
 
 #### Automated
 
-- [ ] 2.1 Type checking passes with no errors under packages/
-- [ ] 2.2 Linting passes with 0 errors
-- [ ] 2.3 No hard-coded model id outside config
-- [ ] 2.4 Empty input fails fast with the new message
+- [x] 2.1 Type checking passes with no errors under packages/
+- [x] 2.2 Linting passes with 0 errors
+- [x] 2.3 No hard-coded model id outside config
+- [x] 2.4 Empty input fails fast with the new message
 
 #### Manual
 
-- [ ] 2.5 npm run review prints JSON on stdout and one usage/cost line on stderr, finishReason stop
-- [ ] 2.6 REVIEWER_MODEL override is used
-- [ ] 2.7 Demos behave as before; rules-inject fails with the same pre-existing ENOENT
-- [ ] 2.8 README matches the exported API
+- [x] 2.5 npm run review prints JSON on stdout and one usage/cost line on stderr, finishReason stop
+- [x] 2.6 REVIEWER_MODEL override is used
+- [x] 2.7 Demos behave as before; rules-inject fails with the same pre-existing ENOENT
+- [x] 2.8 README matches the exported API
