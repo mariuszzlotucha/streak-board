@@ -43,3 +43,6 @@ playwright-report/
 blob-report/
 playwright/.cache/
 .playwright-cli/
+
+# code-reviewer demo output
+packages/code-reviewer/cost.json

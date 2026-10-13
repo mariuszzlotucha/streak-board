@@ -15,7 +15,7 @@ const agent = new ToolLoopAgent({
 
 const { text, usage, finalStep } = await agent.generate({
   prompt: "Napisz jednozdaniowe powitanie dla zespołu programistów.",
-  onStepFinish: ({ stepNumber, usage, finishReason }) => {
+  onStepEnd: ({ stepNumber, usage, finishReason }) => {
     console.error(`krok ${stepNumber}: ${usage.inputTokens} in / ${usage.outputTokens} out (${finishReason})`);
   },
 });

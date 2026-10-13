@@ -1,11 +1,29 @@
+import { DEFAULT_MAX_DIFF_CHARS } from "./config";
+
 /**
- * Reads the diff piped on stdin. Returns `undefined` and prints a usage error
- * on stderr when stdin is a terminal or the piped input is empty.
+ * Upper bound on bytes read from stdin. A UTF-8 character takes at most four
+ * bytes, so this never rejects a diff that `reviewDiff` would accept, and it
+ * stops a huge pipe before it is buffered in full.
  */
-export async function readDiff(): Promise<string | undefined> {
+const MAX_STDIN_BYTES = DEFAULT_MAX_DIFF_CHARS * 4;
+
+/**
+ * Reads the diff piped on stdin. Returns `undefined` and prints an error on
+ * stderr when stdin is a terminal, the piped input is empty, or it is longer
+ * than `maxBytes`.
+ */
+export async function readDiff(maxBytes = MAX_STDIN_BYTES): Promise<string | undefined> {
   if (!process.stdin.isTTY) {
     const chunks: Buffer[] = [];
-    for await (const chunk of process.stdin) chunks.push(chunk as Buffer);
+    let bytes = 0;
+    for await (const chunk of process.stdin) {
+      bytes += (chunk as Buffer).length;
+      if (bytes > maxBytes) {
+        console.error(`error: diff too large (over ${maxBytes} bytes on stdin)`);
+        return undefined;
+      }
+      chunks.push(chunk as Buffer);
+    }
     const piped = Buffer.concat(chunks).toString("utf8").trim();
     if (piped) return piped + "\n";
   }

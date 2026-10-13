@@ -41,6 +41,7 @@ Exit codes:
 
 - `0`: the review succeeded.
 - `1`: no diff on stdin (stdin is a terminal or the input is empty or whitespace only); the CLI prints `error: no diff on stdin (usage: git diff | npx tsx packages/code-reviewer/review.ts)` and makes no model call.
+- `1`: more than `4 × DEFAULT_MAX_DIFF_CHARS` bytes on stdin; the CLI stops reading, prints `error: diff too large (over <n> bytes on stdin)` and makes no model call. A shorter diff over `DEFAULT_MAX_DIFF_CHARS` characters is still rejected by `reviewDiff` (next item).
 - `1`: the review failed. For a `ReviewRunError` the usage line is printed first (the calls were billed), then `error: <message>`; any other error (API or network failure, a diff over the size limit) prints only `error: <message>`.
 
 ## Programmatic usage
@@ -82,11 +83,11 @@ The library does not read `.env`: `OPENROUTER_API_KEY` must already be in `proce
 
 Every run is capped by the defaults in `config.ts`, each overridable per call:
 
-| Limit                       | Default   | Option            | Effect                                                                                                                                                           |
-| --------------------------- | --------- | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `DEFAULT_MAX_STEPS`         | `2`       | `maxSteps`        | At most this many model calls per review (`stopWhen: isStepCount(maxSteps)`)                                                                                     |
-| `DEFAULT_MAX_OUTPUT_TOKENS` | `16384`   | `maxOutputTokens` | Ceiling on generated tokens per call, reasoning tokens included; an answer cut off at it makes `reviewDiff` throw `ReviewRunError` with `finishReason: "length"` |
-| `DEFAULT_MAX_DIFF_CHARS`    | `200_000` | `maxDiffChars`    | `reviewDiff` throws before any model call for a longer diff (option of `reviewDiff` only)                                                                        |
+| Limit                       | Default   | Option            | Effect                                                                                                                                                                        |
+| --------------------------- | --------- | ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DEFAULT_MAX_STEPS`         | `2`       | `maxSteps`        | At most this many model calls per review (`stopWhen: isStepCount(maxSteps)`)                                                                                                  |
+| `DEFAULT_MAX_OUTPUT_TOKENS` | `16384`   | `maxOutputTokens` | Ceiling on generated tokens per call (reasoning tokens may count towards it); an answer cut off at it makes `reviewDiff` throw `ReviewRunError` with `finishReason: "length"` |
+| `DEFAULT_MAX_DIFF_CHARS`    | `200_000` | `maxDiffChars`    | `reviewDiff` throws before any model call for a longer diff (option of `reviewDiff` only)                                                                                     |
 
 The cost of every run is logged: the CLI prints the usage line on stderr for each review, successful or failed with a `ReviewRunError`, and programmatic callers get `usage` and `costUsd` on the `ReviewRun` or the `ReviewRunError`. There is no hard USD limit; a cost gate belongs to the CI gate and the evals.
 

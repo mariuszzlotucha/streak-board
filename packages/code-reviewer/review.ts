@@ -27,16 +27,21 @@ function formatUsageLine({ model, finishReason, usage, costUsd }: UsageLineRun):
   ].join(" ");
 }
 
-const diff = await readDiff();
-if (diff === undefined) process.exit(1);
-
-try {
-  const run = await reviewDiff(diff, { model: resolveReviewerModel() });
-  console.log(JSON.stringify(run.output, null, 2));
-  console.error(formatUsageLine(run));
-} catch (error) {
-  // A run without a valid result was still billed, so report what it consumed first.
-  if (error instanceof ReviewRunError) console.error(formatUsageLine(error));
-  console.error(`error: ${error instanceof Error ? error.message : String(error)}`);
-  process.exit(1);
+/** Runs one review and returns the exit code; `process.exitCode` lets stderr flush before exit. */
+async function main(): Promise<number> {
+  const diff = await readDiff();
+  if (diff === undefined) return 1;
+  try {
+    const run = await reviewDiff(diff, { model: resolveReviewerModel() });
+    console.log(JSON.stringify(run.output, null, 2));
+    console.error(formatUsageLine(run));
+    return 0;
+  } catch (error) {
+    // A run without a valid result was still billed, so report what it consumed first.
+    if (error instanceof ReviewRunError) console.error(formatUsageLine(error));
+    console.error(`error: ${error instanceof Error ? error.message : String(error)}`);
+    return 1;
+  }
 }
+
+process.exitCode = await main();

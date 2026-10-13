@@ -231,6 +231,11 @@ Each review is capped at `DEFAULT_MAX_STEPS = 2` model calls and `DEFAULT_MAX_OU
 - AI SDK agent docs: `node_modules/ai/docs/03-agents/02-building-agents.mdx`, `node_modules/ai/docs/03-agents/04-loop-control.mdx`
 - Rules: `CLAUDE.md` (M5L2 hard rules)
 
+## Addenda
+
+- **2026-10-14 — Phase 2: root `review` npm script removed (user decision).** The script was `git diff | tsx packages/code-reviewer/review.ts`: it ran its own `git diff` and ignored piped input, so `git diff HEAD~1 | npm run review` reviewed the working tree instead. The CLI is now invoked directly as `git diff | npx tsx packages/code-reviewer/review.ts`, `readDiff()` prints `error: no diff on stdin (usage: git diff | npx tsx packages/code-reviewer/review.ts)`, and every `npm run review` in this plan (Migration Notes, the Phase 2 contract, the manual checks and the Progress titles 1.5, 2.5) reads as that command. Manual checks 2.5–2.6 were run that way.
+- **2026-10-14 — Phase 2 review triage (reviews/impl-review-phase-2.md).** `readDiff()` stops after `4 × DEFAULT_MAX_DIFF_CHARS` bytes on stdin (`error: diff too large`); the CLI sets `process.exitCode` instead of calling `process.exit`; ESLint makes `no-console` an error in the package's library modules and turns it off for the CLI and demos; `packages/code-reviewer/cost.json` is git-ignored.
+
 ## Progress
 
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles. See `references/progress-format.md`.
