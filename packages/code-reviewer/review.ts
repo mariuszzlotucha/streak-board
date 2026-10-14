@@ -14,7 +14,7 @@
  * | `3`  | Diff too large: the stdin byte cap or `DiffTooLargeError`                                                                |
  */
 import type { FinishReason } from "ai";
-import { DiffTooLargeError, reviewDiff, ReviewRunError, type ReviewRun } from "./agent";
+import { DiffTooLargeError, reviewDiff, ReviewRunError, verdictFromScores, type ReviewRun } from "./agent";
 import { DEFAULT_REVIEW_TIMEOUT_MS, resolveReviewerModel } from "./config";
 import { loadEnv, readDiff } from "./utils";
 
@@ -56,9 +56,11 @@ async function main(): Promise<number> {
     });
     console.log(JSON.stringify(run.output, null, 2));
     console.error(formatUsageLine(run));
-    if (run.modelVerdict !== run.output.verdict) {
+    // The model and the written rule can disagree either way; the stricter verdict binds (see `reviewDiff`).
+    const ruleVerdict = verdictFromScores(run.output.criteria);
+    if (run.modelVerdict !== ruleVerdict) {
       console.error(
-        `note: verdict overridden to ${run.output.verdict} by the score rule (the model said ${run.modelVerdict})`,
+        `note: the model said ${run.modelVerdict} and the score rule says ${ruleVerdict}; the stricter verdict, ${run.output.verdict}, binds`,
       );
     }
     return 0;

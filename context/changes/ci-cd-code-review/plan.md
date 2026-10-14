@@ -4,6 +4,15 @@
 
 Run `packages/code-reviewer` as a GitHub Actions review on every pull request to `master`. The job posts one summary comment, sets `ai-cr:passed` / `ai-cr:failed`, fails its check on `fail`, re-runs on the `ai-cr:review` label, and becomes a required check after a live trial. The reviewer first gets a CI-ready contract: PR title and capped body as delimited untrusted input, an explicit pass/fail rule, distinct exit codes and a default timeout. The on-demand Claude review (`claude-review.yml`) is kept and hardened. Requirements: `context/changes/ci-cd-code-review/requirements.md`; evidence: `research.md`.
 
+**Deviations.** The shipped code differs from this plan where the reviews and the live trial changed it, each recorded with its reason in `follow-ups/review-fixes.md` and the reports in `reviews/`:
+
+- **#10 steps 1–4:** the base commit is checked out at the workspace root, and the PR head is fetched by SHA as git objects only, with no `.ai-reviewer-base` (Phase 2 review F1).
+- **#10 comment step:** `ai-cr:review` is removed in a first step, the gate runs on `!cancelled()` (Phase 2 F3), and the comment and labels are written independently (full review F4).
+- **#11 `claude-review`:**
+  - It authenticates with `CLAUDE_CODE_OAUTH_TOKEN` instead of `ANTHROPIC_API_KEY` (live trial).
+  - It loads no repository Claude settings and scrubs the token from its commands (full review F1).
+- **#9 and #5:** the step summary shows the six scores, and the CLI notes a disagreement between the model's verdict and the rule in either direction (full review F2).
+
 ## Current State Analysis
 
 - The reviewer matches the requirements' six criteria and the `verdict` / `summary` contract one to one (`research.md` §1). It takes only the diff (`prompts/reviewer.ts:29-31`), appends it undelimited (`:30`) and has no pass/fail rule (`:26`).
@@ -403,11 +412,11 @@ One model call per review; the median diff over 114 past merges is 24.9k charact
 
 #### Manual
 
-- [x] 2.5 Repository secrets set, OpenRouter key confirmed dedicated with a credit limit, and the four labels exist — a3b34fd
-- [x] 2.6 Phase PR: ai-review reviews the change, posts the marked comment and the matching label, check follows the verdict
-- [x] 2.7 Phase PR: a second push edits the same comment
-- [x] 2.8 Phase PR: adding ai-cr:review re-runs the review and the label is removed
-- [x] 2.9 Phase PR: an unrelated label publishes a re-evaluated ai-review with the previous conclusion, also while a review runs
-- [x] 2.10 Phase PR: adding claude-review runs the Claude review without changing the ai-review result
-- [ ] 2.11 Ruleset 24254172 lists integration and ai-review as required checks and the phase PR is mergeable
+- [x] 2.5 Repository secrets set, OpenRouter key confirmed dedicated with a credit limit, and the four labels exist — a3b34fd (credit limit confirmed by the owner on 2026-10-14, full impl review F3)
+- [x] 2.6 Phase PR: ai-review reviews the change, posts the marked comment and the matching label, check follows the verdict — d6984c3
+- [x] 2.7 Phase PR: a second push edits the same comment — d6984c3
+- [x] 2.8 Phase PR: adding ai-cr:review re-runs the review and the label is removed — d6984c3
+- [x] 2.9 Phase PR: an unrelated label publishes a re-evaluated ai-review with the previous conclusion, also while a review runs — d6984c3
+- [x] 2.10 Phase PR: adding claude-review runs the Claude review without changing the ai-review result — d6984c3
+- [x] 2.11 Ruleset 24254172 lists integration and ai-review as required checks and the phase PR is mergeable — b8311c7
 - [ ] 2.12 Archive PR (docs only): ai-review reports success via the skipped outcome and the PR is mergeable
