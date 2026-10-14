@@ -153,6 +153,7 @@ jobs:
           REVIEW_FILE: ${{ steps.review.outputs.review-file }}
         run: |
           # A run for an older head (a re-run from the UI) must not overwrite the result of the current one.
+          echo "Reading the PR head"
           current_sha=$(gh api "repos/$REPO/pulls/$PR" --jq .head.sha)
           if [ "$current_sha" != "$HEAD_SHA" ]; then
             echo "::notice::The PR head moved to ${current_sha:0:7}; the comment and labels are left to its review."
@@ -160,8 +161,9 @@ jobs:
           fi
 
           outcome=${OUTCOME:-error}
-          body_file="$RUNNER_TEMP/ai-review-comment.md"
-          OUTCOME="$outcome" node - "$body_file" <<'EOF'
+          # The comment goes to the API as a JSON payload file (--input), so its text never passes through a flag.
+          payload_file="$RUNNER_TEMP/ai-review-comment.json"
+          OUTCOME="$outcome" node - "$payload_file" <<'EOF'
           const fs = require("fs");
           const { OUTCOME: outcome, VERDICT: verdict, REVIEW_FILE: reviewFile, HEAD_SHA: sha, RUN_URL: runUrl } = process.env;
           const lines = ["<!-- ai-cr:summary -->"];
@@ -195,22 +197,26 @@ jobs:
             );
           }
           lines.push("", "---", `Commit \`${sha.slice(0, 7)}\` · [run log](${runUrl})`);
-          fs.writeFileSync(process.argv[2], lines.join("\n") + "\n");
+          fs.writeFileSync(process.argv[2], JSON.stringify({ body: lines.join("\n") + "\n" }));
           EOF
 
           # Sticky comment: edit the marked comment of github-actions[bot] (claude-review comments as the same bot,
           # so the marker, not the author, identifies it), or create it.
+          echo "Looking up the summary comment"
           comment_ids=$(gh api --paginate "repos/$REPO/issues/$PR/comments" \
             --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("<!-- ai-cr:summary -->"))) | .id')
           comment_id=${comment_ids%%$'\n'*}
           if [ -n "$comment_id" ]; then
-            gh api --method PATCH "repos/$REPO/issues/comments/$comment_id" -F "body=@$body_file" --silent
+            echo "Editing comment $comment_id"
+            gh api --method PATCH "repos/$REPO/issues/comments/$comment_id" --input "$payload_file" --jq .html_url
           else
-            gh api --method POST "repos/$REPO/issues/$PR/comments" -F "body=@$body_file" --silent
+            echo "Creating the summary comment"
+            gh api --method POST "repos/$REPO/issues/$PR/comments" --input "$payload_file" --jq .html_url
           fi
 
           add_label() {
-            gh api --method POST "repos/$REPO/issues/$PR/labels" -f "labels[]=$1" --silent
+            echo "Adding label $1"
+            printf '{"labels":["%s"]}' "$1" | gh api --method POST "repos/$REPO/issues/$PR/labels" --input - --jq '[.[].name] | join(", ")'
           }
           # A label that is not on the PR answers 404, which is fine.
           remove_label() {
