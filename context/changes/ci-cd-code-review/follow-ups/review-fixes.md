@@ -58,6 +58,11 @@
 - **Comment step (F4).** The summary is capped at 60,000 characters (`[truncated]`), and the comment and the labels are written independently. The step fails at the end if either part failed.
 - **Production secrets (F5).** The unused `ANTHROPIC_API_KEY` and `OPENROUTER_API_KEY` copies in the `production` environment were deleted on the owner's instruction.
 
-### Still to verify
+### Live check on #117
 
-- On the review-fix PR, a `claude-review` run must show `settingSources: ["user"]` and the scrub in its log, and must still post its summary and inline comments.
+- `claude-review` at `3f904ad` (run 38602394060) succeeded.
+  - Its log shows `settingSources: ["user"]` and `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB: 1`, and it recorded no permission denials.
+  - It posted its summary comment through `gh pr comment`: the scrub keeps `GH_TOKEN`, the job token, and removes the Anthropic token.
+  - The review found no line to comment on, so the inline path was not exercised.
+- The new comment step ran live on #117: the first review created the sticky comment, and the push of `3f904ad` edited it in place, with the labels kept.
+- The F2 scores and note in the step summary take effect from the first PR after the merge, since the action runs from the base commit.
