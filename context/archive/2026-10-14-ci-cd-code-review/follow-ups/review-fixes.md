@@ -66,3 +66,7 @@
   - The review found no line to comment on, so the inline path was not exercised.
 - The new comment step ran live on #117: the first review created the sticky comment, and the push of `3f904ad` edited it in place, with the labels kept.
 - The F2 scores and note in the step summary take effect from the first PR after the merge, since the action runs from the base commit.
+
+### Deferred
+
+- **CODEOWNERS for `.github/`.** A PR that edits `review.yml` or the action can change the gate (`reviews/impl-review-phase-2.md` F2, the README's CI section). For a team repository, a CODEOWNERS entry on `.github/` with required review would close that gap. Not done: the repository has one owner, who reads such PRs.
