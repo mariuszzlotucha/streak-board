@@ -7,6 +7,9 @@
 # read it. This workflow file itself comes from the PR (`pull_request` runs the merge commit's version), so a PR
 # that edits .github/ can change the gate: the owner reads such a PR, and its green check is no evidence.
 # Fork PRs get no secrets and a read-only token, so an unmodified run ends in `error` with no comment or labels.
+# The reviewer may read the repository at the base and head commits (read-only git object reads: the rules from
+# base, the changed files and the change's plan from head); it never writes, and only this workflow comments and
+# labels.
 # The action reports an outcome:
 #   reviewed  — label ai-cr:passed / ai-cr:failed; the check follows the verdict
 #   skipped   — no code diff after the exclusions; no label; the check passes
@@ -136,6 +139,10 @@ jobs:
           diff-file: ${{ runner.temp }}/pr.diff
           pr-title: ${{ github.event.pull_request.title }}
           pr-body: ${{ github.event.pull_request.body }}
+          # Both commits are in this checkout: the base is checked out, the head fetched as objects above. The
+          # reviewer reads the rules at their merge base, the "before" of the diff.
+          base-sha: ${{ github.event.pull_request.base.sha }}
+          head-sha: ${{ github.event.pull_request.head.sha }}
 
       # Runs after a failed step too (an empty outcome is reported as error), but not after a cancellation.
       # Labels added or removed with GITHUB_TOKEN start no workflow run, so these edits cannot loop. A failure

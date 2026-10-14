@@ -6,11 +6,27 @@ import {
   NoOutputGeneratedError,
   type FinishReason,
   type LanguageModelUsage,
+  type ToolSet,
 } from "ai";
 import { openrouter } from "@openrouter/ai-sdk-provider";
-import { DEFAULT_MAX_DIFF_CHARS, DEFAULT_MAX_OUTPUT_TOKENS, DEFAULT_MAX_STEPS, DEFAULT_REVIEWER_MODEL } from "./config";
-import { REVIEWER_INSTRUCTIONS, buildReviewPrompt, type PullRequestContext } from "./prompts/reviewer";
+import {
+  DEFAULT_MAX_DIFF_CHARS,
+  DEFAULT_MAX_OUTPUT_TOKENS,
+  DEFAULT_MAX_STEPS,
+  DEFAULT_REVIEWER_MODEL,
+  EVIDENCE_PHASE_MS,
+  MAX_DIFF_CHARS_FOR_TOOLS,
+  MAX_TOOL_BUDGET_CHARS,
+  MAX_TOOL_CALLS,
+} from "./config";
+import {
+  REVIEWER_INSTRUCTIONS,
+  buildReviewPrompt,
+  repoToolsInstructions,
+  type PullRequestContext,
+} from "./prompts/reviewer";
 import { ReviewResult, type ReviewCriteria } from "./schemas/review-result";
+import { createRepoTools, listChangedFiles, type RepoContext, type ToolCallRecord } from "./tools";
 
 /**
  * Settings for one reviewer configuration. Omitted fields fall back to the
@@ -37,6 +53,10 @@ export interface ReviewRun {
   costUsd: number | null;
   /** The OpenRouter model id the run used. */
   model: string;
+  /** Every repo-tool call of the run, in order; empty without `repo`. */
+  toolCalls: ToolCallRecord[];
+  /** `true` when `repo` was given but the diff was over `maxDiffCharsForTools`, so the review ran without the tools. */
+  toolsSkipped: boolean;
   /**
    * Finish reason of the final step, normally `"stop"`. An answer cut off by the
    * token ceiling is normally invalid JSON and throws `ReviewRunError` with
@@ -49,20 +69,22 @@ export interface ReviewRun {
 /**
  * Thrown by `reviewDiff` when the model answered but produced no valid
  * `ReviewResult` (unparseable, schema-invalid or missing output, e.g. cut off
- * by the token ceiling). It carries what the run consumed, since those calls
- * were billed; the SDK error stays as `cause`. API and network errors are not
- * wrapped.
+ * by the token ceiling), or when any error (an API failure, the abort signal)
+ * ends a run after at least one step ended or one repo tool ran. It carries
+ * what the run consumed, since those calls were billed; the original error
+ * stays as `cause`. An error before any step ended is not wrapped.
  */
 export class ReviewRunError extends Error {
   readonly usage: LanguageModelUsage;
   readonly costUsd: number | null;
   readonly model: string;
+  readonly toolCalls: ToolCallRecord[];
   /** Finish reason of the last step that ended; `undefined` when none did. */
   readonly finishReason: FinishReason | undefined;
 
   constructor(
     message: string,
-    run: Omit<ReviewRun, "output" | "modelVerdict" | "finishReason"> & { finishReason?: FinishReason },
+    run: Omit<ReviewRun, "output" | "modelVerdict" | "finishReason" | "toolsSkipped"> & { finishReason?: FinishReason },
     options?: ErrorOptions,
   ) {
     super(message, options);
@@ -70,6 +92,7 @@ export class ReviewRunError extends Error {
     this.usage = run.usage;
     this.costUsd = run.costUsd;
     this.model = run.model;
+    this.toolCalls = run.toolCalls;
     this.finishReason = run.finishReason;
   }
 }
@@ -111,31 +134,81 @@ interface ReviewStep {
 }
 
 /**
- * Builds the structured-output reviewer. Returns the plain `ToolLoopAgent`, so
- * callers can pass `messages` (e.g. a multi-turn session) instead of a prompt.
+ * Builds the structured-output reviewer without repo tools: one model call per
+ * `generate`. Returns the plain `ToolLoopAgent`, so callers can pass
+ * `messages` (e.g. a multi-turn session) instead of a prompt. The repo tools
+ * are only on `reviewDiff`, which makes a fresh tool budget for every review.
  */
 export function createReviewer(options: ReviewerOptions = {}) {
-  const { model, maxSteps, maxOutputTokens } = resolveOptions(options);
+  return buildAgent(resolveOptions(options));
+}
+
+/** The user turn that ends the evidence phase and asks for the structured review. */
+const ANSWER_NOW =
+  "The evidence phase is over and the tools are gone. Return the review now as the structured object the schema " +
+  "defines, using what the diff and the tool results show.";
+
+/**
+ * The structured-output reviewer: no tools, one step, `instructions` by
+ * default `REVIEWER_INSTRUCTIONS`. In `reviewDiff` with repo tools it is the
+ * answer phase, given the instructions and messages of the evidence phase.
+ */
+function buildAgent({ model, maxOutputTokens }: ResolvedOptions, instructions = REVIEWER_INSTRUCTIONS) {
   return new ToolLoopAgent({
     // `usage.include` makes OpenRouter report the per-step cost in providerMetadata.
     model: openrouter(model, { usage: { include: true } }),
-    instructions: REVIEWER_INSTRUCTIONS,
+    instructions,
     tools: {},
     output: Output.object({ schema: ReviewResult }),
-    stopWhen: isStepCount(maxSteps),
+    stopWhen: isStepCount(1),
+    maxOutputTokens,
+  });
+}
+
+/**
+ * The evidence phase of a review with repo tools: up to `steps` model calls
+ * with `tools` and no structured output. The schema stays out of these calls
+ * on purpose: with \`response_format: json_schema\` in the request, GLM-5.1 on
+ * OpenRouter answered with the JSON at once and never called a tool (measured
+ * on 8 PRs, 2026-10-14). The phase ends when the model stops calling tools
+ * (its last text holds its notes), at the step cap, or after a step that ends
+ * past `deadline` (epoch ms).
+ */
+function buildExplorer(
+  { model, maxOutputTokens }: ResolvedOptions,
+  instructions: string,
+  tools: ToolSet,
+  steps: number,
+  deadline: number,
+) {
+  return new ToolLoopAgent({
+    model: openrouter(model, { usage: { include: true } }),
+    instructions,
+    tools,
+    stopWhen: [isStepCount(steps), () => Date.now() >= deadline],
     maxOutputTokens,
   });
 }
 
 /**
  * Reviews one diff, with the PR's title and body as optional context
- * (`pullRequest`), and returns the verdict with its usage and cost. Before any
+ * (`pullRequest`), and returns the verdict with its usage and cost. With
+ * `repo` (see `resolveRepo`) the reviewer also gets the read-only `readFile`
+ * and `searchCode` tools, a fresh budget for them, their instructions and the
+ * PR's changed paths (`listChangedFiles`, unless `pullRequest.changedFiles` is
+ * given); without it a review is one model call on the diff. Before any
  * model call it throws an `Error` for an empty or whitespace-only diff or an
  * invalid `maxDiffChars`, and `DiffTooLargeError` for a diff longer than
- * `maxDiffChars` (default `DEFAULT_MAX_DIFF_CHARS`). It throws `ReviewRunError`
+ * `maxDiffChars` (default `DEFAULT_MAX_DIFF_CHARS`). A diff longer than
+ * `maxDiffCharsForTools` (default `MAX_DIFF_CHARS_FOR_TOOLS`) is reviewed
+ * without the repo tools even with `repo` (`toolsSkipped`). With repo tools and
+ * `maxSteps` above 1 a review has two phases: up to `maxSteps - 1` calls that
+ * may use the tools, then one call without tools that returns the
+ * `ReviewResult`, so a model still exploring at the cap still answers. It throws `ReviewRunError`
  * when the model produced no valid `ReviewResult`, including a score that is not
- * an integer from 1 to 10; other SDK errors (API and network failures, an
- * aborted signal) propagate unchanged. The returned `output.verdict` is `"fail"`
+ * an integer from 1 to 10, and for any error after a billed step (see
+ * `ReviewRunError`); an SDK error before that (API and network failures, an
+ * aborted signal) propagates unchanged. The returned `output.verdict` is `"fail"`
  * when the model or `verdictFromScores` says so; `modelVerdict` keeps the
  * model's own.
  */
@@ -145,10 +218,19 @@ export async function reviewDiff(
     abortSignal?: AbortSignal;
     maxDiffChars?: number;
     pullRequest?: PullRequestContext;
+    repo?: RepoContext;
+    maxDiffCharsForTools?: number;
   } = {},
 ): Promise<ReviewRun> {
   if (diff.trim() === "") throw new Error("reviewDiff: the diff is empty");
-  const { abortSignal, maxDiffChars = DEFAULT_MAX_DIFF_CHARS, pullRequest, ...reviewerOptions } = options;
+  const {
+    abortSignal,
+    maxDiffChars = DEFAULT_MAX_DIFF_CHARS,
+    maxDiffCharsForTools = MAX_DIFF_CHARS_FOR_TOOLS,
+    pullRequest,
+    repo,
+    ...reviewerOptions
+  } = options;
   // `diff.length > NaN` is always false, so an unchecked NaN would disable the cap.
   if (maxDiffChars !== Infinity && (!Number.isInteger(maxDiffChars) || maxDiffChars < 1)) {
     throw new Error(`reviewDiff: maxDiffChars must be an integer >= 1 or Infinity, got ${maxDiffChars}`);
@@ -157,19 +239,60 @@ export async function reviewDiff(
 
   const resolved = resolveOptions(reviewerOptions);
   const { model } = resolved;
+  // `diff.length > NaN` is false, so a NaN cap would keep the tools on for any diff.
+  if (!(maxDiffCharsForTools >= 0)) {
+    throw new Error(`reviewDiff: maxDiffCharsForTools must be a number >= 0, got ${maxDiffCharsForTools}`);
+  }
+  const toolsSkipped = repo !== undefined && diff.length > maxDiffCharsForTools;
+  const repoTools = repo && !toolsSkipped ? createRepoTools(repo) : undefined;
+  const toolCalls = repoTools?.calls ?? [];
+  // The changed paths come from git unless the caller passed its own list.
+  const context: PullRequestContext | undefined = repo
+    ? { ...pullRequest, changedFiles: pullRequest?.changedFiles ?? (await listChangedFiles(repo)) }
+    : pullRequest;
   // Steps are collected as they end, so a run whose final answer fails to parse
   // still reports what it consumed (the SDK throws before returning a result).
   const steps: ReviewStep[] = [];
+  const onStepEnd = (step: ReviewStep) => void steps.push(step);
+  const prompt = buildReviewPrompt(diff, context);
   try {
-    const result = await createReviewer(resolved).generate({
-      prompt: buildReviewPrompt(diff, pullRequest),
-      abortSignal,
-      onStepEnd: (step) => void steps.push(step),
-    });
+    let result;
+    // With repo tools and room for more than one call: gather evidence first, then answer with the schema.
+    if (repoTools && resolved.maxSteps > 1) {
+      const instructions = `${REVIEWER_INSTRUCTIONS}\n\n${repoToolsInstructions({
+        maxCalls: MAX_TOOL_CALLS,
+        maxChars: MAX_TOOL_BUDGET_CHARS,
+        maxSteps: resolved.maxSteps,
+      })}`;
+      const evidence = await buildExplorer(
+        resolved,
+        instructions,
+        repoTools.tools,
+        resolved.maxSteps - 1,
+        Date.now() + EVIDENCE_PHASE_MS,
+      ).generate({
+        prompt,
+        abortSignal,
+        onStepEnd,
+      });
+      result = await buildAgent(resolved, instructions).generate({
+        messages: [
+          { role: "user", content: prompt },
+          ...evidence.responseMessages,
+          { role: "user", content: ANSWER_NOW },
+        ],
+        abortSignal,
+        onStepEnd,
+      });
+    } else {
+      result = await buildAgent(resolved).generate({ prompt, abortSignal, onStepEnd });
+    }
     const run = {
-      usage: result.usage,
-      costUsd: sumStepCosts(result.steps),
+      usage: sumStepUsage(steps),
+      costUsd: sumStepCosts(steps),
       model,
+      toolCalls,
+      toolsSkipped,
       finishReason: result.finalStep.finishReason,
     };
     // The schema's bare `z.number()` cannot hold the 1-10 integer bounds (see `ReviewCriterion`).
@@ -183,24 +306,36 @@ export async function reviewDiff(
     const verdict = modelVerdict === "fail" || verdictFromScores(result.output.criteria) === "fail" ? "fail" : "pass";
     return { output: { ...result.output, verdict }, modelVerdict, ...run };
   } catch (error) {
-    if (!NoObjectGeneratedError.isInstance(error) && !NoOutputGeneratedError.isInstance(error)) throw error;
+    if (error instanceof ReviewRunError) throw error;
+    const noOutput = NoObjectGeneratedError.isInstance(error) || NoOutputGeneratedError.isInstance(error);
+    // Before any step ended nothing was billed or logged, so the SDK error stays as it is.
+    if (!noOutput && steps.length === 0 && toolCalls.length === 0) throw error;
     throw new ReviewRunError(
-      error.message,
-      { usage: sumStepUsage(steps), costUsd: sumStepCosts(steps), model, finishReason: steps.at(-1)?.finishReason },
+      error instanceof Error ? error.message : String(error),
+      {
+        usage: sumStepUsage(steps),
+        costUsd: sumStepCosts(steps),
+        model,
+        toolCalls,
+        finishReason: steps.at(-1)?.finishReason,
+      },
       { cause: error },
     );
   }
 }
 
+/** `ReviewerOptions` with every field set. */
+type ResolvedOptions = Required<ReviewerOptions>;
+
 /**
  * Applies the config defaults to `options`; `null` from an untyped caller counts
  * as unset, like an empty or whitespace-only model id. `maxSteps` must be an
  * integer >= 1, since `isStepCount` compares exactly and any other value would
- * never stop the loop once the agent has tools (with `tools: {}` a review is a
+ * never stop the loop once the agent has tools (without repo tools a review is a
  * single model call). `maxOutputTokens` must be an integer >= 1 so the ceiling
  * cannot be dropped.
  */
-function resolveOptions(options: ReviewerOptions): Required<ReviewerOptions> {
+function resolveOptions(options: ReviewerOptions): ResolvedOptions {
   const maxSteps = options.maxSteps ?? DEFAULT_MAX_STEPS;
   const maxOutputTokens = options.maxOutputTokens ?? DEFAULT_MAX_OUTPUT_TOKENS;
   if (!Number.isInteger(maxSteps) || maxSteps < 1) {

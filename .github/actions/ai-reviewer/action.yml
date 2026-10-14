@@ -4,6 +4,9 @@
 # and uses the action from there, so the PR cannot change the reviewer, its prompt or
 # this action; the PR's own review.yml still can change the gate (README, CI section).
 # The action reports an outcome; the gate decision stays in the workflow.
+# With base-sha and head-sha the reviewer also reads the repository at those two commits
+# (read-only git object reads, see packages/code-reviewer/tools.ts), so both must be present
+# in the checkout the action lives in; without them it reviews the diff alone.
 #
 # Outcomes:
 #   reviewed  — the CLI exited 0 with a valid pass/fail verdict (`verdict`, `review-file` set)
@@ -35,6 +38,14 @@ inputs:
     default: ""
   model:
     description: OpenRouter model id; empty means the reviewer's DEFAULT_REVIEWER_MODEL
+    required: false
+    default: ""
+  base-sha:
+    description: The PR's base commit (project rules are read from it); set together with head-sha, or leave both empty
+    required: false
+    default: ""
+  head-sha:
+    description: The PR's head commit (the changed files and the plan are read from it, as untrusted content)
     required: false
     default: ""
 
@@ -109,6 +120,8 @@ runs:
         REVIEWER_MODEL: ${{ inputs.model }}
         PR_TITLE: ${{ inputs.pr-title }}
         PR_BODY: ${{ inputs.pr-body }}
+        REVIEW_BASE_REF: ${{ inputs.base-sha }}
+        REVIEW_HEAD_REF: ${{ inputs.head-sha }}
       # --silent keeps npm's script banner out of stdout, which must be only the JSON.
       # The shell runs with -e, so the exit code is captured with set +e and mapped
       # to an outcome instead of aborting the step.
