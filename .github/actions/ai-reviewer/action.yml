@@ -1,7 +1,8 @@
 # action.yml — composite action that runs packages/code-reviewer on a PR diff.
 # Local action. It runs the reviewer from the checkout it lives in (three levels up
-# from this file), not from the workspace: a workflow that checks out the PR's base
-# commit and uses the action from there keeps the PR from rewriting its own judge.
+# from this file). review.yml checks out the PR's base commit at the workspace root
+# and uses the action from there, so the PR cannot change the reviewer, its prompt or
+# this action; the PR's own review.yml still can change the gate (README, CI section).
 # The action reports an outcome; the gate decision stays in the workflow.
 #
 # Outcomes:
@@ -58,7 +59,8 @@ runs:
         DIFF_FILE: ${{ inputs.diff-file }}
       # setup-node rejects a cache-dependency-path containing "..", so the root is
       # resolved to a normalised absolute path here. The diff path is made absolute
-      # too, since the reviewer runs from the root, not from the workspace.
+      # too, since the reviewer step changes into the root, which need not be the
+      # working directory.
       run: |
         root=$(realpath "$GITHUB_ACTION_PATH/../../..")
         echo "root=$root" >> "$GITHUB_OUTPUT"
@@ -149,6 +151,13 @@ runs:
         fi
 
         usage_line=$(grep '^model=' "$stderr_file" | tail -n 1 || true)
+        # The six scores and the CLI's note line show a verdict that only the model,
+        # or only the written rule, gave (the stricter one binds).
+        note_line=$(grep '^note: ' "$stderr_file" | tail -n 1 || true)
+        scores=""
+        if [ "$outcome" = reviewed ]; then
+          scores=$(node -e 'const r = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")); console.log(Object.entries(r.criteria ?? {}).map(([name, c]) => `${name} ${c?.score}`).join(", "))' "$review_file" 2> /dev/null || true)
+        fi
         {
           echo "### AI review"
           echo
@@ -157,10 +166,15 @@ runs:
             echo
             echo "Verdict: \`$verdict\`"
           fi
-          if [ -n "$usage_line" ]; then
+          if [ -n "$scores" ]; then
+            echo
+            echo "Scores: $scores"
+          fi
+          if [ -n "$usage_line" ] || [ -n "$note_line" ]; then
             echo
             echo '```'
-            echo "$usage_line"
+            if [ -n "$usage_line" ]; then echo "$usage_line"; fi
+            if [ -n "$note_line" ]; then echo "$note_line"; fi
             echo '```'
           fi
         } >> "$GITHUB_STEP_SUMMARY"

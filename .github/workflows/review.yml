@@ -177,6 +177,11 @@ jobs:
             // A zero-width space after every @ keeps the model's text from mentioning users or teams, and an
             // escaped <!-- keeps it from hiding the footer below.
             summary = summary.replace(/@/g, "@\u200b").replace(/<!--/g, "&lt;!--");
+            // GitHub rejects a comment over 65,536 characters, and only the model's token cap bounds its text.
+            if (summary.length > 60000) {
+              const cut = /[\uDC00-\uDFFF]/.test(summary[60000]) ? 59999 : 60000; // never split a surrogate pair
+              summary = summary.slice(0, cut) + "\n\n[truncated]";
+            }
             lines.push(`## AI code review: \`${verdict}\``, "", summary);
           } else if (outcome === "skipped") {
             lines.push(
@@ -201,19 +206,28 @@ jobs:
           fs.writeFileSync(process.argv[2], JSON.stringify({ body: lines.join("\n") + "\n" }));
           EOF
 
+          # The comment and the labels are written independently: a failed comment write (a 5xx, a rate limit)
+          # still updates the labels, and the step fails at the end if either part failed. Bash ignores -e
+          # inside a function called with ||, so every call in it returns explicitly on failure.
+          failed=0
+
           # Sticky comment: edit the marked comment of github-actions[bot] (claude-review comments as the same bot,
           # so the marker, not the author, identifies it), or create it.
-          echo "Looking up the summary comment"
-          comment_ids=$(gh api --paginate "repos/$REPO/issues/$PR/comments" \
-            --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("<!-- ai-cr:summary -->"))) | .id')
-          comment_id=${comment_ids%%$'\n'*}
-          if [ -n "$comment_id" ]; then
-            echo "Editing comment $comment_id"
-            gh api --method PATCH "repos/$REPO/issues/comments/$comment_id" --input "$payload_file" --jq .html_url
-          else
-            echo "Creating the summary comment"
-            gh api --method POST "repos/$REPO/issues/$PR/comments" --input "$payload_file" --jq .html_url
-          fi
+          write_comment() {
+            local comment_ids comment_id
+            echo "Looking up the summary comment"
+            comment_ids=$(gh api --paginate "repos/$REPO/issues/$PR/comments" \
+              --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("<!-- ai-cr:summary -->"))) | .id') || return 1
+            comment_id=${comment_ids%%$'\n'*}
+            if [ -n "$comment_id" ]; then
+              echo "Editing comment $comment_id"
+              gh api --method PATCH "repos/$REPO/issues/comments/$comment_id" --input "$payload_file" --jq .html_url || return 1
+            else
+              echo "Creating the summary comment"
+              gh api --method POST "repos/$REPO/issues/$PR/comments" --input "$payload_file" --jq .html_url || return 1
+            fi
+          }
+          write_comment || failed=1
 
           add_label() {
             echo "Adding label $1"
@@ -230,10 +244,11 @@ jobs:
             fi
           }
           case "$outcome:$VERDICT" in
-            reviewed:pass) add_label ai-cr:passed; remove_label ai-cr:failed ;;
-            reviewed:fail | too-large:*) add_label ai-cr:failed; remove_label ai-cr:passed ;;
-            *) remove_label ai-cr:passed; remove_label ai-cr:failed ;;
+            reviewed:pass) add_label ai-cr:passed || failed=1; remove_label ai-cr:failed || failed=1 ;;
+            reviewed:fail | too-large:*) add_label ai-cr:failed || failed=1; remove_label ai-cr:passed || failed=1 ;;
+            *) remove_label ai-cr:passed || failed=1; remove_label ai-cr:failed || failed=1 ;;
           esac
+          exit "$failed"
 
       # Runs after a failed step too, so a failed comment step cannot skip it; an empty outcome fails.
       - name: Gate on the outcome

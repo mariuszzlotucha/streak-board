@@ -31,9 +31,33 @@
 
 ## From the Phase 2 live trial on #116
 
-- **Comment step: `-F body=@file` failed on the runner.** The first live run reviewed the change (`pass`) but the comment step stopped with `unexpected end of JSON input` before posting; the comment and labels now go to the API as JSON payloads (`--input`), each `gh` call logs a progress line, and the next runs posted, edited and labelled as planned (`5f2d4db`).
+- **Comment step: `-F body=@file` failed on the runner.** The first live run reviewed the change (`pass`) but the comment step stopped with `unexpected end of JSON input` before posting; the comment and labels now go to the API as JSON payloads (`--input`), the comment and label writes log a progress line (the label DELETE calls are silent on success), and the next runs posted, edited and labelled as planned (`5f2d4db`).
 - **Model verdict stricter than the written rule.** On `7d319c1` the model returned `fail` with Corr 8, Sec 8, Test 4, Idiom 8, Cplx 7 (the rule gives `pass`); `reviewDiff` keeps the stricter verdict (Phase 1 F1), so the check failed. Earlier runs on the same code passed. For `code-review-evals`: measure how often the model's verdict disagrees with `verdictFromScores` in either direction, and decide whether the rule alone should bind.
 - **No automated tests for the workflow logic** (raised by that review): the re-evaluation jq filter, the comment builder and the label rules are covered only by local stub probes and this live trial. Candidate: a committed probe script with fixtures, run in CI once `ci.yml` may change.
 - **Sticky comment and claude-review.** `claude-review` comments as `github-actions[bot]` too, so a Claude comment that begins with `<!-- ai-cr:summary -->` would be adopted and edited by `ai-review` (raised by the first `ai-review` of #116). Consider telling Claude never to emit the marker, or matching the full first line plus the heading.
-- **claude-review authentication.** The repository's `ANTHROPIC_API_KEY` was not scoped to a workspace (API 400, found with a temporary `show_full_output`); the owner chose a Claude subscription token, `CLAUDE_CODE_OAUTH_TOKEN` (`7d319c1`), and removed the API key secret.
+- **claude-review authentication.** The repository's `ANTHROPIC_API_KEY` was not scoped to a workspace (API 400, found with a temporary `show_full_output`); the owner chose a Claude subscription token, `CLAUDE_CODE_OAUTH_TOKEN` (`7d319c1`), and removed the repository's API key secret (the unused copies in the `production` environment were deleted in the full review, F5).
 - **Skipped `claude-review` check runs.** Every label added to a PR publishes a skipped `claude-review` check run. Harmless (not required), but noisy in the checks list.
+
+## From the full impl review (`reviews/impl-review.md`)
+
+### Deviations from plan #5, #9, #10 and #11 (owner decisions, 2026-10-14)
+
+- **claude-review settings and credentials (F1).**
+  - What was wrong: in CI the pinned action loaded `.claude/settings.json` on top of `--allowedTools`. That file is a developer allow-list with `node`, `npm`, `npx`, `Write` and `Edit`. Bash commands also inherited `CLAUDE_CODE_OAUTH_TOKEN`.
+  - The fix:
+    - `claude_args` now starts with `--setting-sources user`;
+    - the step sets `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB: "1"`, which the action reads through `env`;
+    - the checkout has `persist-credentials: false`;
+    - the prompt asks for `CLAUDE.md`, which no longer loads by itself.
+  - Still accepted: the action writes the job token into the checkout's remote URL, because its cleanup misses checkout v7's `includeIf` credential file (an upstream issue). An allowed `gh pr comment` could therefore post `.git/config`. The token is short-lived and scoped to comments and labels, and only the owner can add the label.
+- **Model-only fail (F2).**
+  - The CLI prints a `note:` whenever the model's verdict and `verdictFromScores` disagree.
+  - The action's step summary lists the six scores and that note.
+  - A model-only `fail` whose findings do not hold is the owner's call (a push or `ai-cr:review`), never an agent's.
+  - Whether the rule alone should bind stays with `code-review-evals` (see the live-trial note above).
+- **Comment step (F4).** The summary is capped at 60,000 characters (`[truncated]`), and the comment and the labels are written independently. The step fails at the end if either part failed.
+- **Production secrets (F5).** The unused `ANTHROPIC_API_KEY` and `OPENROUTER_API_KEY` copies in the `production` environment were deleted on the owner's instruction.
+
+### Still to verify
+
+- On the review-fix PR, a `claude-review` run must show `settingSources: ["user"]` and the scrub in its log, and must still post its summary and inline comments.

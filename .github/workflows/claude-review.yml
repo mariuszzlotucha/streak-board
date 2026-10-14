@@ -26,22 +26,31 @@ jobs:
       contents: read
       pull-requests: write
       issues: write # labels live on the issues API
-      # No id-token: github_token and the API key are passed explicitly, so the action's OIDC exchange is unused.
+      # No id-token: github_token and the OAuth token are passed explicitly, so the action's OIDC exchange is unused.
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
+          # Claude reads this checkout, so no job token stays in its git config (as in review.yml).
+          persist-credentials: false
 
       - name: Run Claude review
         uses: anthropics/claude-code-action@1d6de8cb0c237e7c15e9e1bdf973826ebae490cc # v1.0.248
+        env:
+          # The action passes this on to Claude Code, which keeps credentials such as the OAuth token
+          # out of the commands it runs.
+          CLAUDE_CODE_SUBPROCESS_ENV_SCRUB: "1"
         with:
           # A Claude subscription token (`claude setup-token`), so the review uses the subscription, not API credits.
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          # Without these tools Claude cannot post the inline and summary comments the prompt asks for.
+          # `--setting-sources user` keeps the repository's Claude settings out of CI: .claude/settings.json
+          # is a developer allow-list (node, npm, npx, Write, Edit). Without the tools below Claude cannot
+          # post the inline and summary comments the prompt asks for.
           claude_args: |
+            --setting-sources user
             --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
           prompt: |
             REPO: ${{ github.repository }}
@@ -60,7 +69,7 @@ jobs:
             - package.json,
             - konfiguracją Astro,
             - istniejącą strukturą katalogów,
-            - lokalnymi konwencjami projektu,
+            - lokalnymi konwencjami projektu z CLAUDE.md (w CI nie ładuje się automatycznie, przeczytaj go),
             - używanymi integracjami i frameworkami.
 
             Nie zakładaj obecności technologii, których nie ma w repozytorium. Szczególnie nie zakładaj użycia NestJS, Spring Boot ani innego backendowego frameworka.

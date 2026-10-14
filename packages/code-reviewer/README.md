@@ -39,7 +39,7 @@ The CLI aborts a review after `DEFAULT_REVIEW_TIMEOUT_MS` (`180_000` ms, 3 minut
 Output:
 
 - stdout: only the `ReviewResult` JSON (`JSON.stringify(output, null, 2)`), so it can be piped (`git diff | npm run --silent review 2>/dev/null | jq .verdict`). Nothing else is ever written to stdout, whatever the exit code.
-- stderr: one usage line per run, for example `model=z-ai/glm-5.1 finishReason=stop input_tokens=1234 output_tokens=567 total_tokens=1801 cost_usd=0.0021`, `note: verdict overridden to fail by the score rule (the model said pass)` when the rule overrode the model (see Input format and verdict rule), and `error: <message>` on failure. A value the provider did not report is printed as `unknown`; `cost_usd=unknown` means no step reported a cost, not that the run was free.
+- stderr: one usage line per run, for example `model=z-ai/glm-5.1 finishReason=stop input_tokens=1234 output_tokens=567 total_tokens=1801 cost_usd=0.0021`, `note: the model said pass and the score rule says fail; the stricter verdict, fail, binds` when the model's verdict and the rule disagree, in either direction (see Input format and verdict rule), and `error: <message>` on failure. A value the provider did not report is printed as `unknown`; `cost_usd=unknown` means no step reported a cost, not that the run was free.
 
 Exit codes (the CI composite action `.github/actions/ai-reviewer` maps them to its `outcome`):
 
@@ -114,7 +114,7 @@ Every run is capped by the defaults in `config.ts`, each overridable per call:
 | `MAX_PR_BODY_CHARS`         | `2_000`   | none              | `buildReviewPrompt` cuts a longer PR body and marks the cut with `[truncated]`                                                                                                         |
 | `DEFAULT_REVIEW_TIMEOUT_MS` | `180_000` | `abortSignal`     | The CLI aborts the review after this many milliseconds and exits 1; programmatic callers pass their own `abortSignal`                                                                  |
 
-The cost of every run is logged: the CLI prints the usage line on stderr for each review, successful or failed with a `ReviewRunError`, and programmatic callers get `usage` and `costUsd` on the `ReviewRun` or the `ReviewRunError`. The AI SDK also retries a failed call up to twice by default (`maxRetries: 2`, on rate limits and server errors), so one model call can mean up to three HTTP requests. There is no hard USD limit; a cost gate belongs to the CI gate and the evals.
+The cost of every run is logged: the CLI prints the usage line on stderr for each review, successful or failed with a `ReviewRunError`, and programmatic callers get `usage` and `costUsd` on the `ReviewRun` or the `ReviewRunError`. The AI SDK also retries a failed call up to twice by default (`maxRetries: 2`, on rate limits and server errors), so one model call can mean up to three HTTP requests. There is no hard USD limit in code: in CI the budget is the credit limit of the OpenRouter key (see the root README, CI section).
 
 ## Input format and verdict rule
 
@@ -146,7 +146,7 @@ Review this pull request. Its inputs follow, each inside its own tag.
 The verdict is a stated function of the scores: `verdict` is `fail` when `implementationCorrectness` ≤ 4, or `securitySafety` ≤ 4, or any criterion ≤ 2; otherwise `pass`. The model is told that the verdict must agree with the scores, and `reviewDiff` enforces it in code:
 
 - a score that is not an integer from 1 to 10 throws `ReviewRunError` (CLI exit 1);
-- the binding `output.verdict` is `fail` when the model's verdict or `verdictFromScores(criteria)` is `fail`, so text that steers only the verdict cannot pass low scores. `modelVerdict` keeps the model's own, and the CLI prints a `note:` line on stderr when the two differ. The model's `summary` is left as written, so it can still lead with the overridden verdict.
+- the binding `output.verdict` is `fail` when the model's verdict or `verdictFromScores(criteria)` is `fail`, so text that steers only the verdict cannot pass low scores. `modelVerdict` keeps the model's own, and the CLI prints a `note:` line on stderr when the model's verdict and `verdictFromScores` disagree, in either direction (a model `fail` with passing scores still binds). The model's `summary` is left as written, so it can still lead with the overridden verdict.
 
 ## Data egress
 
