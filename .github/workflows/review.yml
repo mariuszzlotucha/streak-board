@@ -1,0 +1,252 @@
+# .github/workflows/review.yml — AI code review (`ai-review`) on every pull request to master.
+# A required check of the master ruleset, so the trigger has no path filters and the job never skips:
+# a docs-only PR reviews an empty diff and passes as `skipped`.
+#
+# The reviewer, its prompt and its composite action run from the PR's base commit, checked out at the workspace
+# root; the PR is fetched as git objects only and never checked out, so no PR file lands where npm or git would
+# read it. This workflow file itself comes from the PR (`pull_request` runs the merge commit's version), so a PR
+# that edits .github/ can change the gate: the owner reads such a PR, and its green check is no evidence.
+# Fork PRs get no secrets and a read-only token, so an unmodified run ends in `error` with no comment or labels.
+# The action reports an outcome:
+#   reviewed  — label ai-cr:passed / ai-cr:failed; the check follows the verdict
+#   skipped   — no code diff after the exclusions; no label; the check passes
+#   too-large — the code diff is over the reviewer's limit; label ai-cr:failed; the check fails
+#   error     — API, network, timeout or setup failure (also an empty outcome); no label; the check fails
+# Every review posts or edits one comment marked <!-- ai-cr:summary -->.
+#
+# Labels: ai-cr:review re-runs the review (after an error, not to re-roll a fail) and is removed as it starts.
+# Any other label re-evaluates instead of skipping: a skipped job would report `skipped`, which satisfies the
+# required check, so a label added after a fail would publish a passing ai-review on the same commit. The
+# re-evaluation copies the newest completed review conclusion for the head commit, without a model call.
+name: AI Code Review
+
+on:
+  pull_request:
+    branches: [master]
+    types: [opened, synchronize, reopened, labeled]
+
+permissions:
+  contents: read
+
+jobs:
+  ai-review:
+    name: ai-review
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    # Job-level permissions replace the workflow's, so contents: read is listed again.
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write # comments and labels live on the issues API
+      checks: read # the re-evaluation reads earlier ai-review check runs
+    # One group per PR serializes its runs. A review (open, push, reopen, ai-cr:review) cancels whatever runs in
+    # the group. A re-evaluation never cancels: it waits behind a running review and then reads its result, so
+    # the newest-created run is also the newest-completed one.
+    concurrency:
+      group: ai-review-${{ github.event.pull_request.number }}
+      cancel-in-progress: ${{ github.event.action != 'labeled' || github.event.label.name == 'ai-cr:review' }}
+    steps:
+      - name: Choose review or re-evaluation
+        id: mode
+        env:
+          EVENT_ACTION: ${{ github.event.action }}
+          LABEL_NAME: ${{ github.event.label.name }}
+        run: |
+          if [ "$EVENT_ACTION" = labeled ] && [ "$LABEL_NAME" != "ai-cr:review" ]; then
+            mode=reevaluate
+          else
+            mode=review
+          fi
+          echo "mode=$mode" >> "$GITHUB_OUTPUT"
+          echo "Mode: $mode"
+
+      # This run's own check run is still in progress, so status=completed leaves it out. The default
+      # filter=latest collapses runs only within one check suite, so filter=all lists every run and the newest
+      # success or failure is picked here; cancelled runs and check runs of other apps are ignored.
+      - name: Re-evaluate the last review of this commit
+        if: steps.mode.outputs.mode == 'reevaluate'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          conclusion=$(gh api "repos/$REPO/commits/$HEAD_SHA/check-runs?check_name=ai-review&filter=all&status=completed&per_page=100" \
+            --jq '[.check_runs[] | select(.app.slug == "github-actions" and (.conclusion == "success" or .conclusion == "failure"))] | sort_by(.completed_at) | last | .conclusion // empty')
+          case "$conclusion" in
+            success)
+              echo "The last ai-review of ${HEAD_SHA:0:7} passed; keeping that result."
+              ;;
+            failure)
+              echo "::error::The last ai-review of ${HEAD_SHA:0:7} failed; this run copies that result. Fix the code and push (or add ai-cr:review after an error)."
+              exit 1
+              ;;
+            *)
+              echo "::error::No completed ai-review for ${HEAD_SHA:0:7}. Add the ai-cr:review label to run the review."
+              exit 1
+              ;;
+          esac
+
+      # Removed first, so a run that fails, times out or is cancelled later does not leave it on the PR, where it
+      # could not be added again to re-run.
+      - name: Remove the re-run label
+        if: steps.mode.outputs.mode == 'review'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          if ! out=$(gh api --method DELETE "repos/$REPO/issues/$PR/labels/ai-cr%3Areview" --silent 2>&1); then
+            case "$out" in
+              *"HTTP 404"*) ;; # the label was not on the PR
+              *) echo "$out" >&2; exit 1 ;;
+            esac
+          fi
+
+      # The base commit at the workspace root (inside the workspace, where setup-node hashes package-lock.json for
+      # its cache). The PR is never checked out: a PR file on disk would be an ancestor of the reviewer, and npm
+      # reads ancestor node_modules/.bin, workspaces and .npmrc, while git reads .gitattributes from the worktree.
+      # No credentials are persisted; the repository is public, so the fetch below needs none.
+      - name: Check out the base commit
+        if: steps.mode.outputs.mode == 'review'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          fetch-depth: 0 # full history, so the merge base with the PR head is present
+          persist-credentials: false
+
+      # The PR head as git objects only, diffed against its merge base with the base commit. Code only: context/
+      # documents, Markdown at any depth (`*` matches `/` in a pathspec) and the lockfile are left out. An empty
+      # result is reviewed as `skipped`.
+      - name: Compute the code diff
+        if: steps.mode.outputs.mode == 'review'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git fetch --no-tags --quiet origin "$HEAD_SHA"
+          git diff "$BASE_SHA...$HEAD_SHA" -- . ':(exclude)context' ':(exclude)*.md' ':(exclude)package-lock.json' > "$RUNNER_TEMP/pr.diff"
+          echo "Code diff: $(wc -c < "$RUNNER_TEMP/pr.diff") bytes"
+
+      - name: Review the diff
+        id: review
+        if: steps.mode.outputs.mode == 'review'
+        uses: ./.github/actions/ai-reviewer
+        with:
+          api-key: ${{ secrets.OPENROUTER_API_KEY }}
+          diff-file: ${{ runner.temp }}/pr.diff
+          pr-title: ${{ github.event.pull_request.title }}
+          pr-body: ${{ github.event.pull_request.body }}
+
+      # Runs after a failed step too (an empty outcome is reported as error), but not after a cancellation.
+      # Labels added or removed with GITHUB_TOKEN start no workflow run, so these edits cannot loop. A failure
+      # here (a GitHub API error) does not decide the check: the gate below still runs.
+      - name: Comment and label
+        if: ${{ !cancelled() && steps.mode.outputs.mode == 'review' }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          OUTCOME: ${{ steps.review.outputs.outcome }}
+          VERDICT: ${{ steps.review.outputs.verdict }}
+          REVIEW_FILE: ${{ steps.review.outputs.review-file }}
+        run: |
+          # A run for an older head (a re-run from the UI) must not overwrite the result of the current one.
+          echo "Reading the PR head"
+          current_sha=$(gh api "repos/$REPO/pulls/$PR" --jq .head.sha)
+          if [ "$current_sha" != "$HEAD_SHA" ]; then
+            echo "::notice::The PR head moved to ${current_sha:0:7}; the comment and labels are left to its review."
+            exit 0
+          fi
+
+          outcome=${OUTCOME:-error}
+          # The comment goes to the API as a JSON payload file (--input), so its text never passes through a flag.
+          payload_file="$RUNNER_TEMP/ai-review-comment.json"
+          OUTCOME="$outcome" node - "$payload_file" <<'EOF'
+          const fs = require("fs");
+          const { OUTCOME: outcome, VERDICT: verdict, REVIEW_FILE: reviewFile, HEAD_SHA: sha, RUN_URL: runUrl } = process.env;
+          const lines = ["<!-- ai-cr:summary -->"];
+          if (outcome === "reviewed") {
+            let summary = "_The review summary could not be read; see the run log._";
+            try {
+              const review = JSON.parse(fs.readFileSync(reviewFile, "utf8"));
+              if (typeof review.summary === "string" && review.summary.trim()) summary = review.summary;
+            } catch {}
+            // A zero-width space after every @ keeps the model's text from mentioning users or teams, and an
+            // escaped <!-- keeps it from hiding the footer below.
+            summary = summary.replace(/@/g, "@\u200b").replace(/<!--/g, "&lt;!--");
+            lines.push(`## AI code review: \`${verdict}\``, "", summary);
+          } else if (outcome === "skipped") {
+            lines.push(
+              "## AI code review: `skipped`",
+              "",
+              "No code diff to review after the exclusions (`context/`, `*.md`, `package-lock.json`). The check passes.",
+            );
+          } else if (outcome === "too-large") {
+            lines.push(
+              "## AI code review: `too-large`",
+              "",
+              "The code diff is over the reviewer's limit, so it was not reviewed and the check fails. Split the pull request, or see the break-glass procedure in the README (CI section).",
+            );
+          } else {
+            lines.push(
+              "## AI code review: `error`",
+              "",
+              "The review did not complete (API, network, timeout or setup failure; see the run log), so the check fails. Add the `ai-cr:review` label to re-run it.",
+            );
+          }
+          lines.push("", "---", `Commit \`${sha.slice(0, 7)}\` · [run log](${runUrl})`);
+          fs.writeFileSync(process.argv[2], JSON.stringify({ body: lines.join("\n") + "\n" }));
+          EOF
+
+          # Sticky comment: edit the marked comment of github-actions[bot] (claude-review comments as the same bot,
+          # so the marker, not the author, identifies it), or create it.
+          echo "Looking up the summary comment"
+          comment_ids=$(gh api --paginate "repos/$REPO/issues/$PR/comments" \
+            --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("<!-- ai-cr:summary -->"))) | .id')
+          comment_id=${comment_ids%%$'\n'*}
+          if [ -n "$comment_id" ]; then
+            echo "Editing comment $comment_id"
+            gh api --method PATCH "repos/$REPO/issues/comments/$comment_id" --input "$payload_file" --jq .html_url
+          else
+            echo "Creating the summary comment"
+            gh api --method POST "repos/$REPO/issues/$PR/comments" --input "$payload_file" --jq .html_url
+          fi
+
+          add_label() {
+            echo "Adding label $1"
+            printf '{"labels":["%s"]}' "$1" | gh api --method POST "repos/$REPO/issues/$PR/labels" --input - --jq '[.[].name] | join(", ")'
+          }
+          # A label that is not on the PR answers 404, which is fine.
+          remove_label() {
+            local out
+            if ! out=$(gh api --method DELETE "repos/$REPO/issues/$PR/labels/${1//:/%3A}" --silent 2>&1); then
+              case "$out" in
+                *"HTTP 404"*) ;;
+                *) echo "$out" >&2; return 1 ;;
+              esac
+            fi
+          }
+          case "$outcome:$VERDICT" in
+            reviewed:pass) add_label ai-cr:passed; remove_label ai-cr:failed ;;
+            reviewed:fail | too-large:*) add_label ai-cr:failed; remove_label ai-cr:passed ;;
+            *) remove_label ai-cr:passed; remove_label ai-cr:failed ;;
+          esac
+
+      # Runs after a failed step too, so a failed comment step cannot skip it; an empty outcome fails.
+      - name: Gate on the outcome
+        if: ${{ !cancelled() && steps.mode.outputs.mode == 'review' }}
+        env:
+          OUTCOME: ${{ steps.review.outputs.outcome }}
+          VERDICT: ${{ steps.review.outputs.verdict }}
+        run: |
+          if [ "$OUTCOME" = reviewed ] && [ "$VERDICT" = pass ]; then
+            echo "AI review passed."
+          elif [ "$OUTCOME" = skipped ]; then
+            echo "No code diff to review; passing."
+          else
+            echo "::error::AI review did not pass (outcome: ${OUTCOME:-error}, verdict: ${VERDICT:-none})."
+            exit 1
+          fi

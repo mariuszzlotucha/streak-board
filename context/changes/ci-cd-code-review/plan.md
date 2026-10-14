@@ -389,25 +389,25 @@ One model call per review; the median diff over 114 past merges is 24.9k charact
 - [x] 1.8 A local review of a small real diff with PR_TITLE set returns valid JSON whose verdict follows the written rule — d33f7a4
 - [x] 1.9 A diff with an obvious bug and an embedded "ignore your instructions" line gets verdict fail — d33f7a4
 - [x] 1.12 Baseline on recent merged PRs: every fail explained and no run near the 180 s timeout — d33f7a4
-- [ ] 1.10 The phase PR contains no workflow file and its checks are only the existing ci.yml jobs
+- [x] 1.10 The phase PR contains no workflow file and its checks are only the existing ci.yml jobs — 011e2e9
 
 ### Phase 2: Workflows, required gate and docs
 
 #### Automated
 
-- [ ] 2.1 Lint passes: `npm run lint`
-- [ ] 2.2 Prettier passes on changed files
-- [ ] 2.3 Workflow YAML parses
-- [ ] 2.4 No untrusted PR fields inside run blocks
-- [ ] 2.13 actionlint passes on both workflows
+- [x] 2.1 Lint passes: `npm run lint` — a3b34fd
+- [x] 2.2 Prettier passes on changed files — a3b34fd
+- [x] 2.3 Workflow YAML parses — a3b34fd
+- [x] 2.4 No untrusted PR fields inside run blocks — a3b34fd
+- [x] 2.13 actionlint passes on both workflows — a3b34fd
 
 #### Manual
 
-- [ ] 2.5 Repository secrets set, OpenRouter key confirmed dedicated with a credit limit, and the four labels exist
-- [ ] 2.6 Phase PR: ai-review reviews the change, posts the marked comment and the matching label, check follows the verdict
-- [ ] 2.7 Phase PR: a second push edits the same comment
-- [ ] 2.8 Phase PR: adding ai-cr:review re-runs the review and the label is removed
-- [ ] 2.9 Phase PR: an unrelated label publishes a re-evaluated ai-review with the previous conclusion, also while a review runs
-- [ ] 2.10 Phase PR: adding claude-review runs the Claude review without changing the ai-review result
+- [x] 2.5 Repository secrets set, OpenRouter key confirmed dedicated with a credit limit, and the four labels exist — a3b34fd
+- [x] 2.6 Phase PR: ai-review reviews the change, posts the marked comment and the matching label, check follows the verdict
+- [x] 2.7 Phase PR: a second push edits the same comment
+- [x] 2.8 Phase PR: adding ai-cr:review re-runs the review and the label is removed
+- [x] 2.9 Phase PR: an unrelated label publishes a re-evaluated ai-review with the previous conclusion, also while a review runs
+- [x] 2.10 Phase PR: adding claude-review runs the Claude review without changing the ai-review result
 - [ ] 2.11 Ruleset 24254172 lists integration and ai-review as required checks and the phase PR is mergeable
 - [ ] 2.12 Archive PR (docs only): ai-review reports success via the skipped outcome and the PR is mergeable

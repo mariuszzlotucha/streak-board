@@ -58,6 +58,7 @@ npm run dev
 - `npm run smoke` - Smoke test the auth and group flows against a running server (`BASE_URL`, defaults to `http://localhost:4321`)
 - `npm test` - Run the Vitest integration tests against the local Supabase stack
 - `npm run test:rls` - Run the SQL RLS scenario checks against the local database
+- `npm run review` - Run the AI code reviewer on a diff read from stdin (`git diff | npm run --silent review`; see `packages/code-reviewer/README.md`)
 
 ## Project Structure
 
@@ -351,13 +352,40 @@ Safety guard: the suite refuses to run unless the Supabase URL host is `127.0.0.
 
 ## CI
 
-GitHub Actions runs five jobs: `changes`, `ci`, `smoke` and `integration` on every push and PR to `master`, and `release` only after a push to `master`. On a pull request that changes only files under `context/` and `*.md` files, `ci`, `smoke` and `integration` are skipped at job level; a job skipped by `if:` satisfies the required check `integration`, so docs-only PRs can merge. Do not use `paths-ignore` on the workflow trigger: a workflow skipped by a path filter never reports that check and blocks the merge.
+The `CI` workflow (`.github/workflows/ci.yml`) runs five jobs: `changes`, `ci`, `smoke` and `integration` on every push and PR to `master`, and `release` only after a push to `master`. On a pull request that changes only files under `context/` and `*.md` files, `ci`, `smoke` and `integration` are skipped at job level; a job skipped by `if:` satisfies the required check `integration`, so docs-only PRs can merge. Do not use `paths-ignore` on the workflow trigger: a workflow skipped by a path filter never reports that check and blocks the merge.
 
 - **changes** — decides whether a PR touches anything besides `context/**` and `*.md` files (always yes on a push). If it cannot tell, the other jobs run.
 - **ci** — lint, the design-token contrast gate (`node scripts/token-contrast.mjs`, which fails when a token change drops a gating colour pair below its WCAG threshold), `astro check` and build. Configure `SUPABASE_URL` and `SUPABASE_KEY` as repository secrets for the build step (the `release` build reads the same names from the `production` environment secrets, so set both).
 - **smoke** — starts a local Supabase via the Supabase CLI, builds, serves the production preview on the Cloudflare runtime and runs `npm run smoke` against it. No secrets required.
 - **integration** — starts a local Supabase, then runs `npm test` and the SQL scenarios in `supabase/checks/rls-scenarios.sql`. No secrets required.
 - **release** — runs only on pushes to `master`, after `ci`, `smoke` and `integration` pass and a reviewer approves the `production` environment: `supabase db push`, then `wrangler deploy`, then a check of the live URL, including `/privacy` answering 200 with its `mailto:` contact link and the policy linked from `/`, and the anonymous two-hop Google check (the start route redirects to Supabase, and Supabase's Google provider redirects to `accounts.google.com`; each run leaves one short-lived flow state row in Supabase). See [Deployment](#deployment).
+
+### AI code review (`ai-review`)
+
+`.github/workflows/review.yml` runs the reviewer in `packages/code-reviewer` on every PR to `master` (opened, pushed, reopened, labeled). Its job `ai-review` is a required check of ruleset "master protection" (id `24254172`) next to `integration`, so the workflow has no path filters and the job never skips: a docs-only PR passes as `skipped`.
+
+- **Input** — the code diff against `master` without `context/`, Markdown files and `package-lock.json`, plus the PR title and description, all given to the model as untrusted data. The model scores the six criteria and the verdict follows the written rule (see `packages/code-reviewer/README.md`, Input format and verdict rule).
+- **Reviewer from the base commit** — the job checks out the PR's base commit at the workspace root and runs the composite action `.github/actions/ai-reviewer` and the reviewer from there. The PR is fetched as git objects only and never checked out, so no PR file lands where npm (ancestor `node_modules/.bin`, `workspaces`, `.npmrc`) or git (`.gitattributes`) would read it, and no token is left in the git config. This protects the reviewer, its prompt and the action from the PR's own changes, not the workflow file: on `pull_request` GitHub runs the PR's version of `review.yml`, so a PR that changes `.github/workflows/` or `.github/actions/` can change the gate (the same holds for `integration`). The owner reads such a PR before merging; its green checks are no evidence. A fix to the reviewer, its prompt or the action must therefore land on `master` first, in its own PR (which the old reviewer still judges); then merge `master` into a waiting branch and push, since a label alone keeps the old base.
+- **Outcomes** — every review posts or edits one comment marked `<!-- ai-cr:summary -->` (outcome, verdict and summary, short head SHA, run link; mentions in the model's text are neutralised) and sets the labels:
+
+  | Outcome     | When                                                                          | Label          | Check |
+  | ----------- | ----------------------------------------------------------------------------- | -------------- | ----- |
+  | `reviewed`  | the verdict is `pass`                                                         | `ai-cr:passed` | pass  |
+  | `reviewed`  | the verdict is `fail`                                                         | `ai-cr:failed` | fail  |
+  | `skipped`   | no code diff after the exclusions                                             | none           | pass  |
+  | `too-large` | the code diff is over 200,000 characters                                      | `ai-cr:failed` | fail  |
+  | `error`     | API or network failure, the 180 s timeout, a setup failure, a missing API key | none           | fail  |
+
+- **Re-run** — adding `ai-cr:review` runs the review again; the label is removed as the run starts. Use it after an `error` or another infrastructure failure, never to re-roll a `fail`: fix the code and push instead. The CLI's 180 s timeout shares its budget with the AI SDK's retries on 429 and 5xx answers, so an occasional `error` is expected.
+- **Other labels** — adding any other label re-evaluates instead of reviewing: the job copies the newest `success` or `failure` of `ai-review` on the same head commit, without a model call, so a label cannot turn a failed check green. With no completed review for that commit (for example a label added seconds after a push, which replaces the pending review) it fails and asks for `ai-cr:review`. A push or `ai-cr:review` cancels a running review of the same PR; a re-evaluation waits for it and copies its result.
+- **Fork PRs** get no secrets and a read-only token, so an unmodified `ai-review` fails closed (`error`, with no comment or labels, since the read-only token cannot write them). A fork PR that edits the workflow is the case above: the owner reads it.
+- **Setup** — `OPENROUTER_API_KEY` (a dedicated OpenRouter key with a credit limit, which is the review budget) and `CLAUDE_CODE_OAUTH_TOKEN` (for `claude-review`: a Claude subscription token from `claude setup-token`, so the advisory review uses the subscription, not API credits) are **repository** secrets; the copies in the `production` environment are not readable without its approval. The labels `ai-cr:passed`, `ai-cr:failed`, `ai-cr:review` and `claude-review` must exist: the workflows only add and remove them.
+
+**Break-glass.** When `ai-review` cannot pass for reasons outside the PR (a broken reviewer or action on `master`, an exhausted credit limit, a long OpenRouter outage, a legitimate code diff over 200,000 characters), the owner removes `ai-review` from ruleset `24254172`, merges, adds the check back and confirms that it reports on the next PR. Both edits are the same full-rules PUT (`gh api --method PUT repos/<owner>/<repo>/rulesets/24254172` with the complete `rules` array read back from the ruleset, `required_status_checks` changed): the PUT replaces the whole array, so sending only the changed rule would drop the others. Only the owner decides this; an agent never lifts the check on its own, and a `fail` verdict is not a reason to. To retire the workflow, remove `ai-review` from the ruleset first: a required check whose workflow is gone never reports.
+
+### Claude review (`claude-review`, on demand)
+
+`.github/workflows/claude-review.yml` runs an advisory Claude review (`anthropics/claude-code-action`, inline comments and a summary comment) when the `claude-review` label is added to a PR from a branch of this repository. It is not a required check and does not change `ai-review` or its labels. The label is removed after the run, so adding it again re-runs the review.
 
 ## License
 

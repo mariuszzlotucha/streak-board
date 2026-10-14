@@ -117,14 +117,15 @@ Gate'y, które muszą przejść przed wejściem zmiany na produkcję.
 „Required after §3 Phase N" oznacza, że gate jest egzekwowany po wdrożeniu
 danego etapu; wcześniej ma status `planned`.
 
-| Gate                                     | Where                                      | Required?                 | Catches                                               |
-| ---------------------------------------- | ------------------------------------------ | ------------------------- | ----------------------------------------------------- |
-| lint + build                             | local + CI                                 | required (wired)          | dryf składni i typów                                  |
-| smoke                                    | local + CI                                 | required (wired)          | zepsute podstawowe przepływy HTTP                     |
-| unit + integration (RLS, uprawnienia)    | local + CI (job `integration`)             | required (wired)          | wyciek między grupami, brak kontroli własności        |
-| migration/code consistency check         | CI on PR                                   | required after §3 Phase 2 | kod wymagający schematu, którego produkcja nie ma     |
-| extended smoke (Origin, walidacja, auth) | local + CI                                 | required after §3 Phase 3 | przyjęcie obcego Origin i złych danych, regresje auth |
-| unit (streak rule)                       | local + CI (job `integration`, `npm test`) | required (wired)          | błędna reguła streaka na granicach okresów            |
+| Gate                                     | Where                                      | Required?                 | Catches                                                  |
+| ---------------------------------------- | ------------------------------------------ | ------------------------- | -------------------------------------------------------- |
+| lint + build                             | local + CI                                 | required (wired)          | dryf składni i typów                                     |
+| smoke                                    | local + CI                                 | required (wired)          | zepsute podstawowe przepływy HTTP                        |
+| unit + integration (RLS, uprawnienia)    | local + CI (job `integration`)             | required (wired)          | wyciek między grupami, brak kontroli własności           |
+| migration/code consistency check         | CI on PR                                   | required after §3 Phase 2 | kod wymagający schematu, którego produkcja nie ma        |
+| extended smoke (Origin, walidacja, auth) | local + CI                                 | required after §3 Phase 3 | przyjęcie obcego Origin i złych danych, regresje auth    |
+| unit (streak rule)                       | local + CI (job `integration`, `npm test`) | required (wired)          | błędna reguła streaka na granicach okresów               |
+| AI code review (ai-review)               | CI on PR                                   | required (wired)          | defekty oceniane przez AI w sześciu kryteriach przeglądu |
 
 ## 6. Cookbook Patterns
 

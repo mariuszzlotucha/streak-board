@@ -13,3 +13,27 @@
 
 - **Lookalike fence tags.** Fullwidth `＜/diff＞`, Cyrillic homoglyphs (`</dіff>`), zero-width-space and soft-hyphen splits inside the diff are not neutralised. The title and body escape every `<`. Add these variants, and a title that opens a fake `<diff>`, to the injection cases of the eval suite.
 - **Verdict-only injection.** `reviewDiff` now binds the stricter of the model's verdict and `verdictFromScores` (F1). The eval suite should still measure injections that raise the scores as well, which the rule cannot catch.
+
+## From the Phase 2 impl review (`reviews/impl-review-phase-2.md`)
+
+### Deviation from plan #10 (F1, owner decision 2026-10-14)
+
+- Review-mode steps 1–4 of plan #10 changed: the base commit is checked out at the workspace root (`fetch-depth: 0`, `persist-credentials: false`), the PR head is fetched by SHA as git objects and never checked out, the diff is `"$BASE_SHA...$HEAD_SHA"` with the planned pathspecs, and the action is `./.github/actions/ai-reviewer`. Reason: with the PR checked out at the root, npm resolved PR-committed ancestor `node_modules/.bin`, `workspaces` and `.npmrc` around the base reviewer, and git read the PR's `.gitattributes` (verified by experiment). The Phase 1 notes above on `.ai-reviewer-base` (inside the workspace, after the PR checkout, base copy of the action) are superseded: there is no PR checkout and no `.ai-reviewer-base`.
+- The anonymous fetch by SHA relies on the repository being public; a private repository needs an authenticated fetch.
+
+### Accepted limit (F2)
+
+- `pull_request` runs the PR's own `review.yml`, so a PR that edits `.github/` can change the gate (as for `integration`). Kept by the plan's decision against `pull_request_target`; the README and the workflow header say so, and the owner reads such PRs. Revisit with `pull_request_target` (and the F1 layout) if the repository gets other committers.
+
+### For `code-review-evals`
+
+- **Binary detection hides code.** `git diff` prints `Binary files … differ` for any file with a NUL byte, so a source file with a NUL in a comment reaches the model without content. `--text` would also dump real binaries. Add such a case to the suite, and decide whether the action should fail closed when a binary marker names a source extension.
+
+## From the Phase 2 live trial on #116
+
+- **Comment step: `-F body=@file` failed on the runner.** The first live run reviewed the change (`pass`) but the comment step stopped with `unexpected end of JSON input` before posting; the comment and labels now go to the API as JSON payloads (`--input`), each `gh` call logs a progress line, and the next runs posted, edited and labelled as planned (`5f2d4db`).
+- **Model verdict stricter than the written rule.** On `7d319c1` the model returned `fail` with Corr 8, Sec 8, Test 4, Idiom 8, Cplx 7 (the rule gives `pass`); `reviewDiff` keeps the stricter verdict (Phase 1 F1), so the check failed. Earlier runs on the same code passed. For `code-review-evals`: measure how often the model's verdict disagrees with `verdictFromScores` in either direction, and decide whether the rule alone should bind.
+- **No automated tests for the workflow logic** (raised by that review): the re-evaluation jq filter, the comment builder and the label rules are covered only by local stub probes and this live trial. Candidate: a committed probe script with fixtures, run in CI once `ci.yml` may change.
+- **Sticky comment and claude-review.** `claude-review` comments as `github-actions[bot]` too, so a Claude comment that begins with `<!-- ai-cr:summary -->` would be adopted and edited by `ai-review` (raised by the first `ai-review` of #116). Consider telling Claude never to emit the marker, or matching the full first line plus the heading.
+- **claude-review authentication.** The repository's `ANTHROPIC_API_KEY` was not scoped to a workspace (API 400, found with a temporary `show_full_output`); the owner chose a Claude subscription token, `CLAUDE_CODE_OAUTH_TOKEN` (`7d319c1`), and removed the API key secret.
+- **Skipped `claude-review` check runs.** Every label added to a PR publishes a skipped `claude-review` check run. Harmless (not required), but noisy in the checks list.
