@@ -36,11 +36,22 @@ jobs:
           # Claude reads this checkout, so no job token stays in its git config (as in review.yml).
           persist-credentials: false
 
+      # The subprocess scrub below needs bubblewrap on Linux, which the action installs only together with
+      # allowed_non_write_users. This mirrors its "Install subprocess isolation dependencies" step: bubblewrap
+      # and socat, and unprivileged user namespaces allowed again where AppArmor restricts them (Ubuntu 24.04+).
+      - name: Install subprocess isolation dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends bubblewrap socat
+          if [ -f /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
+
       - name: Run Claude review
         uses: anthropics/claude-code-action@1d6de8cb0c237e7c15e9e1bdf973826ebae490cc # v1.0.248
         env:
           # The action passes this on to Claude Code, which keeps credentials such as the OAuth token
-          # out of the commands it runs.
+          # out of the commands it runs (GH_TOKEN, the short-lived job token, stays for gh).
           CLAUDE_CODE_SUBPROCESS_ENV_SCRUB: "1"
         with:
           # A Claude subscription token (`claude setup-token`), so the review uses the subscription, not API credits.

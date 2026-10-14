@@ -108,7 +108,7 @@
   - Tradeoff: the deny-list must follow every allow rule added to `.claude/settings.json` later, and the hooks still load.
   - Confidence: MED — deny rules override allow rules, but the list is enumerative.
   - Blind spot: allow rules added later.
-- **Decision**: FIXED via Fix A — `claude-review.yml`: `--setting-sources user` in `claude_args`, `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB: "1"` on the step (the pinned action reads it through `env`, action.yml:301), `persist-credentials: false` on the checkout, and the prompt asks for `CLAUDE.md`; one README sentence in `### Claude review`. On branch `ci-cd-code-review/review-fix`; a live `claude-review` run on its PR must confirm it before the merge.
+- **Decision**: FIXED via Fix A — `claude-review.yml`: `--setting-sources user` in `claude_args`, `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB: "1"` on the step (the pinned action reads it through `env`, action.yml:301), `persist-credentials: false` on the checkout, and the prompt asks for `CLAUDE.md`; one README sentence in `### Claude review`. On branch `ci-cd-code-review/review-fix`; a live `claude-review` run on its PR must confirm it before the merge. The first live run on #117 failed before Claude started, because the scrub needs bubblewrap, which the action installs only with `allowed_non_write_users`. A step before the action now installs bubblewrap and socat and lifts the AppArmor user-namespace restriction, mirroring the action's own isolation step.
 
 ### F2 — A model fail that its own scores pass is invisible, and the README misstates which verdict binds
 

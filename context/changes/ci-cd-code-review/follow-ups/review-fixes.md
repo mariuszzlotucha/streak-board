@@ -46,7 +46,7 @@
   - What was wrong: in CI the pinned action loaded `.claude/settings.json` on top of `--allowedTools`. That file is a developer allow-list with `node`, `npm`, `npx`, `Write` and `Edit`. Bash commands also inherited `CLAUDE_CODE_OAUTH_TOKEN`.
   - The fix:
     - `claude_args` now starts with `--setting-sources user`;
-    - the step sets `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB: "1"`, which the action reads through `env`;
+    - the step sets `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB: "1"`, which the action reads through `env`. The scrub needs bubblewrap: the first live run on #117 failed to start Claude Code without it ("bubblewrap is required for subprocess env scrubbing and isolation"). A step before the action now mirrors the action's own isolation step: it installs bubblewrap and socat, and allows unprivileged user namespaces again where AppArmor restricts them;
     - the checkout has `persist-credentials: false`;
     - the prompt asks for `CLAUDE.md`, which no longer loads by itself.
   - Still accepted: the action writes the job token into the checkout's remote URL, because its cleanup misses checkout v7's `includeIf` credential file (an upstream issue). An allowed `gh pr comment` could therefore post `.git/config`. The token is short-lived and scoped to comments and labels, and only the owner can add the label.
