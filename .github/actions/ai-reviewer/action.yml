@@ -118,8 +118,13 @@ runs:
         npm run --silent review < "$DIFF_FILE" > "$review_file" 2> "$stderr_file"
         status=$?
         set -e
-        # Keep the CLI's stderr (usage line, error message) in the job log.
-        cat "$stderr_file" >&2
+        # Keep the CLI's stderr (usage line, error message) in the job log. Error
+        # messages can carry provider text, so workflow commands (::warning:: …)
+        # are paused while it is printed.
+        stop_token=$(openssl rand -hex 16)
+        echo "::stop-commands::$stop_token"
+        cat "$stderr_file"
+        echo "::$stop_token::"
 
         verdict=""
         case "$status" in

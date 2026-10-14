@@ -19,6 +19,16 @@ export function loadEnv(): void {
   }
 }
 
+/**
+ * Returns `text` without its trailing `\n` characters. A loop, not `/\n+$/`,
+ * which backtracks quadratically over a long run of newlines inside the text.
+ */
+export function trimTrailingNewlines(text: string): string {
+  let end = text.length;
+  while (end > 0 && text.charCodeAt(end - 1) === 10) end--;
+  return text.slice(0, end);
+}
+
 /** What `readDiff` read: the diff, or why there is none. */
 export type ReadDiffResult = { diff: string } | { error: "empty" | "too-large" };
 
@@ -44,7 +54,7 @@ export async function readDiff(maxBytes = MAX_STDIN_BYTES): Promise<ReadDiffResu
       chunks.push(buffer);
     }
     const piped = Buffer.concat(chunks).toString("utf8");
-    if (piped.trim()) return { diff: piped.replace(/\n+$/, "") + "\n" };
+    if (piped.trim()) return { diff: trimTrailingNewlines(piped) + "\n" };
   }
   console.error("error: no diff on stdin (usage: git diff | npx tsx packages/code-reviewer/review.ts)");
   return { error: "empty" };

@@ -7,6 +7,7 @@ export {
   reviewDiff,
   ReviewRunError,
   DiffTooLargeError,
+  verdictFromScores,
   type ReviewerOptions,
   type ReviewRun,
 } from "./agent";

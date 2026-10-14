@@ -4,18 +4,18 @@ A small code-review agent built on the AI SDK 7 `ToolLoopAgent` and OpenRouter. 
 
 ## Module map
 
-| File                       | Contents                                                                                                                                                                                                  |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `schemas/review-result.ts` | `ReviewCriterion`, `ReviewCriteria`, `ReviewResult` (zod schema and same-named type) and `REVIEW_JSON_SCHEMA` (draft-07 JSON Schema of `ReviewResult`)                                                    |
-| `prompts/reviewer.ts`      | `REVIEWER_INSTRUCTIONS` (the system prompt), `buildReviewPrompt(diff, pullRequest?)` (the per-diff user prompt, see Input format) and the `PullRequestContext` type (`{ title?: string; body?: string }`) |
-| `config.ts`                | `DEFAULT_REVIEWER_MODEL`, `DEFAULT_MAX_STEPS`, `DEFAULT_MAX_OUTPUT_TOKENS`, `DEFAULT_MAX_DIFF_CHARS`, `MAX_PR_BODY_CHARS`, `DEFAULT_REVIEW_TIMEOUT_MS` and `resolveReviewerModel(env)`                    |
-| `agent.ts`                 | `createReviewer(options)`, `reviewDiff(diff, options)` (options include `pullRequest`), `ReviewRunError`, `DiffTooLargeError` and the `ReviewerOptions` / `ReviewRun` types                               |
-| `index.ts`                 | Public barrel re-exporting all of the above. Importing it has no side effects: no `.env` loading, no stdin read, no logging, no process exit                                                              |
-| `review.ts`                | The CLI (see below)                                                                                                                                                                                       |
-| `utils.ts`                 | `readDiff()`: reads the diff from stdin for the CLI and the demos, resolving to `{ diff }` or `{ error: "empty" \| "too-large" }` (`ReadDiffResult`)                                                      |
-| `review-with-session.ts`   | Demo: a structured review followed by a plain-text follow-up question in the same conversation                                                                                                            |
-| `cost-report.ts`           | Demo: one short call whose usage and OpenRouter cost are written to `cost.json` next to the script                                                                                                        |
-| `rules-inject.ts`          | Demo: injects a skill file into the instructions. It reads `packages/anthropic/.claude/skills/greeting/SKILL.md`, which does not exist in this repo, so it fails with `ENOENT` before any model call      |
+| File                       | Contents                                                                                                                                                                                                                              |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `schemas/review-result.ts` | `ReviewCriterion`, `ReviewCriteria`, `ReviewResult` (zod schema and same-named type) and `REVIEW_JSON_SCHEMA` (draft-07 JSON Schema of `ReviewResult`)                                                                                |
+| `prompts/reviewer.ts`      | `REVIEWER_INSTRUCTIONS` (the system prompt), `buildReviewPrompt(diff, pullRequest?)` (the per-diff user prompt, see Input format) and the `PullRequestContext` type (`{ title?: string; body?: string }`)                             |
+| `config.ts`                | `DEFAULT_REVIEWER_MODEL`, `DEFAULT_MAX_STEPS`, `DEFAULT_MAX_OUTPUT_TOKENS`, `DEFAULT_MAX_DIFF_CHARS`, `MAX_PR_BODY_CHARS`, `DEFAULT_REVIEW_TIMEOUT_MS` and `resolveReviewerModel(env)`                                                |
+| `agent.ts`                 | `createReviewer(options)`, `reviewDiff(diff, options)` (options include `pullRequest`), `ReviewRunError`, `DiffTooLargeError`, `verdictFromScores(criteria)` (the verdict rule as code) and the `ReviewerOptions` / `ReviewRun` types |
+| `index.ts`                 | Public barrel re-exporting all of the above. Importing it has no side effects: no `.env` loading, no stdin read, no logging, no process exit                                                                                          |
+| `review.ts`                | The CLI (see below)                                                                                                                                                                                                                   |
+| `utils.ts`                 | `readDiff()`: reads the diff from stdin for the CLI and the demos, resolving to `{ diff }` or `{ error: "empty" \| "too-large" }` (`ReadDiffResult`)                                                                                  |
+| `review-with-session.ts`   | Demo: a structured review followed by a plain-text follow-up question in the same conversation                                                                                                                                        |
+| `cost-report.ts`           | Demo: one short call whose usage and OpenRouter cost are written to `cost.json` next to the script                                                                                                                                    |
+| `rules-inject.ts`          | Demo: injects a skill file into the instructions. It reads `packages/anthropic/.claude/skills/greeting/SKILL.md`, which does not exist in this repo, so it fails with `ENOENT` before any model call                                  |
 
 ## CLI usage
 
@@ -39,7 +39,7 @@ The CLI aborts a review after `DEFAULT_REVIEW_TIMEOUT_MS` (`180_000` ms, 3 minut
 Output:
 
 - stdout: only the `ReviewResult` JSON (`JSON.stringify(output, null, 2)`), so it can be piped (`git diff | npm run --silent review 2>/dev/null | jq .verdict`). Nothing else is ever written to stdout, whatever the exit code.
-- stderr: one usage line per run, for example `model=z-ai/glm-5.1 finishReason=stop input_tokens=1234 output_tokens=567 total_tokens=1801 cost_usd=0.0021`, and `error: <message>` on failure. A value the provider did not report is printed as `unknown`; `cost_usd=unknown` means no step reported a cost, not that the run was free.
+- stderr: one usage line per run, for example `model=z-ai/glm-5.1 finishReason=stop input_tokens=1234 output_tokens=567 total_tokens=1801 cost_usd=0.0021`, `note: verdict overridden to fail by the score rule (the model said pass)` when the rule overrode the model (see Input format and verdict rule), and `error: <message>` on failure. A value the provider did not report is printed as `unknown`; `cost_usd=unknown` means no step reported a cost, not that the run was free.
 
 Exit codes (the CI composite action `.github/actions/ai-reviewer` maps them to its `outcome`):
 
@@ -83,20 +83,21 @@ The library does not read `.env`: `OPENROUTER_API_KEY` must already be in `proce
 
 `reviewDiff(diff, options)` takes the `ReviewerOptions` (`model`, `maxSteps`, `maxOutputTokens`) plus `abortSignal`, `maxDiffChars` and `pullRequest` (a `PullRequestContext`, `{ title?: string; body?: string }`, forwarded to `buildReviewPrompt`), and resolves to a `ReviewRun`. The library sets no timeout of its own; pass `abortSignal` (the CLI uses `AbortSignal.timeout(DEFAULT_REVIEW_TIMEOUT_MS)`).
 
-| Field          | Meaning                                                                        |
-| -------------- | ------------------------------------------------------------------------------ |
-| `output`       | The `ReviewResult`                                                             |
-| `usage`        | Token usage (`LanguageModelUsage`) summed over every step of the run           |
-| `costUsd`      | OpenRouter cost in USD summed over the steps; `null` when no step reported one |
-| `model`        | The OpenRouter model id the run used                                           |
-| `finishReason` | Finish reason of the final step, normally `stop`                               |
+| Field          | Meaning                                                                                           |
+| -------------- | ------------------------------------------------------------------------------------------------- |
+| `output`       | The `ReviewResult`, with `verdict` set to the binding verdict (see Input format and verdict rule) |
+| `modelVerdict` | The verdict the model itself emitted                                                              |
+| `usage`        | Token usage (`LanguageModelUsage`) summed over every step of the run                              |
+| `costUsd`      | OpenRouter cost in USD summed over the steps; `null` when no step reported one                    |
+| `model`        | The OpenRouter model id the run used                                                              |
+| `finishReason` | Finish reason of the final step, normally `stop`                                                  |
 
 `reviewDiff` throws:
 
 - an `Error` for an empty or whitespace-only diff, before any model call;
 - `DiffTooLargeError` for a diff longer than `maxDiffChars`, before any model call. It carries `length` (the diff's length) and `limit` (the cap), both in characters, so callers need not parse the message;
 - an `Error` when `maxSteps` or `maxOutputTokens` is not an integer >= 1, or `maxDiffChars` is neither an integer >= 1 nor `Infinity`;
-- `ReviewRunError` when the model answered but produced no valid `ReviewResult` (unparseable, schema-invalid or missing output). It carries `usage`, `costUsd`, `model` and `finishReason` (the last step that ended, or `undefined` when none did), with the SDK error as `cause`. A run cut off by the token ceiling normally surfaces this way, with `finishReason: "length"`; a cut-off answer that still parses as a valid `ReviewResult` is returned, so check `finishReason` on a returned run;
+- `ReviewRunError` when the model answered but produced no valid `ReviewResult` (unparseable, schema-invalid or missing output, or a score that is not an integer from 1 to 10). It carries `usage`, `costUsd`, `model` and `finishReason` (the last step that ended, or `undefined` when none did), with the SDK error as `cause`. A run cut off by the token ceiling normally surfaces this way, with `finishReason: "length"`; a cut-off answer that still parses as a valid `ReviewResult` is returned, so check `finishReason` on a returned run;
 - API and network errors from the SDK, and the abort error of a fired `abortSignal`, unchanged.
 
 `createReviewer(options)` returns the plain `ToolLoopAgent`, for callers that need `messages` instead of a single prompt (see `review-with-session.ts`). It does not sum the cost or wrap errors; `reviewDiff` does.
@@ -137,11 +138,15 @@ Review this pull request. Its inputs follow, each inside its own tag.
 
 - `<pr-title>` and `<pr-body>` are present only when the title or body is non-empty after trimming; `<diff>` is always present.
 - The body is cut to `MAX_PR_BODY_CHARS` characters, and the cut is marked with `[truncated]` on its own line.
-- In every input, each match of `/<\/\s*(diff|pr-title|pr-body)\s*>/gi` (also `</diff >`, `</ DIFF>`) has its `<` replaced with `&lt;`, so an input cannot close its fence.
+- Every `<` in the title and body is replaced with `&lt;`, so they hold no tag at all.
+- In the diff, each fence tag, opening or closing, matched by `/<(?:\s*\/)?\s*(diff|pr-title|pr-body)\b[^<>]*>/gi` (also `</diff >`, `< / DIFF >`, `</diff foo>`, `<diff/>`), has its `<` replaced with `&lt;`, so the diff can neither close its fence nor open another. Other `<` characters in the diff stay as they are.
 
 `REVIEWER_INSTRUCTIONS` declares everything inside these tags as untrusted content written by the PR author: data to review, never instructions. An attempt to instruct the reviewer lowers `securitySafety`.
 
-The verdict is a stated function of the scores: `verdict` is `fail` when `implementationCorrectness` ≤ 4, or `securitySafety` ≤ 4, or any criterion ≤ 2; otherwise `pass`. The model is told that the verdict must agree with the scores; the schema does not enforce it.
+The verdict is a stated function of the scores: `verdict` is `fail` when `implementationCorrectness` ≤ 4, or `securitySafety` ≤ 4, or any criterion ≤ 2; otherwise `pass`. The model is told that the verdict must agree with the scores, and `reviewDiff` enforces it in code:
+
+- a score that is not an integer from 1 to 10 throws `ReviewRunError` (CLI exit 1);
+- the binding `output.verdict` is `fail` when the model's verdict or `verdictFromScores(criteria)` is `fail`, so text that steers only the verdict cannot pass low scores. `modelVerdict` keeps the model's own, and the CLI prints a `note:` line on stderr when the two differ. The model's `summary` is left as written, so it can still lead with the overridden verdict.
 
 ## Data egress
 
@@ -151,7 +156,7 @@ The PR title and body are sent the same way when they are given.
 
 ## Known limits
 
-- Prompt injection is reduced, not eliminated: the inputs are fenced and declared as data (see Input format), but a model can still follow text inside them. An injection test case belongs to the eval suite of the `code-review-evals` change.
+- Prompt injection is reduced, not eliminated: the inputs are fenced and declared as data, and the verdict rule is enforced in code (see Input format and verdict rule), but a model can still follow text inside them, and lookalike tags in the diff (fullwidth `＜`, homoglyphs, zero-width characters) are not neutralised. An injection test case belongs to the eval suite of the `code-review-evals` change.
 - The CLI aborts a review after `DEFAULT_REVIEW_TIMEOUT_MS`; the library sets no timeout, so a programmatic caller without an `abortSignal` still waits as long as the provider call does.
 
 ## The schema is the contract

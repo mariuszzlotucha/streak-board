@@ -56,6 +56,11 @@ async function main(): Promise<number> {
     });
     console.log(JSON.stringify(run.output, null, 2));
     console.error(formatUsageLine(run));
+    if (run.modelVerdict !== run.output.verdict) {
+      console.error(
+        `note: verdict overridden to ${run.output.verdict} by the score rule (the model said ${run.modelVerdict})`,
+      );
+    }
     return 0;
   } catch (error) {
     // A run without a valid result was still billed, so report what it consumed first.
