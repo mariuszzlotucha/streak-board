@@ -37,9 +37,10 @@ jobs:
       - name: Run Claude review
         uses: anthropics/claude-code-action@1d6de8cb0c237e7c15e9e1bdf973826ebae490cc # v1.0.248
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # A Claude subscription token (`claude setup-token`), so the review uses the subscription, not API credits.
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          show_full_output: true # TEMPORARY: diagnose the failing API call on #116; remove before merge
+          show_full_output: true # TEMPORARY: verify the OAuth token on #116; remove before merge
           # Without these tools Claude cannot post the inline and summary comments the prompt asks for.
           claude_args: |
             --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
