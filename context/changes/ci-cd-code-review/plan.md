@@ -375,20 +375,20 @@ One model call per review; the median diff over 114 past merges is 24.9k charact
 
 #### Automated
 
-- [ ] 1.1 Type check passes: `npx tsc --noEmit -p .`
-- [ ] 1.2 Lint passes: `npm run lint`
-- [ ] 1.3 Prettier passes on changed files
-- [ ] 1.4 Action YAML parses
-- [ ] 1.5 CLI exits 2 on empty stdin with nothing on stdout
-- [ ] 1.6 CLI exits 3 on a 300,000-character diff and on 900,000 bytes
-- [ ] 1.7 Prompt builder fences inputs, neutralises a closing tag and truncates the body
-- [ ] 1.11 Action probe: run blocks hold no expressions, and a stub npm gives the expected outcome and verdict for every CLI result
+- [x] 1.1 Type check passes: `npx tsc --noEmit -p .` — d33f7a4
+- [x] 1.2 Lint passes: `npm run lint` — d33f7a4
+- [x] 1.3 Prettier passes on changed files — d33f7a4
+- [x] 1.4 Action YAML parses — d33f7a4
+- [x] 1.5 CLI exits 2 on empty stdin with nothing on stdout — d33f7a4
+- [x] 1.6 CLI exits 3 on a 300,000-character diff and on 900,000 bytes — d33f7a4
+- [x] 1.7 Prompt builder fences inputs, neutralises a closing tag and truncates the body — d33f7a4
+- [x] 1.11 Action probe: run blocks hold no expressions, and a stub npm gives the expected outcome and verdict for every CLI result — d33f7a4
 
 #### Manual
 
-- [ ] 1.8 A local review of a small real diff with PR_TITLE set returns valid JSON whose verdict follows the written rule
-- [ ] 1.9 A diff with an obvious bug and an embedded "ignore your instructions" line gets verdict fail
-- [ ] 1.12 Baseline on recent merged PRs: every fail explained and no run near the 180 s timeout
+- [x] 1.8 A local review of a small real diff with PR_TITLE set returns valid JSON whose verdict follows the written rule — d33f7a4
+- [x] 1.9 A diff with an obvious bug and an embedded "ignore your instructions" line gets verdict fail — d33f7a4
+- [x] 1.12 Baseline on recent merged PRs: every fail explained and no run near the 180 s timeout — d33f7a4
 - [ ] 1.10 The phase PR contains no workflow file and its checks are only the existing ci.yml jobs
 
 ### Phase 2: Workflows, required gate and docs

@@ -26,6 +26,20 @@ export const DEFAULT_MAX_OUTPUT_TOKENS = 16384;
 export const DEFAULT_MAX_DIFF_CHARS = 200_000;
 
 /**
+ * Upper bound on the PR body in characters. `buildReviewPrompt` cuts a longer
+ * body and marks the cut with `[truncated]`: the body states intent, so its
+ * first part is what matters, and it is untrusted text that costs tokens.
+ */
+export const MAX_PR_BODY_CHARS = 2_000;
+
+/**
+ * Time in milliseconds after which the CLI aborts a review
+ * (`AbortSignal.timeout`), so a hanging provider call cannot hold a CI job.
+ * The library itself sets no timeout; programmatic callers pass `abortSignal`.
+ */
+export const DEFAULT_REVIEW_TIMEOUT_MS = 180_000;
+
+/**
  * Returns the trimmed `REVIEWER_MODEL` from `env` when it is non-empty, else
  * `DEFAULT_REVIEWER_MODEL`. Pure: reads only the object it is given.
  */

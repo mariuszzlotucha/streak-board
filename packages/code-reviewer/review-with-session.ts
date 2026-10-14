@@ -15,9 +15,9 @@ const recaller = new ToolLoopAgent({
   stopWhen: isStepCount(1),
 });
 
-const diff = await readDiff();
-if (diff === undefined) process.exit(1);
-const messages: ModelMessage[] = [{ role: "user", content: buildReviewPrompt(diff) }];
+const read = await readDiff();
+if ("error" in read) process.exit(1);
+const messages: ModelMessage[] = [{ role: "user", content: buildReviewPrompt(read.diff) }];
 
 const first = await structuredReviewer.generate({ messages });
 messages.push(...first.responseMessages);
