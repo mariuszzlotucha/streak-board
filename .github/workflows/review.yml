@@ -6,6 +6,7 @@
 # root; the PR is fetched as git objects only and never checked out, so no PR file lands where npm or git would
 # read it. This workflow file itself comes from the PR (`pull_request` runs the merge commit's version), so a PR
 # that edits .github/ can change the gate: the owner reads such a PR, and its green check is no evidence.
+# Fork PRs get no secrets and a read-only token, so an unmodified run ends in `error` with no comment or labels.
 # The action reports an outcome:
 #   reviewed  — label ai-cr:passed / ai-cr:failed; the check follows the verdict
 #   skipped   — no code diff after the exclusions; no label; the check passes
