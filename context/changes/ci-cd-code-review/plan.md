@@ -412,7 +412,7 @@ One model call per review; the median diff over 114 past merges is 24.9k charact
 
 #### Manual
 
-- [x] 2.5 Repository secrets set, OpenRouter key confirmed dedicated with a credit limit, and the four labels exist — a3b34fd (credit limit confirmed by the owner on 2026-10-14, full impl review F3)
+- [x] 2.5 Repository secrets set, OpenRouter key confirmed dedicated with a credit limit, and the four labels exist (the owner confirmed the limit on 2026-10-14, see the full impl review F3) — a3b34fd
 - [x] 2.6 Phase PR: ai-review reviews the change, posts the marked comment and the matching label, check follows the verdict — d6984c3
 - [x] 2.7 Phase PR: a second push edits the same comment — d6984c3
 - [x] 2.8 Phase PR: adding ai-cr:review re-runs the review and the label is removed — d6984c3
