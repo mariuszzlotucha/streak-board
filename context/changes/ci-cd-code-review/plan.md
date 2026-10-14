@@ -404,10 +404,10 @@ One model call per review; the median diff over 114 past merges is 24.9k charact
 #### Manual
 
 - [x] 2.5 Repository secrets set, OpenRouter key confirmed dedicated with a credit limit, and the four labels exist — a3b34fd
-- [ ] 2.6 Phase PR: ai-review reviews the change, posts the marked comment and the matching label, check follows the verdict
-- [ ] 2.7 Phase PR: a second push edits the same comment
-- [ ] 2.8 Phase PR: adding ai-cr:review re-runs the review and the label is removed
-- [ ] 2.9 Phase PR: an unrelated label publishes a re-evaluated ai-review with the previous conclusion, also while a review runs
-- [ ] 2.10 Phase PR: adding claude-review runs the Claude review without changing the ai-review result
+- [x] 2.6 Phase PR: ai-review reviews the change, posts the marked comment and the matching label, check follows the verdict
+- [x] 2.7 Phase PR: a second push edits the same comment
+- [x] 2.8 Phase PR: adding ai-cr:review re-runs the review and the label is removed
+- [x] 2.9 Phase PR: an unrelated label publishes a re-evaluated ai-review with the previous conclusion, also while a review runs
+- [x] 2.10 Phase PR: adding claude-review runs the Claude review without changing the ai-review result
 - [ ] 2.11 Ruleset 24254172 lists integration and ai-review as required checks and the phase PR is mergeable
 - [ ] 2.12 Archive PR (docs only): ai-review reports success via the skipped outcome and the PR is mergeable

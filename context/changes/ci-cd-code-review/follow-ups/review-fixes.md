@@ -28,3 +28,12 @@
 ### For `code-review-evals`
 
 - **Binary detection hides code.** `git diff` prints `Binary files … differ` for any file with a NUL byte, so a source file with a NUL in a comment reaches the model without content. `--text` would also dump real binaries. Add such a case to the suite, and decide whether the action should fail closed when a binary marker names a source extension.
+
+## From the Phase 2 live trial on #116
+
+- **Comment step: `-F body=@file` failed on the runner.** The first live run reviewed the change (`pass`) but the comment step stopped with `unexpected end of JSON input` before posting; the comment and labels now go to the API as JSON payloads (`--input`), each `gh` call logs a progress line, and the next runs posted, edited and labelled as planned (`5f2d4db`).
+- **Model verdict stricter than the written rule.** On `7d319c1` the model returned `fail` with Corr 8, Sec 8, Test 4, Idiom 8, Cplx 7 (the rule gives `pass`); `reviewDiff` keeps the stricter verdict (Phase 1 F1), so the check failed. Earlier runs on the same code passed. For `code-review-evals`: measure how often the model's verdict disagrees with `verdictFromScores` in either direction, and decide whether the rule alone should bind.
+- **No automated tests for the workflow logic** (raised by that review): the re-evaluation jq filter, the comment builder and the label rules are covered only by local stub probes and this live trial. Candidate: a committed probe script with fixtures, run in CI once `ci.yml` may change.
+- **Sticky comment and claude-review.** `claude-review` comments as `github-actions[bot]` too, so a Claude comment that begins with `<!-- ai-cr:summary -->` would be adopted and edited by `ai-review` (raised by the first `ai-review` of #116). Consider telling Claude never to emit the marker, or matching the full first line plus the heading.
+- **claude-review authentication.** The repository's `ANTHROPIC_API_KEY` was not scoped to a workspace (API 400, found with a temporary `show_full_output`); the owner chose a Claude subscription token, `CLAUDE_CODE_OAUTH_TOKEN` (`7d319c1`), and removed the API key secret.
+- **Skipped `claude-review` check runs.** Every label added to a PR publishes a skipped `claude-review` check run. Harmless (not required), but noisy in the checks list.
