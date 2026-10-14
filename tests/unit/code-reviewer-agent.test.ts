@@ -1,0 +1,173 @@
+import { execFileSync } from "node:child_process";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { MockLanguageModelV4 } from "ai/test";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import type { RepoContext } from "../../packages/code-reviewer/tools";
+
+// The reviewer builds its model with `openrouter(...)`; each test sets the mock it answers with.
+let model: MockLanguageModelV4;
+vi.mock("@openrouter/ai-sdk-provider", () => ({ openrouter: () => model }));
+
+const { reviewDiff, ReviewRunError } = await import("../../packages/code-reviewer/agent");
+
+const usage = {
+  inputTokens: { total: 10, noCache: 10, cacheRead: undefined, cacheWrite: undefined },
+  outputTokens: { total: 5, text: 5, reasoning: undefined },
+};
+const criterion = { score: 8, rationale: "fine" };
+const review = {
+  criteria: {
+    implementationCorrectness: criterion,
+    idiomaticity: criterion,
+    complexity: criterion,
+    testRiskCoverage: criterion,
+    documentation: criterion,
+    securitySafety: criterion,
+  },
+  verdict: "pass",
+  summary: "**pass** — fine.\n\n### Findings\nNone.",
+};
+const answer = {
+  content: [{ type: "text" as const, text: JSON.stringify(review) }],
+  finishReason: { unified: "stop" as const, raw: "stop" },
+  usage,
+  warnings: [],
+};
+const readClaudeMd = {
+  content: [
+    {
+      type: "tool-call" as const,
+      toolCallId: "c1",
+      toolName: "readFile",
+      input: JSON.stringify({ path: "CLAUDE.md", revision: "base" }),
+    },
+  ],
+  finishReason: { unified: "tool-calls" as const, raw: "tool_calls" },
+  usage,
+  warnings: [],
+};
+
+let dir: string;
+let repo: RepoContext;
+
+beforeAll(() => {
+  dir = mkdtempSync(join(tmpdir(), "reviewer-agent-"));
+  const git = (...args: string[]) =>
+    execFileSync("git", ["-c", "commit.gpgsign=false", ...args], { cwd: dir, encoding: "utf8" }).trim();
+  git("init", "-q", "-b", "main");
+  git("config", "user.email", "test@example.com");
+  git("config", "user.name", "Test");
+  writeFileSync(join(dir, "CLAUDE.md"), "# Rules\n");
+  git("add", "-A");
+  git("commit", "-q", "-m", "base");
+  writeFileSync(join(dir, "a.ts"), "export const a = 1;\n");
+  git("add", "-A");
+  git("commit", "-q", "-m", "head");
+  repo = { cwd: dir, baseSha: git("rev-parse", "HEAD~1"), headSha: git("rev-parse", "HEAD") };
+});
+
+afterAll(() => {
+  rmSync(dir, { recursive: true, force: true });
+});
+
+describe("reviewDiff without a repo", () => {
+  it("makes one call with no tools", async () => {
+    model = new MockLanguageModelV4({ doGenerate: answer });
+    const run = await reviewDiff("+x\n");
+    expect(run.output.verdict).toBe("pass");
+    expect(run.toolCalls).toEqual([]);
+    expect(run.toolsSkipped).toBe(false);
+    expect(model.doGenerateCalls).toHaveLength(1);
+    expect(model.doGenerateCalls[0].tools ?? []).toEqual([]);
+  });
+});
+
+const notes = {
+  content: [{ type: "text" as const, text: "Notes: nothing outside the hunk is affected." }],
+  finishReason: { unified: "stop" as const, raw: "stop" },
+  usage,
+  warnings: [],
+};
+
+describe("reviewDiff with a repo", () => {
+  it("gathers evidence with tools and no schema, then answers with the schema and no tools", async () => {
+    model = new MockLanguageModelV4({ doGenerate: [readClaudeMd, answer] });
+    const run = await reviewDiff("+export const a = 1;\n", { repo, maxSteps: 2 });
+
+    expect(run.output.verdict).toBe("pass");
+    expect(model.doGenerateCalls).toHaveLength(2);
+    const [evidence, final] = model.doGenerateCalls;
+    const result = "CLAUDE.md at base (1 lines):\n1: # Rules";
+    expect(run.toolCalls).toEqual([{ tool: "readFile", revision: "base", target: "CLAUDE.md", chars: result.length }]);
+    // GLM-5.1 skipped the tools whenever the request carried a JSON schema, so the evidence calls carry none.
+    expect(evidence.tools?.map((t) => t.name).sort()).toEqual(["readFile", "searchCode"]);
+    expect(evidence.responseFormat?.type ?? "text").toBe("text");
+    expect(final.tools ?? []).toEqual([]);
+    expect(final.responseFormat?.type).toBe("json");
+    expect(JSON.stringify(evidence.prompt)).toContain("<changed-files>\\nA a.ts\\n</changed-files>");
+    expect(JSON.stringify(evidence.prompt)).toContain("You can read the repository");
+    expect(JSON.stringify(final.prompt)).toContain(JSON.stringify(result).slice(1, -1));
+    expect(JSON.stringify(final.prompt)).toContain("The evidence phase is over");
+    expect(run.usage.inputTokens).toBe(20);
+  });
+
+  it("answers with the schema after an evidence phase that ended in notes", async () => {
+    model = new MockLanguageModelV4({ doGenerate: [notes, answer] });
+    const run = await reviewDiff("+x\n", { repo, maxSteps: 6 });
+    expect(run.output.verdict).toBe("pass");
+    expect(model.doGenerateCalls).toHaveLength(2);
+    expect(JSON.stringify(model.doGenerateCalls[1].prompt)).toContain("Notes: nothing outside the hunk");
+  });
+
+  it("wraps an API error after a billed tool step, keeping the tool log and the cause", async () => {
+    const apiError = new Error("upstream 502");
+    let callNumber = 0;
+    model = new MockLanguageModelV4({
+      doGenerate: () => {
+        callNumber++;
+        if (callNumber === 1) return Promise.resolve(readClaudeMd);
+        return Promise.reject(apiError);
+      },
+    });
+    const error = await reviewDiff("+x\n", { repo, maxSteps: 3 }).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(ReviewRunError);
+    expect((error as InstanceType<typeof ReviewRunError>).toolCalls.map((c) => c.target)).toEqual(["CLAUDE.md"]);
+    expect((error as Error).cause).toBe(apiError);
+  });
+
+  it("starts no further evidence step once the phase deadline has passed", async () => {
+    model = new MockLanguageModelV4({ doGenerate: [readClaudeMd, answer] });
+    const start = Date.now();
+    // The clock jumps past EVIDENCE_PHASE_MS as soon as the first evidence step has run.
+    const now = vi
+      .spyOn(Date, "now")
+      .mockImplementation(() => (model.doGenerateCalls.length > 0 ? start + 200_000 : start));
+    try {
+      await reviewDiff("+x\n", { repo, maxSteps: 6 });
+    } finally {
+      now.mockRestore();
+    }
+    expect(model.doGenerateCalls).toHaveLength(2);
+    expect(model.doGenerateCalls[1].responseFormat?.type).toBe("json");
+  });
+
+  it("reviews a diff over maxDiffCharsForTools without tools, still listing the changed files", async () => {
+    model = new MockLanguageModelV4({ doGenerate: answer });
+    const run = await reviewDiff("+0123456789\n", { repo, maxDiffCharsForTools: 5 });
+    expect(run.toolsSkipped).toBe(true);
+    expect(model.doGenerateCalls).toHaveLength(1);
+    expect(model.doGenerateCalls[0].tools ?? []).toEqual([]);
+    expect(JSON.stringify(model.doGenerateCalls[0].prompt)).toContain("<changed-files>");
+    expect(JSON.stringify(model.doGenerateCalls[0].prompt)).not.toContain("You can read the repository");
+  });
+
+  it("makes a single structured call without tools when maxSteps is 1", async () => {
+    model = new MockLanguageModelV4({ doGenerate: answer });
+    await reviewDiff("+x\n", { repo, maxSteps: 1 });
+    expect(model.doGenerateCalls).toHaveLength(1);
+    expect(model.doGenerateCalls[0].tools ?? []).toEqual([]);
+    expect(model.doGenerateCalls[0].responseFormat?.type).toBe("json");
+  });
+});
