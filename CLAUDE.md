@@ -61,26 +61,28 @@ assertion only when the mutant represents a user-visible or business-relevant bu
 
 <!-- BEGIN @przeprogramowani/10x-cli -->
 
-## Zestaw narzędzi AI 10xDevs — Moduł 5, Lekcja 2 (Agent zespołowy z SDK)
+## Zestaw narzędzi AI 10xDevs — Moduł 5, Lekcja 3 (Przegląd kodu w CI)
 
-Zbuduj minimalnego agenta do przeglądu kodu: diff na wejściu, ustrukturyzowany werdykt JSON na wyjściu. Schemat i prompt systemowy są kontraktem, od którego zależy wszystko później (bramka CI, ewaluacje).
+Przenieś agenta przeglądu do GitHub Actions i zamień jego werdykt w bramkę merge. Oceń zmiany promptów i modeli na stałym zestawie przypadków przed ich wdrożeniem.
 
 ```
-review schema + system prompt -> review.ts (ready-made agent SDK or AI SDK ToolLoopAgent) -> git diff | npx tsx review.ts
+m5l3-requirements -> /10x-new -> /10x-research -> /10x-plan -> review.yml + composite action -> promptfoo evals
 ```
 
 ### Router zadań — od czego zacząć
 
-| Umiejętność / prompt / szablon                      | Użyj, gdy                                                                                                                                                              |
-| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `m5l2-review-schema.ts.template` (config templates) | Rozpoczynasz tworzenie recenzenta. Skopiuj go do pakietu recenzenta: sześć ocenianych kryteriów (1–10), werdykt i podsumowanie jako schemat zod oraz prompt systemowy. |
-| `m5l2-agent` (prompts)                              | Konfigurujesz punkt wejścia AI SDK, a następnie planujesz modułowego recenzenta `ToolLoopAgent` za pomocą `/10x-plan`.                                                 |
-| `/10x-plan` -> `/10x-implement`                     | Przekształcasz jednoplikowego recenzenta w moduły wielokrotnego użytku.                                                                                                |
+| Umiejętność / prompt / szablon                                                 | Użyj, gdy                                                                                                                                                                             |
+| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `m5l3-requirements` + `m5l3-cicd` (prompty)                                    | Prowadzisz badania i planujesz przepływ pracy przeglądu CI na podstawie pisemnych wymagań.                                                                                            |
+| `m5l3-review.yml.template`, `m5l3-action.yml.template` (szablony konfiguracji) | Podłączasz recenzenta do przepływu PR: akcja kompozytowa z wejściami tytułu, treści i diffu, etykietami `ai-cr:passed` / `ai-cr:failed` oraz nieudaną kontrolą przy werdykcie `fail`. |
+| `m5l3-promptfoo` (prompt) + `m5l3-promptfooconfig.yaml.template`               | Porównujesz modele lub zmiany promptów na tych samych diffach za pomocą asercji is-json, llm-rubric i javascript.                                                                     |
+| `/10x-impl-review-ci`                                                          | Przeglądasz PR względem jego `context/changes/<id>/plan.md` w CI za pomocą Claude Code Action; szablon jego workflow znajduje się w katalogu `references/` umiejętności.              |
 
 ### Twarde zasady
 
-- **Schemat jest kontraktem.** Najpierw zmień kryteria, wartości werdyktu lub nazwy pól w schemacie, a następnie w promptach, bramkach i ewaluacjach.
-- **Przypinaj główne wersje.** Kod lekcji jest przeznaczony dla AI SDK 7 (`ai@7`, `@openrouter/ai-sdk-provider@3`) oraz Node 22+.
-- **Śledź koszt każdego uruchomienia.** Loguj użycie z każdego przeglądu i ustaw twardy limit budżetu, zanim agent zacznie działać bez nadzoru.
+- **Przypinaj akcje zewnętrzne do pełnego SHA commita** z tagiem w komentarzu.
+- **Bramkuj na polu werdyktu**, nigdy na swobodnym tekście wyjściowym.
+- **Przekazuj wielowierszowe wartości (diffy) przez pliki lub ograniczniki heredoc**, a nie przez jednowierszowe zapisy `$GITHUB_OUTPUT`.
+- **Uruchom zestaw ewaluacyjny przed zmianą promptu lub modelu przeglądu.**
 
 <!-- END @przeprogramowani/10x-cli -->
