@@ -26,7 +26,7 @@ jobs:
       contents: read
       pull-requests: write
       issues: write # labels live on the issues API
-      id-token: write
+      # No id-token: github_token and the API key are passed explicitly, so the action's OIDC exchange is unused.
 
     steps:
       - name: Checkout repository
@@ -160,5 +160,12 @@ jobs:
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
           PR: ${{ github.event.pull_request.number }}
-        run: gh pr edit "$PR" --repo "$GITHUB_REPOSITORY" --remove-label claude-review || true
+        run: |
+          if ! out=$(gh api --method DELETE "repos/$REPO/issues/$PR/labels/claude-review" --silent 2>&1); then
+            case "$out" in
+              *"HTTP 404"*) ;; # the label was already removed
+              *) echo "$out" >&2; exit 1 ;;
+            esac
+          fi

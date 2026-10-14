@@ -395,15 +395,15 @@ One model call per review; the median diff over 114 past merges is 24.9k charact
 
 #### Automated
 
-- [x] 2.1 Lint passes: `npm run lint`
-- [x] 2.2 Prettier passes on changed files
-- [x] 2.3 Workflow YAML parses
-- [x] 2.4 No untrusted PR fields inside run blocks
-- [x] 2.13 actionlint passes on both workflows
+- [x] 2.1 Lint passes: `npm run lint` — a3b34fd
+- [x] 2.2 Prettier passes on changed files — a3b34fd
+- [x] 2.3 Workflow YAML parses — a3b34fd
+- [x] 2.4 No untrusted PR fields inside run blocks — a3b34fd
+- [x] 2.13 actionlint passes on both workflows — a3b34fd
 
 #### Manual
 
-- [x] 2.5 Repository secrets set, OpenRouter key confirmed dedicated with a credit limit, and the four labels exist
+- [x] 2.5 Repository secrets set, OpenRouter key confirmed dedicated with a credit limit, and the four labels exist — a3b34fd
 - [ ] 2.6 Phase PR: ai-review reviews the change, posts the marked comment and the matching label, check follows the verdict
 - [ ] 2.7 Phase PR: a second push edits the same comment
 - [ ] 2.8 Phase PR: adding ai-cr:review re-runs the review and the label is removed
