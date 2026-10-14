@@ -14,7 +14,8 @@
     "test": "vitest run",
     "test:rls": "docker exec -i supabase_db_10x-astro-starter psql -U postgres -d postgres -X -v ON_ERROR_STOP=1 < supabase/checks/rls-scenarios.sql",
     "prepare": "husky",
-    "deps": "depcruise src tests scripts --config .dependency-cruiser.cjs"
+    "deps": "depcruise src tests scripts --config .dependency-cruiser.cjs",
+    "review": "tsx packages/code-reviewer/review.ts"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.10",

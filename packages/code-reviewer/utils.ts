@@ -19,13 +19,17 @@ export function loadEnv(): void {
   }
 }
 
+/** What `readDiff` read: the diff, or why there is none. */
+export type ReadDiffResult = { diff: string } | { error: "empty" | "too-large" };
+
 /**
- * Reads the diff piped on stdin. Returns `undefined` and prints an error on
- * stderr when stdin is a terminal, the piped input is empty or whitespace only,
- * or it is longer than `maxBytes`. Only trailing newlines are stripped, so the
- * diff's own whitespace (e.g. a blank context line) is kept.
+ * Reads the diff piped on stdin. Returns `{ error: "empty" }` when stdin is a
+ * terminal or the piped input is empty or whitespace only, and
+ * `{ error: "too-large" }` when it is longer than `maxBytes`; either prints an
+ * error on stderr. Only trailing newlines are stripped, so the diff's own
+ * whitespace (e.g. a blank context line) is kept.
  */
-export async function readDiff(maxBytes = MAX_STDIN_BYTES): Promise<string | undefined> {
+export async function readDiff(maxBytes = MAX_STDIN_BYTES): Promise<ReadDiffResult> {
   if (!process.stdin.isTTY) {
     const chunks: Buffer[] = [];
     let bytes = 0;
@@ -35,12 +39,13 @@ export async function readDiff(maxBytes = MAX_STDIN_BYTES): Promise<string | und
       bytes += buffer.length;
       if (bytes > maxBytes) {
         console.error(`error: diff too large (over ${maxBytes} bytes on stdin)`);
-        return undefined;
+        return { error: "too-large" };
       }
       chunks.push(buffer);
     }
     const piped = Buffer.concat(chunks).toString("utf8");
-    if (piped.trim()) return piped.replace(/\n+$/, "") + "\n";
+    if (piped.trim()) return { diff: piped.replace(/\n+$/, "") + "\n" };
   }
   console.error("error: no diff on stdin (usage: git diff | npx tsx packages/code-reviewer/review.ts)");
+  return { error: "empty" };
 }

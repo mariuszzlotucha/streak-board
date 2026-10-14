@@ -9,7 +9,7 @@ import {
 } from "ai";
 import { openrouter } from "@openrouter/ai-sdk-provider";
 import { DEFAULT_MAX_DIFF_CHARS, DEFAULT_MAX_OUTPUT_TOKENS, DEFAULT_MAX_STEPS, DEFAULT_REVIEWER_MODEL } from "./config";
-import { REVIEWER_INSTRUCTIONS, buildReviewPrompt } from "./prompts/reviewer";
+import { REVIEWER_INSTRUCTIONS, buildReviewPrompt, type PullRequestContext } from "./prompts/reviewer";
 import { ReviewResult } from "./schemas/review-result";
 
 /**
@@ -71,6 +71,24 @@ export class ReviewRunError extends Error {
   }
 }
 
+/**
+ * Thrown by `reviewDiff`, before any model call, when the diff is longer than
+ * `maxDiffChars`. `length` is the diff's length and `limit` the cap, both in
+ * characters, so a caller can tell "too large" from other failures without
+ * parsing the message.
+ */
+export class DiffTooLargeError extends Error {
+  readonly length: number;
+  readonly limit: number;
+
+  constructor(length: number, limit: number) {
+    super(`reviewDiff: the diff is ${length} characters, over the ${limit} limit (maxDiffChars)`);
+    this.name = "DiffTooLargeError";
+    this.length = length;
+    this.limit = limit;
+  }
+}
+
 /** The parts of a step result the run totals are computed from. */
 interface ReviewStep {
   usage: LanguageModelUsage;
@@ -96,25 +114,29 @@ export function createReviewer(options: ReviewerOptions = {}) {
 }
 
 /**
- * Reviews one diff and returns the verdict with its usage and cost. Throws for
- * an empty or whitespace-only diff, one longer than `maxDiffChars` (default
- * `DEFAULT_MAX_DIFF_CHARS`) or an invalid `maxDiffChars`, before any model call, and `ReviewRunError`
+ * Reviews one diff, with the PR's title and body as optional context
+ * (`pullRequest`), and returns the verdict with its usage and cost. Before any
+ * model call it throws an `Error` for an empty or whitespace-only diff or an
+ * invalid `maxDiffChars`, and `DiffTooLargeError` for a diff longer than
+ * `maxDiffChars` (default `DEFAULT_MAX_DIFF_CHARS`). It throws `ReviewRunError`
  * when the model produced no valid `ReviewResult`; other SDK errors (API and
- * network failures) propagate unchanged.
+ * network failures, an aborted signal) propagate unchanged.
  */
 export async function reviewDiff(
   diff: string,
-  options: ReviewerOptions & { abortSignal?: AbortSignal; maxDiffChars?: number } = {},
+  options: ReviewerOptions & {
+    abortSignal?: AbortSignal;
+    maxDiffChars?: number;
+    pullRequest?: PullRequestContext;
+  } = {},
 ): Promise<ReviewRun> {
   if (diff.trim() === "") throw new Error("reviewDiff: the diff is empty");
-  const { abortSignal, maxDiffChars = DEFAULT_MAX_DIFF_CHARS, ...reviewerOptions } = options;
+  const { abortSignal, maxDiffChars = DEFAULT_MAX_DIFF_CHARS, pullRequest, ...reviewerOptions } = options;
   // `diff.length > NaN` is always false, so an unchecked NaN would disable the cap.
   if (maxDiffChars !== Infinity && (!Number.isInteger(maxDiffChars) || maxDiffChars < 1)) {
     throw new Error(`reviewDiff: maxDiffChars must be an integer >= 1 or Infinity, got ${maxDiffChars}`);
   }
-  if (diff.length > maxDiffChars) {
-    throw new Error(`reviewDiff: the diff is ${diff.length} characters, over the ${maxDiffChars} limit (maxDiffChars)`);
-  }
+  if (diff.length > maxDiffChars) throw new DiffTooLargeError(diff.length, maxDiffChars);
 
   const resolved = resolveOptions(reviewerOptions);
   const { model } = resolved;
@@ -123,7 +145,7 @@ export async function reviewDiff(
   const steps: ReviewStep[] = [];
   try {
     const result = await createReviewer(resolved).generate({
-      prompt: buildReviewPrompt(diff),
+      prompt: buildReviewPrompt(diff, pullRequest),
       abortSignal,
       onStepEnd: (step) => void steps.push(step),
     });

@@ -1,0 +1,161 @@
+# action.yml — composite action that runs packages/code-reviewer on a PR diff.
+# Local action. It runs the reviewer from the checkout it lives in (three levels up
+# from this file), not from the workspace: a workflow that checks out the PR's base
+# commit and uses the action from there keeps the PR from rewriting its own judge.
+# The action reports an outcome; the gate decision stays in the workflow.
+#
+# Outcomes:
+#   reviewed  — the CLI exited 0 with a valid pass/fail verdict (`verdict`, `review-file` set)
+#   skipped   — the diff file holds only whitespace (nothing installed), or the CLI exited 2
+#   too-large — the CLI exited 3 (stdin byte cap or DiffTooLargeError)
+#   error     — the CLI exited 1 or any other code, or exited 0 without a valid verdict
+# The action fails only on infrastructure errors (missing diff file, setup-node, npm ci),
+# never on a review outcome; the workflow then sees an empty `outcome`.
+name: AI Reviewer
+description: Run the team's code review agent on a pull request diff
+
+branding:
+  icon: terminal
+  color: purple
+
+inputs:
+  api-key:
+    description: OpenRouter API key (passed to the reviewer as OPENROUTER_API_KEY)
+    required: true
+  diff-file:
+    description: Path to a file with the PR diff (a file avoids step-output size and newline limits)
+    required: true
+  pr-title:
+    description: Pull request title (untrusted; reaches the reviewer through env as PR_TITLE)
+    required: true
+  pr-body:
+    description: Pull request description (untrusted; reaches the reviewer through env as PR_BODY, cut to MAX_PR_BODY_CHARS)
+    required: false
+    default: ""
+  model:
+    description: OpenRouter model id; empty means the reviewer's DEFAULT_REVIEWER_MODEL
+    required: false
+    default: ""
+
+outputs:
+  outcome:
+    description: "reviewed | skipped | too-large | error"
+    value: ${{ steps.review.outputs.outcome || steps.prepare.outputs.outcome }}
+  verdict:
+    description: "pass | fail; set only when outcome is reviewed"
+    value: ${{ steps.review.outputs.verdict }}
+  review-file:
+    description: Path to the full ReviewResult JSON; set only when outcome is reviewed
+    value: ${{ steps.review.outputs.review-file }}
+
+runs:
+  using: composite
+  steps:
+    - name: Resolve the reviewer root and check the diff
+      id: prepare
+      shell: bash
+      env:
+        DIFF_FILE: ${{ inputs.diff-file }}
+      # setup-node rejects a cache-dependency-path containing "..", so the root is
+      # resolved to a normalised absolute path here. The diff path is made absolute
+      # too, since the reviewer runs from the root, not from the workspace.
+      run: |
+        root=$(realpath "$GITHUB_ACTION_PATH/../../..")
+        echo "root=$root" >> "$GITHUB_OUTPUT"
+        if [ ! -f "$DIFF_FILE" ]; then
+          echo "::error::diff file not found: $DIFF_FILE"
+          exit 1
+        fi
+        echo "diff-file=$(realpath "$DIFF_FILE")" >> "$GITHUB_OUTPUT"
+        if grep -q '[^[:space:]]' "$DIFF_FILE"; then
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+        else
+          echo "skip=true" >> "$GITHUB_OUTPUT"
+          echo "outcome=skipped" >> "$GITHUB_OUTPUT"
+          {
+            echo "### AI review"
+            echo
+            echo "Outcome: \`skipped\` (the diff is empty)"
+          } >> "$GITHUB_STEP_SUMMARY"
+        fi
+
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      if: steps.prepare.outputs.skip == 'false'
+      with:
+        node-version-file: ${{ steps.prepare.outputs.root }}/.nvmrc
+        cache: npm
+        cache-dependency-path: ${{ steps.prepare.outputs.root }}/package-lock.json
+
+    - name: Install the reviewer's dependencies
+      if: steps.prepare.outputs.skip == 'false'
+      shell: bash
+      env:
+        REVIEWER_ROOT: ${{ steps.prepare.outputs.root }}
+      run: |
+        cd "$REVIEWER_ROOT"
+        npm ci
+
+    - name: Run the reviewer
+      id: review
+      if: steps.prepare.outputs.skip == 'false'
+      shell: bash
+      # Untrusted PR text and the key reach the CLI through env only.
+      env:
+        REVIEWER_ROOT: ${{ steps.prepare.outputs.root }}
+        DIFF_FILE: ${{ steps.prepare.outputs.diff-file }}
+        OPENROUTER_API_KEY: ${{ inputs.api-key }}
+        REVIEWER_MODEL: ${{ inputs.model }}
+        PR_TITLE: ${{ inputs.pr-title }}
+        PR_BODY: ${{ inputs.pr-body }}
+      # --silent keeps npm's script banner out of stdout, which must be only the JSON.
+      # The shell runs with -e, so the exit code is captured with set +e and mapped
+      # to an outcome instead of aborting the step.
+      run: |
+        review_file="$RUNNER_TEMP/ai-review.json"
+        stderr_file="$RUNNER_TEMP/ai-review.stderr"
+        cd "$REVIEWER_ROOT"
+        set +e
+        npm run --silent review < "$DIFF_FILE" > "$review_file" 2> "$stderr_file"
+        status=$?
+        set -e
+        # Keep the CLI's stderr (usage line, error message) in the job log.
+        cat "$stderr_file" >&2
+
+        verdict=""
+        case "$status" in
+          0)
+            if verdict=$(node -e 'const r = JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")); if (!["pass", "fail"].includes(r?.verdict)) process.exit(1); console.log(r.verdict)' "$review_file" 2> /dev/null); then
+              outcome=reviewed
+            else
+              verdict=""
+              outcome=error
+              echo "::error::the reviewer exited 0 without a valid pass/fail verdict"
+            fi
+            ;;
+          2) outcome=skipped ;;
+          3) outcome=too-large ;;
+          *) outcome=error ;;
+        esac
+
+        echo "outcome=$outcome" >> "$GITHUB_OUTPUT"
+        if [ "$outcome" = reviewed ]; then
+          echo "verdict=$verdict" >> "$GITHUB_OUTPUT"
+          echo "review-file=$review_file" >> "$GITHUB_OUTPUT"
+        fi
+
+        usage_line=$(grep '^model=' "$stderr_file" | tail -n 1 || true)
+        {
+          echo "### AI review"
+          echo
+          echo "Outcome: \`$outcome\` (reviewer exit code $status)"
+          if [ -n "$verdict" ]; then
+            echo
+            echo "Verdict: \`$verdict\`"
+          fi
+          if [ -n "$usage_line" ]; then
+            echo
+            echo '```'
+            echo "$usage_line"
+            echo '```'
+          fi
+        } >> "$GITHUB_STEP_SUMMARY"
