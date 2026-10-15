@@ -77,6 +77,21 @@ describe("resolveSignInError", () => {
     );
   });
 
+  // The wording the sign-in page shows for each code (src/lib/auth-errors.ts, SIGN_IN_ERROR_MESSAGES): a blank or
+  // missing message would leave the user with an alert that says nothing.
+  it.each<[string, string]>([
+    ["invalid_credentials", "Invalid email or password. If you signed up with Google, use Continue with Google."],
+    ["email_not_confirmed", "Please confirm your email address before signing in."],
+    ["link_expired", "This confirmation link has expired or was already used. If your email is confirmed, sign in."],
+    ["oauth_cancelled", "Google sign-in was cancelled. Try again or sign in with your email."],
+    ["oauth_failed", "Google sign-in could not be completed. Please try again."],
+    ["rate_limited", "Too many attempts. Please try again later."],
+    ["not_configured", "Sign-in is not available right now."],
+    ["unknown", "Something went wrong. Please try again."],
+  ])("pins the user-facing wording of %s", (code, message) => {
+    expect(resolveSignInError(code)).toBe(message);
+  });
+
   it.each(["Injected message", "access_denied", "server_error", "", "constructor", "__proto__", "toString"])(
     "resolves nothing for the foreign value %j",
     (param) => {
@@ -96,6 +111,24 @@ describe("resolveSignUpError", () => {
     expect(resolution?.field).toBe("email");
     expect(resolution?.message).toContain("already exists");
     expect(resolution?.message).toContain("Continue with Google");
+  });
+
+  // The message and the field each sign-up code resolves to (src/lib/auth-errors.ts, SIGN_UP_ERRORS). The password
+  // minimum is `minimum_password_length = 6` in supabase/config.toml, mirrored by MIN_PASSWORD_LENGTH; the two codes
+  // with a field highlight that input, the other four only show the message.
+  it.each<[string, string, "email" | "password" | undefined]>([
+    [
+      "email_taken",
+      "An account with this email already exists. Sign in instead, or use Continue with Google if you signed up with it.",
+      "email",
+    ],
+    ["weak_password", "Password must be at least 6 characters.", "password"],
+    ["invalid_input", "Check your email and password and try again.", undefined],
+    ["rate_limited", "Too many attempts. Please try again later.", undefined],
+    ["not_configured", "Sign-up is not available right now.", undefined],
+    ["unknown", "Something went wrong. Please try again.", undefined],
+  ])("pins the message and field of %s", (code, message, field) => {
+    expect(resolveSignUpError(code)).toEqual(field === undefined ? { message } : { message, field });
   });
 
   it("resolves nothing for a foreign value", () => {

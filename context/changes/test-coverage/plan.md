@@ -527,9 +527,9 @@ No schema change and no data migration. The `production` tag is new repository m
 
 #### Automated
 
-- [x] 4.1 Smoke passes with the new steps against the production preview: `npm run smoke` (the step count rises by the number of added steps, recorded in the PR)
-- [x] 4.2 Unit and integration suites pass with the mapper tables: `npm test`
-- [x] 4.3 Lint passes: `npm run lint`
+- [x] 4.1 Smoke passes with the new steps against the production preview: `npm run smoke` (the step count rises by the number of added steps, recorded in the PR) — 5c803b1
+- [x] 4.2 Unit and integration suites pass with the mapper tables: `npm test` — 5c803b1
+- [x] 4.3 Lint passes: `npm run lint` — 5c803b1
 - [ ] 4.4 Smoke still passes in CI: `gh pr checks` shows `smoke` green (ticked with the PR head SHA on the next branch or in the closing docs PR)
 
 #### Manual
@@ -542,11 +542,11 @@ No schema change and no data migration. The `production` tag is new repository m
 
 #### Automated
 
-- [ ] 5.1 Precondition holds: `tests/unit/{group-errors,task-errors,group-rules,join-code,checkoff-response}.test.ts` and `tests/integration/rule-contracts.test.ts` exist on `master`
-- [ ] 5.2 Every listed module has a recorded run: `mutation-baseline.md` has one row per module, and no runtime mutant in any run has `testsCompleted: 0` except those classified as import-time throws
-- [ ] 5.3 Suites pass with the strengthened tests: `npm test` with the stack up and `npm run test:unit` with the stack stopped
-- [ ] 5.4 No source change: `git diff --stat origin/master...HEAD -- src` prints nothing
-- [ ] 5.5 Lint passes: `npm run lint`
+- [x] 5.1 Precondition holds: `tests/unit/{group-errors,task-errors,group-rules,join-code,checkoff-response}.test.ts` and `tests/integration/rule-contracts.test.ts` exist on `master`
+- [x] 5.2 Every listed module has a recorded run: `mutation-baseline.md` has one row per module, and no runtime mutant in any run has `testsCompleted: 0` except those classified as import-time throws
+- [x] 5.3 Suites pass with the strengthened tests: `npm test` with the stack up and `npm run test:unit` with the stack stopped
+- [x] 5.4 No source change: `git diff --stat origin/master...HEAD -- src` prints nothing
+- [x] 5.5 Lint passes: `npm run lint`
 
 #### Manual
 

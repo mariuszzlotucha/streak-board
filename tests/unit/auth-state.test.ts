@@ -36,16 +36,32 @@ describe("resolveAuthState", () => {
     expect(state.kind).toBe("anonymous");
   });
 
-  it.each(["bad_jwt", "session_not_found", "session_expired", "refresh_token_not_found", "user_not_found"])(
-    "is anonymous for a 401 %s",
-    async (code) => {
-      const error = new AuthApiError("gone", 401, code);
-      expect((await resolveAuthState(clientReturning({ data: { user: null }, error }))).kind).toBe("anonymous");
-    },
-  );
+  // Every code the module lists as "this session is gone" (src/lib/auth-state.ts, SESSION_GONE_CODES): a signed-out
+  // visitor, not a fault to report.
+  it.each([
+    "bad_jwt",
+    "session_not_found",
+    "session_expired",
+    "refresh_token_not_found",
+    "refresh_token_already_used",
+    "user_not_found",
+    "no_authorization",
+  ])("is anonymous for a 401 %s", async (code) => {
+    const error = new AuthApiError("gone", 401, code);
+    expect((await resolveAuthState(clientReturning({ data: { user: null }, error }))).kind).toBe("anonymous");
+  });
 
   it("is unexpected for a 401 without a code", async () => {
     const error = new AuthApiError("nope", 401, undefined);
+    expect(await resolveAuthState(clientReturning({ data: { user: null }, error }))).toEqual({
+      kind: "unexpected",
+      error,
+    });
+  });
+
+  it("is unexpected for a 4xx with a code that does not mean the session is gone", async () => {
+    // "anything else: treated as anonymous, but reported" (the AuthState comment), so the error must come back
+    const error = new AuthApiError("nope", 422, "validation_failed");
     expect(await resolveAuthState(clientReturning({ data: { user: null }, error }))).toEqual({
       kind: "unexpected",
       error,
