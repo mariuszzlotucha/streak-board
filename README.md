@@ -280,7 +280,7 @@ npx wrangler rollback [version-id]   # reverts to the given version, or the prio
 
 `wrangler rollback` prompts for a message and a confirmation; both fall back to sane defaults in a non-interactive shell. Rollback only affects the Worker's code/version — it does not touch Supabase (migrations are not rolled back, see the backward-compatibility rule above) or any bound resources.
 
-After a rollback, move the `production` tag by hand to the commit that is live again, so the `compat` job keeps testing the deployed code (only the `release` job moves it automatically): find the commit of the rolled-back version (the `release` run that deployed it, or `npx wrangler deployments list`), then `git tag -f production <sha> && git push --force origin refs/tags/production`.
+After a rollback, move the `production` tag by hand to the commit that is live again, so the `compat` job keeps testing the deployed code (only the `release` job moves it automatically): find the commit of the rolled-back version (the `release` run that deployed it, or `npx wrangler deployments list`), then `git tag -f production <sha> && git push --force origin refs/tags/production`. The `release` job moves the tag with the run's `GITHUB_TOKEN`, so a tag protection rule or a ruleset covering `refs/tags/production` would turn that step red after a successful deploy (the live check still runs); there is none today, and adding one means moving the tag by hand after every release.
 
 ### Auth e-mail sender domain
 

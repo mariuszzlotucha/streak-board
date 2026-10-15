@@ -516,7 +516,7 @@ No schema change and no data migration. The `production` tag is new repository m
 - [x] 3.1 Both projects pass locally: `npx playwright test` runs every spec in `chromium` and `mobile-chromium` and passes — 99a4f77
 - [x] 3.2 The seed script refuses a non-local stack: `TEST_SUPABASE_URL=https://example.supabase.co TEST_SUPABASE_ANON_KEY=x TEST_SUPABASE_SERVICE_ROLE_KEY=x node scripts/e2e-user.mjs` exits non-zero and creates nothing — 99a4f77
 - [x] 3.3 Lint passes, the script included: `npm run lint` — 99a4f77
-- [ ] 3.4 The `e2e` job passes on the phase PR with both projects: `gh pr checks` shows `e2e` green (ticked with the PR head SHA on the next phase branch or in the closing docs PR, never on the merged branch)
+- [x] 3.4 The `e2e` job passes on the phase PR with both projects: `gh pr checks` shows `e2e` green (ticked with the PR head SHA on the next phase branch or in the closing docs PR, never on the merged branch) — PR #133, head ed73bb0, run 38824562138
 
 #### Manual
 
@@ -530,7 +530,7 @@ No schema change and no data migration. The `production` tag is new repository m
 - [x] 4.1 Smoke passes with the new steps against the production preview: `npm run smoke` (the step count rises by the number of added steps, recorded in the PR) — 5c803b1
 - [x] 4.2 Unit and integration suites pass with the mapper tables: `npm test` — 5c803b1
 - [x] 4.3 Lint passes: `npm run lint` — 5c803b1
-- [ ] 4.4 Smoke still passes in CI: `gh pr checks` shows `smoke` green (ticked with the PR head SHA on the next branch or in the closing docs PR)
+- [x] 4.4 Smoke still passes in CI: `gh pr checks` shows `smoke` green (ticked with the PR head SHA on the next branch or in the closing docs PR) — PR #133, head ed73bb0, run 38824562138
 
 #### Manual
 
@@ -559,7 +559,7 @@ No schema change and no data migration. The `production` tag is new repository m
 #### Automated
 
 - [x] 6.1 The initial tag exists at the confirmed deployed commit: `git ls-remote --tags origin production` shows that SHA (`fb62d74`, pushed 2026-10-16) — 577bb4e
-- [ ] 6.2 The phase PR's own CI run is green with the new jobs: `gh pr checks` shows `ci`, `smoke`, `integration`, `e2e` green and `compat` skipped (the PR adds no migration); ticked with the PR head SHA in the closing docs PR
+- [x] 6.2 The phase PR's own CI run is green with the new jobs: `gh pr checks` shows `ci`, `smoke`, `integration`, `e2e` green and `compat` skipped (the PR adds no migration); ticked with the PR head SHA in the closing docs PR — PR #133, head ed73bb0, run 38824562138
 - [x] 6.3 Lint and formatting pass on the edited documents and workflow: `npm run lint` — 81f9fdc
 
 #### Manual
