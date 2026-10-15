@@ -13,6 +13,8 @@
     "smoke": "node scripts/smoke.mjs",
     "test": "vitest run",
     "test:rls": "docker exec -i supabase_db_10x-astro-starter psql -U postgres -d postgres -X -v ON_ERROR_STOP=1 < supabase/checks/rls-scenarios.sql",
+    "guard:migrations": "node scripts/migration-guard.mjs",
+    "types:check": "supabase gen types typescript --local | prettier --stdin-filepath src/types.ts | diff -u src/types.ts -",
     "prepare": "husky",
     "deps": "depcruise src tests scripts --config .dependency-cruiser.cjs",
     "review": "tsx packages/code-reviewer/review.ts"

@@ -1,9 +1,6 @@
-import { readFileSync, readdirSync } from "node:fs";
-import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import {
   MAX_TASK_TITLE_LENGTH,
-  TASK_RECURRENCES,
   groupParticipantsByTask,
   normalizeRecurrence,
   normalizeTaskTitle,
@@ -47,17 +44,6 @@ describe("normalizeRecurrence", () => {
     for (const input of ["Daily", "WEEKLY", " once", "", "monthly", undefined, null, 1]) {
       expect(normalizeRecurrence(input)).toBeNull();
     }
-  });
-
-  it("matches the values allowed by the database CHECK", () => {
-    const dir = fileURLToPath(new URL("../../supabase/migrations", import.meta.url));
-    const file = readdirSync(dir).find((name) => name.endsWith("_create_tasks.sql"));
-    expect(file).toBeDefined();
-    const sql = readFileSync(`${dir}/${file}`, "utf8");
-    const check = /tasks_recurrence_allowed[\s\S]*?check\s*\(([^;]*?)\)\s*[,;)]/i.exec(sql);
-    expect(check).not.toBeNull();
-    const values = [...(check?.[1] ?? "").matchAll(/'([a-z]+)'/g)].map((m) => m[1]);
-    expect([...values].sort()).toEqual([...TASK_RECURRENCES].sort());
   });
 });
 

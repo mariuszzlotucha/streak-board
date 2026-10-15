@@ -2,6 +2,7 @@
 import AppLayout from "@/layouts/AppLayout.astro";
 import DashboardView from "@/components/dashboard/DashboardView.astro";
 import { loadDashboard } from "@/lib/dashboard-data";
+import { requestFields } from "@/lib/log";
 import { createClient } from "@/lib/supabase";
 
 const { user } = Astro.locals;
@@ -24,6 +25,7 @@ const {
   cookies: Astro.cookies,
   user,
   errorParam: Astro.url.searchParams.get("error"),
+  log: requestFields(Astro),
 });
 
 // G5: a dashboard that could not be loaded answers 503 (with the error page); the partial failures stay 200.

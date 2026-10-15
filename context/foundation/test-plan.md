@@ -117,15 +117,15 @@ Gate'y, które muszą przejść przed wejściem zmiany na produkcję.
 „Required after §3 Phase N" oznacza, że gate jest egzekwowany po wdrożeniu
 danego etapu; wcześniej ma status `planned`.
 
-| Gate                                     | Where                                      | Required?                 | Catches                                                  |
-| ---------------------------------------- | ------------------------------------------ | ------------------------- | -------------------------------------------------------- |
-| lint + build                             | local + CI                                 | required (wired)          | dryf składni i typów                                     |
-| smoke                                    | local + CI                                 | required (wired)          | zepsute podstawowe przepływy HTTP                        |
-| unit + integration (RLS, uprawnienia)    | local + CI (job `integration`)             | required (wired)          | wyciek między grupami, brak kontroli własności           |
-| migration/code consistency check         | CI on PR                                   | required after §3 Phase 2 | kod wymagający schematu, którego produkcja nie ma        |
-| extended smoke (Origin, walidacja, auth) | local + CI                                 | required after §3 Phase 3 | przyjęcie obcego Origin i złych danych, regresje auth    |
-| unit (streak rule)                       | local + CI (job `integration`, `npm test`) | required (wired)          | błędna reguła streaka na granicach okresów               |
-| AI code review (ai-review)               | CI on PR                                   | required (wired)          | defekty oceniane przez AI w sześciu kryteriach przeglądu |
+| Gate                                     | Where                                      | Required?                 | Catches                                                                                                                                                                                                                                                                        |
+| ---------------------------------------- | ------------------------------------------ | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| lint + build                             | local + CI                                 | required (wired)          | dryf składni i typów                                                                                                                                                                                                                                                           |
+| smoke                                    | local + CI                                 | required (wired)          | zepsute podstawowe przepływy HTTP                                                                                                                                                                                                                                              |
+| unit + integration (RLS, uprawnienia)    | local + CI (job `integration`)             | required (wired)          | wyciek między grupami, brak kontroli własności                                                                                                                                                                                                                                 |
+| migration/code consistency check         | CI on PR (job `integration`)               | partly wired              | kod wymagający schematu, którego produkcja nie ma; wired: immutability of merged migrations, the `-- compat:` marker, ordering (`npm run guard:migrations`) and fresh `src/types.ts` (`npm run types:check`); still pending: the old-code-against-new-schema gate (§3 Phase 2) |
+| extended smoke (Origin, walidacja, auth) | local + CI                                 | required after §3 Phase 3 | przyjęcie obcego Origin i złych danych, regresje auth                                                                                                                                                                                                                          |
+| unit (streak rule)                       | local + CI (job `integration`, `npm test`) | required (wired)          | błędna reguła streaka na granicach okresów                                                                                                                                                                                                                                     |
+| AI code review (ai-review)               | CI on PR                                   | required (wired)          | defekty oceniane przez AI w sześciu kryteriach przeglądu                                                                                                                                                                                                                       |
 
 ## 6. Cookbook Patterns
 
@@ -160,7 +160,9 @@ wdrożeniu odpowiedniego etapu; wcześniej brzmi „TBD — see §3 Phase N."
 
 ### 6.5 Adding a test for a schema or migration change
 
-- TBD — see §3 Phase 2 (wykrywanie niezgodności schematu z kodem przed wydaniem).
+- Write a compatible migration: the schema ships before the code and never rolls back, so a new migration must work with the deployed code. Add tables and columns first; remove, rename, drop a policy or revoke a privilege only in a later release, once no deployed code depends on it, and say how the deployed code keeps working in one `-- compat: <text>` line of that migration (the guard requires the line for a destructive migration; it proves nothing, the author does). Never edit, rename or delete a merged migration: undo its effect in a new one. Name the file with a timestamp newer than every merged migration.
+- Commands, locally with the stack up: `npm run guard:migrations` (against `origin/master`; `-- --base <ref>` for another base), `npx supabase db reset` to apply the new file, `npx supabase gen types typescript --local > src/types.ts && npx prettier --write src/types.ts` and `npm run types:check` (it must print nothing), then `npm test` and `npm run test:rls`. The `integration` job runs the guard (on a PR) and the types check before the tests. When a merged file really has to change, `node scripts/migration-guard.mjs --entry supabase/migrations/<file>` prints the allowlist line for `supabase/checks/migration-edit-allowlist.txt` (replace `<reason>` with at least 20 characters). Unit tests for the guard's rules: `tests/unit/migration-guard.test.ts`.
+- Still pending (§3 Phase 2): a gate that runs the deployed code against the new schema (old code, new migrations) before the release.
 
 ### 6.6 Per-rollout-phase notes
 

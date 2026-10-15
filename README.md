@@ -58,6 +58,8 @@ npm run dev
 - `npm run smoke` - Smoke test the auth and group flows against a running server (`BASE_URL`, defaults to `http://localhost:4321`)
 - `npm test` - Run the Vitest integration tests against the local Supabase stack
 - `npm run test:rls` - Run the SQL RLS scenario checks against the local database
+- `npm run guard:migrations` - Check the migrations of this branch against `origin/master` (`-- --base <ref>` for another base): immutability of merged files, the `-- compat:` marker, ordering (see [Deployment](#deployment))
+- `npm run types:check` - Diff `src/types.ts` against a fresh generation from the local stack (non-zero with the diff when it is stale)
 - `npm run review` - Run the AI code reviewer on a diff read from stdin (`git diff | npm run --silent review`; see `packages/code-reviewer/README.md`)
 
 ## Project Structure
@@ -198,7 +200,14 @@ Signing out of StreakBoard does not sign out of Google, and the start route send
 
 ### RLS scenario checks
 
-`supabase/checks/rls-scenarios.sql` asserts the row-level security rules of `groups`, `group_members`, `tasks`, `task_participants` and `task_checkoffs` (visibility, joining via `join_group`, leaving, column privileges, the `task_checkoff_periods` view's group scoping, and the `list_group_members` / `preview_group` helper functions) and exits non-zero on the first regression. Run it after every migration that touches group RLS, with the local stack running:
+`supabase/checks/rls-scenarios.sql` asserts the row-level security rules of `groups`, `group_members`, `tasks`, `task_participants` and `task_checkoffs` (visibility, joining via `join_group`, leaving, column privileges, the `task_checkoff_periods` view's group scoping, and the `list_group_members` / `preview_group` helper functions) and exits non-zero on the first regression. It also pins the table-level privileges in both directions (read from `information_schema.role_table_grants`, so a missing privilege and an extra one both fail; column-level grants are outside this check):
+
+| Object                                                                    | `authenticated`  | `anon` |
+| ------------------------------------------------------------------------- | ---------------- | ------ |
+| `groups`, `group_members`, `tasks`, `task_participants`, `task_checkoffs` | `DELETE, SELECT` | none   |
+| `task_checkoff_periods` (view)                                            | `SELECT`         | none   |
+
+Run it after every migration that touches group RLS or privileges, with the local stack running:
 
 ```bash
 docker exec -i supabase_db_10x-astro-starter psql -U postgres -d postgres -X -v ON_ERROR_STOP=1 < supabase/checks/rls-scenarios.sql
@@ -242,7 +251,13 @@ npx wrangler secret put CONTACT_EMAIL
 
 `CONTACT_EMAIL` is the controller's contact address that the privacy policy and the footer publish. It is not secret, but it is read at runtime so the address stays out of the repo and the bundle; locally put it in `.dev.vars` (and `.env`). Unset, the footer drops its Contact link and the policy shows "[contact address not configured]", which smoke and the release live check report as a missing `mailto:` link.
 
-**Migrations must be backward compatible.** The schema ships before the code and a code rollback does not roll the schema back, so every migration has to work with the code version that is currently deployed (add columns and tables first, remove or rename in a later release). There are no automated down-migrations.
+**Migrations must be backward compatible.** The schema ships before the code and a code rollback does not roll the schema back, so every migration has to work with the code version that is currently deployed (add columns and tables first, remove or rename in a later release). There are no automated down-migrations. The `integration` job guards the mechanics on every PR with `npm run guard:migrations` (`scripts/migration-guard.mjs`):
+
+- **Merged migrations are immutable.** A migration that is on `master` may change only in comments and blank lines; it is never deleted or renamed (the hosted history records the applied version, and a missing file breaks `db push`). Undo its effect in a new migration instead. When a merged file really has to change, run `node scripts/migration-guard.mjs --entry supabase/migrations/<file>`, append the printed line to `supabase/checks/migration-edit-allowlist.txt` and replace `<reason>` with at least 20 characters. The allowlist is append-only, an entry counts only in the PR that adds it and only for the exact content it names (another edit needs another entry), an entry that matches no edit fails, and every used entry shows as a warning on the PR.
+- **A destructive migration carries `-- compat:`.** A new migration that drops anything, alters a policy, renames something, replaces (`create or replace`) a function or view an earlier migration created, or revokes a privilege on a table, view or function an earlier migration created needs one line `-- compat: <how the deployed code keeps working>`. The check is a heuristic that makes the author think; it proves nothing about compatibility.
+- **A new migration sorts after every merged one.** Otherwise `supabase db push` is expected to refuse the older timestamp; rename the file (it is new in the PR, so the rename is free). The guard sees the base at the time `integration` runs and the ruleset does not require branches to be up to date, so update the branch (which re-runs `integration`) before merging a migration PR when another migration merged in the meantime. A merged out-of-order file can be neither renamed nor deleted past the guard; the owner applies it by hand with `supabase db push --include-all` (credentialed, never through the chat).
+
+The same job checks that `src/types.ts` equals a fresh generation (`npm run types:check`); after a migration regenerate it with `npx supabase gen types typescript --local > src/types.ts && npx prettier --write src/types.ts`.
 
 ### Manual deploy (fallback)
 
@@ -307,13 +322,13 @@ Changing the production address, in this order (add before you remove, move the 
 
 Server-side failures are reported through `src/lib/log.ts`, never with a bare `console.error`. `reportError(event, error, context)` writes one structured error line, `reportInfo(event, context)` one info line, and `reportMapped(event, code, error, context)` applies the route policy in one place: a returned Supabase error that a route maps to `unknown` or `forbidden` is an error, `rate_limited` is an info line, and every other code is a domain outcome (`invalid_code`, validation) and stays quiet. `requestFields(context)` supplies the `route` (the route pattern, never the raw path), `userId` and the `cf-ray` id.
 
-- **Event names** follow `<area>.<action>.<outcome>`, for example `groups.join.failed`, `tasks.create.exception`, `checkoff.forbidden`, `auth.unavailable`. `.failed` is a returned Supabase error, `.exception` a thrown one.
+- **Event names** follow `<area>.<action>.<outcome>`, for example `groups.join.failed`, `tasks.create.exception`, `checkoff.forbidden`, `auth.unavailable`. `.failed` is a returned Supabase error, `.exception` a thrown one. The dashboard loader's events (`dashboard.tasks.failed`, `dashboard.participants.failed`, `dashboard.checkoffs.failed`, `dashboard.leaderboard.failed`, `dashboard.load.failed`) are all `.failed` because the data helpers in `src/lib/groups.ts` and `src/lib/tasks.ts` rethrow a returned error, so the loader cannot tell it from a thrown one.
 - **Levels**: error for unexpected outcomes (unmapped SQLSTATEs, 5xx, network failures, `42501`), info for stale or expected ones (a task that is gone, an invalid id, not enrolled, an undo that removes nothing, a rate limit).
 - **Fields**: `event`, `route`, `userId`, `ray`, `status`, the SQLSTATE `code` and a scrubbed `message` (plus `details`, `hint` and a trimmed `stack` when present). Messages pass through `src/lib/redact.ts`, which masks e-mail addresses, the values in `Key (column)=(value)` fragments and `/join/<code>` URLs.
 - **Never logged**: e-mail addresses, cookies, request bodies and the invite code. The join route logs `codeLength` instead of the code.
 - **Reading logs**: `npx wrangler tail --format json` for a live stream, or query Workers Logs by `event` (and `code`, `userId`) in the Cloudflare dashboard.
 - **503 contract**: when the Auth service is unreachable, a protected request answers 503 (`{"ok":false,"error":"unavailable"}` for `Accept: application/json`, a plain page otherwise) with `Retry-After: 30` and an `auth.unavailable` error line, while a missing session still redirects to `/auth/signin` silently.
-- **Adding a Supabase call**: report its returned `error` through the helper (`reportMapped` in a route that maps the code to a redirect); never map `error.code` and drop it.
+- **Adding a Supabase call**: report its returned `error` through the helper (`reportMapped` in a route that maps the code to a redirect); never map `error.code` and drop it. A bare `console` call in `src` now fails lint (`no-console` is an error; `src/lib/log.ts` is the only exception).
 - **Sentry**: error-level reports (`reportError`, and `reportMapped` for `unknown` and `forbidden`) are also sent to Sentry through `@sentry/cloudflare`; info lines never are. `src/lib/sentry.ts` wraps each request from the middleware (the adapter's entry point stays), and `src/lib/sentry-options.ts` locks data collection down: no default integrations, no cookies, headers, bodies or query strings, only `user.id`, and a `beforeSend` scrubber. Events group by event name and SQLSTATE; the release is the Worker version id and the environment comes from `SENTRY_ENVIRONMENT` (`production` in `wrangler.jsonc`). With no `SENTRY_DSN` nothing is sent.
   - Create the Sentry project, then run `npx wrangler secret put SENTRY_DSN` yourself; never put the DSN in the repo, a build variable or a chat.
   - For a local preview, optionally put `SENTRY_DSN` and `SENTRY_ENVIRONMENT=local` in `.dev.vars` (dev vars win over the config var).
@@ -357,7 +372,7 @@ The `CI` workflow (`.github/workflows/ci.yml`) runs five jobs: `changes`, `ci`, 
 - **changes** — decides whether a PR touches anything besides `context/**` and `*.md` files (always yes on a push). If it cannot tell, the other jobs run.
 - **ci** — lint, the design-token contrast gate (`node scripts/token-contrast.mjs`, which fails when a token change drops a gating colour pair below its WCAG threshold), `astro check` and build. Configure `SUPABASE_URL` and `SUPABASE_KEY` as repository secrets for the build step (the `release` build reads the same names from the `production` environment secrets, so set both).
 - **smoke** — starts a local Supabase via the Supabase CLI, builds, serves the production preview on the Cloudflare runtime and runs `npm run smoke` against it. No secrets required.
-- **integration** — starts a local Supabase, then runs `npm test` and the SQL scenarios in `supabase/checks/rls-scenarios.sql`. No secrets required.
+- **integration** — on a pull request, first `Check migrations` (`npm run guard:migrations -- --base origin/<base branch>`, with a full-history checkout: merged migrations unchanged, the `-- compat:` marker on a destructive new one, a new one newer than every merged one; see [Deployment](#deployment)); then starts a local Supabase, runs `Check generated types are fresh` (`npm run types:check`, which prints the regeneration command on failure), `npm test` and the SQL scenarios in `supabase/checks/rls-scenarios.sql`. No secrets required. The two checks live here and not in `changes` because this is the job with the required check: a failed `changes` job does not stop a merge.
 - **release** — runs only on pushes to `master`, after `ci`, `smoke` and `integration` pass and a reviewer approves the `production` environment: `supabase db push`, then `wrangler deploy`, then a check of the live URL, including `/privacy` answering 200 with its `mailto:` contact link and the policy linked from `/`, and the anonymous two-hop Google check (the start route redirects to Supabase, and Supabase's Google provider redirects to `accounts.google.com`; each run leaves one short-lived flow state row in Supabase). See [Deployment](#deployment).
 
 ### AI code review (`ai-review`)

@@ -391,11 +391,11 @@ Only Phase 5 touches the database: one additive `grant` that works with the code
 
 #### Automated
 
-- [ ] 1.1 No bare console call remains outside the helper: `grep -rnE 'console\.(error|warn|log|info|debug)' src --include='*.ts' --include='*.tsx' --include='*.astro' | grep -v 'src/lib/log.ts'` prints nothing
-- [ ] 1.2 Lint passes with `no-console` as an error: `npm run lint`
-- [ ] 1.3 Type check passes, which confirms `requestFields(Astro)` compiles: `npx astro check`
-- [ ] 1.4 The loader tests assert each of the five events with its cause and the passed `log`, no event in the healthy and invite cases, and unchanged returned fields; the suites stay green: `npm test`
-- [ ] 1.5 Production build succeeds: `npm run build`
+- [x] 1.1 No bare console call remains outside the helper: `grep -rnE 'console\.(error|warn|log|info|debug)' src --include='*.ts' --include='*.tsx' --include='*.astro' | grep -v 'src/lib/log.ts'` prints nothing — a8d092d
+- [x] 1.2 Lint passes with `no-console` as an error: `npm run lint` — a8d092d
+- [x] 1.3 Type check passes, which confirms `requestFields(Astro)` compiles: `npx astro check` — a8d092d
+- [x] 1.4 The loader tests assert each of the five events with its cause and the passed `log`, no event in the healthy and invite cases, and unchanged returned fields; the suites stay green: `npm test` — a8d092d
+- [x] 1.5 Production build succeeds: `npm run build` — a8d092d
 
 #### Manual
 
@@ -406,11 +406,11 @@ Only Phase 5 touches the database: one additive `grant` that works with the code
 
 #### Automated
 
-- [ ] 2.1 Guard unit tests and the end-to-end guard test pass: `npm test`
-- [ ] 2.2 Lint passes, the script included: `npm run lint`
-- [ ] 2.3 The guard passes on this branch against master: `npm run guard:migrations -- --base origin/master`
-- [ ] 2.4 The generated types are fresh locally: `npm run types:check`
-- [ ] 2.5 Type check passes: `npx astro check`
+- [x] 2.1 Guard unit tests and the end-to-end guard test pass: `npm test` — 278f425
+- [x] 2.2 Lint passes, the script included: `npm run lint` — 278f425
+- [x] 2.3 The guard passes on this branch against master: `npm run guard:migrations -- --base origin/master` — 278f425
+- [x] 2.4 The generated types are fresh locally: `npm run types:check` — 278f425
+- [x] 2.5 Type check passes: `npx astro check` — 278f425
 
 #### Manual
 
@@ -424,9 +424,9 @@ Only Phase 5 touches the database: one additive `grant` that works with the code
 
 #### Automated
 
-- [ ] 3.1 New unit and route suites pass together with the existing ones: `npm test`
-- [ ] 3.2 Tests are linted and type-checked: `npm run lint && npx astro check`
-- [ ] 3.3 No source file changed: `git diff --stat origin/master...HEAD -- src` prints nothing
+- [x] 3.1 New unit and route suites pass together with the existing ones: `npm test` — 74a2317
+- [x] 3.2 Tests are linted and type-checked: `npm run lint && npx astro check` — 74a2317
+- [x] 3.3 No source file changed: `git diff --stat origin/master...HEAD -- src` prints nothing — 74a2317
 
 #### Manual
 
@@ -438,10 +438,10 @@ Only Phase 5 touches the database: one additive `grant` that works with the code
 
 #### Automated
 
-- [ ] 4.1 Contract tests pass: `npm test`
-- [ ] 4.2 The regex-on-SQL test is gone: `grep -n "_create_tasks.sql" tests/unit/task-rules.test.ts` prints nothing
-- [ ] 4.3 Lint and type check pass: `npm run lint && npx astro check`
-- [ ] 4.4 No source file changed: `git diff --stat origin/master...HEAD -- src` prints nothing
+- [x] 4.1 Contract tests pass: `npm test` — e5aa279
+- [x] 4.2 The regex-on-SQL test is gone: `grep -n "_create_tasks.sql" tests/unit/task-rules.test.ts` prints nothing — e5aa279
+- [x] 4.3 Lint and type check pass: `npm run lint && npx astro check` — e5aa279
+- [x] 4.4 No source file changed: `git diff --stat origin/master...HEAD -- src` prints nothing — e5aa279
 
 #### Manual
 
@@ -452,10 +452,10 @@ Only Phase 5 touches the database: one additive `grant` that works with the code
 
 #### Automated
 
-- [ ] 5.1 RLS scenarios pass including the new block, reporting 7 more assertions than the 293 of the baseline: `npm run test:rls`
-- [ ] 5.2 Existing suites stay green: `npm test`
-- [ ] 5.3 Lint stays green, and so do the generated types once Phase 2 has landed (the migration changes no type; if Phase 5 runs first, only `npm run lint` applies until then): `npm run lint && npm run types:check`
-- [ ] 5.4 The Phase 2 guard accepts the new migration as an added, non-destructive file (requires Phase 2; if Phase 5 runs first, tick this row when Phase 2 lands): `npm run guard:migrations -- --base origin/master`
+- [x] 5.1 RLS scenarios pass including the new block, reporting 7 more assertions than the 293 of the baseline: `npm run test:rls` — c95f32c
+- [x] 5.2 Existing suites stay green: `npm test` — c95f32c
+- [x] 5.3 Lint stays green, and so do the generated types once Phase 2 has landed (the migration changes no type; if Phase 5 runs first, only `npm run lint` applies until then): `npm run lint && npm run types:check` — c95f32c
+- [x] 5.4 The Phase 2 guard accepts the new migration as an added, non-destructive file (requires Phase 2; if Phase 5 runs first, tick this row when Phase 2 lands): `npm run guard:migrations -- --base origin/master` — c95f32c
 
 #### Manual
 
