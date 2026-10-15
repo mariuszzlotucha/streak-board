@@ -145,7 +145,7 @@ Manual rows 1.6–1.7, 2.6–2.8, 3.5–3.6, 4.5–4.7, 5.6–5.8, 6.4–6.10: p
 - **Location**: .github/workflows/ci.yml:304-316 (release), :226-232 (compat)
 - **Detail**: (a) When `Mark the deployed commit` fails (token, a future tag rule), the job stops before `Check the live deployment`, so the owner sees a red release with no evidence about the Worker that was just deployed, and a re-run repeats `db push` and `deploy`; the step order itself (tag right after deploy) follows the new lesson and should stay. (b) The root `npm ci` in `compat` is unused: the stack starts from the Supabase CLI binary and build, preview and smoke run in `deployed/`; it costs about a minute on every migration PR. The plan prescribed "npm ci in both checkouts", so dropping it is a (harmless) deviation to list.
 - **Fix**: (a) give the deploy step `id: deploy` and the live check `if: ${{ !cancelled() && steps.deploy.outcome == 'success' }}`; (b) drop the root `npm ci` and the root entry of `cache-dependency-path`, or keep both and accept the minute.
-- **Decision**: FIXED (2026-10-16: both parts applied; (b) is a deviation from the plan's "npm ci in both checkouts" to list in the PR description)
+- **Decision**: FIXED (a) / REVERTED (b) (2026-10-16: (a) applied. (b) was applied and then undone: the first `compat` runs (scratch PRs #131 and #132) failed in "Build the deployed commit" with `Tsconfig not found astro/tsconfigs/strict`, reproduced locally: the deployed build's resolver also reads the parent directory's `tsconfig.json`, whose `extends` resolves only when the PR checkout has `node_modules`. The root `npm ci` the plan prescribed stays, with a comment that records why.)
 
 ### F10 — Harmless additions outside the contract
 
