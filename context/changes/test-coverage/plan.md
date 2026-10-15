@@ -482,11 +482,11 @@ No schema change and no data migration. The `production` tag is new repository m
 
 #### Automated
 
-- [x] 1.1 The unit project runs without the stack: with the local stack stopped, `npm run test:unit` passes and runs every file under `tests/unit/`
-- [x] 1.2 The whole suite is unchanged: with the stack up, `npm test` passes and runs the same number of files and tests as the previous `master` run (both numbers recorded in the PR)
-- [x] 1.3 The narrowed mutation run executes the covering tests on Vitest 5: with the stack stopped, `npm run test:mutation -- --mutate src/lib/landing.ts` finishes, and in `reports/mutation/mutation.json` every runtime mutant has `testsCompleted >= 1` and at least one runtime mutant is `Killed`
-- [x] 1.4 A clean install keeps the fix: after `npm ci`, the two runner files contain the `" > "` separator (patch route) or the upgraded runner version is the one locked in `package-lock.json` (upgrade route)
-- [x] 1.5 Lint and type check pass with the new config files: `npm run lint && npx astro check`
+- [x] 1.1 The unit project runs without the stack: with the local stack stopped, `npm run test:unit` passes and runs every file under `tests/unit/` — 21b7800
+- [x] 1.2 The whole suite is unchanged: with the stack up, `npm test` passes and runs the same number of files and tests as the previous `master` run (both numbers recorded in the PR) — 21b7800
+- [x] 1.3 The narrowed mutation run executes the covering tests on Vitest 5: with the stack stopped, `npm run test:mutation -- --mutate src/lib/landing.ts` finishes, and in `reports/mutation/mutation.json` every runtime mutant has `testsCompleted >= 1` and at least one runtime mutant is `Killed` — 21b7800
+- [x] 1.4 A clean install keeps the fix: after `npm ci`, the two runner files contain the `" > "` separator (patch route) or the upgraded runner version is the one locked in `package-lock.json` (upgrade route) — 21b7800
+- [x] 1.5 Lint and type check pass with the new config files: `npm run lint && npx astro check` — 21b7800
 
 #### Manual
 
@@ -497,11 +497,11 @@ No schema change and no data migration. The `production` tag is new repository m
 
 #### Automated
 
-- [ ] 2.1 Invite spec green against the production preview: `npx playwright test tests/e2e/invite-join.spec.ts`
-- [ ] 2.2 Check-off spec green: `npx playwright test tests/e2e/checkoff-round-trip.spec.ts`
-- [ ] 2.3 Settings specs green: `npx playwright test tests/e2e/group-settings-member.spec.ts tests/e2e/group-settings-owner.spec.ts`
-- [ ] 2.4 Full suite green, seed and isolation included: `npx playwright test`
-- [ ] 2.5 Lint passes on the new specs and helpers: `npm run lint`
+- [x] 2.1 Invite spec green against the production preview: `npx playwright test tests/e2e/invite-join.spec.ts`
+- [x] 2.2 Check-off spec green: `npx playwright test tests/e2e/checkoff-round-trip.spec.ts`
+- [x] 2.3 Settings specs green: `npx playwright test tests/e2e/group-settings-member.spec.ts tests/e2e/group-settings-owner.spec.ts`
+- [x] 2.4 Full suite green, seed and isolation included: `npx playwright test`
+- [x] 2.5 Lint passes on the new specs and helpers: `npm run lint`
 
 #### Manual
 

@@ -96,11 +96,59 @@ export async function createGroupAs(persona: Persona, name: string): Promise<str
   return data.id;
 }
 
+/** A daily task. The creator is enrolled as its participant by the `tasks_add_creator_to_task` trigger. */
 export async function createTaskAs(persona: Persona, groupId: string, title: string): Promise<void> {
   const { error } = await persona.client
     .from("tasks")
     .insert({ group_id: groupId, created_by: persona.id, title, recurrence: "daily" });
   if (error) throw new Error(`createTaskAs: insert failed: ${error.message}`);
+}
+
+/** The group's invite code, read through the owner's own client (the owner always sees their group). */
+export async function readJoinCode(persona: Persona, groupId: string): Promise<string> {
+  const { data, error } = await persona.client.from("groups").select("join_code").eq("id", groupId).single();
+  if (error) throw new Error(`readJoinCode: read failed: ${error.message}`);
+  return data.join_code;
+}
+
+/** Joins the group behind `code` as the persona, through the same `join_group` RPC the app calls. */
+export async function joinGroupAs(persona: Persona, code: string): Promise<void> {
+  const { error } = await persona.client.rpc("join_group", { p_join_code: code });
+  if (error) throw new Error(`joinGroupAs: join_group failed: ${error.message}`);
+}
+
+/**
+ * Deletes accounts a spec created through the real sign-up form (so no `Persona` exists for them), by e-mail: looks
+ * them up through the admin API (paginated, as tests/setup/global-setup.ts does), deletes the groups they own and then
+ * the accounts. An e-mail with no account is an error too: a cleanup that silently skips is a cleanup that leaks.
+ */
+export async function deleteAccountsByEmail(emails: string[]): Promise<void> {
+  if (emails.length === 0) return;
+  const admin = adminClient();
+  const wanted = new Set(emails.map((email) => email.toLowerCase()));
+  const ids = new Map<string, string>();
+  const perPage = 200;
+  for (let page = 1; ; page++) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
+    if (error) throw new Error(`deleteAccountsByEmail: listUsers failed: ${error.message}`);
+    for (const user of data.users) {
+      const email = user.email?.toLowerCase();
+      if (email && wanted.has(email)) ids.set(email, user.id);
+    }
+    if (data.users.length < perPage) break;
+  }
+  const missing = [...wanted].filter((email) => !ids.has(email));
+  if (missing.length > 0) throw new Error(`deleteAccountsByEmail: no account for ${missing.join(", ")}`);
+
+  const { error: groupsError } = await admin
+    .from("groups")
+    .delete()
+    .in("owner_id", [...ids.values()]);
+  if (groupsError) throw new Error(`deleteAccountsByEmail: deleting groups failed: ${groupsError.message}`);
+  for (const [email, id] of ids) {
+    const { error } = await admin.auth.admin.deleteUser(id);
+    if (error) throw new Error(`deleteAccountsByEmail: deleting ${email} failed: ${error.message}`);
+  }
 }
 
 /**
