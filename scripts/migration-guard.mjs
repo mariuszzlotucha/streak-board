@@ -73,9 +73,11 @@ const DEFAULT_BASE = "origin/master";
  */
 
 /**
- * Removes `--` and `/* ... *\/` comments that are outside single-quoted strings (plain `'...'` and escape strings
- * `E'...'`, where a backslash escapes the next character). Everything else, including the newline that ends a line
- * comment and the newlines inside a block comment, stays, so line numbers survive.
+ * Removes `--` and `/* ... *\/` comments that are outside strings: plain `'...'`, escape strings `E'...'` (a backslash
+ * escapes the next character) and dollar-quoted `$tag$ ... $tag$` bodies, which are copied as they are (a function
+ * body is part of what the migration defines, so an edit inside one, comment or not, is a statement edit). Everything
+ * else, including the newline that ends a line comment and the newlines inside a block comment, stays, so line numbers
+ * survive.
  * @param {string} sql The SQL text.
  * @returns {string} The text without line comments.
  */
@@ -100,6 +102,16 @@ export function stripLineComments(sql) {
       escapeString = /[Ee]/.test(sql[i - 1] ?? "") && !/\w/.test(sql[i - 2] ?? "");
       out += ch;
       continue;
+    }
+    if (ch === "$") {
+      const tag = /^\$(\w*)\$/.exec(sql.slice(i, i + 64));
+      if (tag) {
+        const close = sql.indexOf(tag[0], i + tag[0].length);
+        const end = close === -1 ? sql.length : close + tag[0].length;
+        out += sql.slice(i, end);
+        i = end - 1;
+        continue;
+      }
     }
     if (ch === "-" && sql[i + 1] === "-") {
       const end = sql.indexOf("\n", i);

@@ -70,6 +70,15 @@ describe("comment-only edits", () => {
     expect(isCommentOnlyEdit(a, "select 'a -- b'; -- note\n")).toBe(true);
   });
 
+  it("keeps a dollar-quoted body as it is, apostrophes and comments included", () => {
+    const fn = "create function f() returns text language sql as $$ select 'it''s'; -- it's\n$$;\n";
+    expect(isCommentOnlyEdit(fn, `${fn}-- note\n`)).toBe(true);
+    expect(isCommentOnlyEdit(fn, fn.replace("-- it's", "-- its"))).toBe(false);
+    expect(isCommentOnlyEdit("select $$it's$$;\n", "select $$it's$$; -- note\n")).toBe(true);
+    expect(isCommentOnlyEdit("select $a$x$a$;\n", "select $a$y$a$;\n")).toBe(false);
+    expect(isCommentOnlyEdit("select $a$ $$ $a$;\n", "select $a$ $$ $a$; -- note\n")).toBe(true);
+  });
+
   it("keeps an escape string E'...' with a backslash-escaped quote in one piece", () => {
     const a = "select E'it\\'s'; -- note\n";
     expect(isCommentOnlyEdit(a, "select E'it\\'s';\n")).toBe(true);
