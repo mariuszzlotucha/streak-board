@@ -115,7 +115,7 @@ Manual rows 1.6–1.7, 2.6–2.8, 3.5–3.6, 4.5–4.7, 5.6–5.8, 6.4–6.10: p
 - **Location**: .github/workflows/ci.yml:198-259 (commit `81f9fdc`); plan.md:64, :366, :428
 - **Detail**: The plan lands the `changes` output and the `compat` job "after the two scratch-PR checks (one red, one green) are done with the owner's go-ahead" and pauses "before the `compat` commit is pushed". The job is committed locally while rows 6.4 and 6.5 are unticked; the branch is not pushed, and deployment-plan.md Phase 16 records both scratch PRs as pending, so the proof is owed, not skipped. The job has never run anywhere yet.
 - **Fix**: Before `git push`, with the owner's go-ahead, open the two scratch draft PRs from a branch cut off this one (a `drop column` the deployed code reads, then an additive migration), confirm `compat` red then green, close them unmerged and delete the branches; land any `compat` fix as a fixup commit on this branch, then push and record the PR numbers and run ids in deployment-plan Phase 16.
-- **Decision**: FIX IN PROGRESS (2026-10-16: owner go-ahead given during triage; the two scratch PRs run right after the triage, before any push of the implementation branch)
+- **Decision**: FIXED (2026-10-16: scratch PR #131, head `943a4d4`, renamed `tasks.title` and `compat` failed in the deployed commit's smoke, run 38822675599; scratch PR #132, head `a9c2cb7`, added a nullable column and `compat` passed with 227/227 deployed smoke steps, run 38822678146; both closed unmerged, branches deleted. The first attempt exposed the parent-tsconfig dependency of the deployed build, fixed in `ef27121` before the proof. Evidence recorded in deployment-plan Phase 16.)
 
 ### F7 — Third copy of the stack resolution, and the two e2e copies disagree
 
