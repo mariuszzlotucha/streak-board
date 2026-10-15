@@ -69,6 +69,13 @@ describe("comment-only edits", () => {
     expect(isCommentOnlyEdit(a, "select 'a -- c';\n")).toBe(false);
     expect(isCommentOnlyEdit(a, "select 'a -- b'; -- note\n")).toBe(true);
   });
+
+  it("ignores a block comment, also one with an apostrophe before a line comment", () => {
+    const a = "select 1;\n";
+    expect(isCommentOnlyEdit(a, "/* don't\n   forget */\nselect 1; -- note\n")).toBe(true);
+    expect(isCommentOnlyEdit(a, "/* a */\nselect 2;\n")).toBe(false);
+    expect(isCommentOnlyEdit("select '/* x */';\n", "select '/* y */';\n")).toBe(false);
+  });
 });
 
 describe("immutability", () => {
@@ -217,6 +224,21 @@ describe("marker", () => {
     expect(flaggedStatements("revoke all on all tables in schema public from anon;", earlier)).toHaveLength(1);
   });
 
+  it("flags create or replace of an earlier function or view, not of the migration's own", () => {
+    const body = "language sql as $$ select false $$";
+    expect(
+      flaggedStatements(`create or replace function public.is_member(p uuid) returns boolean ${body};`, earlier),
+    ).toHaveLength(1);
+    expect(flaggedStatements("create or replace view public.v as select 2;", earlier)).toHaveLength(1);
+    expect(
+      flaggedStatements(
+        `create function public.g() returns void ${body};\ncreate or replace function public.g() returns void ${body};`,
+        earlier,
+      ),
+    ).toEqual([]);
+    expect(flaggedStatements("create or replace view public.other as select 1;", earlier)).toEqual([]);
+  });
+
   it("does not flag a revoke on the migration's own table or function", () => {
     const own =
       "create table public.tasks (id uuid);\nrevoke all on public.tasks from anon;\ncreate function public.f() returns void language sql as $$ select 1 $$;\nrevoke execute on function public.f () from public, anon;\ngrant select on public.tasks to authenticated;";
@@ -226,6 +248,7 @@ describe("marker", () => {
 
   it("ignores drop inside comments and strings", () => {
     expect(flaggedStatements("-- we drop nothing here\nselect 'drop';", none)).toEqual([]);
+    expect(flaggedStatements("/* we drop nothing */ select 1;\n/* don't */ select 2; -- drop x\n", none)).toEqual([]);
   });
 
   it("needs text after compat:", () => {
@@ -276,6 +299,12 @@ describe("ordering", () => {
       input({ changes: [{ status: "A", path: NEW_PATH }], head: { [NEW_PATH]: "select 1;" } }),
     );
     expect(pass.violations).toEqual([]);
+  });
+
+  it("fails an added migration with the same timestamp as the newest at the base, whatever its slug", () => {
+    const same = `${MIGRATIONS_DIR}/20260925003350_zzz.sql`;
+    const result = evaluateGuard(input({ changes: [{ status: "A", path: same }], head: { [same]: "select 1;" } }));
+    expect(result.violations).toEqual([{ file: same, message: expect.stringContaining("newer timestamp") as string }]);
   });
 
   it("passes any name when the base has no migrations", () => {
@@ -354,13 +383,13 @@ describe("end to end against a throwaway git repository", () => {
     mutate();
     commitAll(name);
   };
-  const guard = (): { status: number; output: string } => {
+  const guard = (base = "main"): { status: number; output: string; stderr: string } => {
     try {
-      const output = execFileSync(process.execPath, [GUARD, "--base", "main"], { cwd: repo, env, encoding: "utf8" });
-      return { status: 0, output };
+      const output = execFileSync(process.execPath, [GUARD, "--base", base], { cwd: repo, env, encoding: "utf8" });
+      return { status: 0, output, stderr: "" };
     } catch (error) {
-      const failure = error as { status: number | null; stdout: string };
-      return { status: failure.status ?? -1, output: failure.stdout };
+      const failure = error as { status: number | null; stdout: string; stderr: string };
+      return { status: failure.status ?? -1, output: failure.stdout, stderr: failure.stderr };
     }
   };
 
@@ -379,7 +408,14 @@ describe("end to end against a throwaway git repository", () => {
     scenario("comment-edit", () => {
       write(BASE_PATH, `-- a better header\n${BASE_SQL}`);
     });
-    expect(guard()).toEqual({ status: 0, output: expect.stringContaining("0 violation(s)") as string });
+    expect(guard()).toEqual({ status: 0, output: expect.stringContaining("0 violation(s)") as string, stderr: "" });
+  });
+
+  it("names an unresolvable base ref instead of throwing", () => {
+    const result = guard("no-such-ref");
+    expect(result.status).toBe(1);
+    expect(result.output).toContain('::error::cannot resolve the base ref "no-such-ref"');
+    expect(result.stderr).not.toContain("    at ");
   });
 
   it("fails a statement edit", () => {

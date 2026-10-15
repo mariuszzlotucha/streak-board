@@ -1110,9 +1110,15 @@ for (const route of ROUTE_IDS) {
 }
 
 describe("coverage guard", () => {
-  it("has rows, including a recorded call chain, for every route file under src/pages/api/{groups,tasks}", () => {
+  it("has rows, including a recorded call chain, for every route file under src/pages/api except auth", () => {
     const apiDir = fileURLToPath(new URL("../../src/pages/api", import.meta.url));
-    const files = ["groups", "tasks"].flatMap((dir) =>
+    // Every route family except auth (no data routes), so a new family turns this red by name.
+    const dirs = readdirSync(apiDir, { withFileTypes: true })
+      .filter((entry) => entry.isDirectory() && entry.name !== "auth")
+      .map((entry) => entry.name)
+      .sort();
+    expect(dirs).toEqual(["groups", "tasks"]);
+    const files = dirs.flatMap((dir) =>
       readdirSync(`${apiDir}/${dir}`)
         .filter((name) => name.endsWith(".ts"))
         .map((name) => `${dir}/${name.slice(0, -3)}`),

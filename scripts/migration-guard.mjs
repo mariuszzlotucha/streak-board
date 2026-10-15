@@ -73,8 +73,8 @@ const DEFAULT_BASE = "origin/master";
  */
 
 /**
- * Removes `--` comments that are outside single-quoted strings. Everything else, including the newline that ends a
- * comment, stays, so line numbers survive.
+ * Removes `--` and `/* ... *\/` comments that are outside single-quoted strings. Everything else, including the newline
+ * that ends a line comment and the newlines inside a block comment, stays, so line numbers survive.
  * @param {string} sql The SQL text.
  * @returns {string} The text without line comments.
  */
@@ -97,6 +97,14 @@ export function stripLineComments(sql) {
       const end = sql.indexOf("\n", i);
       if (end === -1) break;
       i = end - 1;
+      continue;
+    }
+    if (ch === "/" && sql[i + 1] === "*") {
+      const end = sql.indexOf("*/", i + 2);
+      const body = end === -1 ? sql.slice(i) : sql.slice(i, end + 2);
+      out += "\n".repeat((body.match(/\n/g) ?? []).length);
+      if (end === -1) break;
+      i = end + 1;
       continue;
     }
     out += ch;
@@ -244,9 +252,10 @@ export function createdObjects(sqls) {
 }
 
 /**
- * The statements of a migration that the marker rule flags: any `drop`, `alter policy`, `alter … rename`, and a
- * `revoke` on a table, view or function that an earlier migration created (`all … in schema` counts when an earlier
- * migration created anything).
+ * The statements of a migration that the marker rule flags: any `drop`, `alter policy`, `alter … rename`, a
+ * `create or replace` of a function, procedure or view that an earlier migration created, and a `revoke` on a table,
+ * view or function that an earlier migration created (`all … in schema` counts when an earlier migration created
+ * anything).
  * @param {string} sql The migration's SQL text.
  * @param {CreatedObjects} earlier What the migrations sorting before it created.
  * @returns {string[]} The flagged statements, shortened; empty when none.
@@ -262,6 +271,11 @@ export function flaggedStatements(sql, earlier) {
       /^alter\s+policy\b/i.test(statement) ||
       /^alter\b.*\brename\b/i.test(statement)
     ) {
+      flagged.push(short);
+      continue;
+    }
+    const replace = /^create\s+or\s+replace\s+(?:function|procedure|view)\s+([\w."]+)/i.exec(statement);
+    if (replace && known.has(objectName(replace[1]))) {
       flagged.push(short);
       continue;
     }
@@ -392,10 +406,11 @@ export function evaluateGuard(input) {
   const added = sqlChanges.filter((c) => c.status === "A").sort((a, b) => a.path.localeCompare(b.path));
   for (const change of added) {
     const name = path.posix.basename(change.path);
-    if (newest !== undefined && name <= newest) {
+    // Supabase keys migrations by the 14-digit version, so the slug after it does not count.
+    if (newest !== undefined && name.slice(0, 14) <= newest.slice(0, 14)) {
       violations.push({
         file: change.path,
-        message: `A new migration must sort after every merged one (newest at the base: ${newest}); "supabase db push" is expected to refuse an older timestamp. Rename it to a newer timestamp (the file is new in this PR, so the rename is free).`,
+        message: `A new migration must sort after every merged one (newest at the base: ${newest}); "supabase db push" is expected to refuse an older or equal timestamp. Rename it to a newer timestamp (the file is new in this PR, so the rename is free).`,
       });
     }
     const sql = input.readHead(change.path);
@@ -487,7 +502,15 @@ function main() {
     console.log(allowlistEntryFor(entry));
     return 0;
   }
-  const mergeBase = git(["merge-base", base, "HEAD"]).trim();
+  let mergeBase;
+  try {
+    mergeBase = git(["merge-base", base, "HEAD"]).trim();
+  } catch {
+    console.log(
+      `::error::cannot resolve the base ref "${base}" (run "git fetch origin", or pass --base <ref>; a shallow clone has no history to diff)`,
+    );
+    return 1;
+  }
   const changes = parseNameStatus(
     git(["diff", "--name-status", "--find-renames", `${base}...HEAD`, "--", MIGRATIONS_DIR]),
   );
