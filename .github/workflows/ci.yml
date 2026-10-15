@@ -95,8 +95,9 @@ jobs:
       - if: always()
         run: supabase stop --no-backup
 
-  # The Playwright suite (tests/e2e/) in both projects, desktop and phone, against the production preview. Advisory until
-  # the owner adds it to the ruleset's required checks; the id and name stay unique so that step is a ruleset edit only.
+  # The Playwright suite (tests/e2e/) in both projects, desktop and phone, against the production preview. The `release`
+  # job waits for it on a `master` push. On pull requests it is advisory until the owner adds it to the ruleset's required
+  # checks; the id and name stay unique so that step is a ruleset edit only.
   e2e:
     needs: changes
     if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
@@ -262,7 +263,7 @@ jobs:
         run: supabase stop --no-backup
 
   release:
-    needs: [ci, smoke, integration]
+    needs: [ci, smoke, e2e, integration]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     environment: production
