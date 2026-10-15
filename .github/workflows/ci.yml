@@ -195,6 +195,9 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     environment: production
+    # The tag step below pushes to the repository; the workflow default stays read-only.
+    permissions:
+      contents: write
     concurrency:
       group: release
       cancel-in-progress: false
@@ -235,6 +238,12 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      # The `production` tag is what the `compat` job builds, so it follows every deploy. The checkout's persisted
+      # GITHUB_TOKEN pushes it. After a manual `npx wrangler rollback` the owner moves it by hand (README, Rollback).
+      - name: Mark the deployed commit
+        run: |
+          git tag -f production "$GITHUB_SHA"
+          git push --force origin refs/tags/production
       # Exact status checks: plain `curl -f` would also pass on a wrong 200.
       - name: Check the live deployment
         env:
