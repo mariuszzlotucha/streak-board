@@ -92,8 +92,12 @@ export const MAX_PR_BODY_CHARS = 2_000;
  * The library itself sets no timeout; programmatic callers pass `abortSignal`.
  * A single-call review took up to 124 s in the baseline; a review with repo
  * tools makes several calls, so it gets more room within the job's 15 minutes.
+ * At 300 s the answer call of a review of a regex-heavy script
+ * (`scripts/migration-guard.mjs`, PR #126, 2026-10-15) was aborted three
+ * times out of three after an evidence phase of under 2 minutes, so the answer
+ * call now has up to 8 minutes after `EVIDENCE_PHASE_MS`.
  */
-export const DEFAULT_REVIEW_TIMEOUT_MS = 300_000;
+export const DEFAULT_REVIEW_TIMEOUT_MS = 600_000;
 
 /**
  * Returns the trimmed `REVIEWER_MODEL` from `env` when it is non-empty, else
