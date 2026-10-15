@@ -61,28 +61,27 @@ assertion only when the mutant represents a user-visible or business-relevant bu
 
 <!-- BEGIN @przeprogramowani/10x-cli -->
 
-## Zestaw narzędzi AI 10xDevs — Moduł 5, Lekcja 3 (Przegląd kodu w CI)
+## Zestaw narzędzi AI 10xDevs — Moduł 5, Lekcja 4 (Wspólny rejestr AI)
 
-Przenieś agenta przeglądu do GitHub Actions i zamień jego werdykt w bramkę merge. Oceń zmiany promptów i modeli na stałym zestawie przypadków przed ich wdrożeniem.
+Dystrybuuj umiejętności zespołu, prompty i reguły jako wersjonowany pakiet w rejestrze, który Twoja organizacja już posiada. GitHub Packages to domyślna ścieżka; AWS CodeArtifact z Terraform to opcjonalna ścieżka zarządzanej infrastruktury.
 
 ```
-m5l3-requirements -> /10x-new -> /10x-research -> /10x-plan -> review.yml + composite action -> promptfoo evals
+m5l4-shared-* -> m5l4-github-packages-spec-* + config templates -> publish -> npm install in consumer repos
 ```
 
 ### Router zadań — od czego zacząć
 
-| Umiejętność / prompt / szablon                                                 | Użyj, gdy                                                                                                                                                                             |
-| ------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `m5l3-requirements` + `m5l3-cicd` (prompty)                                    | Prowadzisz badania i planujesz przepływ pracy przeglądu CI na podstawie pisemnych wymagań.                                                                                            |
-| `m5l3-review.yml.template`, `m5l3-action.yml.template` (szablony konfiguracji) | Podłączasz recenzenta do przepływu PR: akcja kompozytowa z wejściami tytułu, treści i diffu, etykietami `ai-cr:passed` / `ai-cr:failed` oraz nieudaną kontrolą przy werdykcie `fail`. |
-| `m5l3-promptfoo` (prompt) + `m5l3-promptfooconfig.yaml.template`               | Porównujesz modele lub zmiany promptów na tych samych diffach za pomocą asercji is-json, llm-rubric i javascript.                                                                     |
-| `/10x-impl-review-ci`                                                          | Przeglądasz PR względem jego `context/changes/<id>/plan.md` w CI za pomocą Claude Code Action; szablon jego workflow znajduje się w katalogu `references/` umiejętności.              |
+| Umiejętność / prompt / szablon                                                                                   | Użyj, gdy                                                                                                                                                                                          |
+| ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `m5l4-shared-conventions`, `m5l4-shared-spec-skill` (prompty)                                                    | Definiujesz pierwszą wspólną umiejętność zespołu i jej konwencje.                                                                                                                                  |
+| `m5l4-github-packages-spec-pack`, `m5l4-github-packages-spec-cicd` (prompty) + `m5l4-github-packages-*.template` | Tworzysz domyślny pakiet: package.json, instalator i deinstalator, konsumencki `.npmrc`, początkowy `rules/CLAUDE.md` oraz workflow publikowania.                                                  |
+| `/pack-init` -> `/tf-registry` -> `/setup-cicd`                                                                  | Opcjonalna ścieżka CodeArtifact: utwórz szkielet pakietu, skonfiguruj rejestr za pomocą Terraform, a następnie dodaj CI/CD. Odczytują specyfikacje `m5l4-*` z katalogu promptów Twojego narzędzia. |
 
-### Twarde zasady
+### Twarde reguły
 
-- **Przypinaj akcje zewnętrzne do pełnego SHA commita** z tagiem w komentarzu.
-- **Bramkuj na polu werdyktu**, nigdy na swobodnym tekście wyjściowym.
-- **Przekazuj wielowierszowe wartości (diffy) przez pliki lub ograniczniki heredoc**, a nie przez jednowierszowe zapisy `$GITHUB_OUTPUT`.
-- **Uruchom zestaw ewaluacyjny przed zmianą promptu lub modelu przeglądu.**
+- **Nigdy nie nadpisuj tego, co napisał konsument.** Instalatory modyfikują tylko pliki, które śledzą w swoim manifeście, i wyłącznie tekst między ich znacznikami sentinelowymi.
+- **Deinstalacja usuwa dokładnie to, co dodała instalacja**, używając manifestu.
+- **Publikuj wyłącznie nową wersję.** Zwiększ wersję przed publikacją; rejestr odrzuca wersję, która już istnieje.
+- **Tokeny pozostają w sekretach CI lub lokalnym env**, nigdy w zatwierdzonym `.npmrc`.
 
 <!-- END @przeprogramowani/10x-cli -->
