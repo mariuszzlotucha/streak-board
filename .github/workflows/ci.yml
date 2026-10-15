@@ -13,11 +13,13 @@ jobs:
   # Docs-only PRs skip the slow jobs at job level, never with `paths-ignore` on the trigger: a workflow skipped by a
   # path filter reports nothing, so the required check `integration` stays pending and the PR cannot merge, while a
   # job skipped by `if:` reports as skipped, which satisfies it. The `if:` on those jobs fails safe: they run unless
-  # this job answers `false` (a failed `changes` job leaves the output empty).
+  # this job answers `false` (a failed `changes` job leaves the output empty). The second output, `migrations`, routes
+  # the `compat` job the same way: `true` when the PR touches `supabase/migrations/`, `false` otherwise and on pushes.
   changes:
     runs-on: ubuntu-latest
     outputs:
       code: ${{ steps.diff.outputs.code }}
+      migrations: ${{ steps.diff.outputs.migrations }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,12 +30,15 @@ jobs:
           BASE_REF: ${{ github.base_ref }}
         run: |
           code=true
+          migrations=false
           if [ "$EVENT" = "pull_request" ]; then
             git diff --name-only "origin/$BASE_REF...HEAD" > changed-files.txt
             cat changed-files.txt
             if [ -s changed-files.txt ] && ! grep -qvE '^context/|\.md$' changed-files.txt; then code=false; fi
+            if grep -q '^supabase/migrations/' changed-files.txt; then migrations=true; fi
           fi
           echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "migrations=$migrations" >> "$GITHUB_OUTPUT"
 
   ci:
     needs: changes
