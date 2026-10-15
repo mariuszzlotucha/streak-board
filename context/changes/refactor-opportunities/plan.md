@@ -452,10 +452,10 @@ Only Phase 5 touches the database: one additive `grant` that works with the code
 
 #### Automated
 
-- [x] 5.1 RLS scenarios pass including the new block, reporting 7 more assertions than the 293 of the baseline: `npm run test:rls`
-- [x] 5.2 Existing suites stay green: `npm test`
-- [x] 5.3 Lint stays green, and so do the generated types once Phase 2 has landed (the migration changes no type; if Phase 5 runs first, only `npm run lint` applies until then): `npm run lint && npm run types:check`
-- [ ] 5.4 The Phase 2 guard accepts the new migration as an added, non-destructive file (requires Phase 2; if Phase 5 runs first, tick this row when Phase 2 lands): `npm run guard:migrations -- --base origin/master`
+- [x] 5.1 RLS scenarios pass including the new block, reporting 7 more assertions than the 293 of the baseline: `npm run test:rls` — c95f32c
+- [x] 5.2 Existing suites stay green: `npm test` — c95f32c
+- [x] 5.3 Lint stays green, and so do the generated types once Phase 2 has landed (the migration changes no type; if Phase 5 runs first, only `npm run lint` applies until then): `npm run lint && npm run types:check` — c95f32c
+- [x] 5.4 The Phase 2 guard accepts the new migration as an added, non-destructive file (requires Phase 2; if Phase 5 runs first, tick this row when Phase 2 lands): `npm run guard:migrations -- --base origin/master` — c95f32c
 
 #### Manual
 
