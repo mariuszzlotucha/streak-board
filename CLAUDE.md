@@ -61,27 +61,27 @@ assertion only when the mutant represents a user-visible or business-relevant bu
 
 <!-- BEGIN @przeprogramowani/10x-cli -->
 
-## Zestaw narzędzi AI 10xDevs — Moduł 5, Lekcja 4 (Wspólny rejestr AI)
+## Zestaw narzędzi AI 10xDevs — moduł 5, lekcja 5 (agenci asynchroniczni i zdalni)
 
-Dystrybuuj umiejętności zespołu, prompty i reguły jako wersjonowany pakiet w rejestrze, który Twoja organizacja już posiada. GitHub Packages to domyślna ścieżka; AWS CodeArtifact z Terraform to opcjonalna ścieżka zarządzanej infrastruktury.
+Deleguj ograniczoną, zaplanowaną zmianę i wróć, aby ją przejrzeć. Kontrola nie znika; przenosi się do kontraktu zadania, konfiguracji sandboxa i końcowego przeglądu.
 
 ```
-m5l4-shared-* -> m5l4-github-packages-spec-* + config templates -> publish -> npm install in consumer repos
+/10x-plan -> /goal + /10x-goal-implement (interactive or claude -p) -> review the commits and the manual checklist
 ```
 
 ### Router zadań — od czego zacząć
 
-| Umiejętność / prompt / szablon                                                                                   | Użyj, gdy                                                                                                                                                                                          |
-| ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `m5l4-shared-conventions`, `m5l4-shared-spec-skill` (prompty)                                                    | Definiujesz pierwszą wspólną umiejętność zespołu i jej konwencje.                                                                                                                                  |
-| `m5l4-github-packages-spec-pack`, `m5l4-github-packages-spec-cicd` (prompty) + `m5l4-github-packages-*.template` | Tworzysz domyślny pakiet: package.json, instalator i deinstalator, konsumencki `.npmrc`, początkowy `rules/CLAUDE.md` oraz workflow publikowania.                                                  |
-| `/pack-init` -> `/tf-registry` -> `/setup-cicd`                                                                  | Opcjonalna ścieżka CodeArtifact: utwórz szkielet pakietu, skonfiguruj rejestr za pomocą Terraform, a następnie dodaj CI/CD. Odczytują specyfikacje `m5l4-*` z katalogu promptów Twojego narzędzia. |
+| Umiejętność                       | Użyj jej, gdy                                                                                                                                                                                              |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/10x-goal-implement <change-id>` | Zatwierdzony `context/changes/<id>/plan.md` powinien zostać wykonany bez nadzoru. Połącz go z `/goal <condition>`; zapisuje commit po każdej zielonej fazie i kończy się oczekującymi ręcznymi kontrolami. |
+| `/10x-implement`                  | Chcesz samodzielnie kierować każdą fazą.                                                                                                                                                                   |
 
-### Twarde reguły
+### Twarde zasady
 
-- **Nigdy nie nadpisuj tego, co napisał konsument.** Instalatory modyfikują tylko pliki, które śledzą w swoim manifeście, i wyłącznie tekst między ich znacznikami sentinelowymi.
-- **Deinstalacja usuwa dokładnie to, co dodała instalacja**, używając manifestu.
-- **Publikuj wyłącznie nową wersję.** Zwiększ wersję przed publikacją; rejestr odrzuca wersję, która już istnieje.
-- **Tokeny pozostają w sekretach CI lub lokalnym env**, nigdy w zatwierdzonym `.npmrc`.
+- **Deleguj wyłącznie zaplanowaną pracę.** Brak zatwierdzonego `plan.md` oznacza brak działania bez nadzoru.
+- **Ogranicz każde uruchomienie.** Warunek `/goal` określa stan końcowy i limit tur.
+- **Zielone uruchomienie nie oznacza ukończonej zmiany.** Przejrzyj commity i wykonaj ręczną checklistę przed mergowaniem.
+- **Przyznaj sandboxowi tylko te sekrety i dostęp do sieci, których zadanie potrzebuje.**
+- **Monitoruj równoległe i zdalne uruchomienia w jednym miejscu.** Uruchamiaj każdą sesję bez nadzoru w osobnym obszarze roboczym herdr, aby widzieć, którzy agenci pracują, są zablokowani lub skończyli, oraz interweniować z przeglądarki (konfiguracja w M2L6 Deep Dive).
 
 <!-- END @przeprogramowani/10x-cli -->
