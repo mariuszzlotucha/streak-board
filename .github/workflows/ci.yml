@@ -223,11 +223,16 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: deployed/package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            deployed/package-lock.json
       - uses: supabase/setup-cli@v1
         with:
           version: 2.117.0
-      # Only the deployed commit is built and smoked; the PR checkout contributes its migrations through the CLI.
+      # The root install is not for running anything here: the deployed build's resolver also reads the PR checkout's
+      # tsconfig.json (the parent directory), whose `extends: astro/tsconfigs/strict` must resolve, or the build fails
+      # with "Tsconfig not found" (scratch PRs #131/#132, 2026-10-16).
+      - run: npm ci
       - run: npm ci
         working-directory: deployed
       # The stack starts from the PR checkout, so the PR's migrations are the schema the deployed code meets.
