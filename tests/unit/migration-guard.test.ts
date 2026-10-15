@@ -70,6 +70,14 @@ describe("comment-only edits", () => {
     expect(isCommentOnlyEdit(a, "select 'a -- b'; -- note\n")).toBe(true);
   });
 
+  it("keeps an escape string E'...' with a backslash-escaped quote in one piece", () => {
+    const a = "select E'it\\'s'; -- note\n";
+    expect(isCommentOnlyEdit(a, "select E'it\\'s';\n")).toBe(true);
+    expect(isCommentOnlyEdit(a, "select E'it\\'s -- not a comment';\n")).toBe(false);
+    expect(isCommentOnlyEdit("select 'it\\';\n", "select 'it\\'; -- plain strings have no escapes\n")).toBe(true);
+    expect(isCommentOnlyEdit("select nameE'x\\';\n", "select nameE'x\\'; -- not an E-string\n")).toBe(true);
+  });
+
   it("ignores a block comment, also one with an apostrophe before a line comment", () => {
     const a = "select 1;\n";
     expect(isCommentOnlyEdit(a, "/* don't\n   forget */\nselect 1; -- note\n")).toBe(true);
@@ -212,6 +220,13 @@ describe("marker", () => {
   ]);
   const none = createdObjects([]);
 
+  it("keeps the dots of a quoted identifier when matching a revoke to its creator", () => {
+    const dotted = createdObjects(['create table public."My.Table" (id uuid);']);
+    expect([...dotted.tables]).toEqual(["my.table"]);
+    expect(flaggedStatements('revoke all on public."My.Table" from anon;', dotted)).toHaveLength(1);
+    expect(flaggedStatements('revoke all on "Table" from anon;', dotted)).toEqual([]);
+  });
+
   it("flags drop policy, alter policy, a rename and a revoke on an earlier table", () => {
     expect(flaggedStatements('drop policy "x" on public.groups;', none)).toHaveLength(1);
     expect(flaggedStatements('alter policy "x" on public.groups using (true);', none)).toHaveLength(1);
@@ -305,6 +320,23 @@ describe("ordering", () => {
     const same = `${MIGRATIONS_DIR}/20260925003350_zzz.sql`;
     const result = evaluateGuard(input({ changes: [{ status: "A", path: same }], head: { [same]: "select 1;" } }));
     expect(result.violations).toEqual([{ file: same, message: expect.stringContaining("newer timestamp") as string }]);
+  });
+
+  it("fails two migrations added in the same PR that share a version", () => {
+    const first = `${MIGRATIONS_DIR}/20261201000000_a.sql`;
+    const second = `${MIGRATIONS_DIR}/20261201000000_b.sql`;
+    const result = evaluateGuard(
+      input({
+        changes: [
+          { status: "A", path: first },
+          { status: "A", path: second },
+        ],
+        head: { [first]: "select 1;", [second]: "select 2;" },
+      }),
+    );
+    expect(result.violations).toEqual([
+      { file: second, message: expect.stringContaining("share the version 20261201000000") as string },
+    ]);
   });
 
   it("passes any name when the base has no migrations", () => {
