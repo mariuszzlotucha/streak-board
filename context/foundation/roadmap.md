@@ -3,7 +3,7 @@ project: "StreakBoard"
 version: 1
 status: draft
 created: 2026-09-24
-updated: 2026-10-14
+updated: 2026-10-15
 prd_version: 1
 main_goal: market-feedback
 top_blocker: time
@@ -53,7 +53,7 @@ Grono znajomych korzystało wcześniej ze wspólnego arkusza Google, w którym r
 | S-07 | google-login                   | zarejestrować się i zalogować kontem Google, bez ustawiania hasła                                                                                        | S-06                                                    | FR-001 (OAuth/passwordless); MS-06 | done     |
 | S-08 | observability-swallowed-errors | (jakościowy) awaria w krytycznym przepływie nie jest połykana ani zamieniana na sukces: trafia do odpowiedzi API i do monitoringu                        | —                                                       | — (jakościowe; MS-05)              | done     |
 | S-09 | landing-page                   | zobaczyć jako niezalogowany stronę startową, która tłumaczy, czym jest aplikacja, i prowadzi do rejestracji lub logowania                                | S-06, S-07                                              | — (UI; MS-03)                      | done     |
-| S-10 | test-coverage                  | (jakościowy) zmiany w aplikacji są chronione testami wybranymi według ryzyka, a jakość testów jednostkowych jest mierzona mutacjami                      | —                                                       | — (jakościowe; MS-02)              | ready    |
+| S-10 | test-coverage                  | (jakościowy) zmiany w aplikacji są chronione testami wybranymi według ryzyka, a jakość testów jednostkowych jest mierzona mutacjami                      | —                                                       | — (jakościowe; MS-02)              | planning |
 | S-11 | dashboard-ui                   | korzystać z czytelniejszego, spójnego wizualnie widoku grupy, tasków i tablicy wyników                                                                   | S-08                                                    | — (UI; MS-04)                      | done     |
 | S-12 | refactor-opportunities         | (jakościowy) znane ciche luki są zamknięte: raportowanie błędów dashboardu, strażnicy migracji i typów w CI, testy tras i reguł, jawne uprawnienia tabel | —                                                       | — (jakościowe; MS-07)              | planning |
 | S-13 | checkoff-grid                  | zobaczyć siatkę odznaczeń grupy: kto wykonał task w każdym z ostatnich okresów                                                                           | S-11                                                    | — (UI; MS-08)                      | proposed |
@@ -163,7 +163,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
   - Jak uzgodnić `test-plan.md` z decyzją o e2e: §4 mówi dziś „e2e: none — not planned", a wejście wprost wlicza e2e kluczowych przepływów (Playwright jest już skonfigurowany) — odświeżyć test-plan przed planowaniem czy uzgodnić to w planie wycinka? — Owner: user. Block: no — rozstrzyga `/10x-frame`.
 - **Źródło zakresu:** `context/foundation/roadmap-input-next-slices.md`, sekcja „2. test-coverage" (testy jednostkowe dla logiki bez testów, testy mutacyjne na modułach z regułami, e2e kluczowych przepływów zamiast wszystkiego; UI poza testami DOM wg test-planu §7).
 - **Risk:** Najszerszy wycinek M-2 i zakres bez granic: plan musi wybrać etapy z test-planu (niezrealizowane są etap 2, bramka kolejności wydania, i etap 3, granice auth i walidacja), zapisać, czego nie testuje, i może rozpaść się na kilka zmian (status przesuwa tylko pierwsza). Idzie na końcu M-2 (decyzja właściciela 2026-10-08), po S-11 i S-13, więc e2e kluczowych przepływów powstaje pod nowy wygląd; nie ma zależności technicznych, więc może też iść równolegle.
-- **Status:** ready
+- **Status:** planning
 
 ### S-11: Czytelniejszy widok grupy, tasków i tablicy wyników
 
