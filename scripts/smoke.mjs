@@ -421,6 +421,12 @@ function alertBeforeHeading(text, name) {
   );
 }
 
+// The text anywhere in the page's markup, that is, not inside a <script> element: an alert, a heading or an island's
+// serialised props would match, the inlined island runtime would not.
+function outsideScripts(text) {
+  return new RegExp(`(?<!<script\\b[^>]*>(?:(?!</script>)[\\s\\S])*)${escapeRegExp(text)}`);
+}
+
 // The inline script that drops `?error=` from the address after the page has shown the alert.
 const ERROR_PARAM_SCRIPT =
   /<script[^>]*>(?:(?!<\/script>)[\s\S])*searchParams\.delete\("error"\)(?:(?!<\/script>)[\s\S])*history\.replaceState/;
@@ -549,6 +555,20 @@ const steps = [
     "google start does not answer GET",
     () => request("/api/auth/google", { cookie: "" }),
     { status: 404 },
+  ],
+  // The password routes are POST-only as well: a GET handler on sign-in or sign-up would take credentials from a
+  // query string, and one on sign-out would let any site end the visitor's session through a cross-site top-level GET.
+  ["signin does not answer GET", () => request("/api/auth/signin", { cookie: "" }), { status: 404 }],
+  ["signup does not answer GET", () => request("/api/auth/signup", { cookie: "" }), { status: 404 }],
+  ["signout does not answer GET", () => request("/api/auth/signout", { cookie: "" }), { status: 404 }],
+  [
+    // An anonymous jar has no session to end, so nothing is lost even if the Origin check were off. The pending invite
+    // cookie is the handler's one side effect for such a visitor (sign-out clears `join_code`): no Set-Cookie for it
+    // proves the handler never ran, not only that the answer was 403.
+    "signout from a foreign origin is rejected",
+    () =>
+      request("/api/auth/signout", { method: "POST", form: {}, cookie: "join_code=0123abcd", origin: FOREIGN_ORIGIN }),
+    { status: 403, setCookieExcludes: ["join_code", "sb-"] },
   ],
   [
     // The Google round trip must not lose a pending invite: the start route neither sets nor clears `join_code`. The
@@ -690,6 +710,14 @@ const steps = [
     { status: 302, location: "/auth/signup?error=email_taken", setCookie: "auth_email=" },
   ],
   [
+    // The address is registered already, so no account could be created even if the Origin check were off (the step
+    // above answers 302 email_taken and remembers the address): a 403 without the `auth_email` cookie can only come
+    // from the Origin check, before the handler ran.
+    "signup from a foreign origin is rejected",
+    () => request("/api/auth/signup", { method: "POST", form: { email, password }, origin: FOREIGN_ORIGIN }),
+    { status: 403, setCookieExcludes: "auth_email=" },
+  ],
+  [
     "signup rejects weak password",
     () => request("/api/auth/signup", { method: "POST", form: { email: `weak-${email}`, password: "12345" } }),
     { status: 302, location: "/auth/signup?error=weak_password" },
@@ -708,6 +736,14 @@ const steps = [
     "signin rejects wrong password",
     () => request("/api/auth/signin", { method: "POST", form: { email, password: "wrong" } }),
     { status: 302, location: "/auth/signin?error=invalid_credentials", setCookie: "auth_email=" },
+  ],
+  [
+    // The wrong password cannot open a session even if the Origin check were off (the step above answers 302
+    // invalid_credentials and remembers the address): a 403 without the `auth_email` cookie can only come from the
+    // Origin check, before the handler ran.
+    "signin from a foreign origin is rejected",
+    () => request("/api/auth/signin", { method: "POST", form: { email, password: "wrong" }, origin: FOREIGN_ORIGIN }),
+    { status: 403, setCookieExcludes: ["auth_email=", "sb-"] },
   ],
   [
     "signin page prefills and consumes the remembered email",
@@ -843,6 +879,7 @@ const steps = [
     () => request("/api/tasks/uncheck", { method: "POST", form: { task_id: "not-a-uuid" } }),
     { status: 302, locationExact: "/dashboard?error=forbidden" },
   ],
+  ["task create does not answer GET", () => request("/api/tasks/create"), { status: 404 }],
   ["task update does not answer GET", () => request("/api/tasks/update"), { status: 404 }],
   ["task delete does not answer GET", () => request("/api/tasks/delete"), { status: 404 }],
   ["task join does not answer GET", () => request("/api/tasks/join"), { status: 404 }],
@@ -927,6 +964,14 @@ const steps = [
     "user B signs in",
     () => request("/api/auth/signin", { method: "POST", form: { email: emailB, password }, jar: jarB }),
     { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    // An empty form joins nothing even if the Origin check were off (it would answer 302 invalid_code), but it would
+    // clear B's pending invite cookie: no Set-Cookie for `join_code` proves the handler never ran. The preview step
+    // below reads the state: B is still outside the group and the invite is still pending.
+    "join from a foreign origin is rejected",
+    () => request("/api/groups/join", { method: "POST", form: {}, jar: jarB, origin: FOREIGN_ORIGIN }),
+    { status: 403, setCookieExcludes: "join_code" },
   ],
   [
     "dashboard previews the pending invite for user B",
@@ -1017,6 +1062,13 @@ const steps = [
     { status: 302, locationExact: "/dashboard?error=forbidden" },
   ],
   [
+    // The owner's own session, but an empty name: nothing would change even if the Origin check were off (it would
+    // answer 302 invalid_name). The step below reads the state: the group still carries its first name.
+    "rename from a foreign origin is rejected",
+    () => request("/api/groups/rename", { method: "POST", form: { name: "  " }, origin: FOREIGN_ORIGIN }),
+    { status: 403 },
+  ],
+  [
     "group name is unchanged after the rejected rename",
     () => request("/dashboard", { jar: jarB }),
     { status: 200, bodyMatches: [groupHeading(groupName)], bodyExcludes: renamedGroupName },
@@ -1063,6 +1115,13 @@ const steps = [
     "leave by the owner is rejected",
     () => request("/api/groups/leave", { method: "POST" }),
     { status: 302, locationExact: "/dashboard?error=forbidden" },
+  ],
+  [
+    // The owner's own session: the database refuses the owner's leave anyway (the step above answers 302 forbidden),
+    // so the membership stays even if the Origin check were off. The step below reads the state.
+    "leave from a foreign origin is rejected",
+    () => request("/api/groups/leave", { method: "POST", form: {}, origin: FOREIGN_ORIGIN }),
+    { status: 403 },
   ],
   [
     "owner still has the group after the rejected leave",
@@ -1207,6 +1266,21 @@ const steps = [
       ],
     },
   ],
+  // A foreign `?error=` value is never reflected: the page renders without any alert and without the value in its
+  // markup. The two values differ in kind: a prototype key tests the lookup in the message table, a made-up code the
+  // plain miss. The step above is the positive control (a known code does render the alert). Astro's island runtime,
+  // inlined in a <script>, names `__proto__` as a key it refuses to deserialize, so the check leaves scripts out and a
+  // plain substring check would never pass for that value.
+  ...["__proto__", "not-a-code"].map((value) => [
+    `member dashboard with ?error=${value} shows no alert and does not reflect the value`,
+    () => request(`/dashboard?error=${value}`, { jar: jarB }),
+    {
+      status: 200,
+      bodyMatches: [groupHeading(renamedGroupName), memberRow(emailB, "You")],
+      bodyNotMatches: outsideScripts(value),
+      bodyExcludes: NO_ERROR_ALERT,
+    },
+  ]),
   [
     "remove-member by a non-owner is rejected",
     () => request("/api/groups/remove-member", { method: "POST", form: { user_id: sessionUserId(jarA) }, jar: jarB }),
@@ -1281,6 +1355,12 @@ const steps = [
     { status: 404 },
   ],
   ["delete does not answer GET", () => request("/api/groups/delete", { jar: jarB }), { status: 404 }],
+  // The other group routes are POST-only too: a GET handler on create, join, rename or leave would let a link change
+  // the visitor's membership or group name.
+  ["group create does not answer GET", () => request("/api/groups/create", { jar: jarB }), { status: 404 }],
+  ["join does not answer GET", () => request("/api/groups/join", { jar: jarB }), { status: 404 }],
+  ["rename does not answer GET", () => request("/api/groups/rename", { jar: jarB }), { status: 404 }],
+  ["leave does not answer GET", () => request("/api/groups/leave", { jar: jarB }), { status: 404 }],
   [
     "group and all three members are intact after the rejected requests",
     () => request("/dashboard", { jar: jarB }),
