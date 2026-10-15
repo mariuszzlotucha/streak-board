@@ -56,7 +56,9 @@ npm run dev
 - `npm run lint:fix` - Auto-fix ESLint issues
 - `npm run format` - Run Prettier
 - `npm run smoke` - Smoke test the auth and group flows against a running server (`BASE_URL`, defaults to `http://localhost:4321`)
-- `npm test` - Run the Vitest integration tests against the local Supabase stack
+- `npm test` - Run both Vitest projects, unit and integration; needs the local Supabase stack
+- `npm run test:unit` - Run the Vitest unit project alone (`tests/unit/`); needs no stack
+- `npm run test:mutation` - Run Stryker on the unit project (`-- --mutate <path>` narrows it to one module or line range; see [Tests](#tests))
 - `npm run test:rls` - Run the SQL RLS scenario checks against the local database
 - `npm run guard:migrations` - Check the migrations of this branch against `origin/master` (`-- --base <ref>` for another base): immutability of merged files, the `-- compat:` marker, ordering (see [Deployment](#deployment))
 - `npm run types:check` - Diff `src/types.ts` against a fresh generation from the local stack (non-zero with the diff when it is stale)
@@ -356,14 +358,28 @@ It needs a reachable Supabase instance (local or cloud) with email confirmation 
 
 Integration tests (Vitest, `tests/integration/`) exercise row-level security and creator-only permissions through real Supabase clients: two or more users in different groups, each denial paired with a positive control, and state re-read via the service-role client. Unit tests (`tests/unit/`) cover the pure rules: the streak and Leaderboard rules (`streak-rules`, `leaderboard-rules`, day and week boundaries in Europe/Warsaw, written from the PRD sentence), the check-off island's net-delta store and request protocol (`checkoff-sync`, `checkoff-client`) and the task rules.
 
-Prerequisite: the local stack must be running (`npx supabase start`, see [Supabase Configuration](#supabase-configuration)). No `.env` is needed; the global setup reads the URL and keys from `supabase status -o env`.
+The two suites are two Vitest projects (`vitest.config.ts` composes `vitest.unit.config.ts` and `vitest.integration.config.ts`): only the integration project has the global setup that needs the stack, so the unit project runs anywhere.
 
 ```bash
-npm test            # Vitest: integration and unit suites
+npm run test:unit   # Vitest unit project only (tests/unit/), no stack needed
+npm test            # both projects: unit and integration
 npm run test:rls    # SQL scenarios (supabase/checks/rls-scenarios.sql) via docker exec
 ```
 
-Safety guard: the suite refuses to run unless the Supabase URL host is `127.0.0.1` or `localhost`. Test users use a dedicated email prefix and are removed after the run (leftovers from crashed runs are swept on the next one).
+Prerequisite for `npm test` and `npm run test:rls`: the local stack must be running (`npx supabase start`, see [Supabase Configuration](#supabase-configuration)). No `.env` is needed; the global setup reads the URL and keys from `supabase status -o env`.
+
+Safety guard: the integration project refuses to run unless the Supabase URL host is `127.0.0.1` or `localhost`. Test users use a dedicated email prefix and are removed after the run (leftovers from crashed runs are swept on the next one).
+
+### Mutation testing
+
+`npm run test:mutation` runs [Stryker](https://stryker-mutator.io/) with the Vitest runner on the unit project (`vitest.unit.config.ts`, so it needs no stack). `stryker.config.json` mutates the rule and mapping modules without I/O in `src/lib/` (`auth-errors`, `auth-state`, `checkoff-client`, `checkoff-response`, `checkoff-sync`, `group-errors`, `group-rules`, `join-code`, `landing`, `leaderboard-rules`, `redact`, `streak-rules`, `task-errors`, `task-rules`); narrow a run to the code of the current change, as `CLAUDE.md` asks:
+
+```bash
+npm run test:mutation -- --mutate src/lib/landing.ts          # one module
+npm run test:mutation -- --mutate "src/lib/landing.ts:13-18"  # one line range
+```
+
+The reports land in `reports/mutation/` (gitignored): `mutation.html` to browse and `mutation.json` to check that every covered mutant ran tests (`testsCompleted`) and which of them survived. Review survivors one by one; add an assertion only for a user-visible or business-relevant bug. Two caveats: `--logLevel debug` crashes the runner on Vitest 5, use `--logLevel info`; and the runner (`@stryker-mutator/vitest-runner` 10.0.0) joins test names with a space while Vitest 5 joins them with `" > "`, so without a fix no test matches any mutant and every covered mutant is reported survived with zero tests. `patches/@stryker-mutator+vitest-runner+10.0.0.patch` changes the separator in the runner's two `collectTestName` copies (`dist/src/test-helpers.js`, `dist/src/stryker-setup.js`); `patch-package` applies it in the `postinstall` script, so `npm ci` and `npm install` keep the fix in every checkout and in CI. Drop the patch when a runner release joins with `" > "` or reads Vitest's `fullTestName`.
 
 ## CI
 

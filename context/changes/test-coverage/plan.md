@@ -482,11 +482,11 @@ No schema change and no data migration. The `production` tag is new repository m
 
 #### Automated
 
-- [ ] 1.1 The unit project runs without the stack: with the local stack stopped, `npm run test:unit` passes and runs every file under `tests/unit/`
-- [ ] 1.2 The whole suite is unchanged: with the stack up, `npm test` passes and runs the same number of files and tests as the previous `master` run (both numbers recorded in the PR)
-- [ ] 1.3 The narrowed mutation run executes the covering tests on Vitest 5: with the stack stopped, `npm run test:mutation -- --mutate src/lib/landing.ts` finishes, and in `reports/mutation/mutation.json` every runtime mutant has `testsCompleted >= 1` and at least one runtime mutant is `Killed`
-- [ ] 1.4 A clean install keeps the fix: after `npm ci`, the two runner files contain the `" > "` separator (patch route) or the upgraded runner version is the one locked in `package-lock.json` (upgrade route)
-- [ ] 1.5 Lint and type check pass with the new config files: `npm run lint && npx astro check`
+- [x] 1.1 The unit project runs without the stack: with the local stack stopped, `npm run test:unit` passes and runs every file under `tests/unit/`
+- [x] 1.2 The whole suite is unchanged: with the stack up, `npm test` passes and runs the same number of files and tests as the previous `master` run (both numbers recorded in the PR)
+- [x] 1.3 The narrowed mutation run executes the covering tests on Vitest 5: with the stack stopped, `npm run test:mutation -- --mutate src/lib/landing.ts` finishes, and in `reports/mutation/mutation.json` every runtime mutant has `testsCompleted >= 1` and at least one runtime mutant is `Killed`
+- [x] 1.4 A clean install keeps the fix: after `npm ci`, the two runner files contain the `" > "` separator (patch route) or the upgraded runner version is the one locked in `package-lock.json` (upgrade route)
+- [x] 1.5 Lint and type check pass with the new config files: `npm run lint && npx astro check`
 
 #### Manual
 

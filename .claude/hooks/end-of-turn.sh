@@ -46,7 +46,8 @@ $(printf '%s\n' "$OUT" | head -n 60)
 fi
 
 # The whole suite takes ~6 s, so it also catches a red test in a module this turn only imported.
-# tests/setup/global-setup.ts needs the local Supabase stack: without it the run is skipped, not failed.
+# The integration project (tests/setup/global-setup.ts) needs the local Supabase stack: without it only the unit
+# project runs (no global setup, no stack), and the integration project is skipped, not failed.
 HEALTH=$(curl -s -m 2 -o /dev/null -w '%{http_code}' -H 'apikey: hook' \
   "${TEST_SUPABASE_URL:-http://127.0.0.1:54321}/auth/v1/health" 2>/dev/null)
 if [ "${HEALTH:-000}" != "000" ]; then
@@ -55,7 +56,11 @@ Vitest fails:
 $(printf '%s\n' "$OUT" | head -n 80)
 "
 else
-  NOTE="Hook end-of-turn: Vitest skipped, local Supabase is not running (run 'npx supabase start' to enable the test gate)."
+  OUT=$(npx vitest run --project unit 2>&1) || REPORT="$REPORT
+Vitest (unit project) fails:
+$(printf '%s\n' "$OUT" | head -n 80)
+"
+  NOTE="Hook end-of-turn: only the Vitest unit project ran; the integration project was skipped because the local Supabase stack is down (run 'npx supabase start' to enable the full test gate)."
 fi
 
 # astro check ignores NO_COLOR: strip ANSI escapes and its startup log lines so the agent reads plain diagnostics.

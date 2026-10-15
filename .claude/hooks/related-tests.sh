@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # PostToolUse (Write|Edit): run the Vitest tests that depend on the edited file.
-# tests/setup/global-setup.ts needs the local Supabase stack; without it every run would fail for a reason
-# the edit did not cause, so the hook stays silent then (end-of-turn.sh warns the user once per turn).
+# The integration project (tests/setup/global-setup.ts) needs the local Supabase stack; without it that project
+# would fail for a reason the edit did not cause, so the hook then runs the unit project alone (no global setup)
+# and end-of-turn.sh tells the user once per turn that the integration project was skipped.
 cd "${CLAUDE_PROJECT_DIR:-.}" || exit 0
 export NO_COLOR=1 FORCE_COLOR=0
 
@@ -20,9 +21,10 @@ esac
 
 CODE=$(curl -s -m 2 -o /dev/null -w '%{http_code}' -H 'apikey: hook' \
   "${TEST_SUPABASE_URL:-http://127.0.0.1:54321}/auth/v1/health" 2>/dev/null)
-[ "${CODE:-000}" != "000" ] || exit 0
+PROJECT=()
+[ "${CODE:-000}" != "000" ] || PROJECT=(--project unit)
 
-if ! OUTPUT=$(npx vitest related "$REL" --run 2>&1); then
+if ! OUTPUT=$(npx vitest related "$REL" --run "${PROJECT[@]}" 2>&1); then
   echo "Tests related to $REL fail:" >&2
   printf '%s\n' "$OUTPUT" | head -n 80 >&2
   exit 2
