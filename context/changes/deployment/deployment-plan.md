@@ -2,8 +2,8 @@
 project: streak-board
 based_on: context/foundation/infrastructure.md
 platform: Cloudflare Workers
-status: phases_0-4_done_pending_auth_smoke_test
-last_updated: 2026-09-25
+status: phases_0-14_done
+last_updated: 2026-10-15
 ---
 
 # Cloudflare Workers Deployment Plan
@@ -239,7 +239,8 @@ Turns "rollback works in theory" into a proven, once-rehearsed step before you n
 - [x] Owner's production check (owner-reported, 2026-10-08, in one answer to Claude's list; no values or per-step details were recorded): the pages at phone width; signing in, then opening `/`, lands on `/dashboard`; the `sb-` cookies are marked Secure in DevTools; Google sign-in works for a listed tester; signing out works.
 - [x] Search Console review request (owner-reported, 2026-10-08, sent after the release, the HTTPS switch and the production check): Security issues → "Deceptive pages" → Request review, with the text from the `landing-page` plan (Phase 2, change 4) and "live since 8 October 2026".
 - [x] Google Auth Platform → Branding (owner-reported, 2026-10-08): App home page `https://streakboard.app/`, privacy policy link `https://streakboard.app/privacy`, authorized domain `streakboard.app`. The app stays in Testing, so these are Draft Branding that users do not see.
-- [x] Google's verdict on the review request: **accepted** (owner-reported, 2026-10-09; the Safe Browsing flag is lifted) (Search Console and the Transparency Report): recorded here, in this row (the owner archived `landing-page` on 2026-10-08 while the review was pending, so its Phase 3 does not run). Search Console is the source of the verdict; check every 2-3 days until about 22 October. Passed: tick this row with the date, close the roadmap's Open Roadmap Question and update the status line above. Rejected: fix forward in a new change (`/10x-new`), never by reverting the public pages.
+- [x] Google's verdict on the review request: **accepted** (owner-reported, 2026-10-09; the Safe Browsing flag is lifted) (Search Console and the Transparency Report): recorded here, in this row (the owner archived `landing-page` on 2026-10-08 while the review was pending, so its Phase 3 does not run). Search Console is the source of the verdict; owner-reported 2026-10-15: the Search Console check was done, so no further watch is needed. Passed: tick this row with the date, close the roadmap's Open Roadmap Question and update the status line above. Rejected: fix forward in a new change (`/10x-new`), never by reverting the public pages.
+- [x] Google Auth Platform → Audience → Publish app (owner-reported, 2026-10-15): publishing status "In production". Branding unchanged from 2026-10-08. The post-publish login check with a non-test account is not recorded here; it was not confirmed.
 
 ## Phase 14 — Dashboard UI (change `dashboard-ui`, S-11)
 
