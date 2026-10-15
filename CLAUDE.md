@@ -24,7 +24,7 @@ Astro 7 SSR app (`output: "server"` in `astro.config.mjs`) with React 19 islands
 - shadcn/ui components live in `src/components/ui/` (`radix-maia` style, `lucide` icons). Add new ones with `npx shadcn@latest add [name]` (see UI below).
 - API routes use uppercase `GET`/`POST` exports.
 - No Next.js directives in React components (no `"use client"`); extract hooks to `src/components/hooks/`.
-- Services/helpers go in `src/lib/`; shared types (entities, DTOs) belong in `src/types.ts` (generated from the local database schema with `npx supabase gen types typescript --local`; do not hand-edit).
+- Services/helpers go in `src/lib/`; shared types (entities, DTOs) belong in `src/types.ts` (generated from the local database schema with `npx supabase gen types typescript --local > src/types.ts && npx prettier --write src/types.ts`, which CI compares with `npm run types:check`; do not hand-edit).
 - The privacy policy (`src/pages/privacy.astro`, one component per section in `src/components/privacy/`) states facts about the data model, who sees what, deletion, cookies and providers; a change to any of them updates the policy in the same change.
 - Supabase migrations go in `supabase/migrations/` named `YYYYMMDDHHmmss_short_description.sql`, with RLS enabled and granular per-operation/per-role policies on every new table. The schema currently consists of `groups`, `group_members`, `tasks`, `task_participants` and `task_checkoffs` (read through the `task_checkoff_periods` view) plus Supabase Auth's built-in `auth.users`.
 

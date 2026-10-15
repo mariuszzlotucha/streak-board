@@ -96,6 +96,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The migration guard diffs the PR against its base branch.
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -104,8 +107,22 @@ jobs:
         with:
           version: 2.117.0
       - run: npm ci
+      # Merged migrations stay immutable, a destructive new one carries `-- compat:`, and a new one sorts after every
+      # merged one. It lives in this job, not in `changes`, because only this job holds the required check.
+      - name: Check migrations
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: npm run guard:migrations -- --base "origin/$BASE_REF"
       - name: Start local Supabase
         run: supabase start -x studio,imgproxy,mailpit,edge-runtime,logflare,vector,realtime,storage-api,postgres-meta,supavisor
+      # src/types.ts must equal a fresh generation from the migrations (formatted with Prettier).
+      - name: Check generated types are fresh
+        run: |
+          if ! npm run types:check; then
+            echo "::error file=src/types.ts::src/types.ts is stale. Regenerate it: npx supabase gen types typescript --local > src/types.ts && npx prettier --write src/types.ts"
+            exit 1
+          fi
       - name: Run integration tests (Vitest)
         run: npm test
       - name: Run RLS scenario checks (SQL)

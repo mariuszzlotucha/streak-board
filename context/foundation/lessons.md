@@ -178,3 +178,10 @@
 - **Problem**: The cloud review of `code-review-agent-tools` reported a "missing module `./tools`" as its only normal-severity finding: `packages/code-reviewer/tools.ts` existed and type-checked locally but was untracked, so the bundle did not contain it. The real findings sat among the nits.
 - **Rule**: `git add` every new file (or commit) before launching a cloud review, and read a "missing module" or "file not found" finding against `git status` before acting on it.
 - **Applies to**: implement, impl-review
+
+## Enforcement steps belong inside the job that holds the required check
+
+- **Context**: Adding a CI guard that must block a merge (`.github/workflows/ci.yml`: the migration guard and the generated-types check of `refactor-opportunities`, and any later gate), in a workflow where `integration` is the required check and a `changes` job only decides which jobs run.
+- **Problem**: A step placed in `changes` (or in any job that is not a required check) cannot stop a merge: when `changes` fails, its outputs are empty, the other jobs still run because their `if:` fails safe, and `integration` reports green. The failure shows as a red job nobody is required to look at.
+- **Rule**: Put every enforcement step inside the job that holds the required check (`integration`), before the steps whose result it protects, and keep `changes` a routing job with no assertions. Wire the mechanism first (a script with its tests, then the npm script, both passing locally) and the CI step in its own commit, so the first red run is a real finding and reverting that commit alone switches the guard off.
+- **Applies to**: plan, implement, impl-review

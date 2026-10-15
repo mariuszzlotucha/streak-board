@@ -391,11 +391,11 @@ Only Phase 5 touches the database: one additive `grant` that works with the code
 
 #### Automated
 
-- [x] 1.1 No bare console call remains outside the helper: `grep -rnE 'console\.(error|warn|log|info|debug)' src --include='*.ts' --include='*.tsx' --include='*.astro' | grep -v 'src/lib/log.ts'` prints nothing
-- [x] 1.2 Lint passes with `no-console` as an error: `npm run lint`
-- [x] 1.3 Type check passes, which confirms `requestFields(Astro)` compiles: `npx astro check`
-- [x] 1.4 The loader tests assert each of the five events with its cause and the passed `log`, no event in the healthy and invite cases, and unchanged returned fields; the suites stay green: `npm test`
-- [x] 1.5 Production build succeeds: `npm run build`
+- [x] 1.1 No bare console call remains outside the helper: `grep -rnE 'console\.(error|warn|log|info|debug)' src --include='*.ts' --include='*.tsx' --include='*.astro' | grep -v 'src/lib/log.ts'` prints nothing — a8d092d
+- [x] 1.2 Lint passes with `no-console` as an error: `npm run lint` — a8d092d
+- [x] 1.3 Type check passes, which confirms `requestFields(Astro)` compiles: `npx astro check` — a8d092d
+- [x] 1.4 The loader tests assert each of the five events with its cause and the passed `log`, no event in the healthy and invite cases, and unchanged returned fields; the suites stay green: `npm test` — a8d092d
+- [x] 1.5 Production build succeeds: `npm run build` — a8d092d
 
 #### Manual
 
@@ -406,11 +406,11 @@ Only Phase 5 touches the database: one additive `grant` that works with the code
 
 #### Automated
 
-- [ ] 2.1 Guard unit tests and the end-to-end guard test pass: `npm test`
-- [ ] 2.2 Lint passes, the script included: `npm run lint`
-- [ ] 2.3 The guard passes on this branch against master: `npm run guard:migrations -- --base origin/master`
-- [ ] 2.4 The generated types are fresh locally: `npm run types:check`
-- [ ] 2.5 Type check passes: `npx astro check`
+- [x] 2.1 Guard unit tests and the end-to-end guard test pass: `npm test`
+- [x] 2.2 Lint passes, the script included: `npm run lint`
+- [x] 2.3 The guard passes on this branch against master: `npm run guard:migrations -- --base origin/master`
+- [x] 2.4 The generated types are fresh locally: `npm run types:check`
+- [x] 2.5 Type check passes: `npx astro check`
 
 #### Manual
 
