@@ -542,11 +542,11 @@ No schema change and no data migration. The `production` tag is new repository m
 
 #### Automated
 
-- [x] 5.1 Precondition holds: `tests/unit/{group-errors,task-errors,group-rules,join-code,checkoff-response}.test.ts` and `tests/integration/rule-contracts.test.ts` exist on `master`
-- [x] 5.2 Every listed module has a recorded run: `mutation-baseline.md` has one row per module, and no runtime mutant in any run has `testsCompleted: 0` except those classified as import-time throws
-- [x] 5.3 Suites pass with the strengthened tests: `npm test` with the stack up and `npm run test:unit` with the stack stopped
-- [x] 5.4 No source change: `git diff --stat origin/master...HEAD -- src` prints nothing
-- [x] 5.5 Lint passes: `npm run lint`
+- [x] 5.1 Precondition holds: `tests/unit/{group-errors,task-errors,group-rules,join-code,checkoff-response}.test.ts` and `tests/integration/rule-contracts.test.ts` exist on `master` — a7731bf
+- [x] 5.2 Every listed module has a recorded run: `mutation-baseline.md` has one row per module, and no runtime mutant in any run has `testsCompleted: 0` except those classified as import-time throws — a7731bf
+- [x] 5.3 Suites pass with the strengthened tests: `npm test` with the stack up and `npm run test:unit` with the stack stopped — a7731bf
+- [x] 5.4 No source change: `git diff --stat origin/master...HEAD -- src` prints nothing — a7731bf
+- [x] 5.5 Lint passes: `npm run lint` — a7731bf
 
 #### Manual
 
@@ -558,9 +558,9 @@ No schema change and no data migration. The `production` tag is new repository m
 
 #### Automated
 
-- [ ] 6.1 The initial tag exists at the confirmed deployed commit: `git ls-remote --tags origin production` shows that SHA
+- [x] 6.1 The initial tag exists at the confirmed deployed commit: `git ls-remote --tags origin production` shows that SHA (`fb62d74`, pushed 2026-10-16) — 577bb4e
 - [ ] 6.2 The phase PR's own CI run is green with the new jobs: `gh pr checks` shows `ci`, `smoke`, `integration`, `e2e` green and `compat` skipped (the PR adds no migration); ticked with the PR head SHA in the closing docs PR
-- [ ] 6.3 Lint and formatting pass on the edited documents and workflow: `npm run lint`
+- [x] 6.3 Lint and formatting pass on the edited documents and workflow: `npm run lint` — 81f9fdc
 
 #### Manual
 

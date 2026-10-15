@@ -6,7 +6,7 @@
 >
 > Refresh: re-run `/10x-test-plan --refresh` when stale (see §8).
 >
-> Last updated: 2026-10-01 (Phase 4 shipped with S-04: streak rule, unit gate)
+> Last updated: 2026-10-15 (Phases 2 and 3 shipped with S-10: release compatibility gate, auth boundaries, e2e in the stack)
 
 ## 1. Strategy
 
@@ -74,19 +74,25 @@ Each row is a discrete rollout phase that will open its own change folder
 via `/10x-new`. Status moves left-to-right through the values below; the
 orchestrator updates Status as artifacts appear on disk.
 
-| #   | Phase name                              | Goal (one line)                                                                                                               | Risks covered | Test types                            | Status      | Change folder                                                  |
-| --- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------- | ----------- | -------------------------------------------------------------- |
-| 1   | Runner + data isolation and permissions | Zainicjować runner i lokalną bazę; udowodnić, że obca grupa nie czyta ani nie zmienia danych, a nie-twórca nie zarządza grupą | #2, #3        | integration (RLS + API)               | shipped     | context/changes/testing-runner-data-isolation-and-permissions/ |
-| 2   | Release ordering gate                   | Udowodnić, że niezgodny schemat i kod są wykrywane przed produkcją                                                            | #1            | CI check, extended smoke              | not started | —                                                              |
-| 3   | Auth boundaries and input validation    | Rejestracja i błędy zachowują się poprawnie; API odrzuca obcy Origin i złe dane                                               | #5, #6        | integration, smoke, unit (validation) | complete    | context/changes/test-coverage/ (S-10)                          |
-| 4   | Streak rule                             | Udowodnić poprawność reguły streaka na granicach dnia i tygodnia (po S-04 i decyzji o wartości spadku)                        | #4            | unit (pure function)                  | shipped     | context/changes/checkoff-and-leaderboard/ (S-04)               |
+| #   | Phase name                              | Goal (one line)                                                                                                               | Risks covered | Test types                            | Status   | Change folder                                                             |
+| --- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------- | -------- | ------------------------------------------------------------------------- |
+| 1   | Runner + data isolation and permissions | Zainicjować runner i lokalną bazę; udowodnić, że obca grupa nie czyta ani nie zmienia danych, a nie-twórca nie zarządza grupą | #2, #3        | integration (RLS + API)               | complete | context/archive/2026-09-30-testing-runner-data-isolation-and-permissions/ |
+| 2   | Release ordering gate                   | Udowodnić, że niezgodny schemat i kod są wykrywane przed produkcją                                                            | #1            | CI check, extended smoke              | complete | context/changes/test-coverage/ (S-10)                                     |
+| 3   | Auth boundaries and input validation    | Rejestracja i błędy zachowują się poprawnie; API odrzuca obcy Origin i złe dane                                               | #5, #6        | integration, smoke, unit (validation) | complete | context/changes/test-coverage/ (S-10)                                     |
+| 4   | Streak rule                             | Udowodnić poprawność reguły streaka na granicach dnia i tygodnia (po S-04 i decyzji o wartości spadku)                        | #4            | unit (pure function)                  | complete | context/archive/2026-10-01-checkoff-and-leaderboard/ (S-04)               |
 
 Kolejność: etap 2 ma ryzyko High × High, ale etap 1 dostarcza runner i lokalną
 bazę, z których korzystają kolejne etapy, oraz chroni najbardziej obawiany
 obszar (interview Q3). Etap 3 zależy częściowo od S-05 (`/auth/callback`).
 Etap 4 dostarczyła zmiana S-04 (`checkoff-and-leaderboard`) razem z regułą
-spadku streaka (połowa, w dół). Nie planuję warstwy AI-native ani e2e: tańsze testy deterministyczne
-dają ten sam sygnał (zasada #1).
+spadku streaka (połowa, w dół). Etapy 2 i 3 dostarczyła zmiana S-10
+(`test-coverage`): strażników mechaniki migracji (niezmienność, marker
+`-- compat:`, kolejność, świeże typy) dała wcześniej S-12, a S-10 dodała
+bramkę `compat` (kod z produkcji kontra nowy schemat, §6.5) i tag `production`.
+Nie planuję warstwy AI-native: tańsze testy deterministyczne dają ten sam
+sygnał (zasada #1). Pierwotnie plan nie przewidywał też e2e; dołączyło do stosu
+w S-10 decyzją właściciela z 2026-10-15 (§4, §5, §6.3), z asercjami
+funkcjonalnymi, bez porównań zrzutów ekranu.
 
 ## 4. Stack
 
@@ -117,16 +123,16 @@ Gate'y, które muszą przejść przed wejściem zmiany na produkcję.
 „Required after §3 Phase N" oznacza, że gate jest egzekwowany po wdrożeniu
 danego etapu; wcześniej ma status `planned`.
 
-| Gate                                        | Where                                      | Required?                                                   | Catches                                                                                                                                                                                                                                                                        |
-| ------------------------------------------- | ------------------------------------------ | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| lint + build                                | local + CI                                 | required (wired)                                            | dryf składni i typów                                                                                                                                                                                                                                                           |
-| smoke                                       | local + CI                                 | required (wired)                                            | zepsute podstawowe przepływy HTTP                                                                                                                                                                                                                                              |
-| unit + integration (RLS, uprawnienia)       | local + CI (job `integration`)             | required (wired)                                            | wyciek między grupami, brak kontroli własności                                                                                                                                                                                                                                 |
-| migration/code consistency check            | CI on PR (job `integration`)               | partly wired                                                | kod wymagający schematu, którego produkcja nie ma; wired: immutability of merged migrations, the `-- compat:` marker, ordering (`npm run guard:migrations`) and fresh `src/types.ts` (`npm run types:check`); still pending: the old-code-against-new-schema gate (§3 Phase 2) |
-| extended smoke (Origin, walidacja, auth)    | local + CI                                 | required (wired)                                            | przyjęcie obcego Origin i złych danych, regresje auth                                                                                                                                                                                                                          |
-| unit (streak rule)                          | local + CI (job `integration`, `npm test`) | required (wired)                                            | błędna reguła streaka na granicach okresów                                                                                                                                                                                                                                     |
-| AI code review (ai-review)                  | CI on PR                                   | required (wired)                                            | defekty oceniane przez AI w sześciu kryteriach przeglądu                                                                                                                                                                                                                       |
-| e2e (kluczowe przepływy, desktop + telefon) | local + CI (job `e2e`)                     | advisory; required po dodaniu do rulesetu (zamknięcie S-10) | zepsuty przepływ zaproszenia, odznaczania lub ustawień grupy w przeglądarce                                                                                                                                                                                                    |
+| Gate                                        | Where                                      | Required?                                                                                                                                                           | Catches                                                                                       |
+| ------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| lint + build                                | local + CI                                 | required (wired)                                                                                                                                                    | dryf składni i typów                                                                          |
+| smoke                                       | local + CI                                 | required (wired)                                                                                                                                                    | zepsute podstawowe przepływy HTTP                                                             |
+| unit + integration (RLS, uprawnienia)       | local + CI (job `integration`)             | required (wired)                                                                                                                                                    | wyciek między grupami, brak kontroli własności                                                |
+| migration/code consistency check            | CI on PR (jobs `integration` i `compat`)   | required (wired): strażnicy S-12 (niezmienność, marker, kolejność, typy) + job compat (kod z produkcji kontra nowy schemat); required po dodaniu compat do rulesetu | kod wymagający schematu, którego produkcja nie ma; migracja, której wdrożony kod nie przeżyje |
+| extended smoke (Origin, walidacja, auth)    | local + CI                                 | required (wired)                                                                                                                                                    | przyjęcie obcego Origin i złych danych, regresje auth                                         |
+| unit (streak rule)                          | local + CI (job `integration`, `npm test`) | required (wired)                                                                                                                                                    | błędna reguła streaka na granicach okresów                                                    |
+| AI code review (ai-review)                  | CI on PR                                   | required (wired)                                                                                                                                                    | defekty oceniane przez AI w sześciu kryteriach przeglądu                                      |
+| e2e (kluczowe przepływy, desktop + telefon) | local + CI (job `e2e`)                     | advisory; required po dodaniu do rulesetu (zamknięcie S-10)                                                                                                         | zepsuty przepływ zaproszenia, odznaczania lub ustawień grupy w przeglądarce                   |
 
 ## 6. Cookbook Patterns
 
@@ -168,12 +174,19 @@ wdrożeniu odpowiedniego etapu; wcześniej brzmi „TBD — see §3 Phase N."
 
 - Write a compatible migration: the schema ships before the code and never rolls back, so a new migration must work with the deployed code. Add tables and columns first; remove, rename, drop a policy or revoke a privilege only in a later release, once no deployed code depends on it, and say how the deployed code keeps working in one `-- compat: <text>` line of that migration (the guard requires the line for a destructive migration; it proves nothing, the author does). Never edit, rename or delete a merged migration: undo its effect in a new one. Name the file with a timestamp newer than every merged migration.
 - Commands, locally with the stack up: `npm run guard:migrations` (against `origin/master`; `-- --base <ref>` for another base), `npx supabase db reset` to apply the new file, `npx supabase gen types typescript --local > src/types.ts && npx prettier --write src/types.ts` and `npm run types:check` (it must print nothing), then `npm test` and `npm run test:rls`. The `integration` job runs the guard (on a PR) and the types check before the tests. When a merged file really has to change, `node scripts/migration-guard.mjs --entry supabase/migrations/<file>` prints the allowlist line for `supabase/checks/migration-edit-allowlist.txt` (replace `<reason>` with at least 20 characters). Unit tests for the guard's rules: `tests/unit/migration-guard.test.ts`.
-- Still pending (§3 Phase 2): a gate that runs the deployed code against the new schema (old code, new migrations) before the release.
+- The release compatibility gate (§3 Phase 2, S-10): the `compat` job in `.github/workflows/ci.yml` runs on every PR that touches `supabase/migrations/` (the `changes` job's `migrations` output; the job is skipped on other PRs and runs when `changes` cannot tell). It checks out the commit the `production` tag points at into `deployed/`, starts the local stack from the PR checkout (so the PR's migrations are the schema), builds the deployed commit and runs that commit's own `npm run smoke` against its production preview. The `release` job moves the tag after every successful deploy; after a `wrangler rollback` the owner moves it by hand (README, Rollback). A missing tag fails the job with "no production tag: create it at the deployed commit"; it never skips.
+- When `compat` is red: the deployed code does not survive the new schema in the interval between `db push` and `wrangler deploy`, or after a code rollback. Do not weaken the smoke of the deployed commit (it is frozen at the tag) and do not edit the gate; split the migration: the additive part (new table, column, policy, function) in this PR, the destructive part (drop, rename, policy change, revoke) in a later release, once the deployed code no longer depends on it, with its `-- compat:` line. A red run on a PR whose code change the smoke of the deployed commit cannot know about (a new route it does not call) is not possible: the gate runs the old smoke against the old code, only the schema is new.
+- Before relying on the gate for a real migration, see it both red and green once: the two scratch PRs of S-10 Phase 6 (a `drop column` the deployed code reads, then an additive migration) are the pattern.
 
 ### 6.6 Per-rollout-phase notes
 
 (Opcjonalnie. Po każdym etapie `/10x-implement` dopisuje 2–3 linie o tym, co
 zaskoczyło.)
+
+**Etap 2 (bramka zgodności wydania, S-10 `test-coverage`, faza 6, 2026-10-16):**
+
+- `master` nie jest tym, co działa na produkcji: każdy run `release` od 2026-10-12 do 2026-10-15 był anulowany przez grupę współbieżności albo czekał na zatwierdzenie, więc wdrożony commit odstawał od `master` o kilkanaście PR-ów. Stąd tag `production` przesuwany przez job `release`, a nie porównanie z `master`; commit z planowania (`30c01bb`) był już nieaktualny w dniu utworzenia tagu (`fb62d74`, run 38796422365).
+- Bramka buduje stary kod i uruchamia jego własny smoke (zamrożony razem z tagiem), więc nowy krok smoke w PR nic tu nie zmienia; zmienia się tylko schemat. Job nigdy nie pomija braku tagu: bez tagu jest czerwony z komunikatem, bo pominięcie liczyłoby się jako zaliczony required check.
 
 **Etap 3, faza 5 (linia bazowa mutacji, S-10 `test-coverage`, 2026-10-16):**
 
@@ -203,15 +216,18 @@ zaskoczyło.)
 Wyłączenia uzgodnione podczas wywiadu (Q5). Przyszli współtwórcy powinni je
 respektować, dopóki nie zmieni się założenie.
 
-- **Wygląd UI i snapshoty komponentów** — ciągle się zmieniają i dają mały sygnał. Re-evaluate, jeśli pojawi się stabilny design system z kontraktem tokenów. (Source: Phase 2 interview Q5.)
+- **Wygląd UI i snapshoty komponentów** — ciągle się zmieniają i dają mały sygnał. Re-evaluated 2026-10-15 (S-10, po design systemie S-11): wygląd pozostaje wyłączony. Bramką wyglądu jest kitchen sink `/dev/dashboard-kitchen-sink` i `scripts/ui-screenshots.mjs` oglądane przez człowieka; e2e (§6.3) asertuje funkcję (role, etykiety, stan po akcji), bez `toHaveScreenshot`. Re-evaluate, jeśli regresja wizualna dotrze na produkcję. (Source: Phase 2 interview Q5; S-10 plan.)
+- **E2E logowania Google** — dostawcy nie da się uruchomić lokalnie; hopy sprawdzają smoke (trasa startowa i powrotna) i live check joba `release` (302 do Supabase, 302 do `accounts.google.com`), a pełny przepływ właściciel sprawdza na produkcji. Re-evaluate, jeśli Supabase lub Google udostępnią lokalny dostawca testowy. (Source: §2 wiersz #5; S-10 research.)
+- **Potwierdzenie e-mail na produkcji** — wymaga prawdziwej skrzynki i jednorazowego linku; lokalny stos auto-potwierdza, a `/auth/callback` pokrywają testy integracyjne i smoke. Pozostaje ręcznym sprawdzeniem właściciela przy zmianie adresu lub SMTP. (Source: §2 wiersz #5; README, Production auth settings.)
+- **Limity hostowanego Auth i captcha pod prawdziwym zalewem** — konfiguracja żyje tylko w dashboardzie Supabase, więc test nie ma jej skąd odczytać; testowane jest wyłącznie mapowanie odpowiedzi 429 (`over_email_send_rate_limit`, `over_request_rate_limit`) na komunikaty (`tests/unit/auth-errors.test.ts`), a wartości limitów i stan captcha właściciel odczytuje z dashboardu (zapis w `context/changes/deployment/deployment-plan.md`, etap 16). Re-evaluate, jeśli zalew rejestracji zablokuje prawdziwych użytkowników. (Source: §2 wiersz #5; S-10 plan, faza 4.)
 - **Anti-cheat odznaczania tasków** — poza zakresem PRD (Non-Goals), system opiera się na zaufaniu w gronie znajomych. Re-evaluate, jeśli grupy przestaną być zaufanym gronem. (Source: PRD Non-Goals.)
 - **Natychmiastowość odznaczenia** — wymaganie wydajnościowe, oceniane ręcznie lub obserwowalnością, nie testem. Re-evaluate, jeśli pojawi się skarga na opóźnienie. (Source: brief Phase 3, challenger findings.)
 
 ## 8. Freshness Ledger
 
-- Strategy (§1–§5) last reviewed: 2026-10-01 (etap 1 i etap 4 wdrożone)
-- §4 (wiersz e2e) i §5 (gate e2e) edited 2026-10-15 on the owner's instruction in S-10 (`test-coverage`): e2e dołączone do stosu i bramek, §6.3 wypełnione
-- Stack versions last verified: 2026-09-30 (Vitest 5.0.3, lokalny Supabase); Playwright Test 1.63.0 checked 2026-10-15
+- Strategy (§1–§5) last reviewed: 2026-10-15 (etapy 1–4 wdrożone; §3 i §5 zamknięte w S-10 `test-coverage`)
+- §4 (wiersz e2e), §5 (gate e2e) i §7 edited 2026-10-15 on the owner's instruction in S-10 (`test-coverage`): e2e dołączone do stosu i bramek, §6.3 wypełnione, §6.5 opisuje bramkę `compat`
+- Stack versions last verified: 2026-10-15 (Vitest 5.0.3, Playwright Test 1.63.0, Stryker 10.0.0 z łatką separatora nazw testów, Supabase CLI 2.117.0 w CI)
 - AI-native tool references last verified: 2026-09-30 (brak narzędzi AI-native w planie)
 
 Refresh (`/10x-test-plan --refresh`) when:
