@@ -90,6 +90,66 @@ jobs:
       - if: always()
         run: supabase stop --no-backup
 
+  # The Playwright suite (tests/e2e/) in both projects, desktop and phone, against the production preview. Advisory until
+  # the owner adds it to the ruleset's required checks; the id and name stay unique so that step is a ruleset edit only.
+  e2e:
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.117.0
+      - run: npm ci
+      # The browser download is keyed by the @playwright/test version in package-lock.json, so a bump refreshes it.
+      - name: Read the Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('./package-lock.json').packages['node_modules/@playwright/test'].version")" >> "$GITHUB_OUTPUT"
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+      - run: npx playwright install --with-deps chromium
+      - name: Start local Supabase
+        run: |
+          supabase start -x studio,imgproxy,mailpit,edge-runtime,logflare,vector,realtime,storage-api,postgres-meta,supavisor
+          supabase status -o env | grep -E '^(API_URL|ANON_KEY)=' > supabase.env
+      - name: Configure secrets for build and preview
+        run: |
+          source supabase.env
+          printf 'SUPABASE_URL=%s\nSUPABASE_KEY=%s\n' "$API_URL" "$ANON_KEY" > .env
+          # The privacy policy's contact address is runtime configuration; the suite only needs the page to render.
+          printf 'CONTACT_EMAIL=contact@example.com\n' >> .env
+          cp .env .dev.vars
+      # A fresh stack has no accounts: the script creates the confirmed user the `setup` project signs in with and prints
+      # the two variables. The password is masked before it reaches the log.
+      - name: Create the E2E account
+        run: |
+          node scripts/e2e-user.mjs > e2e-user.env
+          password=$(sed -n 's/^E2E_PASSWORD=//p' e2e-user.env)
+          echo "::add-mask::$password"
+          cat e2e-user.env >> "$GITHUB_ENV"
+      # With CI set the config builds and starts the preview itself and never reuses a running server.
+      - name: Run the Playwright suite
+        run: npx playwright test
+        env:
+          CI: true
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+      - if: always()
+        run: supabase stop --no-backup
+
   integration:
     needs: changes
     if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}

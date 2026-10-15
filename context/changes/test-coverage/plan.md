@@ -497,11 +497,11 @@ No schema change and no data migration. The `production` tag is new repository m
 
 #### Automated
 
-- [x] 2.1 Invite spec green against the production preview: `npx playwright test tests/e2e/invite-join.spec.ts`
-- [x] 2.2 Check-off spec green: `npx playwright test tests/e2e/checkoff-round-trip.spec.ts`
-- [x] 2.3 Settings specs green: `npx playwright test tests/e2e/group-settings-member.spec.ts tests/e2e/group-settings-owner.spec.ts`
-- [x] 2.4 Full suite green, seed and isolation included: `npx playwright test`
-- [x] 2.5 Lint passes on the new specs and helpers: `npm run lint`
+- [x] 2.1 Invite spec green against the production preview: `npx playwright test tests/e2e/invite-join.spec.ts` — 0e08366
+- [x] 2.2 Check-off spec green: `npx playwright test tests/e2e/checkoff-round-trip.spec.ts` — 0e08366
+- [x] 2.3 Settings specs green: `npx playwright test tests/e2e/group-settings-member.spec.ts tests/e2e/group-settings-owner.spec.ts` — 0e08366
+- [x] 2.4 Full suite green, seed and isolation included: `npx playwright test` — 0e08366
+- [x] 2.5 Lint passes on the new specs and helpers: `npm run lint` — 0e08366
 
 #### Manual
 
@@ -513,9 +513,9 @@ No schema change and no data migration. The `production` tag is new repository m
 
 #### Automated
 
-- [ ] 3.1 Both projects pass locally: `npx playwright test` runs every spec in `chromium` and `mobile-chromium` and passes
-- [ ] 3.2 The seed script refuses a non-local stack: `TEST_SUPABASE_URL=https://example.supabase.co TEST_SUPABASE_ANON_KEY=x TEST_SUPABASE_SERVICE_ROLE_KEY=x node scripts/e2e-user.mjs` exits non-zero and creates nothing
-- [ ] 3.3 Lint passes, the script included: `npm run lint`
+- [x] 3.1 Both projects pass locally: `npx playwright test` runs every spec in `chromium` and `mobile-chromium` and passes
+- [x] 3.2 The seed script refuses a non-local stack: `TEST_SUPABASE_URL=https://example.supabase.co TEST_SUPABASE_ANON_KEY=x TEST_SUPABASE_SERVICE_ROLE_KEY=x node scripts/e2e-user.mjs` exits non-zero and creates nothing
+- [x] 3.3 Lint passes, the script included: `npm run lint`
 - [ ] 3.4 The `e2e` job passes on the phase PR with both projects: `gh pr checks` shows `e2e` green (ticked with the PR head SHA on the next phase branch or in the closing docs PR, never on the merged branch)
 
 #### Manual
