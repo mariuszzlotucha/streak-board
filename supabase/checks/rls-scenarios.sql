@@ -1,4 +1,4 @@
--- RLS scenario checks for groups / group_members / tasks / task_participants / task_checkoffs (F-01 + group-rls-hardening + S-01 helper functions + S-02 tasks + S-03 participation + S-04 check-offs).
+-- RLS scenario checks for groups / group_members / tasks / task_participants / task_checkoffs (F-01 + group-rls-hardening + S-01 helper functions + S-02 tasks + S-03 participation + S-04 check-offs + S-12 table-level privileges).
 --
 -- Run against the LOCAL Supabase database only:
 --   docker exec -i supabase_db_10x-astro-starter psql -U postgres -d postgres -X -v ON_ERROR_STOP=1 < supabase/checks/rls-scenarios.sql
@@ -1224,6 +1224,37 @@ begin
   perform rls_check.expect_error('42501', rls_check.tick(t, m, d0), 'S-04 an ex-member with a leftover participation row cannot check off (the task is not visible to them)');
   perform rls_check.as_user(a);
   perform rls_check.expect_rows(rls_check.tick(t, a, d0), 1, 'S-04 the creator can still check off the same task');
+
+  perform rls_check.as_postgres();
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- S-12: table-level privileges (20261015180024_grant_core_table_privileges.sql), pinned in both directions
+-- ---------------------------------------------------------------------------
+
+-- Runs as postgres and reads the catalog, not behaviour: a missing privilege and an extra one both fail. authenticated
+-- holds exactly DELETE and SELECT on every table (the writes go through column-level grants, which are outside this
+-- scenario and asserted behaviourally above) and exactly SELECT on the aggregate view; anon holds nothing in the schema.
+do $$
+declare
+  v_table text;
+begin
+  perform rls_check.as_postgres();
+
+  foreach v_table in array array['groups', 'group_members', 'tasks', 'task_participants', 'task_checkoffs'] loop
+    perform rls_check.expect_value(
+      format($q$select string_agg(privilege_type, ',' order by privilege_type) from information_schema.role_table_grants
+                where table_schema = 'public' and table_name = %L and grantee = 'authenticated'$q$, v_table),
+      'DELETE,SELECT', format('S-12 authenticated holds exactly DELETE,SELECT on %s', v_table));
+  end loop;
+  perform rls_check.expect_value(
+    $q$select string_agg(privilege_type, ',' order by privilege_type) from information_schema.role_table_grants
+       where table_schema = 'public' and table_name = 'task_checkoff_periods' and grantee = 'authenticated'$q$,
+    'SELECT', 'S-12 authenticated holds exactly SELECT on the view task_checkoff_periods');
+  perform rls_check.expect_value(
+    $q$select count(*) from information_schema.role_table_grants where table_schema = 'public' and grantee = 'anon'$q$,
+    '0', 'S-12 anon holds no table-level privilege in the public schema');
 
   perform rls_check.as_postgres();
 end;

@@ -200,7 +200,14 @@ Signing out of StreakBoard does not sign out of Google, and the start route send
 
 ### RLS scenario checks
 
-`supabase/checks/rls-scenarios.sql` asserts the row-level security rules of `groups`, `group_members`, `tasks`, `task_participants` and `task_checkoffs` (visibility, joining via `join_group`, leaving, column privileges, the `task_checkoff_periods` view's group scoping, and the `list_group_members` / `preview_group` helper functions) and exits non-zero on the first regression. Run it after every migration that touches group RLS, with the local stack running:
+`supabase/checks/rls-scenarios.sql` asserts the row-level security rules of `groups`, `group_members`, `tasks`, `task_participants` and `task_checkoffs` (visibility, joining via `join_group`, leaving, column privileges, the `task_checkoff_periods` view's group scoping, and the `list_group_members` / `preview_group` helper functions) and exits non-zero on the first regression. It also pins the table-level privileges in both directions (read from `information_schema.role_table_grants`, so a missing privilege and an extra one both fail; column-level grants are outside this check):
+
+| Object                                                                    | `authenticated`  | `anon` |
+| ------------------------------------------------------------------------- | ---------------- | ------ |
+| `groups`, `group_members`, `tasks`, `task_participants`, `task_checkoffs` | `DELETE, SELECT` | none   |
+| `task_checkoff_periods` (view)                                            | `SELECT`         | none   |
+
+Run it after every migration that touches group RLS or privileges, with the local stack running:
 
 ```bash
 docker exec -i supabase_db_10x-astro-starter psql -U postgres -d postgres -X -v ON_ERROR_STOP=1 < supabase/checks/rls-scenarios.sql
