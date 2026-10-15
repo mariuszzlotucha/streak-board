@@ -424,9 +424,9 @@ Only Phase 5 touches the database: one additive `grant` that works with the code
 
 #### Automated
 
-- [x] 3.1 New unit and route suites pass together with the existing ones: `npm test`
-- [x] 3.2 Tests are linted and type-checked: `npm run lint && npx astro check`
-- [x] 3.3 No source file changed: `git diff --stat origin/master...HEAD -- src` prints nothing
+- [x] 3.1 New unit and route suites pass together with the existing ones: `npm test` — 74a2317
+- [x] 3.2 Tests are linted and type-checked: `npm run lint && npx astro check` — 74a2317
+- [x] 3.3 No source file changed: `git diff --stat origin/master...HEAD -- src` prints nothing — 74a2317
 
 #### Manual
 
@@ -438,10 +438,10 @@ Only Phase 5 touches the database: one additive `grant` that works with the code
 
 #### Automated
 
-- [ ] 4.1 Contract tests pass: `npm test`
-- [ ] 4.2 The regex-on-SQL test is gone: `grep -n "_create_tasks.sql" tests/unit/task-rules.test.ts` prints nothing
-- [ ] 4.3 Lint and type check pass: `npm run lint && npx astro check`
-- [ ] 4.4 No source file changed: `git diff --stat origin/master...HEAD -- src` prints nothing
+- [x] 4.1 Contract tests pass: `npm test`
+- [x] 4.2 The regex-on-SQL test is gone: `grep -n "_create_tasks.sql" tests/unit/task-rules.test.ts` prints nothing
+- [x] 4.3 Lint and type check pass: `npm run lint && npx astro check`
+- [x] 4.4 No source file changed: `git diff --stat origin/master...HEAD -- src` prints nothing
 
 #### Manual
 
