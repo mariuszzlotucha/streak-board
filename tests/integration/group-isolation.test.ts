@@ -189,18 +189,19 @@ describe("cross-group data isolation", () => {
       expect(await adminMemberIdsOfA()).toHaveLength(2);
 
       const anon = anonClient();
+      // The grants deny the anon role outright (42501), so a silent empty result would be a weaker, different policy.
       const { data: groups, error: groupsError } = await anon.from("groups").select("id");
-      expect(groupsError?.code ?? null).toSatisfy((code: string | null) => code === null || code === RLS_VIOLATION);
-      expect(groups ?? []).toEqual([]);
+      expect(groupsError?.code).toBe(RLS_VIOLATION);
+      expect(groups).toBeNull();
 
       const { data: members, error: membersError } = await anon.from("group_members").select("user_id");
-      expect(membersError?.code ?? null).toSatisfy((code: string | null) => code === null || code === RLS_VIOLATION);
-      expect(members ?? []).toEqual([]);
+      expect(membersError?.code).toBe(RLS_VIOLATION);
+      expect(members).toBeNull();
     });
 
     it("cannot insert into groups", async () => {
       const { data, error } = await anonClient().from("groups").insert({ name: "Anon group", owner_id: a.id });
-      expect(error).not.toBeNull();
+      expect(error?.code).toBe(RLS_VIOLATION);
       expect(data).toBeNull();
 
       const { data: byName, error: adminError } = await adminClient()
@@ -224,15 +225,15 @@ describe("cross-group data isolation", () => {
 
       const anon = anonClient();
       const join = await anon.rpc("join_group", { p_join_code: ga.joinCode });
-      expect(join.error).not.toBeNull();
+      expect(join.error?.code).toBe(RLS_VIOLATION);
       expect(join.data).toBeNull();
 
       const list = await anon.rpc("list_group_members", { p_group_id: ga.id });
-      expect(list.error).not.toBeNull();
+      expect(list.error?.code).toBe(RLS_VIOLATION);
       expect(list.data).toBeNull();
 
       const previewAnon = await anon.rpc("preview_group", { p_join_code: ga.joinCode });
-      expect(previewAnon.error).not.toBeNull();
+      expect(previewAnon.error?.code).toBe(RLS_VIOLATION);
       expect(previewAnon.data).toBeNull();
 
       expect(await adminMemberIdsOfA()).toEqual([a.id, a2.id].sort());
