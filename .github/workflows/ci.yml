@@ -195,6 +195,69 @@ jobs:
       - if: always()
         run: supabase stop --no-backup
 
+  # Release compatibility gate. The `release` job applies the migrations before it deploys the Worker, and a code
+  # rollback never rolls the schema back, so for a while the code that is live on production runs against the new
+  # schema. This job rehearses that interval on every PR that touches `supabase/migrations/`: it builds the commit the
+  # `production` tag points at (the `release` job moves the tag after every deploy) and runs that commit's own smoke
+  # against a local stack carrying the PR's migrations. A red run means the migration is not backward compatible with
+  # the deployed code: split it (add columns, tables and policies first; remove, rename or revoke in a later release,
+  # once no deployed code depends on it). On a PR without migrations the job is skipped, which satisfies a required
+  # check; the `if:` fails safe and runs when `changes` could not tell. A missing tag fails the job, never skips it.
+  compat:
+    needs: changes
+    if: ${{ !cancelled() && github.event_name == 'pull_request' && needs.changes.outputs.migrations != 'false' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require the production tag
+        run: |
+          if ! git ls-remote --exit-code --tags origin production; then
+            echo "::error::no production tag: create it at the deployed commit"
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+        with:
+          ref: refs/tags/production
+          path: deployed
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            deployed/package-lock.json
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.117.0
+      - run: npm ci
+      - run: npm ci
+        working-directory: deployed
+      # The stack starts from the PR checkout, so the PR's migrations are the schema the deployed code meets.
+      - name: Start local Supabase with the PR's migrations
+        run: |
+          supabase start -x studio,imgproxy,mailpit,edge-runtime,logflare,vector,realtime,storage-api,postgres-meta,supavisor
+          supabase status -o env | grep -E '^(API_URL|ANON_KEY)=' > supabase.env
+      - name: Configure secrets for the deployed build and preview
+        working-directory: deployed
+        run: |
+          source ../supabase.env
+          printf 'SUPABASE_URL=%s\nSUPABASE_KEY=%s\n' "$API_URL" "$ANON_KEY" > .env
+          # The privacy policy's contact address is runtime configuration; smoke only checks that a mailto: link renders.
+          printf 'CONTACT_EMAIL=contact@example.com\n' >> .env
+          cp .env .dev.vars
+      - name: Build the deployed commit
+        working-directory: deployed
+        run: npm run build
+      # The deployed commit's own smoke script and expectations, against the new schema.
+      - name: Run the deployed commit's smoke against the new schema
+        working-directory: deployed
+        run: |
+          npm run preview -- --port 4321 &
+          for i in $(seq 1 60); do curl -sf -o /dev/null http://localhost:4321/ && break; sleep 1; done
+          BASE_URL=http://localhost:4321 npm run smoke
+      - if: always()
+        run: supabase stop --no-backup
+
   release:
     needs: [ci, smoke, integration]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
