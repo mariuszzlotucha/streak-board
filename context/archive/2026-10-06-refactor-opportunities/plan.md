@@ -400,7 +400,7 @@ Only Phase 5 touches the database: one additive `grant` that works with the code
 #### Manual
 
 - [ ] 1.6 With the local stack up and no other session using it, stop PostgREST (`docker stop supabase_rest_10x-astro-starter`) and load `/dashboard` as a signed-in test user with a client timeout above 60 s (the first request after the stop waits about 60 s at the local gateway): status 503 with the dashboard error page, as since S-11, and the dev server output carries exactly one `dashboard.load.failed` error line with `route`, `userId`, `ray` and the cause, and no e-mail, cookie, request body or invite code; start the container again, also when the check fails, and see the page load normally
-- [ ] 1.7 After the merge and the owner's approval of the `release` run, `/dashboard` loads on the production URL for a signed-in user as before (the new events appear only when a read fails)
+- [x] 1.7 After the merge and the owner's approval of the `release` run, `/dashboard` loads on the production URL for a signed-in user as before (the new events appear only when a read fails)
 
 ### Phase 2: CI guards for the migration and code seam (OPP-3)
 
@@ -418,7 +418,7 @@ Only Phase 5 touches the database: one additive `grant` that works with the code
 - [ ] 2.7 Changing one identifier in `src/types.ts` locally makes `npm run types:check` exit 1 with a diff; restore the file
 - [ ] 2.8 With the owner's go-ahead, a draft PR from a scratch branch that edits a statement of `20260925011727_harden_group_rls.sql` shows `integration` failing with the annotation and the merge blocked; close it unmerged and delete the branch
 - [ ] 2.9 README, `test-plan.md`, the `CLAUDE.md` types command and the new `lessons.md` entry read correctly
-- [ ] 2.10 After the PR is open, all its checks pass with both new steps: `gh pr checks` shows `integration`, `ci` and `smoke` passing
+- [x] 2.10 After the PR is open, all its checks pass with both new steps: `gh pr checks` shows `integration`, `ci` and `smoke` passing
 
 ### Phase 3: Characterization net for the data routes (OPP-1)
 
@@ -461,9 +461,9 @@ Only Phase 5 touches the database: one additive `grant` that works with the code
 
 - [ ] 5.5 Local mutation check: revoke `select, delete` on the three tables from `authenticated`, see `npm run test:rls` go red on the new block, apply the migration SQL and see it green again
 - [ ] 5.6 With the owner's go-ahead, a fresh-database check that wipes local data: `npx supabase db reset && npm run test:rls && npm test`
-- [ ] 5.7 The owner runs the hosted privilege query in the Supabase dashboard SQL editor (never through the chat) and the result matches the scenario table: `select table_name, grantee, string_agg(privilege_type, ',' order by privilege_type) from information_schema.role_table_grants where table_schema = 'public' and grantee in ('anon', 'authenticated') group by 1, 2 order by 1, 2;` returns the six `authenticated` rows and no `anon` row; a difference stops the phase for a re-plan
-- [ ] 5.8 After the PR is open, its CI run, which starts a fresh stack and applies every migration, is green: `gh pr checks`
-- [ ] 5.9 Release: after the merge, check that `supabase/migrations/` of the merge commit lists exactly the new migration, approve the `release` run in the `production` environment, and see the live check pass
-- [ ] 5.10 On the production URL: sign in, the dashboard shows the group and its tasks, tick a task and undo it
-- [ ] 5.11 Every S-12 release run, with the date, the applied migration and the result, is noted in `context/changes/deployment/deployment-plan.md` under the next free Phase number (15 at the 2026-10-13 review)
+- [x] 5.7 The owner runs the hosted privilege query in the Supabase dashboard SQL editor (never through the chat) and the result matches the scenario table: `select table_name, grantee, string_agg(privilege_type, ',' order by privilege_type) from information_schema.role_table_grants where table_schema = 'public' and grantee in ('anon', 'authenticated') group by 1, 2 order by 1, 2;` returns the six `authenticated` rows and no `anon` row; a difference stops the phase for a re-plan
+- [x] 5.8 After the PR is open, its CI run, which starts a fresh stack and applies every migration, is green: `gh pr checks`
+- [x] 5.9 Release: after the merge, check that `supabase/migrations/` of the merge commit lists exactly the new migration, approve the `release` run in the `production` environment, and see the live check pass
+- [x] 5.10 On the production URL: sign in, the dashboard shows the group and its tasks, tick a task and undo it
+- [x] 5.11 Every S-12 release run, with the date, the applied migration and the result, is noted in `context/changes/deployment/deployment-plan.md` under the next free Phase number (15 at the 2026-10-13 review)
 - [ ] 5.12 Optional: the owner reads Project Settings, API, Max rows on the hosted project and records it in the PR (no change is planned)
