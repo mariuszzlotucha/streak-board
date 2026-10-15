@@ -482,11 +482,11 @@ No schema change and no data migration. The `production` tag is new repository m
 
 #### Automated
 
-- [ ] 1.1 The unit project runs without the stack: with the local stack stopped, `npm run test:unit` passes and runs every file under `tests/unit/`
-- [ ] 1.2 The whole suite is unchanged: with the stack up, `npm test` passes and runs the same number of files and tests as the previous `master` run (both numbers recorded in the PR)
-- [ ] 1.3 The narrowed mutation run executes the covering tests on Vitest 5: with the stack stopped, `npm run test:mutation -- --mutate src/lib/landing.ts` finishes, and in `reports/mutation/mutation.json` every runtime mutant has `testsCompleted >= 1` and at least one runtime mutant is `Killed`
-- [ ] 1.4 A clean install keeps the fix: after `npm ci`, the two runner files contain the `" > "` separator (patch route) or the upgraded runner version is the one locked in `package-lock.json` (upgrade route)
-- [ ] 1.5 Lint and type check pass with the new config files: `npm run lint && npx astro check`
+- [x] 1.1 The unit project runs without the stack: with the local stack stopped, `npm run test:unit` passes and runs every file under `tests/unit/` — 21b7800
+- [x] 1.2 The whole suite is unchanged: with the stack up, `npm test` passes and runs the same number of files and tests as the previous `master` run (both numbers recorded in the PR) — 21b7800
+- [x] 1.3 The narrowed mutation run executes the covering tests on Vitest 5: with the stack stopped, `npm run test:mutation -- --mutate src/lib/landing.ts` finishes, and in `reports/mutation/mutation.json` every runtime mutant has `testsCompleted >= 1` and at least one runtime mutant is `Killed` — 21b7800
+- [x] 1.4 A clean install keeps the fix: after `npm ci`, the two runner files contain the `" > "` separator (patch route) or the upgraded runner version is the one locked in `package-lock.json` (upgrade route) — 21b7800
+- [x] 1.5 Lint and type check pass with the new config files: `npm run lint && npx astro check` — 21b7800
 
 #### Manual
 
@@ -497,11 +497,11 @@ No schema change and no data migration. The `production` tag is new repository m
 
 #### Automated
 
-- [ ] 2.1 Invite spec green against the production preview: `npx playwright test tests/e2e/invite-join.spec.ts`
-- [ ] 2.2 Check-off spec green: `npx playwright test tests/e2e/checkoff-round-trip.spec.ts`
-- [ ] 2.3 Settings specs green: `npx playwright test tests/e2e/group-settings-member.spec.ts tests/e2e/group-settings-owner.spec.ts`
-- [ ] 2.4 Full suite green, seed and isolation included: `npx playwright test`
-- [ ] 2.5 Lint passes on the new specs and helpers: `npm run lint`
+- [x] 2.1 Invite spec green against the production preview: `npx playwright test tests/e2e/invite-join.spec.ts` — 0e08366
+- [x] 2.2 Check-off spec green: `npx playwright test tests/e2e/checkoff-round-trip.spec.ts` — 0e08366
+- [x] 2.3 Settings specs green: `npx playwright test tests/e2e/group-settings-member.spec.ts tests/e2e/group-settings-owner.spec.ts` — 0e08366
+- [x] 2.4 Full suite green, seed and isolation included: `npx playwright test` — 0e08366
+- [x] 2.5 Lint passes on the new specs and helpers: `npm run lint` — 0e08366
 
 #### Manual
 
@@ -513,9 +513,9 @@ No schema change and no data migration. The `production` tag is new repository m
 
 #### Automated
 
-- [ ] 3.1 Both projects pass locally: `npx playwright test` runs every spec in `chromium` and `mobile-chromium` and passes
-- [ ] 3.2 The seed script refuses a non-local stack: `TEST_SUPABASE_URL=https://example.supabase.co TEST_SUPABASE_ANON_KEY=x TEST_SUPABASE_SERVICE_ROLE_KEY=x node scripts/e2e-user.mjs` exits non-zero and creates nothing
-- [ ] 3.3 Lint passes, the script included: `npm run lint`
+- [x] 3.1 Both projects pass locally: `npx playwright test` runs every spec in `chromium` and `mobile-chromium` and passes — 99a4f77
+- [x] 3.2 The seed script refuses a non-local stack: `TEST_SUPABASE_URL=https://example.supabase.co TEST_SUPABASE_ANON_KEY=x TEST_SUPABASE_SERVICE_ROLE_KEY=x node scripts/e2e-user.mjs` exits non-zero and creates nothing — 99a4f77
+- [x] 3.3 Lint passes, the script included: `npm run lint` — 99a4f77
 - [ ] 3.4 The `e2e` job passes on the phase PR with both projects: `gh pr checks` shows `e2e` green (ticked with the PR head SHA on the next phase branch or in the closing docs PR, never on the merged branch)
 
 #### Manual
@@ -527,9 +527,9 @@ No schema change and no data migration. The `production` tag is new repository m
 
 #### Automated
 
-- [ ] 4.1 Smoke passes with the new steps against the production preview: `npm run smoke` (the step count rises by the number of added steps, recorded in the PR)
-- [ ] 4.2 Unit and integration suites pass with the mapper tables: `npm test`
-- [ ] 4.3 Lint passes: `npm run lint`
+- [x] 4.1 Smoke passes with the new steps against the production preview: `npm run smoke` (the step count rises by the number of added steps, recorded in the PR) — 5c803b1
+- [x] 4.2 Unit and integration suites pass with the mapper tables: `npm test` — 5c803b1
+- [x] 4.3 Lint passes: `npm run lint` — 5c803b1
 - [ ] 4.4 Smoke still passes in CI: `gh pr checks` shows `smoke` green (ticked with the PR head SHA on the next branch or in the closing docs PR)
 
 #### Manual
@@ -542,11 +542,11 @@ No schema change and no data migration. The `production` tag is new repository m
 
 #### Automated
 
-- [ ] 5.1 Precondition holds: `tests/unit/{group-errors,task-errors,group-rules,join-code,checkoff-response}.test.ts` and `tests/integration/rule-contracts.test.ts` exist on `master`
-- [ ] 5.2 Every listed module has a recorded run: `mutation-baseline.md` has one row per module, and no runtime mutant in any run has `testsCompleted: 0` except those classified as import-time throws
-- [ ] 5.3 Suites pass with the strengthened tests: `npm test` with the stack up and `npm run test:unit` with the stack stopped
-- [ ] 5.4 No source change: `git diff --stat origin/master...HEAD -- src` prints nothing
-- [ ] 5.5 Lint passes: `npm run lint`
+- [x] 5.1 Precondition holds: `tests/unit/{group-errors,task-errors,group-rules,join-code,checkoff-response}.test.ts` and `tests/integration/rule-contracts.test.ts` exist on `master` — a7731bf
+- [x] 5.2 Every listed module has a recorded run: `mutation-baseline.md` has one row per module, and no runtime mutant in any run has `testsCompleted: 0` except those classified as import-time throws — a7731bf
+- [x] 5.3 Suites pass with the strengthened tests: `npm test` with the stack up and `npm run test:unit` with the stack stopped — a7731bf
+- [x] 5.4 No source change: `git diff --stat origin/master...HEAD -- src` prints nothing — a7731bf
+- [x] 5.5 Lint passes: `npm run lint` — a7731bf
 
 #### Manual
 
@@ -558,9 +558,9 @@ No schema change and no data migration. The `production` tag is new repository m
 
 #### Automated
 
-- [ ] 6.1 The initial tag exists at the confirmed deployed commit: `git ls-remote --tags origin production` shows that SHA
+- [x] 6.1 The initial tag exists at the confirmed deployed commit: `git ls-remote --tags origin production` shows that SHA (`fb62d74`, pushed 2026-10-16) — 577bb4e
 - [ ] 6.2 The phase PR's own CI run is green with the new jobs: `gh pr checks` shows `ci`, `smoke`, `integration`, `e2e` green and `compat` skipped (the PR adds no migration); ticked with the PR head SHA in the closing docs PR
-- [ ] 6.3 Lint and formatting pass on the edited documents and workflow: `npm run lint`
+- [x] 6.3 Lint and formatting pass on the edited documents and workflow: `npm run lint` — 81f9fdc
 
 #### Manual
 

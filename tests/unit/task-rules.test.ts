@@ -1,10 +1,20 @@
 import { describe, expect, it } from "vitest";
 import {
   MAX_TASK_TITLE_LENGTH,
+  RECURRENCE_LABELS,
+  TASK_RECURRENCES,
   groupParticipantsByTask,
   normalizeRecurrence,
   normalizeTaskTitle,
 } from "@/lib/task-rules";
+
+describe("RECURRENCE_LABELS", () => {
+  it("labels each recurrence kind of the add-task select with its capitalised name", () => {
+    // The select posts once/daily/weekly (README, Task routes) and shows each kind as a capitalised word
+    expect(TASK_RECURRENCES).toEqual(["once", "daily", "weekly"]);
+    expect(RECURRENCE_LABELS).toEqual({ once: "Once", daily: "Daily", weekly: "Weekly" });
+  });
+});
 
 describe("normalizeTaskTitle", () => {
   it("returns the trimmed title", () => {

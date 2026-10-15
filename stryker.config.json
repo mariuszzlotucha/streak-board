@@ -2,12 +2,37 @@
   "$schema": "./node_modules/@stryker-mutator/core/schema/stryker-schema.json",
   "testRunner": "vitest",
   "plugins": ["@stryker-mutator/vitest-runner"],
+  "vitest": {
+    "configFile": "vitest.unit.config.ts",
+    "related": true
+  },
   "mutate": [
-    "src/**/*.ts",
-    "!src/**/*.spec.ts",
-    "!src/**/*.test.ts"
+    "src/lib/auth-errors.ts",
+    "src/lib/auth-state.ts",
+    "src/lib/checkoff-client.ts",
+    "src/lib/checkoff-response.ts",
+    "src/lib/checkoff-sync.ts",
+    "src/lib/group-errors.ts",
+    "src/lib/group-rules.ts",
+    "src/lib/join-code.ts",
+    "src/lib/landing.ts",
+    "src/lib/leaderboard-rules.ts",
+    "src/lib/redact.ts",
+    "src/lib/streak-rules.ts",
+    "src/lib/task-errors.ts",
+    "src/lib/task-rules.ts"
   ],
-  "reporters": ["progress", "clear-text", "html"],
+  "ignorePatterns": [
+    ".claude/**",
+    ".wrangler/**",
+    "dist/**",
+    ".astro/**",
+    "context/**",
+    "docs/**",
+    "playwright-report/**",
+    "test-results/**"
+  ],
+  "reporters": ["progress", "clear-text", "html", "json"],
   "concurrency": 4,
   "thresholds": { "high": 80, "low": 60, "break": null }
 }

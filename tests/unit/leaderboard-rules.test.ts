@@ -122,6 +122,21 @@ describe("rankStandings", () => {
     expect(ranked.map((r) => r.userId)).toEqual(["u2", "u1", "u4", "u3", "u5"]);
   });
 
+  it("orders two members without an e-mail by user id, whatever the input order", () => {
+    // Both sort as "Unknown member", so the user id is the last resort (the rankStandings comment): u1 before u2
+    // from either input order, never the order the rows happened to arrive in
+    const u1 = row("u1", null, 4);
+    const u2 = row("u2", null, 4);
+    expect(rankStandings([u1, u2], "u1").map((r) => [r.userId, r.position])).toEqual([
+      ["u1", 1],
+      ["u2", 1],
+    ]);
+    expect(rankStandings([u2, u1], "u1").map((r) => [r.userId, r.position])).toEqual([
+      ["u1", 1],
+      ["u2", 1],
+    ]);
+  });
+
   it("orders by code units, not by locale, and folds case downwards", () => {
     // '2' (0x32) sorts before '@' (0x40); localeCompare says the opposite
     const byCodeUnit = rankStandings([row("u1", "john@example.com", 1), row("u2", "john2@example.com", 1)], "u1");

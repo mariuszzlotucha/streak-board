@@ -30,6 +30,13 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"], storageState: "playwright/.auth/user.json" },
       dependencies: ["setup"],
     },
+    {
+      // The PRD's only NFR is that the key flows work at phone size (412×839, touch). Every spec runs here too, with
+      // functional assertions only: no screenshot comparison (test-plan §7). `--project=mobile-chromium` runs it alone.
+      name: "mobile-chromium",
+      use: { ...devices["Pixel 7"], storageState: "playwright/.auth/user.json" },
+      dependencies: ["setup"],
+    },
   ],
   webServer: {
     // Production-like build + preview (the workerd runtime, as in CI), on the port above.

@@ -19,6 +19,8 @@ describe("rememberJoinCode", () => {
 
     rememberJoinCode(cookies, `https://streak.example/join/${CODE.toUpperCase()}?x=1`);
 
+    // The cookie is named `join_code` (README, Smoke test; CLAUDE.md): the smoke steps look for it by that name
+    expect(JOIN_CODE_COOKIE).toBe("join_code");
     expect(stub.set).toHaveBeenCalledOnce();
     expect(stub.set).toHaveBeenCalledWith(JOIN_CODE_COOKIE, CODE, {
       path: "/",
