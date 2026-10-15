@@ -5,6 +5,7 @@ import type { createClient } from "@/lib/supabase";
 import { groupErrorMessage, resolveGroupError } from "@/lib/group-errors";
 import { getMyGroup, listGroupMembers, previewGroup, type GroupMember, type MyGroup } from "@/lib/groups";
 import { clearJoinCode, peekJoinCode } from "@/lib/join-code";
+import { reportError, type ReportContext } from "@/lib/log";
 import {
   buildBoard,
   groupPeriodsByEnrolment,
@@ -25,6 +26,8 @@ export interface DashboardInput {
   user: User | null;
   /** The `error` query parameter, resolved to a fixed group or task message. */
   errorParam: string | null;
+  /** The request's ids for the failure reports (`requestFields`): never an e-mail, cookie or invite code. */
+  log: ReportContext;
 }
 
 export interface DashboardData {
@@ -48,6 +51,7 @@ export async function loadDashboard({
   cookies,
   user,
   errorParam,
+  log,
 }: DashboardInput): Promise<DashboardData> {
   const data: DashboardData = {
     error: resolveGroupError(errorParam) ?? resolveTaskError(errorParam),
@@ -83,8 +87,7 @@ export async function loadDashboard({
         if (tasksResult.status === "fulfilled") {
           data.tasks = tasksResult.value;
         } else {
-          // eslint-disable-next-line no-console -- server-side log; the user only sees the fixed message
-          console.error("Loading the tasks failed", tasksResult.reason);
+          reportError("dashboard.tasks.failed", tasksResult.reason, log);
           data.tasksFailed = true;
         }
         // Participants and check-offs are secondary: a failure (or the row cap) degrades the rows, it must not hide task
@@ -92,13 +95,11 @@ export async function loadDashboard({
         if (participantsResult.status === "fulfilled") {
           data.participantsByTask = groupParticipantsByTask(participantsResult.value);
         } else {
-          // eslint-disable-next-line no-console -- server-side log; the user only sees the fixed note
-          console.error("Loading the task participants failed", participantsResult.reason);
+          reportError("dashboard.participants.failed", participantsResult.reason, log);
           data.participantsFailed = true;
         }
         if (checkoffsResult.status === "rejected") {
-          // eslint-disable-next-line no-console -- server-side log; the user only sees the fixed note
-          console.error("Loading the check-offs failed", checkoffsResult.reason);
+          reportError("dashboard.checkoffs.failed", checkoffsResult.reason, log);
           data.checkoffsFailed = true;
         } else if (user && !data.tasksFailed && !data.participantsFailed) {
           // The slice's riskiest code gets its own try/catch: a throw degrades the scores like a failed read and must not
@@ -116,8 +117,7 @@ export async function loadDashboard({
             rankStandings(computed.totals, user.id);
             data.board = computed;
           } catch (boardError) {
-            // eslint-disable-next-line no-console -- server-side log; the user only sees the fixed note
-            console.error("Computing the leaderboard failed", boardError);
+            reportError("dashboard.leaderboard.failed", boardError, log);
             data.checkoffsFailed = true;
           }
         }
@@ -141,8 +141,7 @@ export async function loadDashboard({
       }
     }
   } catch (loadError) {
-    // eslint-disable-next-line no-console -- server-side log; the user only sees the fixed message
-    console.error("Loading the dashboard failed", loadError);
+    reportError("dashboard.load.failed", loadError, log);
     data.error = groupErrorMessage("unknown");
     data.loadFailed = true;
   }

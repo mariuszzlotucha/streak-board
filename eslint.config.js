@@ -22,7 +22,7 @@ const baseConfig = defineConfig({
     },
   },
   rules: {
-    "no-console": "warn",
+    "no-console": "error",
     "no-unused-vars": "off",
     "@typescript-eslint/no-unused-vars": [
       "error",

@@ -391,11 +391,11 @@ Only Phase 5 touches the database: one additive `grant` that works with the code
 
 #### Automated
 
-- [ ] 1.1 No bare console call remains outside the helper: `grep -rnE 'console\.(error|warn|log|info|debug)' src --include='*.ts' --include='*.tsx' --include='*.astro' | grep -v 'src/lib/log.ts'` prints nothing
-- [ ] 1.2 Lint passes with `no-console` as an error: `npm run lint`
-- [ ] 1.3 Type check passes, which confirms `requestFields(Astro)` compiles: `npx astro check`
-- [ ] 1.4 The loader tests assert each of the five events with its cause and the passed `log`, no event in the healthy and invite cases, and unchanged returned fields; the suites stay green: `npm test`
-- [ ] 1.5 Production build succeeds: `npm run build`
+- [x] 1.1 No bare console call remains outside the helper: `grep -rnE 'console\.(error|warn|log|info|debug)' src --include='*.ts' --include='*.tsx' --include='*.astro' | grep -v 'src/lib/log.ts'` prints nothing
+- [x] 1.2 Lint passes with `no-console` as an error: `npm run lint`
+- [x] 1.3 Type check passes, which confirms `requestFields(Astro)` compiles: `npx astro check`
+- [x] 1.4 The loader tests assert each of the five events with its cause and the passed `log`, no event in the healthy and invite cases, and unchanged returned fields; the suites stay green: `npm test`
+- [x] 1.5 Production build succeeds: `npm run build`
 
 #### Manual
 
