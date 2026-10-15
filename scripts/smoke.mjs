@@ -1269,16 +1269,17 @@ const steps = [
   // A foreign `?error=` value is never reflected: the page renders without any alert and without the value in its
   // markup. The two values differ in kind: a prototype key tests the lookup in the message table, a made-up code the
   // plain miss. The step above is the positive control (a known code does render the alert). Astro's island runtime,
-  // inlined in a <script>, names `__proto__` as a key it refuses to deserialize, so the check leaves scripts out and a
-  // plain substring check would never pass for that value.
+  // inlined in a <script>, names `__proto__` as a key it refuses to deserialize, so for that value alone the check
+  // leaves scripts out; the made-up code must be absent from the whole body, scripts included.
   ...["__proto__", "not-a-code"].map((value) => [
     `member dashboard with ?error=${value} shows no alert and does not reflect the value`,
     () => request(`/dashboard?error=${value}`, { jar: jarB }),
     {
       status: 200,
       bodyMatches: [groupHeading(renamedGroupName), memberRow(emailB, "You")],
-      bodyNotMatches: outsideScripts(value),
-      bodyExcludes: NO_ERROR_ALERT,
+      ...(value === "__proto__"
+        ? { bodyNotMatches: outsideScripts(value), bodyExcludes: NO_ERROR_ALERT }
+        : { bodyExcludes: [NO_ERROR_ALERT, value] }),
     },
   ]),
   [

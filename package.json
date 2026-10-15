@@ -18,7 +18,7 @@
     "guard:migrations": "node scripts/migration-guard.mjs",
     "types:check": "supabase gen types typescript --local | prettier --stdin-filepath src/types.ts | diff -u src/types.ts -",
     "prepare": "husky",
-    "postinstall": "patch-package",
+    "postinstall": "patch-package --error-on-fail",
     "deps": "depcruise src tests scripts --config .dependency-cruiser.cjs",
     "review": "tsx packages/code-reviewer/review.ts"
   },

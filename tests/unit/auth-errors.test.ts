@@ -11,8 +11,9 @@ import {
 
 const STALE_CODES = ["flow_state_not_found", "flow_state_expired", "bad_code_verifier", "pkce_code_verifier_not_found"];
 
-// Oracle tables for the two password mappers, written from the README's auth-error documentation and the module's
-// comments (not by running the code): GoTrue's error code on the left, the app's `?error=` code on the right. The
+// Oracle tables for the two password mappers, written from the comments of `src/lib/auth-errors.ts` and the README's
+// auth notes (which name the messages, not the GoTrue codes), not by running the code: GoTrue's error code on the
+// left, the app's `?error=` code on the right. The
 // local stack auto-confirms e-mail addresses, so `email_not_confirmed` cannot be produced there: this row and the
 // message test are its only automated coverage.
 const SIGN_IN_ORACLE: [string, string][] = [

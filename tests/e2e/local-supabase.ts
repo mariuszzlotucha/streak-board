@@ -27,8 +27,24 @@ const authOptions = { persistSession: false, autoRefreshToken: false } as const;
 
 let stack: Stack | undefined;
 
-function localStack(): Stack {
-  if (stack) return stack;
+// Resolved the way tests/setup/global-setup.ts (the reference copy) and scripts/e2e-user.mjs resolve it: the
+// TEST_SUPABASE_* variables, all three or none, else `supabase status`. The identical rule keeps the seed account and
+// the personas on the same stack.
+function stackFromEnv(): Stack | null {
+  const url = process.env.TEST_SUPABASE_URL;
+  const anonKey = process.env.TEST_SUPABASE_ANON_KEY;
+  const serviceRoleKey = process.env.TEST_SUPABASE_SERVICE_ROLE_KEY;
+  const provided = [url, anonKey, serviceRoleKey].filter(Boolean).length;
+  if (provided === 0) return null;
+  if (!url || !anonKey || !serviceRoleKey) {
+    throw new Error(
+      "Set all of TEST_SUPABASE_URL, TEST_SUPABASE_ANON_KEY and TEST_SUPABASE_SERVICE_ROLE_KEY, or none of them.",
+    );
+  }
+  return { url, anonKey, serviceRoleKey };
+}
+
+function stackFromCli(): Stack {
   let output: string;
   try {
     output = execSync("npx supabase status -o env", { encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] });
@@ -46,12 +62,18 @@ function localStack(): Stack {
   if (!url || !anonKey || !serviceRoleKey) {
     throw new Error("Local Supabase status is missing API_URL, ANON_KEY or SERVICE_ROLE_KEY.");
   }
+  return { url, anonKey, serviceRoleKey };
+}
+
+function localStack(): Stack {
+  if (stack) return stack;
+  const resolved = stackFromEnv() ?? stackFromCli();
   // Accounts are created and deleted here: never against a hosted project.
-  const { hostname } = new URL(url);
+  const { hostname } = new URL(resolved.url);
   if (hostname !== "127.0.0.1" && hostname !== "localhost") {
     throw new Error(`Refusing to create E2E accounts on non-local Supabase host "${hostname}".`);
   }
-  stack = { url, anonKey, serviceRoleKey };
+  stack = resolved;
   return stack;
 }
 

@@ -26,7 +26,8 @@ const START_HINT = "Start the local stack with `supabase start` (npx supabase st
  */
 
 /**
- * The stack from the TEST_SUPABASE_* variables: all three or none.
+ * The stack from the TEST_SUPABASE_* variables: all three or none. The rule mirrors tests/setup/global-setup.ts (the
+ * reference copy); tests/e2e/local-supabase.ts applies the same one, so the seed account and the personas share a stack.
  * @returns {StackConfig | null} The config, or null when none of the variables is set.
  */
 function resolveFromEnv() {

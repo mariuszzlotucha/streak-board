@@ -72,6 +72,8 @@ test.describe("risk #4: check-off round trip", () => {
     await expect(row.getByText("1", { exact: true })).toBeVisible();
     await expectViewerTotal(page, owner.email, 1);
 
+    // The reload must not race the save: the control keeps the button `aria-disabled` until the server has answered.
+    await expect(row.getByRole("button", { name: `Undo ${title}` })).not.toHaveAttribute("aria-disabled", "true");
     // The risk assertion: the server recorded the check-off, so the reloaded page shows the same streak and total.
     await page.reload();
     await expect(row.getByText("Done today", { exact: true })).toBeVisible();
@@ -85,6 +87,7 @@ test.describe("risk #4: check-off round trip", () => {
     await expect(row.getByText("0", { exact: true })).toBeVisible();
     await expectViewerTotal(page, owner.email, 0);
 
+    await expect(row.getByRole("button", { name: `Mark done ${title}` })).not.toHaveAttribute("aria-disabled", "true");
     await page.reload();
     await expect(row.getByRole("button", { name: `Mark done ${title}` })).toBeVisible();
     await expect(row.getByText("0", { exact: true })).toBeVisible();

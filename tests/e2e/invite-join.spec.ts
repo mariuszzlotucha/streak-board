@@ -23,10 +23,13 @@ test.describe("risk #6 and #2: an invite link joins a new member to the group", 
   const signedUpEmails: string[] = [];
 
   test.afterEach(async () => {
-    // Both cleanups run and both are checked: the owner (and the group, with the membership) first, then the account
-    // the form created.
-    await deletePersonas(personas.splice(0));
-    await deleteAccountsByEmail(signedUpEmails.splice(0));
+    // Both cleanups run and both are checked, in this order: the owner (and the group, with the membership) first,
+    // then the account the form created. A failure of the first still lets the second run, so neither account leaks.
+    try {
+      await deletePersonas(personas.splice(0));
+    } finally {
+      await deleteAccountsByEmail(signedUpEmails.splice(0));
+    }
   });
 
   test("a signed-out invite link survives sign-up, and joining shows the group with both members", async ({ page }) => {
