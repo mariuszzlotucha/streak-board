@@ -99,4 +99,16 @@ Read after the log covers two slices.
 
 ## Log
 
-No slices logged yet.
+### S-12 (`refactor-opportunities`, archived 2026-10-15)
+
+PRs: [#125](https://github.com/mariuszzlotucha/streak-board/pull/125) (Phases 1–5 in one goal run, plus the impl-review fixes), [#126](https://github.com/mariuszzlotucha/streak-board/pull/126) (guard follow-up), [#128](https://github.com/mariuszzlotucha/streak-board/pull/128) (archive), [#129](https://github.com/mariuszzlotucha/streak-board/pull/129) (deployment-plan Phase 15 and the Manual ticks). Logged 2026-10-15 by the agent from the session's own trace, with the owner's answers to questions 4 and 7.
+
+1. **Screen:** Yes. Plan → one implementation PR (the owner chose a single `/10x-goal-implement` run over the plan's per-phase releases) → archive, with a Progress table.
+2. **Records wrong at any point:** 0. The impl review's 7 findings (2 warnings, 5 observations) were all about code and docs (the guard's comment stripping and ordering, the coverage guard's directory list, README wording), none about a Progress row, SHA, status or deployment-plan entry. The Phase 15 skeleton in the deployment plan held `TBD` placeholders by design and was filled in #129.
+3. **Who noticed first:** nobody had anything to notice. The CI rows 2.10 and 5.8 were ticked in the closing docs PR (#129), as the note of 2026-10-12 says, so the "CI tick rides the next branch" case did not recur as drift.
+4. **Owner's own time on records:** under 5 min. The owner's time went to starting the goal run, supervising it, merging the four PRs, approving the release, the hosted privilege query and the production check; no record was written or corrected by the owner (owner, 2026-10-15).
+5. **Wrong starting point, redone step or extra PR:** No.
+6. **Correction commits or PRs:** 0. The routine bookkeeping was the goal run's per-phase SHA write-back, the archive commit (#128) and the closing docs PR (#129).
+7. **`/10x-status` run:** No (owner, 2026-10-15).
+8. **Most recent wrong record:** none in this slice.
+9. **Got past the review:** nothing about records. One caveat for the next reading: the guard's `ai-review` check timed out three times on #126 before passing; that was CI flakiness, not a records issue, and it cost the owner a status question and the agent a re-run and PR #127.
