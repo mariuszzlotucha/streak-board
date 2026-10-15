@@ -73,25 +73,45 @@ const DEFAULT_BASE = "origin/master";
  */
 
 /**
- * Removes `--` and `/* ... *\/` comments that are outside single-quoted strings. Everything else, including the newline
- * that ends a line comment and the newlines inside a block comment, stays, so line numbers survive.
+ * Removes `--` and `/* ... *\/` comments that are outside strings: plain `'...'`, escape strings `E'...'` (a backslash
+ * escapes the next character) and dollar-quoted `$tag$ ... $tag$` bodies, which are copied as they are (a function
+ * body is part of what the migration defines, so an edit inside one, comment or not, is a statement edit). Everything
+ * else, including the newline that ends a line comment and the newlines inside a block comment, stays, so line numbers
+ * survive.
  * @param {string} sql The SQL text.
  * @returns {string} The text without line comments.
  */
 export function stripLineComments(sql) {
   let out = "";
   let inString = false;
+  let escapeString = false;
   for (let i = 0; i < sql.length; i++) {
     const ch = sql[i];
     if (inString) {
       out += ch;
+      if (escapeString && ch === "\\" && i + 1 < sql.length) {
+        out += sql[++i];
+        continue;
+      }
       if (ch === "'") inString = false;
       continue;
     }
     if (ch === "'") {
       inString = true;
+      // E'...' (the prefix is not part of a longer identifier) allows backslash escapes.
+      escapeString = /[Ee]/.test(sql[i - 1] ?? "") && !/\w/.test(sql[i - 2] ?? "");
       out += ch;
       continue;
+    }
+    if (ch === "$") {
+      const tag = /^\$(\w*)\$/.exec(sql.slice(i, i + 64));
+      if (tag) {
+        const close = sql.indexOf(tag[0], i + tag[0].length);
+        const end = close === -1 ? sql.length : close + tag[0].length;
+        out += sql.slice(i, end);
+        i = end - 1;
+        continue;
+      }
     }
     if (ch === "-" && sql[i + 1] === "-") {
       const end = sql.indexOf("\n", i);
@@ -222,13 +242,15 @@ function statements(sql) {
 }
 
 /**
- * The unqualified, unquoted, lower-case form of an object name (`public."Groups"` becomes `groups`).
+ * The unqualified, unquoted, lower-case form of an object name (`public."Groups"` becomes `groups`; a quoted last
+ * segment keeps its dots, so `public."My.Table"` becomes `my.table`).
  * @param {string} name The name as written.
  * @returns {string} The normalised name.
  */
 function objectName(name) {
-  const bare = name.replace(/"/g, "");
-  return (bare.split(".").pop() ?? bare).toLowerCase();
+  const quoted = /"([^"]*)"$/.exec(name);
+  const last = quoted ? quoted[1] : (name.split(".").pop() ?? name);
+  return last.replace(/"/g, "").toLowerCase();
 }
 
 /**
@@ -404,13 +426,24 @@ export function evaluateGuard(input) {
   const baseNames = input.baseMigrations.map((p) => path.posix.basename(p)).sort();
   const newest = baseNames[baseNames.length - 1];
   const added = sqlChanges.filter((c) => c.status === "A").sort((a, b) => a.path.localeCompare(b.path));
+  /** @type {Map<string, string>} version -> the added migration that first used it */
+  const addedVersions = new Map();
   for (const change of added) {
     const name = path.posix.basename(change.path);
     // Supabase keys migrations by the 14-digit version, so the slug after it does not count.
-    if (newest !== undefined && name.slice(0, 14) <= newest.slice(0, 14)) {
+    const version = name.slice(0, 14);
+    if (newest !== undefined && version <= newest.slice(0, 14)) {
       violations.push({
         file: change.path,
         message: `A new migration must sort after every merged one (newest at the base: ${newest}); "supabase db push" is expected to refuse an older or equal timestamp. Rename it to a newer timestamp (the file is new in this PR, so the rename is free).`,
+      });
+    }
+    const twin = addedVersions.get(version);
+    if (twin === undefined) addedVersions.set(version, name);
+    else {
+      violations.push({
+        file: change.path,
+        message: `Two migrations added in this PR share the version ${version} (${twin}); "supabase db push" keys migrations by that version. Rename one of them to a newer timestamp.`,
       });
     }
     const sql = input.readHead(change.path);
