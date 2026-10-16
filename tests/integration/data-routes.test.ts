@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import type { APIContext, APIRoute } from "astro";
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
 import { createClient } from "@/lib/supabase";
+import { POST as accountDelete } from "@/pages/api/account/delete";
 import { POST as accountNickname } from "@/pages/api/account/nickname";
 import { POST as groupsCreate } from "@/pages/api/groups/create";
 import { POST as groupsDelete } from "@/pages/api/groups/delete";
@@ -27,7 +28,7 @@ import {
   type Supabase,
 } from "../helpers/fake-supabase";
 
-// Characterization of the 16 data routes: what each answers, reports and asks the client today, pinned against a
+// Characterization of the 17 data routes: what each answers, reports and asks the client today, pinned against a
 // scripted fake client (tests/helpers/fake-supabase.ts) so a later restructuring keeps the same contract. The two
 // per-route suites (groups-join-route, tasks-create-route) stay: they pin the report fields and secret scrubbing in
 // more detail. This file deliberately does not import tests/helpers/supabase.ts (database cleanup hooks).
@@ -36,6 +37,7 @@ import {
 vi.mock("@/lib/supabase", () => ({ createClient: vi.fn() }));
 
 type RouteId =
+  | "account/delete"
   | "account/nickname"
   | "groups/create"
   | "groups/delete"
@@ -120,6 +122,7 @@ const WEEKLY_PERIOD = "2026-10-05";
 const WEEK_END = "2026-10-11";
 
 const ROUTES: Record<RouteId, RouteEntry> = {
+  "account/delete": { POST: accountDelete, event: "account.delete", validForm: { successor_id: OTHER } },
   "account/nickname": {
     POST: accountNickname,
     event: "account.nickname",
@@ -159,6 +162,7 @@ const task = (recurrence: string) => ({ id: TASK, title: "Run", recurrence, crea
 const step = (method: string, ...args: unknown[]): RecordedStep => ({ method, args });
 const from = (name: string, ...chain: RecordedStep[]): RecordedCall => ({ kind: "from", name, chain });
 const rpc = (name: string, params: unknown): RecordedCall => ({ kind: "rpc", name, chain: [step("rpc", params)] });
+const SIGN_OUT: RecordedCall = { kind: "auth", name: "signOut", chain: [step("signOut")] };
 const MY_GROUP = from(
   "groups",
   step("select", "id, name, join_code, owner_id, owner_notice_pending"),
@@ -262,6 +266,67 @@ const throwingClient = (route: RouteId): Row => ({
 });
 
 const ROWS: Row[] = [
+  // account/delete: a deleted account ends signed out on the landing page; a refused one on the dashboard's alert.
+  ...common("account/delete"),
+  {
+    name: "rpc ok with an uppercase successor: signed out, join cookie cleared, the landing notice, the lowercased successor in the call",
+    route: "account/delete",
+    form: { successor_id: OTHER.toUpperCase() },
+    script: [ok(null, 204), ok()],
+    expect: {
+      location: "/?account=deleted",
+      cookie: "cleared",
+      calls: [rpc("delete_own_account", { p_successor: OTHER }), SIGN_OUT],
+    },
+  },
+  {
+    name: "rpc ok without a successor field: no successor in the call",
+    route: "account/delete",
+    form: {},
+    script: [ok(null, 204), ok()],
+    expect: {
+      location: "/?account=deleted",
+      cookie: "cleared",
+      calls: [rpc("delete_own_account", {}), SIGN_OUT],
+    },
+  },
+  {
+    name: "malformed successor_id: left to the database, no successor in the call",
+    route: "account/delete",
+    form: { successor_id: "not-a-uuid" },
+    script: [ok(null, 204), ok()],
+    expect: {
+      location: "/?account=deleted",
+      cookie: "cleared",
+      calls: [rpc("delete_own_account", {}), SIGN_OUT],
+    },
+  },
+  {
+    name: "sign-out error after the deletion: reported, still signed out on the landing notice",
+    route: "account/delete",
+    script: [ok(null, 204), UNMAPPED],
+    expect: {
+      location: "/?account=deleted",
+      cookie: "cleared",
+      errors: [
+        {
+          level: "error",
+          event: "account.delete.signout_failed",
+          ...request("account/delete"),
+          error: { code: "XX000" },
+        },
+      ],
+      calls: [rpc("delete_own_account", { p_successor: OTHER }), SIGN_OUT],
+    },
+  },
+  ...mutationFailures(
+    "account/delete",
+    [],
+    [["P0003", "invalid_successor", "an owner with members names no valid successor"]],
+  ),
+  nonFormBody("account/delete"),
+  throwingClient("account/delete"),
+
   // account/nickname
   ...common("account/nickname"),
   {
@@ -1310,7 +1375,7 @@ describe("coverage guard", () => {
         .filter((name) => name.endsWith(".ts"))
         .map((name) => `${dir}/${name.slice(0, -3)}`),
     );
-    expect(files).toHaveLength(16);
+    expect(files).toHaveLength(17);
     const covered = new Set<string>(ROWS.map((row) => row.route));
     const withChain = new Set<string>(ROWS.filter((row) => row.expect.calls).map((row) => row.route));
     for (const file of files) {

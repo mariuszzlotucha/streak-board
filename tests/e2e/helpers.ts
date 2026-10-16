@@ -41,3 +41,20 @@ export async function chooseNickname(page: Page, nickname: string): Promise<void
   await page.getByRole("button", { name: "Continue" }).click();
   await page.waitForURL("**/dashboard");
 }
+
+/**
+ * On the settings page: opens "Delete account", chooses the successor when given (an owner with other members has to),
+ * confirms, and waits for the landing page the deleted account ends on. The account is gone afterwards, so a spec's
+ * cleanup has to tolerate it (`deletePersonas` treats `user_not_found` as done).
+ */
+export async function deleteAccountThroughSettings(page: Page, successor?: string): Promise<void> {
+  await page.goto("/settings");
+  await waitForHydration(page);
+  await page.getByRole("button", { name: "Delete account" }).click();
+  const dialog = page.getByRole("alertdialog", { name: "Delete your account?" });
+  if (successor !== undefined) {
+    await dialog.getByLabel("New owner").selectOption({ label: successor });
+  }
+  await dialog.getByRole("button", { name: "Delete account" }).click();
+  await page.waitForURL((url) => url.pathname === "/" && url.searchParams.get("account") === "deleted");
+}

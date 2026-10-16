@@ -429,10 +429,10 @@ Usunięcie to jedna transakcja na kilku wierszach jednej grupy; `delete` z `auth
 
 #### Automated
 
-- [x] 2.1 Testy przechodzą (w tym `group-errors` i `settings-data`): `npm test`
-- [x] 2.2 Lint, typy, build: `npm run lint && npx astro check && npm run build`
-- [x] 2.3 Smoke przechodzi na lokalnym preview: `npm run smoke`
-- [x] 2.4 E2E przechodzi: `npx playwright test tests/e2e/group-transfer.spec.ts tests/e2e/group-settings-owner.spec.ts tests/e2e/group-settings-member.spec.ts`
+- [x] 2.1 Testy przechodzą (w tym `group-errors` i `settings-data`): `npm test` — 3c1dc2f
+- [x] 2.2 Lint, typy, build: `npm run lint && npx astro check && npm run build` — 3c1dc2f
+- [x] 2.3 Smoke przechodzi na lokalnym preview: `npm run smoke` — 3c1dc2f
+- [x] 2.4 E2E przechodzi: `npx playwright test tests/e2e/group-transfer.spec.ts tests/e2e/group-settings-owner.spec.ts tests/e2e/group-settings-member.spec.ts` — 3c1dc2f
 
 #### Manual
 
@@ -443,10 +443,10 @@ Usunięcie to jedna transakcja na kilku wierszach jednej grupy; `delete` z `auth
 
 #### Automated
 
-- [ ] 3.1 Testy przechodzą (w tym `landing`): `npm test`
-- [ ] 3.2 Lint, typy, build: `npm run lint && npx astro check && npm run build`
-- [ ] 3.3 Smoke przechodzi na lokalnym preview: `npm run smoke`
-- [ ] 3.4 E2E przechodzi (cały zestaw): `npx playwright test`
+- [x] 3.1 Testy przechodzą (w tym `landing`): `npm test`
+- [x] 3.2 Lint, typy, build: `npm run lint && npx astro check && npm run build`
+- [x] 3.3 Smoke przechodzi na lokalnym preview: `npm run smoke`
+- [x] 3.4 E2E przechodzi (cały zestaw): `npx playwright test`
 
 #### Manual
 

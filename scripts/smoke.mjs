@@ -25,6 +25,9 @@ const taskTitle = `Smoke Task ${stamp}`;
 const renamedTaskTitle = `Edited Chore ${stamp}`;
 // A second task, of the `once` kind: unique and not containing the other titles, so the row regexes cannot mix them up.
 const onceTitle = `Smoke Once ${stamp}`;
+// S-15: the group and the task of the account-deletion steps, unique and not containing the other names and titles.
+const farewellGroupName = `Farewell Club ${stamp}`;
+const keptTaskTitle = `Kept Chore ${stamp}`;
 // User A's session and the sessions of users B and C are independent cookie jars.
 const jarA = new Map();
 const jarB = new Map();
@@ -42,6 +45,9 @@ let taskId;
 let onceTaskId;
 // Read from B's first JSON check-off answer: the period the repeated tick has to answer with again.
 let tickedPeriod;
+// Read from A's dashboard and C's rendered delete form in the account-deletion steps (S-15).
+let farewellJoinCode;
+let keptTaskId;
 // A well-formed task id that no task has.
 const UNKNOWN_TASK_ID = "00000000-0000-4000-8000-000000000000";
 // A well-formed user id that no member of the smoke group has (the successor of a refused ownership transfer).
@@ -266,7 +272,7 @@ function dialogTrigger(label) {
 // The server-rendered destructive forms (and the ownership transfer's) hold hidden fields only; a submit button inside one
 // would skip the confirmation.
 const SUBMIT_IN_DESTRUCTIVE_FORM =
-  /<form[^>]*action="\/api\/(?:groups\/(?:delete|remove-member|transfer)|tasks\/delete)"[^>]*>(?:(?!<\/form>)[\s\S])*type="submit"/;
+  /<form[^>]*action="\/api\/(?:groups\/(?:delete|remove-member|transfer)|tasks\/delete|account\/delete)"[^>]*>(?:(?!<\/form>)[\s\S])*type="submit"/;
 
 // The Tasks card heading (an error alert or another card would not match).
 const TASKS_HEADING = /<h2[^>]*>\s*Tasks\s*<\/h2>/;
@@ -301,6 +307,19 @@ function cookiesNamed(setCookies, prefix) {
       return { name: pair.split("=")[0].trim(), secure: attrs.some((attr) => /^secure$/i.test(attr.trim())) };
     })
     .filter(({ name }) => name.startsWith(prefix));
+}
+
+// The response cleared at least one cookie whose name starts with `prefix` (a Set-Cookie for it), and the session's jar,
+// which treats `Max-Age=0` and a past `Expires` as deletion, holds none of them afterwards. Only names are printed.
+function jarCookieNames(jar, prefix) {
+  return jar === undefined ? [] : [...jar.keys()].filter((name) => name.startsWith(prefix));
+}
+function cookiesCleared(actual, prefix) {
+  return (
+    actual.jar !== undefined &&
+    cookiesNamed(actual.setCookies, prefix).length > 0 &&
+    jarCookieNames(actual.jar, prefix).length === 0
+  );
 }
 
 // At least one such cookie is set, and every one of them is HTTPS-only.
@@ -401,7 +420,14 @@ const INVITE_IN_MEMBERS =
 const IN_GROUP_ORDER = /<h2[^>]*>\s*Tasks\s*<\/h2>[\s\S]*aria-label="Leaderboard"[\s\S]*<h2[^>]*>\s*Members\s*<\/h2>/;
 
 // Group management lives on /settings: none of its texts may be on the dashboard (the dialogs' island props included).
-const SETTINGS_ON_DASHBOARD = ["Group settings", "Rename group", "Delete group", "Leave group", "Transfer ownership"];
+const SETTINGS_ON_DASHBOARD = [
+  "Group settings",
+  "Rename group",
+  "Delete group",
+  "Leave group",
+  "Transfer ownership",
+  "Delete account",
+];
 
 // The Main nav of the signed-in header: the current page's link carries aria-current="page" and the other one does not.
 function mainNav(current) {
@@ -464,6 +490,14 @@ function ownerNotice(name) {
 }
 // Any trace of the notice: its sentence or its form.
 const OWNER_NOTICE_TRACES = ["You are now the owner of", "/api/groups/dismiss-owner-notice"];
+
+// S-15: the landing page's confirmation of a deleted account, a status (not an error alert) inside <main> above the
+// landing heading.
+const ACCOUNT_DELETED_STATUS =
+  /<main[^>]*>(?:(?!<h1|<\/main>)[\s\S])*role="status"[^>]*>(?:(?!<\/div>)[\s\S])*<div[^>]*data-slot="alert-description"[^>]*>\s*Your account has been deleted\.\s*<\/div>(?:(?!<\/main>)[\s\S])*<h1[^>]*>\s*Keep each other on track\.\s*<\/h1>/;
+// The shared part of every account-deletion dialog (island props in the server HTML), and the parts of each variant.
+const DELETION_SHARED_WARNING = "Your account, nickname and check-offs are deleted right away. This cannot be undone.";
+const DELETION_VARIANT_TRACES = ["You leave ", "Choose who takes over", "is deleted with all its tasks and check-offs"];
 
 // The inline script that drops `?error=` from the address after the page has shown the alert.
 const ERROR_PARAM_SCRIPT =
@@ -2613,6 +2647,225 @@ const steps = [
     () => request("/api/groups/remove-member", { method: "POST", form: { user_id: memberIdB } }),
     { status: 302, locationExact: "/dashboard" },
   ],
+  // S-15: account deletion, after the group above is gone. A starts a new group with B and C. C, a member whose task B
+  // has ticked, deletes the account: the task stays in the group with B's tick and passes to A, the owner. B then leaves
+  // and deletes an account without a group. A stays for the closing steps.
+  [
+    "group create for the account-deletion steps succeeds",
+    () => request("/api/groups/create", { method: "POST", form: { name: farewellGroupName } }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "dashboard shows the account-deletion group and its invite link",
+    async () => {
+      const result = await request("/dashboard");
+      farewellJoinCode = result.body.match(/\/join\/([0-9a-f]+)/)?.[1];
+      if (!farewellJoinCode) {
+        console.log("FAIL  invite code of the account-deletion group not found; later deletion steps cannot run");
+        process.exit(1);
+      }
+      return result;
+    },
+    { status: 200, bodyMatches: [groupHeading(farewellGroupName), memberRow(nickA, "Owner")] },
+  ],
+  [
+    "user B joins the account-deletion group",
+    () => request("/api/groups/join", { method: "POST", form: { code: farewellJoinCode }, jar: jarB }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "user C joins the account-deletion group",
+    () => request("/api/groups/join", { method: "POST", form: { code: farewellJoinCode }, jar: jarC }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "member C creates a task",
+    () =>
+      request("/api/tasks/create", { method: "POST", form: { title: keptTaskTitle, recurrence: "daily" }, jar: jarC }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "member C's dashboard shows C's task with the creator's controls",
+    async () => {
+      const result = await request("/dashboard", { jar: jarC });
+      keptTaskId = deleteTargetInRow(result.body, keptTaskTitle);
+      if (!keptTaskId) {
+        console.log("FAIL  task id not found in member C's delete form; later deletion steps cannot run");
+        process.exit(1);
+      }
+      return result;
+    },
+    {
+      status: 200,
+      bodyMatches: [editControl(keptTaskTitle), taskRowWithConfirmedDelete(keptTaskTitle), memberRow(nickC, "You")],
+      bodyExcludes: NO_ERROR_ALERT,
+    },
+  ],
+  [
+    "user B joins member C's task",
+    () => request("/api/tasks/join", { method: "POST", form: { task_id: keptTaskId }, jar: jarB }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "user B ticks member C's task",
+    () =>
+      request("/api/tasks/checkoff", {
+        method: "POST",
+        form: { task_id: keptTaskId },
+        jar: jarB,
+        headers: BROWSER_ACCEPT,
+      }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "user B's tick on member C's task shows",
+    () => request("/dashboard", { jar: jarB }),
+    {
+      status: 200,
+      bodyMatches: [
+        taskRowWithStatus(keptTaskTitle, "Done today"),
+        taskRowListing(keptTaskTitle, nickB, { you: true }),
+      ],
+      bodyNotMatches: [editControl(keptTaskTitle)],
+      bodyExcludes: NO_ERROR_ALERT,
+    },
+  ],
+  [
+    // The dialog itself is not server-rendered: its words are in the island's props. A member names the owner who
+    // takes over the member's tasks, and chooses no successor.
+    "member C's settings offer Delete account through its dialog, naming the owner who takes over C's tasks",
+    () => request("/settings", { jar: jarC }),
+    {
+      status: 200,
+      bodyMatches: [ACCOUNT_HEADING, formPostingTo("/api/account/delete"), dialogTrigger("Delete account")],
+      bodyIncludes: [DELETION_SHARED_WARNING, `You leave ${farewellGroupName}.`, `pass to its owner, ${nickA}.`],
+      bodyNotMatches: [SUBMIT_IN_DESTRUCTIVE_FORM],
+      bodyExcludes: ["Choose who takes over", "successor_id", NO_ERROR_ALERT],
+    },
+  ],
+  [
+    "owner A's settings ask for a successor in the Delete account dialog",
+    () => request("/settings"),
+    {
+      status: 200,
+      bodyMatches: [formPostingTo("/api/account/delete"), dialogTrigger("Delete account")],
+      bodyIncludes: [DELETION_SHARED_WARNING, `Choose who takes over ${farewellGroupName}.`, "successor_id"],
+      bodyNotMatches: [SUBMIT_IN_DESTRUCTIVE_FORM],
+      bodyExcludes: ["You leave ", "is deleted with all its tasks and check-offs", NO_ERROR_ALERT],
+    },
+  ],
+  ["account delete does not answer GET", () => request("/api/account/delete", { jar: jarC }), { status: 404 }],
+  [
+    // C's own session: only the Origin check stands between the request and the deletion. The step below reads the
+    // state: C is still signed in and still in the group.
+    "account delete from a foreign origin is rejected",
+    () => request("/api/account/delete", { method: "POST", form: {}, jar: jarC, origin: FOREIGN_ORIGIN }),
+    { status: 403, setCookieExcludes: ["sb-", "join_code"] },
+  ],
+  [
+    "member C is still signed in and in the group after the foreign-origin deletion",
+    () => request("/dashboard", { jar: jarC }),
+    {
+      status: 200,
+      bodyMatches: [groupHeading(farewellGroupName), memberRow(nickC, "You"), editControl(keptTaskTitle)],
+      bodyExcludes: NO_ERROR_ALERT,
+    },
+  ],
+  [
+    // The session cookies are cleared by the response itself and are gone from C's jar; the pending-invite cookie too.
+    "member C deletes the account and ends signed out on the landing page",
+    () => request("/api/account/delete", { method: "POST", form: {}, jar: jarC }),
+    { status: 302, locationExact: "/?account=deleted", setCookie: "join_code=deleted", clearedCookies: "sb-" },
+  ],
+  [
+    "the landing page confirms the deletion above its sections",
+    () => request("/?account=deleted", { jar: jarC }),
+    { status: 200, bodyMatches: [ACCOUNT_DELETED_STATUS, linkTo("/auth/signin")], bodyExcludes: NO_ERROR_ALERT },
+  ],
+  [
+    "the landing page without the parameter shows no deletion notice",
+    () => request("/", { jar: jarC }),
+    { status: 200, bodyMatches: [LANDING_HEADING], bodyExcludes: "Your account has been deleted" },
+  ],
+  [
+    "deleted member C's dashboard redirects to signin",
+    () => request("/dashboard", { jar: jarC }),
+    { status: 302, locationExact: "/auth/signin" },
+  ],
+  [
+    "signing in as deleted member C fails",
+    () => request("/api/auth/signin", { method: "POST", form: { email: emailC, password }, jar: jarC }),
+    { status: 302, locationExact: "/auth/signin?error=invalid_credentials", setCookieExcludes: "sb-" },
+  ],
+  [
+    // The task is A's now (Edit and Delete), with B as its participant and B's tick on the board; C is gone everywhere.
+    "owner A sees deleted member C's task with the creator's controls and user B's tick",
+    () => request("/dashboard"),
+    {
+      status: 200,
+      bodyIncludes: "2 members",
+      bodyMatches: [
+        groupHeading(farewellGroupName),
+        editControl(keptTaskTitle),
+        taskRowWithConfirmedDelete(keptTaskTitle),
+        taskRowListing(keptTaskTitle, nickB),
+        leaderboardRow(nickB, 1, 1, { you: false }),
+        leaderboardRow(nickA, 2, 0, { you: true }),
+      ],
+      bodyExcludes: [nickC, NO_ERROR_ALERT],
+    },
+  ],
+  [
+    "user B still sees the tick on the task, without the creator's controls",
+    () => request("/dashboard", { jar: jarB }),
+    {
+      status: 200,
+      bodyMatches: [taskRowWithStatus(keptTaskTitle, "Done today"), memberRow(nickA, "Owner")],
+      bodyNotMatches: [editControl(keptTaskTitle), formPostingTo("/api/tasks/delete")],
+      bodyExcludes: [nickC, NO_ERROR_ALERT],
+    },
+  ],
+  [
+    "user B leaves the account-deletion group",
+    () => request("/api/groups/leave", { method: "POST", jar: jarB }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "settings offer user B without a group Delete account with the shared warning only",
+    () => request("/settings", { jar: jarB }),
+    {
+      status: 200,
+      bodyMatches: [formPostingTo("/api/account/delete"), dialogTrigger("Delete account")],
+      bodyNotMatches: [GROUP_SETTINGS_HEADING, SUBMIT_IN_DESTRUCTIVE_FORM],
+      bodyIncludes: DELETION_SHARED_WARNING,
+      bodyExcludes: [...DELETION_VARIANT_TRACES, farewellGroupName, NO_ERROR_ALERT],
+    },
+  ],
+  [
+    "user B without a group deletes the account and ends signed out on the landing page",
+    () => request("/api/account/delete", { method: "POST", form: {}, jar: jarB }),
+    { status: 302, locationExact: "/?account=deleted", setCookie: "join_code=deleted", clearedCookies: "sb-" },
+  ],
+  [
+    "deleted user B's dashboard redirects to signin",
+    () => request("/dashboard", { jar: jarB }),
+    { status: 302, locationExact: "/auth/signin" },
+  ],
+  [
+    "signing in as deleted user B fails",
+    () => request("/api/auth/signin", { method: "POST", form: { email: emailB, password }, jar: jarB }),
+    { status: 302, locationExact: "/auth/signin?error=invalid_credentials", setCookieExcludes: "sb-" },
+  ],
+  [
+    // B's own participation and tick went with the account; the task stays with its new creator.
+    "owner A is alone with the kept task after both deletions",
+    () => request("/dashboard"),
+    {
+      status: 200,
+      bodyMatches: [groupHeading(farewellGroupName), editControl(keptTaskTitle), leaderboardRow(nickA, 1, 0)],
+      bodyExcludes: [nickB, nickC, NO_ERROR_ALERT],
+    },
+  ],
   ["signin page redirects signed-in user", () => request("/auth/signin"), { status: 302, location: "/dashboard" }],
   ["signup page redirects signed-in user", () => request("/auth/signup"), { status: 302, location: "/dashboard" }],
   ["signout clears session", () => request("/api/auth/signout", { method: "POST" }), { status: 302, location: "/" }],
@@ -2651,6 +2904,7 @@ for (const [name, run, expectation] of steps) {
     (expected.setCookie === undefined || actual.setCookies.some((c) => c.includes(expected.setCookie))) &&
     [expected.setCookieExcludes ?? []].flat().every((text) => !actual.setCookies.some((c) => c.includes(text))) &&
     (expected.secureCookies === undefined || allSecure(actual.setCookies, expected.secureCookies)) &&
+    (expected.clearedCookies === undefined || cookiesCleared(actual, expected.clearedCookies)) &&
     (expected.header === undefined ||
       (actual.headers.get(expected.header.name) ?? "")
         .toLowerCase()
@@ -2669,6 +2923,9 @@ for (const [name, run, expectation] of steps) {
         // Only the cookie names are printed: a value may be a session or a code verifier.
         (expected.setCookieExcludes
           ? ` no Set-Cookie including ${JSON.stringify(expected.setCookieExcludes)} (got names ${JSON.stringify(actual.setCookies.map((c) => c.split("=")[0]))})`
+          : "") +
+        (expected.clearedCookies
+          ? ` ${expected.clearedCookies}* cookies cleared by the response and gone from the jar (still in the jar: ${JSON.stringify(jarCookieNames(actual.jar, expected.clearedCookies))})`
           : "") +
         (expected.secureCookies
           ? ` at least one ${expected.secureCookies}* Set-Cookie, every one with Secure (got ${JSON.stringify(cookiesNamed(actual.setCookies, expected.secureCookies).map(({ name, secure }) => `${name}${secure ? " Secure" : " without Secure"}`))})`

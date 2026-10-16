@@ -51,20 +51,31 @@ export function isDashboardStateId(value: string | null): value is DashboardStat
   return DASHBOARD_STATES.some((state) => state.id === value);
 }
 
-// The states of `/settings` (`SettingsView`); ids start with `settings-` so one `?state=` names either page.
+// The states of `/settings` (`SettingsView`); ids start with `settings-` so one `?state=` names either page. Every state
+// that renders the Account card offers "Delete account", whose dialog `SettingsView` words from the group, the viewer and
+// the members of the fixture (the four variants: owner with members, owner alone, member, no group).
 export const SETTINGS_STATES = [
   {
     id: "settings-owner",
     label: "Owner",
-    description: "Rename the group, transfer ownership to another member, then delete it last",
+    description:
+      "Rename the group, transfer ownership to another member, then delete it last; deleting the account asks for a successor",
   },
   {
     id: "settings-owner-alone",
     label: "Owner, alone",
-    description: "The only member: rename and delete, no transfer",
+    description: "The only member: rename and delete, no transfer; deleting the account deletes the group",
   },
-  { id: "settings-member", label: "Member", description: "Leave the group" },
-  { id: "settings-no-group", label: "No group", description: "Not in a group: a link to the dashboard" },
+  {
+    id: "settings-member",
+    label: "Member",
+    description: "Leave the group; deleting the account passes the member's tasks to the owner",
+  },
+  {
+    id: "settings-no-group",
+    label: "No group",
+    description: "Not in a group: a link to the dashboard; deleting the account has no group to mention",
+  },
   { id: "settings-load-failed", label: "Load failed", description: "The group could not be read" },
 ] as const;
 

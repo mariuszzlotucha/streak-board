@@ -1,5 +1,6 @@
 // A chainable, thenable stand-in for the supabase-js client, scripted by results and written against the call chain
-// (`from(table).select(...).eq(...).maybeSingle()`, `rpc(name, params)`), not against any route's internals. This file
+// (`from(table).select(...).eq(...).maybeSingle()`, `rpc(name, params)`, `auth.signOut()`), not against any route's
+// internals. This file
 // must not import tests/helpers/supabase.ts: that module registers database cleanup hooks on import.
 import type { createClient } from "@/lib/supabase";
 
@@ -23,16 +24,16 @@ export interface RecordedStep {
   args: unknown[];
 }
 
-/** One `from(table)` or `rpc(name)` call with the methods chained on it, in call order. */
+/** One `from(table)`, `rpc(name)` or `auth.<method>()` call with the methods chained on it, in call order. */
 export interface RecordedCall {
-  kind: "from" | "rpc";
+  kind: "from" | "rpc" | "auth";
   name: string;
   chain: RecordedStep[];
 }
 
 export interface FakeSupabase {
   client: Supabase;
-  /** Every `from` and `rpc` call, with its chain, in the order the route made them. */
+  /** Every `from`, `rpc` and `auth` call, with its chain, in the order the route made them. */
   calls: RecordedCall[];
   /** Scripted results not yet consumed; negative when the route awaited more queries than were scripted. */
   remaining: () => number;
@@ -71,7 +72,8 @@ type Chain = Record<string, (...args: unknown[]) => unknown> & PromiseLike<Query
 
 /**
  * Builds a client whose queries answer with `script`, one result per awaited query, in order. A `maybeSingle()`, a
- * `single()`, a chain awaited directly and an `rpc()` each consume one result; every other method returns the chain.
+ * `single()`, a chain awaited directly, an `rpc()` and an `auth.signOut()` each consume one result (sign-out answers
+ * with its `error` only, as supabase-js does); every other method returns the chain.
  * An await beyond the script throws (and `remaining()` goes negative), so a test can assert exact consumption.
  */
 export function createFakeSupabase(script: readonly ScriptedResult[]): FakeSupabase {
@@ -127,6 +129,15 @@ export function createFakeSupabase(script: readonly ScriptedResult[]): FakeSupab
       const call: RecordedCall = { kind: "rpc", name, chain: [{ method: "rpc", args }] };
       calls.push(call);
       return chainFor(call);
+    },
+    auth: {
+      signOut(...args: unknown[]) {
+        const call: RecordedCall = { kind: "auth", name: "signOut", chain: [{ method: "signOut", args }] };
+        calls.push(call);
+        return new Promise<{ error: QueryResult["error"] }>((resolve) => {
+          resolve({ error: consume(call).error });
+        });
+      },
     },
   } as unknown as Supabase;
 
