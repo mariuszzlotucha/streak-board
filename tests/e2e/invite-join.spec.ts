@@ -81,5 +81,6 @@ test.describe("risk #6 and #2: an invite link joins a new member to the group", 
     await expect(memberRows.filter({ has: page.getByText("You", { exact: true }) }).first()).toBeVisible();
     const ownerRows = page.getByRole("listitem").filter({ hasText: owner.email });
     await expect(ownerRows.filter({ has: page.getByText("Owner", { exact: true }) })).toBeVisible();
+    expect(1, "deliberate red for the artifact check").toBe(2);
   });
 });
