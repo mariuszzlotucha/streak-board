@@ -6,7 +6,7 @@
 >
 > Refresh: re-run `/10x-test-plan --refresh` when stale (see §8).
 >
-> Last updated: 2026-10-15 (Phases 2 and 3 shipped with S-10: release compatibility gate, auth boundaries, e2e in the stack)
+> Last updated: 2026-10-16 (Phases 2 and 3 shipped with S-10: release compatibility gate, auth boundaries, e2e in the stack)
 
 ## 1. Strategy
 
