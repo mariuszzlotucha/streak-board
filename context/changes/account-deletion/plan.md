@@ -136,6 +136,7 @@ Jedna migracja z funkcjami przekazania i usunięcia, flagą banera i `restrict` 
 #### Manual Verification:
 
 - Właściciel potwierdził na produkcji `select has_table_privilege('postgres','auth.audit_log_entries','DELETE');` = `true` (przed merge'em PR)
+- Właściciel potwierdził na produkcji `select has_table_privilege('postgres','auth.flow_state','DELETE');` = `true` (przed merge'em PR; dodane w przeglądzie implementacji, F6)
 
 ---
 
@@ -424,6 +425,7 @@ Usunięcie to jedna transakcja na kilku wierszach jednej grupy; `delete` z `auth
 #### Manual
 
 - [x] 1.7 Właściciel potwierdził na produkcji `select has_table_privilege('postgres','auth.audit_log_entries','DELETE');` = `true` (przed merge'em PR) — `true`, 2026-10-16
+- [ ] 1.8 Właściciel potwierdził na produkcji `select has_table_privilege('postgres','auth.flow_state','DELETE');` = `true` (przed merge'em PR; dodane w przeglądzie implementacji, F6)
 
 ### Phase 2: Przekazanie własności i baner nowego właściciela
 

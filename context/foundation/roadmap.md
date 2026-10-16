@@ -60,7 +60,7 @@ Grono znajomych korzystało wcześniej ze wspólnego arkusza Google, w którym r
 | S-12 | refactor-opportunities         | (jakościowy) znane ciche luki są zamknięte: raportowanie błędów dashboardu, strażnicy migracji i typów w CI, testy tras i reguł, jawne uprawnienia tabel | —                                                       | — (jakościowe; MS-07)              | done        |
 | S-13 | checkoff-grid                  | zobaczyć siatkę odznaczeń grupy: kto wykonał task w każdym z ostatnich okresów                                                                           | S-11, S-14                                              | — (UI; MS-08)                      | proposed    |
 | S-14 | nickname                       | ustawić nick, który inni członkowie grupy widzą zamiast e-maila                                                                                          | —                                                       | FR-010 (nowa funkcja)              | done        |
-| S-15 | account-deletion               | usunąć swoje konto w ustawieniach, po ostrzeżeniu w oknie potwierdzenia                                                                                  | S-14                                                    | — (nowa funkcja; MS-10)            | in-progress |
+| S-15 | account-deletion               | usunąć swoje konto w ustawieniach, po ostrzeżeniu w oknie potwierdzenia                                                                                  | S-14                                                    | FR-003, FR-011, FR-012 (MS-10)     | in-progress |
 
 ## Streams
 
@@ -237,7 +237,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 - **Outcome:** zalogowany użytkownik usuwa swoje konto na `/settings`: najpierw widzi okno z ostrzeżeniem, co zniknie (także dla innych członków grupy), i dopiero po potwierdzeniu konto i jego dane są usuwane, a on zostaje wylogowany. Właściciel grupy przekazuje ją w tym oknie wybranemu członkowi (albo w każdej chwili akcją „Transfer ownership” w ustawieniach grupy), nowy właściciel raz widzi o tym baner na dashboardzie, a taski usuwającego zostają w grupie z postępem innych i przechodzą na właściciela grupy.
 - **Change ID:** account-deletion
-- **PRD refs:** — (nowa funkcja; MS-10). PRD nie ma FR o usunięciu konta; nowy FR dopisuje zmiana tego wycinka, tak jak FR-010 w S-14.
+- **PRD refs:** FR-011 (usunięcie konta), FR-012 (przekazanie własności grupy), FR-003 (właściciel grupy zamiast twórcy); nowa funkcja, MS-10. Wszystkie trzy dopisała lub zmieniła ta zmiana, tak jak FR-010 w S-14.
 - **Prerequisites:** S-14 (karta konta `AccountCard` na `/settings`, w której stanie przycisk)
 - **Parallel with:** S-13 (różne sekcje polityki prywatności i różne widoki; wspólne mogą być PRD, `scripts/smoke.mjs` i fixture'y kitchen sinka, więc uzgodnić kolejność merge'y)
 - **Blockers:** —

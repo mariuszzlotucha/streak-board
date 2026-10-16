@@ -1388,6 +1388,15 @@ begin
     (gen_random_uuid(), json_build_object('action', 'login', 'actor_id', a::text), now()),
     (gen_random_uuid(), json_build_object('action', 'user_signedup', 'actor_id', '00000000-0000-0000-0000-000000000000', 'traits', json_build_object('user_id', a::text)), now()),
     (gen_random_uuid(), json_build_object('action', 'login', 'actor_id', m::text), now());
+  -- An unfinished Google sign-in (PKCE flow state) of A and one of M: auth.flow_state has no foreign key to auth.users.
+  insert into auth.flow_state (id, user_id, provider_type, authentication_method, provider_access_token)
+  values
+    (gen_random_uuid(), a, 'google', 'pkce', 'token-a'),
+    (gen_random_uuid(), m, 'google', 'pkce', 'token-m');
+
+  -- The inner functions are for the SQL Editor only: not even the service key may call them.
+  perform rls_check.expect_value('select has_function_privilege(''service_role'', ''public.delete_account(uuid, uuid)'', ''EXECUTE'')', 'false', 'S-15 service_role cannot call delete_account');
+  perform rls_check.expect_value('select has_function_privilege(''service_role'', ''public.transfer_group_ownership_for(uuid, uuid)'', ''EXECUTE'')', 'false', 'S-15 service_role cannot call transfer_group_ownership_for');
 
   -- An owner with another member needs a valid successor; a refusal changes nothing.
   perform rls_check.expect_error('P0003', format('select public.delete_account(%L)', a), 'S-15 an owner with members cannot be deleted without a successor (P0003)');
@@ -1395,6 +1404,7 @@ begin
   perform rls_check.expect_value(format('select count(*) from auth.users where id = %L', a), '1', 'S-15 the refused deletion keeps the account');
   perform rls_check.expect_value(format('select owner_id::text from public.groups where id = %L', ga), a::text, 'S-15 the refused deletion keeps the owner');
   perform rls_check.expect_value(format('select count(*) from auth.audit_log_entries where payload->>%L = %L or payload->%L->>%L = %L', 'actor_id', a, 'traits', 'user_id', a), '2', 'S-15 the refused deletion keeps the security log entries');
+  perform rls_check.expect_value(format('select count(*) from auth.flow_state where user_id = %L', a), '1', 'S-15 the refused deletion keeps the sign-in flow state');
 
   -- With M as successor.
   perform public.delete_account(a, m);
@@ -1406,6 +1416,8 @@ begin
   perform rls_check.expect_value(format('select count(*) from public.nicknames where user_id = %L', a), '0', 'S-15 the deleted owner''s nickname is gone');
   perform rls_check.expect_value(format('select count(*) from auth.audit_log_entries where payload->>%L = %L or payload->%L->>%L = %L', 'actor_id', a, 'traits', 'user_id', a), '0', 'S-15 the deleted owner''s security log entries are gone');
   perform rls_check.expect_value(format('select count(*) from auth.audit_log_entries where payload->>%L = %L', 'actor_id', m), '1', 'S-15 another account''s security log entry stays');
+  perform rls_check.expect_value(format('select count(*) from auth.flow_state where user_id = %L', a), '0', 'S-15 the deleted owner''s sign-in flow state is gone');
+  perform rls_check.expect_value(format('select count(*) from auth.flow_state where user_id = %L', m), '1', 'S-15 another account''s sign-in flow state stays');
 
   perform rls_check.expect_error('P0002', format('select public.delete_account(%L)', gen_random_uuid()), 'S-15 deleting an account that does not exist -> P0002');
 

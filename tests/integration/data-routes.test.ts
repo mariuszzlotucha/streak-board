@@ -319,6 +319,17 @@ const ROWS: Row[] = [
       calls: [rpc("delete_own_account", { p_successor: OTHER }), SIGN_OUT],
     },
   },
+  {
+    name: "P0002 (a second tab after the deletion): an info line, signed out on the landing notice",
+    route: "account/delete",
+    script: [err("P0002", 400), ok()],
+    expect: {
+      location: "/?account=deleted",
+      cookie: "cleared",
+      infos: [info("account/delete", "already_deleted")],
+      calls: [rpc("delete_own_account", { p_successor: OTHER }), SIGN_OUT],
+    },
+  },
   ...mutationFailures(
     "account/delete",
     [],
