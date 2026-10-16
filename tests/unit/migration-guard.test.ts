@@ -146,6 +146,27 @@ describe("immutability", () => {
     expect(result.warnings).toEqual([]);
   });
 
+  it("fails a repeated entry: one line authorises one edit, and repeating a base line counts too", () => {
+    const line = entry(BASE_PATH, statementEdit, LONG_REASON);
+    const repeated = evaluateGuard(
+      input({ changes: [edit], head: { [BASE_PATH]: statementEdit }, headAllowlist: `${line}${line}` }),
+    );
+    expect(repeated.violations).toEqual([
+      { file: ALLOWLIST_PATH, line: 2, message: expect.stringContaining("repeats line 1") as string },
+    ]);
+    const repeatsBase = evaluateGuard(
+      input({
+        changes: [edit],
+        head: { [BASE_PATH]: statementEdit },
+        baseAllowlist: line,
+        headAllowlist: `${line}${line}`,
+      }),
+    );
+    expect(repeatsBase.violations).toEqual([
+      { file: ALLOWLIST_PATH, line: 2, message: expect.stringContaining("repeats line 1") as string },
+    ]);
+  });
+
   it("fails a wrong hash (the entry is unused and the edit unauthorised)", () => {
     const result = evaluateGuard(
       input({
@@ -484,6 +505,23 @@ describe("end to end against a throwaway git repository", () => {
     expect(result.status).toBe(0);
     expect(result.output).toContain(`::warning file=${BASE_PATH}::`);
     expect(result.output).toContain(LONG_REASON);
+  });
+
+  it("fails a repeated allowlist line: one line per edit", () => {
+    const edited = BASE_SQL.replace("uuid", "text");
+    scenario("repeated-entry", () => {
+      write(BASE_PATH, edited);
+      const line = execFileSync(process.execPath, [GUARD, "--entry", BASE_PATH], {
+        cwd: repo,
+        env,
+        encoding: "utf8",
+      }).trim();
+      const allowed = line.replace(ENTRY_PLACEHOLDER, LONG_REASON);
+      write(ALLOWLIST_PATH, `${allowed}\n${allowed}\n`);
+    });
+    const result = guard();
+    expect(result.status).toBe(1);
+    expect(result.output).toContain(`::error file=${ALLOWLIST_PATH},line=2::`);
   });
 
   it("fails an added destructive migration without a marker", () => {
