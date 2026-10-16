@@ -3,7 +3,8 @@
 //
 //   1. Immutability: a merged migration is never deleted, renamed or edited beyond comments and blank lines. The hosted
 //      history records the applied version, and a missing file breaks `supabase db push`. An edit that is not comment-only
-//      needs a new line in supabase/checks/migration-edit-allowlist.txt for this exact content (see --entry).
+//      needs a new line in supabase/checks/migration-edit-allowlist.txt for this exact content (see --entry). Each line
+//      authorises one edit: a line that repeats an earlier line's file and content is refused.
 //   2. Marker: a new migration that drops an object, alters a policy, renames something or revokes a privilege on an
 //      object created by an earlier migration must carry one `-- compat: <text>` line. The heuristic prompts the author;
 //      it proves nothing about compatibility.
@@ -372,6 +373,23 @@ export function evaluateGuard(input) {
         file: ALLOWLIST_PATH,
         line: entry.line,
         message: `The reason for ${entry.file} has ${entry.reason.length} characters; write at least ${MIN_REASON_LENGTH} (replace the "${ENTRY_PLACEHOLDER}" placeholder with why the merged migration had to change).`,
+      });
+    }
+  }
+  // One line authorises one edit: a line that repeats the file and hash of an earlier line is refused, and a base line
+  // counts as earlier. Only lines new in this PR are reported.
+  const baseLength = lines(input.baseAllowlist).length;
+  /** @type {Map<string, number>} `<file> <hash>` -> the first line that carries it */
+  const firstLine = new Map();
+  for (const entry of parseAllowlist(input.headAllowlist).entries) {
+    const key = `${entry.file} ${entry.hash}`;
+    const earlier = firstLine.get(key);
+    if (earlier === undefined) firstLine.set(key, entry.line);
+    else if (entry.line > baseLength) {
+      violations.push({
+        file: ALLOWLIST_PATH,
+        line: entry.line,
+        message: `The entry for ${entry.file} repeats line ${earlier} (same sha256): one line authorises one edit, so delete this one.`,
       });
     }
   }
