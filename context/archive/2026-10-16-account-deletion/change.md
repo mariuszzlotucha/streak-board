@@ -1,7 +1,8 @@
 ---
 change_id: account-deletion
 title: Account deletion
-status: impl_reviewed
+status: archived
+archived_at: 2026-10-16T19:00:45Z
 created: 2026-10-16
 updated: 2026-10-16
 ---
