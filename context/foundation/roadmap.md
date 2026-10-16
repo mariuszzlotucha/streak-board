@@ -78,9 +78,9 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Backend / API:** present — 17 tras API (auth, groups, tasks), `/auth/callback` i `/auth/google/callback` (stan po S-07); 24 wywołania `console.error` w trasach, callbacku i dashboardzie (zachowanie przy błędach do zweryfikowania w audycie S-08).
 - **Data:** present — Supabase (Postgres + RLS): 7 migracji (grupy, członkostwo, taski, uczestnicy, odznaczenia, utwardzenia RLS i uprawnień), lokalny stos i testy RLS.
 - **Auth:** present — Supabase Auth email+hasło oraz Google (od S-07: dostawca włączony w Supabase, aplikacja Google opublikowana, status „In production” od 2026-10-15), sesje w cookie, middleware chroni `/dashboard`, `/api/groups` i `/api/tasks`; link potwierdzający wraca przez `/auth/callback`, logowanie Google przez `/auth/google/callback`; e-maile z własnego SMTP (Resend) wg README.
-- **Deploy / infra:** present — Cloudflare Workers pod adresem `workers.dev`; CI w GitHub Actions (joby `ci`, `smoke` i `integration`; `release` czeka na wszystkie trzy i na zatwierdzenie w środowisku `production`: migracje, potem deploy); domena `streakboard.app` zarejestrowana (Cloudflare Registrar, DNS w Cloudflare, potwierdzone przez właściciela), aplikacja stoi na niej od S-06 (`2026-10-02`).
+- **Deploy / infra:** present — Cloudflare Workers pod adresem `workers.dev`; CI w GitHub Actions (joby `ci`, `smoke`, `e2e`, `integration` i `compat`; `release` czeka na cztery pierwsze i na zatwierdzenie w środowisku `production`: migracje, potem deploy); domena `streakboard.app` zarejestrowana (Cloudflare Registrar, DNS w Cloudflare, potwierdzone przez właściciela), aplikacja stoi na niej od S-06 (`2026-10-02`).
 - **Observability:** partial — Workers Logs włączone; od S-08 (`2026-10-02`) błędy na poziomie error idą też do Sentry (`src/lib/sentry.ts`, DSN ustawiony przez właściciela); `context/audits/observability/` istnieje, skill `/10x-observability-audit` jest zainstalowany.
-- **Tests (poza standardową listą warstw):** present — Vitest (5 plików unit, 9 integracyjnych na lokalnym Supabase), Playwright (setup, seed, izolacja grup), smoke przez HTTP (skrypt na ponad 1600 linii; stronę `/` sprawdza tylko statusem 200), konfiguracja Stryker (testy mutacyjne); w `test-plan.md` etapy 1 i 4 wdrożone, 2 i 3 nierozpoczęte, a §4 wciąż mówi „e2e: none — not planned".
+- **Tests (poza standardową listą warstw):** present — Vitest (5 plików unit, 9 integracyjnych na lokalnym Supabase), Playwright (setup, seed, izolacja grup), smoke przez HTTP (skrypt na ponad 1600 linii; stronę `/` sprawdza tylko statusem 200), konfiguracja Stryker (testy mutacyjne); w `test-plan.md` etapy 1 do 4 wdrożone (etapy 2 i 3 w S-10), a e2e (Playwright, job `e2e`) działa w CI.
 
 ## Foundations
 
@@ -160,7 +160,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Parallel with:** S-11, S-12, S-13
 - **Blockers:** —
 - **Unknowns:**
-  - Jak uzgodnić `test-plan.md` z decyzją o e2e: §4 mówi dziś „e2e: none — not planned", a wejście wprost wlicza e2e kluczowych przepływów (Playwright jest już skonfigurowany) — odświeżyć test-plan przed planowaniem czy uzgodnić to w planie wycinka? — Owner: user. Block: no — rozstrzyga `/10x-frame`.
+  - Rozstrzygnięte w S-10: e2e jest w `test-plan.md` §5 jako wymagana bramka (job `e2e`, w rulesecie od 2026-10-16), a §4 nie mówi już „e2e: none”. Owner: user. Block: no.
 - **Źródło zakresu:** `context/foundation/roadmap-input-next-slices.md`, sekcja „2. test-coverage" (testy jednostkowe dla logiki bez testów, testy mutacyjne na modułach z regułami, e2e kluczowych przepływów zamiast wszystkiego; UI poza testami DOM wg test-planu §7).
 - **Risk:** Najszerszy wycinek M-2 i zakres bez granic: plan musi wybrać etapy z test-planu (niezrealizowane są etap 2, bramka kolejności wydania, i etap 3, granice auth i walidacja), zapisać, czego nie testuje, i może rozpaść się na kilka zmian (status przesuwa tylko pierwsza). Idzie na końcu M-2 (decyzja właściciela 2026-10-08), po S-11 i S-13, więc e2e kluczowych przepływów powstaje pod nowy wygląd; nie ma zależności technicznych, więc może też iść równolegle.
 - **Status:** done

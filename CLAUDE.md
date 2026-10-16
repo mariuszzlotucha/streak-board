@@ -43,9 +43,9 @@ Several slices can be developed at once, one agent session per linked git worktr
 
 ## Commands
 
-`npm run {dev,build,preview,lint,lint:fix,format,smoke,test,test:unit,test:mutation,test:rls}` — see `@README.md` (Available Scripts, Smoke test) for what each does and when to run it.
+`npm run {dev,build,preview,lint,lint:fix,format,smoke,test,test:unit,test:mutation,test:rls,guard:migrations,types:check,deps,review}` — see `@README.md` (Available Scripts, Smoke test) for what each does and when to run it.
 
-Pre-commit hooks (husky + lint-staged) run `eslint --fix` on `*.{ts,tsx,astro}` and `prettier --write` on `*.{json,css,md}`. Tests: `npm test` (both Vitest projects, unit and integration, against the local Supabase stack; needs `supabase start`), `npm run test:unit` (the unit project alone; needs no stack), `npm run test:mutation -- --mutate <path>` (Stryker on the unit project) and `npm run test:rls` (SQL RLS scenarios via `docker exec`); see `@README.md` (Tests).
+Pre-commit hooks (husky + lint-staged) run `eslint --fix` on `*.{ts,tsx,astro}` and `prettier --write` on `*.{json,css,md}`. Tests: `npm test` (both Vitest projects, unit and integration, against the local Supabase stack; needs `supabase start`), `npm run test:unit` (the unit project alone; needs no stack), `npm run test:mutation -- --mutate <path>` (Stryker on the unit project) and `npm run test:rls` (SQL RLS scenarios via `docker exec`); the Playwright e2e specs in `tests/e2e/` run with `npx playwright test`; see `@README.md` (Tests).
 
 ## Environment
 
