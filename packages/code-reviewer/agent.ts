@@ -10,6 +10,7 @@ import {
 } from "ai";
 import { openrouter } from "@openrouter/ai-sdk-provider";
 import {
+  BINARY_EXTENSIONS,
   DEFAULT_MAX_DIFF_CHARS,
   DEFAULT_MAX_OUTPUT_TOKENS,
   DEFAULT_MAX_STEPS,
@@ -116,6 +117,76 @@ export class DiffTooLargeError extends Error {
 }
 
 /**
+ * Thrown by `reviewDiff`, before any model call, when the diff shows a file as
+ * binary (`Binary files <a> and <b> differ`) whose path does not end with one
+ * of `BINARY_EXTENSIONS`: usually a source file with a NUL byte in it, whose
+ * change the reviewer cannot read. `paths` lists every such side as git
+ * prints it (`a/src/x.ts`, `b/src/x.ts`, or a quoted path), so a caller can
+ * name them without parsing the message.
+ */
+export class UnreviewableDiffError extends Error {
+  readonly paths: string[];
+
+  constructor(paths: string[]) {
+    super(
+      "reviewDiff: the diff shows files without a binary extension (BINARY_EXTENSIONS) as binary, " +
+        `so it cannot be reviewed: ${JSON.stringify(paths)}`,
+    );
+    this.name = "UnreviewableDiffError";
+    this.paths = paths;
+  }
+}
+
+/** The line git prints instead of a hunk for a binary file: `Binary files <a> and <b> differ`. */
+const BINARY_MARKER_START = "Binary files ";
+const BINARY_MARKER_END = " differ";
+const BINARY_MARKER_SEPARATOR = " and ";
+
+/** Whether a side of a binary marker (a path as git prints it, maybe quoted) ends with a `BINARY_EXTENSIONS` entry. */
+function hasBinaryExtension(side: string): boolean {
+  const path = side.endsWith('"') ? side.slice(0, -1) : side;
+  const name = path.slice(path.lastIndexOf("/") + 1);
+  const dot = name.lastIndexOf(".");
+  return dot >= 0 && BINARY_EXTENSIONS.includes(name.slice(dot + 1).toLowerCase());
+}
+
+/** Whether a side of a binary marker can hide content: neither `/dev/null` nor a path with a binary extension. */
+function hidesContent(side: string): boolean {
+  return side !== "/dev/null" && !hasBinaryExtension(side);
+}
+
+/**
+ * Every side of a `Binary files … differ` line in `diff` that is neither
+ * `/dev/null` nor a path with a binary extension. A name holding " and " makes
+ * the split ambiguous (a new file `img.png and /dev/null` prints
+ * `Binary files /dev/null and b/img.png and /dev/null differ`), so a line
+ * passes only when every split at " and " leaves two such sides. The sides
+ * listed are those of the split at the last " and " or, when that split
+ * passes, of the first split that does not; a line without " and " is listed
+ * whole. Plain string search instead of a regular expression, so every
+ * character of a raw path, U+2028 included, belongs to a side.
+ */
+function hiddenBinaryPaths(diff: string): string[] {
+  const paths: string[] = [];
+  for (const line of diff.split("\n")) {
+    if (!line.startsWith(BINARY_MARKER_START) || !line.endsWith(BINARY_MARKER_END)) continue;
+    const sides = line.slice(BINARY_MARKER_START.length, line.length - BINARY_MARKER_END.length);
+    const hiddenBySplit: string[][] = [];
+    for (
+      let at = sides.indexOf(BINARY_MARKER_SEPARATOR, 1);
+      at !== -1;
+      at = sides.indexOf(BINARY_MARKER_SEPARATOR, at + 1)
+    ) {
+      hiddenBySplit.push([sides.slice(0, at), sides.slice(at + BINARY_MARKER_SEPARATOR.length)].filter(hidesContent));
+    }
+    const last = hiddenBySplit.at(-1);
+    if (last === undefined) paths.push(sides);
+    else paths.push(...(last.length > 0 ? last : (hiddenBySplit.find((hidden) => hidden.length > 0) ?? [])));
+  }
+  return paths;
+}
+
+/**
  * The written verdict rule of `REVIEWER_INSTRUCTIONS` as code: `"fail"` when
  * `implementationCorrectness` or `securitySafety` is 4 or lower, or any
  * criterion is 2 or lower; otherwise `"pass"`. Keep the two in step.
@@ -198,8 +269,10 @@ function buildExplorer(
  * PR's changed paths (`listChangedFiles`, unless `pullRequest.changedFiles` is
  * given); without it a review is one model call on the diff. Before any
  * model call it throws an `Error` for an empty or whitespace-only diff or an
- * invalid `maxDiffChars`, and `DiffTooLargeError` for a diff longer than
- * `maxDiffChars` (default `DEFAULT_MAX_DIFF_CHARS`). A diff longer than
+ * invalid `maxDiffChars`, `DiffTooLargeError` for a diff longer than
+ * `maxDiffChars` (default `DEFAULT_MAX_DIFF_CHARS`), and, after that check,
+ * `UnreviewableDiffError` for a diff that shows a file without a
+ * `BINARY_EXTENSIONS` extension as binary. A diff longer than
  * `maxDiffCharsForTools` (default `MAX_DIFF_CHARS_FOR_TOOLS`) is reviewed
  * without the repo tools even with `repo` (`toolsSkipped`). With repo tools and
  * `maxSteps` above 1 a review has two phases: up to `maxSteps - 1` calls that
@@ -236,6 +309,9 @@ export async function reviewDiff(
     throw new Error(`reviewDiff: maxDiffChars must be an integer >= 1 or Infinity, got ${maxDiffChars}`);
   }
   if (diff.length > maxDiffChars) throw new DiffTooLargeError(diff.length, maxDiffChars);
+  // A file the diff shows as binary hides its change from the reviewer, so the review fails closed.
+  const hidden = hiddenBinaryPaths(diff);
+  if (hidden.length > 0) throw new UnreviewableDiffError(hidden);
 
   const resolved = resolveOptions(reviewerOptions);
   const { model } = resolved;

@@ -1,0 +1,42 @@
+# promptfooconfig.models.yaml — the models matrix (M5L3 lesson): the reviewer of this checkout on the production
+# model and the three lesson models, every case once. For information only; the production model stays
+# DEFAULT_REVIEWER_MODEL. Run: npm run --prefix packages/code-reviewer/evals models
+description: Code reviewer — models matrix, x1
+
+prompts: ["code review case"]
+
+tests: file://cases/*.yaml
+
+defaultTest:
+  options:
+    # Grader of the llm-rubric assertions.
+    provider: openrouter:anthropic/claude-sonnet-5.5
+  assert:
+    # Weight 0: never fails a case, only records whether the model's verdict and the score rule agree.
+    - type: javascript
+      weight: 0
+      metric: verdict-agreement
+      value: output.outcome !== "reviewed" || output.modelVerdict === output.ruleVerdict
+
+providers:
+  - id: file://provider.ts
+    label: glm-5.1
+    config:
+      model: z-ai/glm-5.1
+  - id: file://provider.ts
+    label: glm-5.3
+    config:
+      model: z-ai/glm-5.3
+  - id: file://provider.ts
+    label: deepseek-v4.1-flash
+    config:
+      model: deepseek/deepseek-v4.1-flash
+  - id: file://provider.ts
+    label: gpt-5.6-luna
+    config:
+      model: openai/gpt-5.6-luna
+
+# Top-level `repeat` passes validation but is ignored; the count lives here (`--repeat` overrides it).
+evaluateOptions:
+  maxConcurrency: 4
+  repeat: 1

@@ -176,6 +176,7 @@ jobs:
 
             Gałąź PR jest już pobrana w bieżącym katalogu roboczym.
             Komentarz podsumowujący publikuj przez `gh pr comment`, a uwagi do konkretnych linii przez `mcp__github_inline_comment__create_inline_comment` (z `confirmed: true`).
+            Nigdy nie umieszczaj w żadnym komentarzu znacznika `<!-- ai-cr:summary -->`: należy do komentarza wymaganej bramki `ai-review`.
 
       - name: Remove trigger label
         if: always()

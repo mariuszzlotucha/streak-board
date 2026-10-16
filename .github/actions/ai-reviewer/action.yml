@@ -12,6 +12,8 @@
 #   reviewed  — the CLI exited 0 with a valid pass/fail verdict (`verdict`, `review-file` set)
 #   skipped   — the diff file holds only whitespace (nothing installed), or the CLI exited 2
 #   too-large — the CLI exited 3 (stdin byte cap or DiffTooLargeError)
+#   unreviewable — the CLI exited 4 (UnreviewableDiffError: the diff shows a file without a binary
+#                  extension as binary, usually a source file with a NUL byte)
 #   error     — the CLI exited 1 or any other code, or exited 0 without a valid verdict
 # The action fails only on infrastructure errors (missing diff file, setup-node, npm ci),
 # never on a review outcome; the workflow then sees an empty `outcome`.
@@ -51,7 +53,7 @@ inputs:
 
 outputs:
   outcome:
-    description: "reviewed | skipped | too-large | error"
+    description: "reviewed | skipped | too-large | unreviewable | error"
     value: ${{ steps.review.outputs.outcome || steps.prepare.outputs.outcome }}
   verdict:
     description: "pass | fail; set only when outcome is reviewed"
@@ -154,6 +156,7 @@ runs:
             ;;
           2) outcome=skipped ;;
           3) outcome=too-large ;;
+          4) outcome=unreviewable ;;
           *) outcome=error ;;
         esac
 

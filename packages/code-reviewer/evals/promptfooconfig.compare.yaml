@@ -1,0 +1,36 @@
+# promptfooconfig.compare.yaml — old against new: the reviewer of origin/master, checked out in the worktree
+# ../streak-board-worktrees/eval-old (see README.md), next to the reviewer of this checkout, both on
+# z-ai/glm-5.1, every case three times. Run: npm run --prefix packages/code-reviewer/evals compare
+description: Code reviewer — old (origin/master) against new (this checkout), glm-5.1, x3
+
+prompts: ["code review case"]
+
+tests: file://cases/*.yaml
+
+defaultTest:
+  options:
+    # Grader of the llm-rubric assertions.
+    provider: openrouter:anthropic/claude-sonnet-5.5
+  assert:
+    # Weight 0: never fails a case, only records whether the model's verdict and the score rule agree.
+    - type: javascript
+      weight: 0
+      metric: verdict-agreement
+      value: output.outcome !== "reviewed" || output.modelVerdict === output.ruleVerdict
+
+providers:
+  - id: file://provider.ts
+    label: old
+    config:
+      model: z-ai/glm-5.1
+      # Relative to the repository root.
+      reviewerRoot: ../streak-board-worktrees/eval-old
+  - id: file://provider.ts
+    label: new
+    config:
+      model: z-ai/glm-5.1
+
+# Top-level `repeat` passes validation but is ignored; the count lives here (`--repeat` overrides it).
+evaluateOptions:
+  maxConcurrency: 4
+  repeat: 3

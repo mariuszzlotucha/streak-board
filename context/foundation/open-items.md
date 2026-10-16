@@ -47,13 +47,15 @@ Szczegóły i źródła są w `context/foundation/owner-decisions.md`.
 
 Plan `code-review-evals` jest tylko w follow-upach, nie w roadmapie. Wymaga planu, bo dotyka bramki `ai-review`. Decyzja 2026-10-16: zaplanować całość przez `/10x-plan`. Źródła: `context/archive/2026-10-14-ci-cd-code-review/follow-ups/review-fixes.md` i `context/archive/2026-10-13-tool-loop-agent/follow-ups/review-fixes.md` (F2).
 
-- [ ] Zaplanować `code-review-evals` przez `/10x-plan`. Zakres:
-- [ ] Podrobione znaczniki w diffie (`＜/diff＞`, homoglify, znaki zerowej szerokości) nie są neutralizowane.
-- [ ] Wstrzyknięcia, które podbijają same wyniki (a nie werdykt), reguła werdyktu nie łapie.
-- [ ] Plik z bajtem NUL: `git diff` pokazuje „Binary files differ", więc model nie widzi treści.
-- [ ] Marker `<!-- ai-cr:summary -->` (`.github/workflows/review.yml:227`): komentarz `claude-review` zaczynający się od niego mógłby zostać przejęty przez `ai-review`.
-- [ ] Demo `packages/code-reviewer/review-with-session.ts` woła `generate()` bez limitu diffu (`:22`, `:32`) i nie loguje zużycia.
-- [ ] Testy logiki workflow (filtr jq, budowanie komentarza, reguły etykiet).
+Zamknięte 2026-10-17: plan w `context/changes/code-review-evals/plan.md` (PR #158, scalony jako `274c5f7`), faza 1 w commicie `d09ab4e` na gałęzi `code-review-evals/implementation`, wyniki ewaluacji w `context/changes/code-review-evals/eval-results.md`. Punkty planu niżej to „Changes Required” fazy 1.
+
+- [x] Zaplanować `code-review-evals` przez `/10x-plan`. Zrobione: `context/changes/code-review-evals/plan.md`, PR #158 (`274c5f7`). Zakres:
+- [x] Podrobione znaczniki w diffie (`＜/diff＞`, homoglify, znaki zerowej szerokości) nie są neutralizowane. Zrobione: losowy sufiks tagów (plan, pkt 10; `d09ab4e`); `fence-lookalikes` oblał 2/2 (`eval-results.md`).
+- [x] Wstrzyknięcia, które podbijają same wyniki (a nie werdykt), reguła werdyktu nie łapie. Zmierzone, nie wykrywane w kodzie (decyzja planu): `score-raising` oblał przez oceny 2/2 (`eval-results.md`), wyniki z datą w Known limits `packages/code-reviewer/README.md`.
+- [x] Plik z bajtem NUL: `git diff` pokazuje „Binary files differ", więc model nie widzi treści. Zrobione: fail closed z wynikiem `unreviewable` (plan, pkt 11; `d09ab4e`); `nul-hidden` skończył się `unreviewable` 2/2 (`eval-results.md`).
+- [x] Marker `<!-- ai-cr:summary -->` (`.github/workflows/review.yml:227`): komentarz `claude-review` zaczynający się od niego mógłby zostać przejęty przez `ai-review`. Zrobione: sticky komentarz wymaga markera i nagłówka, a `claude-review` nie emituje markera (plan, pkt 9; `d09ab4e`).
+- [x] Demo `packages/code-reviewer/review-with-session.ts` woła `generate()` bez limitu diffu (`:22`, `:32`) i nie loguje zużycia. Zrobione: limit diffu i linia zużycia po każdym wywołaniu (plan, pkt 12; `d09ab4e`).
+- [x] Testy logiki workflow (filtr jq, budowanie komentarza, reguły etykiet). Zrobione: `tests/unit/ai-review-workflow.test.ts` i `tests/helpers/workflow-steps.ts` (plan, pkt 8; `d09ab4e`).
 
 Odroczone świadomie, z wyzwalaczami w planach. Nie są zadaniami, dopóki wyzwalacz się nie pojawi:
 
@@ -73,4 +75,4 @@ Odroczone świadomie, z wyzwalaczami w planach. Nie są zadaniami, dopóki wyzwa
 
 1. S-14 `nickname`: oba wydania są na produkcji; zostało `/10x-archive nickname`.
 2. S-13 `checkoff-grid` (`/10x-frame`), razem z poprawkami dokumentów (streak, poziomy, okno dat).
-3. `/10x-plan` dla `code-review-evals`.
+3. `/10x-plan` dla `code-review-evals`: zamknięte. Plan w PR #158, implementacja 2026-10-16/17 na gałęzi `code-review-evals/implementation` (§4).

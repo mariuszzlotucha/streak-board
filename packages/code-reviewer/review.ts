@@ -14,9 +14,9 @@
  * | `1`  | Review error: API, network, timeout, missing key, `ReviewRunError`; the usage line is still printed for `ReviewRunError` |
  * | `2`  | No diff on stdin                                                                                                         |
  * | `3`  | Diff too large: the stdin byte cap or `DiffTooLargeError`                                                                |
+ * | `4`  | Unreviewable: `UnreviewableDiffError`, the diff shows a file without a binary extension as binary                        |
  */
-import type { FinishReason } from "ai";
-import { DiffTooLargeError, reviewDiff, ReviewRunError, verdictFromScores, type ReviewRun } from "./agent";
+import { DiffTooLargeError, reviewDiff, ReviewRunError, UnreviewableDiffError, verdictFromScores } from "./agent";
 import {
   DEFAULT_REVIEW_TIMEOUT_MS,
   MAX_DIFF_CHARS_FOR_TOOLS,
@@ -24,28 +24,9 @@ import {
   resolveReviewerModel,
 } from "./config";
 import { resolveRepo, type ToolCallRecord } from "./tools";
-import { loadEnv, readDiff } from "./utils";
+import { formatUsageLine, loadEnv, readDiff } from "./utils";
 
 loadEnv();
-
-/** The run fields the usage line reports; a failed run may lack a finish reason. */
-interface UsageLineRun extends Pick<ReviewRun, "model" | "usage" | "costUsd" | "toolCalls"> {
-  finishReason?: FinishReason;
-}
-
-/** One stderr line with the model, finish reason, token counts and cost of a run. */
-function formatUsageLine({ model, finishReason, usage, costUsd, toolCalls }: UsageLineRun): string {
-  return [
-    `model=${model}`,
-    `finishReason=${finishReason ?? "unknown"}`,
-    `input_tokens=${usage.inputTokens ?? "unknown"}`,
-    `output_tokens=${usage.outputTokens ?? "unknown"}`,
-    `total_tokens=${usage.totalTokens ?? "unknown"}`,
-    // `null` means no step reported a cost, which is not the same as free.
-    `cost_usd=${costUsd ?? "unknown"}`,
-    `tool_calls=${toolCalls.length}`,
-  ].join(" ");
-}
 
 /** One stderr line per repo-tool call; the target is JSON-quoted, so a path or query stays on its line. */
 function printToolCalls(toolCalls: readonly ToolCallRecord[]): void {
@@ -96,8 +77,9 @@ async function main(): Promise<number> {
       console.error(formatUsageLine(error));
     }
     console.error(`error: ${error instanceof Error ? error.message : String(error)}`);
-    // The size check runs before any model call, so nothing was billed.
-    return error instanceof DiffTooLargeError ? 3 : 1;
+    // The size and binary checks run before any model call, so nothing was billed.
+    if (error instanceof DiffTooLargeError) return 3;
+    return error instanceof UnreviewableDiffError ? 4 : 1;
   }
 }
 

@@ -1,0 +1,52 @@
+# Seeded flaw (M5L3 lesson): a search endpoint that splices a query-string parameter into SQL, next to a
+# database helper that already takes bound parameters.
+- description: "sql-injection: search handler splices a query parameter into SQL"
+  metadata:
+    kind: bug
+    expect: fail
+  vars:
+    title: Add a task search endpoint
+    body: |-
+      Adds `GET /api/search?q=…`, which returns the tasks whose name contains the search term,
+      sorted by name, for the search box on the dashboard.
+    files:
+      base:
+        src/lib/db.ts: |
+          import { Pool } from "pg";
+
+          const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+          /** Runs one statement; `params` are bound to $1, $2, … by the driver. */
+          export async function query<T>(sql: string, params: unknown[] = []): Promise<T[]> {
+            const result = await pool.query(sql, params);
+            return result.rows as T[];
+          }
+        src/pages/api/tasks.ts: |
+          import type { APIRoute } from "astro";
+          import { query } from "../../lib/db";
+
+          export const prerender = false;
+
+          export const GET: APIRoute = async ({ url }) => {
+            const groupId = url.searchParams.get("group") ?? "";
+            const rows = await query("SELECT id, name FROM tasks WHERE group_id = $1 ORDER BY name", [groupId]);
+            return Response.json(rows);
+          };
+      head:
+        src/pages/api/search.ts: |
+          import type { APIRoute } from "astro";
+          import { query } from "../../lib/db";
+
+          export const prerender = false;
+
+          export const GET: APIRoute = async ({ url }) => {
+            const term = url.searchParams.get("q") ?? "";
+            const rows = await query(`SELECT id, name FROM tasks WHERE name LIKE '%${term}%' ORDER BY name`);
+            return Response.json(rows);
+          };
+  assert:
+    - type: javascript
+      value: output.verdict === "fail" && output.scores.securitySafety <= 3
+    - type: llm-rubric
+      transform: output.summary
+      value: The review rejects the change and points to the SQL injection through the q parameter

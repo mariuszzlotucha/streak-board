@@ -1,0 +1,51 @@
+# Historical PR #112 (merge b61de90): base is the merge's first parent, head its second parent.
+# Title and body copied once from `gh pr view 112 --json title,body`.
+- description: "pr-112: tool-loop-agent phase 2, CLI, demos and docs"
+  metadata:
+    kind: regression
+    expect: pass
+  vars:
+    base: 345ade8a56fda9765d4040ead8237fc9611448a7
+    head: 3ac8f2298cb570486839e3d8431062490c0c7543
+    title: "feat(tool-loop-agent): CLI, demos and docs (p2)"
+    body: |
+      Phase 2 of 2 of `context/changes/tool-loop-agent/plan.md`, plus the full-plan review fixes.
+
+      ## What changed
+      - **CLI** (`packages/code-reviewer/review.ts`): loads `.env`, picks the model with `resolveReviewerModel()` (`REVIEWER_MODEL` override), prints the `ReviewResult` JSON on stdout and one usage/cost line on stderr (`model=… finishReason=… input_tokens=… output_tokens=… total_tokens=… cost_usd=…`). A `ReviewRunError` still prints the usage line before the error; exit 1 on any failure.
+      - **Input**: `readDiff()` prints an actionable usage error on missing input and stops after `4 × DEFAULT_MAX_DIFF_CHARS` bytes on stdin.
+      - **Demos** (`review-with-session.ts`, `cost-report.ts`, `rules-inject.ts`) use the shared config and `createReviewer` / `buildReviewPrompt`; `stepCountIs` → `isStepCount`, `onStepFinish` → `onStepEnd`.
+      - **README** for the package: module map, CLI and programmatic usage, budget limits, `ReviewRunError`, data egress, known open items, schema-is-contract rule.
+      - **ESLint**: `no-console` is an error in the package's library modules and off for its CLI and demos. `cost.json` from the demo is git-ignored.
+
+      ## Deviation from the plan
+      The root `review` npm script is **removed** (user decision). It ran its own `git diff` and ignored piped input, so `git diff HEAD~1 | npm run review` reviewed the working tree instead. Use:
+
+      ```sh
+      git diff | npx tsx packages/code-reviewer/review.ts
+      ```
+
+      Recorded in the plan's `## Addenda`.
+
+      ## Verification
+      - `npx tsc --noEmit -p .`: pass
+      - `npx eslint packages/code-reviewer` / `npm run lint`: 0 errors
+      - `glm-5.1` only in `config.ts`
+      - Empty stdin: usage error, exit 1, no model call
+      - Manual checks 2.5–2.8 confirmed
+
+      Review: `context/changes/tool-loop-agent/reviews/impl-review-phase-2.md` (APPROVED; 8 findings triaged, 7 fixed, 1 queued in `follow-ups/review-fixes.md`).
+
+      Full-plan review: `context/changes/tool-loop-agent/reviews/impl-review.md` (9 findings, all fixed in 3ac8f22):
+      - `reviewDiff` validates `maxDiffChars` (NaN no longer disables the cap) and `maxOutputTokens`.
+      - `.env` is loaded with Node's `process.loadEnvFile` (`loadEnv()` in `utils.ts`) instead of the undeclared, transitively installed `dotenv`; a shell variable still wins.
+      - `readDiff()` accepts string chunks and keeps the diff's own whitespace; docs corrected (one model call without tools, SDK retries, `finishReason` on a returned run).
+      - Plan addenda cover every deviation. The empty `context/changes/simple-code-reviewer/` scaffold that rode along with #111 is removed.
+      - Note: #111 also vendored the AI SDK agent skills (`.agents/skills/{ai-sdk,migrate-ai-sdk-v6-to-v7}`, `.claude/skills/` symlinks, `skills-lock.json`); they are intentional and used for this change.
+
+      Still open (follow-ups): prompt injection via the undelimited diff (Phase 1 F2), no default timeout, no USD gate. All must be addressed before a CI gate trusts `verdict`.
+
+      🤖 Generated with [Claude Code](https://claude.com/claude-code)
+  assert:
+    - type: javascript
+      value: output.verdict === "pass"

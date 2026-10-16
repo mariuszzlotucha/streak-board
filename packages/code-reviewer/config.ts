@@ -80,6 +80,46 @@ export const DEFAULT_MAX_OUTPUT_TOKENS = 32_768;
 export const DEFAULT_MAX_DIFF_CHARS = 200_000;
 
 /**
+ * File extensions, lower case and without the dot, of the types the diff may
+ * show as binary (`Binary files … differ`). Any other path git shows that way,
+ * usually a source file with a NUL byte in it, makes the diff unreviewable:
+ * the reviewer cannot read its content (`readFile` and `searchCode` skip
+ * binary files too), so `reviewDiff` throws `UnreviewableDiffError` before any
+ * model call. A new binary type is added here, on `master`, in its own PR.
+ */
+export const BINARY_EXTENSIONS: readonly string[] = [
+  "png",
+  "jpg",
+  "jpeg",
+  "gif",
+  "webp",
+  "avif",
+  "ico",
+  "bmp",
+  "tif",
+  "tiff",
+  "woff",
+  "woff2",
+  "ttf",
+  "otf",
+  "eot",
+  "pdf",
+  "zip",
+  "gz",
+  "tgz",
+  "br",
+  "zst",
+  "wasm",
+  "mp3",
+  "mp4",
+  "m4a",
+  "ogg",
+  "wav",
+  "webm",
+  "mov",
+];
+
+/**
  * Upper bound on the PR body in characters. `buildReviewPrompt` cuts a longer
  * body and marks the cut with `[truncated]`: the body states intent, so its
  * first part is what matters, and it is untrusted text that costs tokens.

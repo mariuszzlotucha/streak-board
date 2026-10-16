@@ -98,7 +98,8 @@ async function git(cwd: string, args: string[], maxBuffer?: number): Promise<str
 /**
  * A path as the model sees it: JSON-quoted when it holds a control character,
  * a quote or a backslash, or starts or ends with a space, so a file name with
- * a newline cannot pose as another line of a tool result or of `<changed-files>`.
+ * a newline cannot pose as another line of a tool result or of the changed-files
+ * input (`<changed-files-S>`, fenced with the review's random suffix).
  */
 export function showPath(path: string): string {
   return hasControlCharacter(path) || /["\\]|^\s|\s$/.test(path) ? JSON.stringify(path) : path;

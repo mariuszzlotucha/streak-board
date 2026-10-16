@@ -1,0 +1,27 @@
+# Historical PR #114 (merge 805fbac): base is the merge's first parent, head its second parent.
+# Title and body copied once from `gh pr view 114 --json title,body`.
+- description: "pr-114: planning PR for the AI code review in CI"
+  metadata:
+    kind: regression
+    expect: pass
+  vars:
+    base: 7ca1795ebc9df31b0f1f46d99a4be0324224dd82
+    head: 8ed9d724af49a441a4014c5f294c62351d096b3f
+    title: "Plan: AI code review in CI (ci-cd-code-review)"
+    body: |
+      Planning artifacts for the `ci-cd-code-review` change, plus the M5L3 lesson files. No code.
+
+      - `context/changes/ci-cd-code-review/plan.md`: two phases.
+        - Phase 1 gives `packages/code-reviewer` a CI-ready contract: PR title and capped body as fenced untrusted input, a written verdict rule, exit codes 0/1/2/3 and a 180 s timeout. It also rebuilds the composite action, with no workflow yet.
+        - Phase 2 adds the `ai-review` workflow: reviewer run from the base commit, code-only diff, one sticky comment, labels, re-evaluation instead of skipping. It hardens `claude-review.yml`, documents the gate, trials it on its own PR and then makes `ai-review` a required check.
+      - `context/changes/ci-cd-code-review/plan-brief.md`: summary with the key decisions.
+      - `context/changes/ci-cd-code-review/research.md` and `requirements.md`: the evidence and the lesson's requirements.
+      - `context/changes/ci-cd-code-review/reviews/plan-review.md`: verdict SOUND after triage, F1–F8 fixed (F1 via Fix A: one concurrency group per PR).
+      - M5L3 lesson files: the `CLAUDE.md` section, `.claude/.10x-cli-manifest.json` and the `m5l3-{action.yml,promptfooconfig.yaml,review.yml}` templates.
+
+      The drafts of the `review` script in `package.json`, `.github/actions/ai-reviewer/action.yml`, `review.yml` and `claude-review.yml` stay out of this PR; phases 1 and 2 rewrite and commit them.
+
+      🤖 Generated with [Claude Code](https://claude.com/claude-code)
+  assert:
+    - type: javascript
+      value: output.verdict === "pass"

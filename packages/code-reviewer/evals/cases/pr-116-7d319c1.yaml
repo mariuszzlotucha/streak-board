@@ -1,0 +1,44 @@
+# Historical PR #116 (merge b8311c7): base is the merge's first parent, head is commit 7d319c1 of the PR branch.
+# Title and body copied once from `gh pr view 116 --json title,body`.
+- description: "pr-116-7d319c1: ai-review workflows at commit 7d319c1, where only the model said fail"
+  metadata:
+    kind: regression
+    expect: pass
+  vars:
+    base: de6c4418ac8b1c589781438f2f0e76204de4f0e7
+    head: 7d319c181b4290606ead0dddf56bed2e8143dbed
+    title: "ci-cd-code-review phase 2: AI review workflows, required gate and docs"
+    body: |-
+      Phase 2 of [`context/changes/ci-cd-code-review/plan.md`](context/changes/ci-cd-code-review/plan.md): the `ai-review` gate and the hardened on-demand Claude review. This PR is the live trial of the gate (plan rows 2.6–2.11).
+
+      ## Changes
+
+      - **`.github/workflows/review.yml`** — job `ai-review` on every PR to `master` (opened, synchronize, reopened, labeled), no path filters.
+        - The reviewer and the composite action run from the PR's **base commit**, checked out at the workspace root. The PR head is fetched by SHA as git objects and never checked out.
+        - Code-only diff (`context/`, `*.md` and `package-lock.json` excluded).
+        - One sticky comment marked `<!-- ai-cr:summary -->`.
+        - Labels `ai-cr:passed` / `ai-cr:failed`.
+        - The gate passes on `reviewed` + `pass`, or on `skipped`.
+        - `ai-cr:review` re-runs the review. Any other label re-evaluates: it copies the newest `ai-review` conclusion on the same head SHA, and the job is never skipped.
+        - Per-PR job concurrency: a review cancels, a re-evaluation waits.
+      - **`.github/workflows/claude-review.yml`** — the advisory Claude review on the `claude-review` label.
+        - Job `claude-review` runs for same-repo heads only.
+        - Job-level concurrency and a 30 min timeout.
+        - No `id-token`; the label is removed via the REST API.
+      - **Docs** — README `## CI` (outcomes, labels, re-run, the real limits of base-commit execution under `pull_request`, break-glass) and `npm run review`; a new gate row in `test-plan.md` §5; a lessons entry on required-check jobs and unrelated events.
+      - **Review** — `reviews/impl-review-phase-2.md`: 2 warnings and 5 observations, all fixed. The layout change versus plan #10 is recorded in `follow-ups/review-fixes.md`.
+
+      ## Before merge
+
+      1. Live trial on this PR:
+         - first review;
+         - a second push edits the same comment;
+         - `ai-cr:review` re-runs;
+         - an unrelated label re-evaluates, both after a review and while one runs;
+         - `claude-review` leaves `ai-review` unchanged.
+      2. `ai-review` is added to ruleset `24254172` next to `integration`.
+
+      🤖 Generated with [Claude Code](https://claude.com/claude-code)
+  assert:
+    - type: javascript
+      value: output.verdict === "pass"

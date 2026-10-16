@@ -6,7 +6,7 @@
 >
 > Refresh: re-run `/10x-test-plan --refresh` when stale (see §8).
 >
-> Last updated: 2026-10-16 (Phases 2 and 3 shipped with S-10: release compatibility gate, auth boundaries, e2e in the stack)
+> Last updated: 2026-10-17 (§5: the AI reviewer's eval suite as a manual process gate, `code-review-evals`)
 
 ## 1. Strategy
 
@@ -89,10 +89,11 @@ spadku streaka (połowa, w dół). Etapy 2 i 3 dostarczyła zmiana S-10
 (`test-coverage`): strażników mechaniki migracji (niezmienność, marker
 `-- compat:`, kolejność, świeże typy) dała wcześniej S-12, a S-10 dodała
 bramkę `compat` (kod z produkcji kontra nowy schemat, §6.5) i tag `production`.
-Nie planuję warstwy AI-native: tańsze testy deterministyczne dają ten sam
-sygnał (zasada #1). Pierwotnie plan nie przewidywał też e2e; dołączyło do stosu
-w S-10 decyzją właściciela z 2026-10-15 (§4, §5, §6.3), z asercjami
-funkcjonalnymi, bez porównań zrzutów ekranu.
+Nie planuję warstwy AI-native dla aplikacji: tańsze testy deterministyczne dają
+ten sam sygnał (zasada #1). Wyjątek to ewaluacja AI-recenzenta (§5, promptfoo
+z oceniającym LLM): sprawdza narzędzie CI, nie aplikację. Pierwotnie plan nie
+przewidywał też e2e; dołączyło do stosu w S-10 decyzją właściciela z 2026-10-15
+(§4, §5, §6.3), z asercjami funkcjonalnymi, bez porównań zrzutów ekranu.
 
 ## 4. Stack
 
@@ -123,16 +124,17 @@ Gate'y, które muszą przejść przed wejściem zmiany na produkcję.
 „Required after §3 Phase N" oznacza, że gate jest egzekwowany po wdrożeniu
 danego etapu; wcześniej ma status `planned`.
 
-| Gate                                        | Where                                      | Required?                                                                                                                                                  | Catches                                                                                       |
-| ------------------------------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| lint + build                                | local + CI                                 | required (wired)                                                                                                                                           | dryf składni i typów                                                                          |
-| smoke                                       | local + CI                                 | required (wired)                                                                                                                                           | zepsute podstawowe przepływy HTTP                                                             |
-| unit + integration (RLS, uprawnienia)       | local + CI (job `integration`)             | required (wired)                                                                                                                                           | wyciek między grupami, brak kontroli własności                                                |
-| migration/code consistency check            | CI on PR (jobs `integration` i `compat`)   | required (wired): strażnicy S-12 (niezmienność, marker, kolejność, typy) + job compat (kod z produkcji kontra nowy schemat); oba w rulesecie od 2026-10-16 | kod wymagający schematu, którego produkcja nie ma; migracja, której wdrożony kod nie przeżyje |
-| extended smoke (Origin, walidacja, auth)    | local + CI                                 | required (wired)                                                                                                                                           | przyjęcie obcego Origin i złych danych, regresje auth                                         |
-| unit (streak rule)                          | local + CI (job `integration`, `npm test`) | required (wired)                                                                                                                                           | błędna reguła streaka na granicach okresów                                                    |
-| AI code review (ai-review)                  | CI on PR                                   | required (wired)                                                                                                                                           | defekty oceniane przez AI w sześciu kryteriach przeglądu                                      |
-| e2e (kluczowe przepływy, desktop + telefon) | local + CI (job `e2e`)                     | required (job `e2e`, w rulesecie od 2026-10-16; `release` na nim czeka)                                                                                    | zepsuty przepływ zaproszenia, odznaczania lub ustawień grupy w przeglądarce                   |
+| Gate                                                                | Where                                                          | Required?                                                                                                                                                  | Catches                                                                                                      |
+| ------------------------------------------------------------------- | -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| lint + build                                                        | local + CI                                                     | required (wired)                                                                                                                                           | dryf składni i typów                                                                                         |
+| smoke                                                               | local + CI                                                     | required (wired)                                                                                                                                           | zepsute podstawowe przepływy HTTP                                                                            |
+| unit + integration (RLS, uprawnienia)                               | local + CI (job `integration`)                                 | required (wired)                                                                                                                                           | wyciek między grupami, brak kontroli własności                                                               |
+| migration/code consistency check                                    | CI on PR (jobs `integration` i `compat`)                       | required (wired): strażnicy S-12 (niezmienność, marker, kolejność, typy) + job compat (kod z produkcji kontra nowy schemat); oba w rulesecie od 2026-10-16 | kod wymagający schematu, którego produkcja nie ma; migracja, której wdrożony kod nie przeżyje                |
+| extended smoke (Origin, walidacja, auth)                            | local + CI                                                     | required (wired)                                                                                                                                           | przyjęcie obcego Origin i złych danych, regresje auth                                                        |
+| unit (streak rule)                                                  | local + CI (job `integration`, `npm test`)                     | required (wired)                                                                                                                                           | błędna reguła streaka na granicach okresów                                                                   |
+| AI code review (ai-review)                                          | CI on PR                                                       | required (wired)                                                                                                                                           | defekty oceniane przez AI w sześciu kryteriach przeglądu                                                     |
+| Ewaluacja AI-recenzenta (promptfoo, `packages/code-reviewer/evals`) | lokalnie, przed zmianą promptu, modelu, narzędzi albo wiązania | ręczna (proces, lekcja)                                                                                                                                    | regresje recenzenta na przypadkach z błędami i wstrzyknięciami oraz fałszywe faile na zaakceptowanych PR-ach |
+| e2e (kluczowe przepływy, desktop + telefon)                         | local + CI (job `e2e`)                                         | required (job `e2e`, w rulesecie od 2026-10-16; `release` na nim czeka)                                                                                    | zepsuty przepływ zaproszenia, odznaczania lub ustawień grupy w przeglądarce                                  |
 
 ## 6. Cookbook Patterns
 
@@ -228,8 +230,9 @@ respektować, dopóki nie zmieni się założenie.
 - Strategy (§1–§5) last reviewed: 2026-10-15 (etapy 1–4 wdrożone; §3 i §5 zamknięte w S-10 `test-coverage`; notatki §6.6 faz 5–6 i linia bazowa mutacji z 2026-10-16)
 - §4 (wiersz e2e), §5 (gate e2e) i §7 edited 2026-10-15 on the owner's instruction in S-10 (`test-coverage`): e2e dołączone do stosu i bramek, §6.3 wypełnione, §6.5 opisuje bramkę `compat`; 2026-10-16: §3 (ścieżka archiwum, wiersze 2 i 3) i §5 (wiersze e2e i compat po zmianie rulesetu) zaktualizowane
 - 2026-10-16, S-14 (`nickname`, faza 1): nowe testy bez zmiany strategii — brama nicka w middleware (`tests/integration/middleware.test.ts`, przekierowanie na `/account/nickname`, wyjątki strony i trasy nicka, 503 `nickname.lookup.failed`), trasa `account/nickname` w sieci charakteryzacyjnej (`tests/integration/data-routes.test.ts`, strażnik pokrycia: rodziny `account`, `groups`, `tasks`, 14 plików), kontrakt reguły nicka TS↔DB (`tests/integration/rule-contracts.test.ts`) i zachowanie bazy (`tests/integration/nicknames.test.ts`), testy jednostkowe reguł, błędów, podpowiedzi i remisu po nicku, sekcja RLS „S-14: nicknames" (`supabase/checks/rls-scenarios.sql`), kroki smoke (brama jako wynik, stan po każdym odrzuconym zapisie, zero cudzych adresów e-mail w HTML) i e2e (rejestracja przez UI przechodzi stronę nicka z oczekującym zaproszeniem; persony i konto seed z nickiem)
+- 2026-10-17, `code-review-evals`: §5 dostaje wiersz „Ewaluacja AI-recenzenta (promptfoo, `packages/code-reviewer/evals`)", bramkę ręczną (proces, nie check CI), którą wiąże lekcja „Run the eval suite, old against new, before shipping a reviewer change" (`context/foundation/lessons.md`); §3 i linia AI-native niżej nazywają ją wyjątkiem: sprawdza narzędzie CI, nie aplikację
 - Stack versions last verified: 2026-10-15 (Vitest 5.0.3, Playwright Test 1.63.0, Stryker 10.0.0 z łatką separatora nazw testów, Supabase CLI 2.117.0 w CI)
-- AI-native tool references last verified: 2026-09-30 (brak narzędzi AI-native w planie)
+- AI-native tool references last verified: 2026-10-17 (dla aplikacji brak; ewaluacja AI-recenzenta w §5 używa promptfoo 0.124.1)
 
 Refresh (`/10x-test-plan --refresh`) when:
 

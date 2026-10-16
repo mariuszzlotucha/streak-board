@@ -1,0 +1,44 @@
+# Historical PR #111 (merge 345ade8): base is the merge's first parent, head its second parent.
+# Title and body copied once from `gh pr view 111 --json title,body`.
+- description: "pr-111: tool-loop-agent phase 1, modules and public API"
+  metadata:
+    kind: regression
+    expect: pass
+  vars:
+    base: c6524a68c11478711aeb6ec637edf15146a3d7e3
+    head: a8b03676adccb8b96679a3b55ae029e8c792b27e
+    title: "refactor(tool-loop-agent): modules, agent and public API (phase 1)"
+    body: |-
+      Phase 1 of [`context/changes/tool-loop-agent/plan.md`](../blob/tool-loop-agent/phase-1/context/changes/tool-loop-agent/plan.md): turns `packages/code-reviewer` from a one-file script into modules behind a side-effect-free barrel, built on the AI SDK 7 `ToolLoopAgent`.
+
+      ## Changes
+      - `schemas/review-result.ts`: the zod schemas and `REVIEW_JSON_SCHEMA`, moved verbatim from `review-schema.ts` (now deleted)
+      - `prompts/reviewer.ts`: `REVIEWER_INSTRUCTIONS` (text unchanged) and `buildReviewPrompt(diff)`
+      - `config.ts`: the default model, the step and token limits, and `resolveReviewerModel(env)`
+      - `agent.ts`: `createReviewer(options)` returns the plain `ToolLoopAgent`; `reviewDiff(diff, options)` returns `ReviewRun` (`output`, total `usage`, `costUsd` summed over steps or `null`, `model`, `finishReason`)
+      - `index.ts`: the public barrel. Importing it reads no stdin, makes no network call and prints nothing
+      - `review.ts` now calls `reviewDiff`, and stdout is unchanged. `review-with-session.ts` gets only the import repoint; its agents move to the shared modules in Phase 2
+
+      ## Impl-review fixes (`reviews/impl-review-phase-1.md`)
+      - **F1:** a run that produces no valid `ReviewResult` (for example cut off at `maxOutputTokens`) throws `ReviewRunError` carrying `usage`, `costUsd`, `model` and `finishReason`, so failed runs are no longer invisible in the cost log
+      - **F3:** `DEFAULT_MAX_DIFF_CHARS = 200_000` and a `maxDiffChars` option on `reviewDiff`. A longer diff throws before any model call. This adds a little scope to the plan
+      - **F4:** `resolveOptions()`: an empty model id counts as unset, and `maxSteps` must be an integer >= 1
+      - **F2** (undelimited diff, prompt injection) was skipped. **F5** (README data-egress note) and the F1/F3 carry-overs are queued for Phase 2 in `follow-ups/review-fixes.md`
+
+      ## Deviations from the plan
+      - The plan expected a stacked base on `m5l2-package-code-review`. That branch had already merged, so this branch is cut from `master`
+      - `ReviewerOptions` and `ReviewRun` are written as `interface` (the ESLint `consistent-type-definitions` rule). `usage` is `result.usage`, which is already the total in ai@7.0.139 (`totalUsage` is deprecated)
+      - At the owner's request the commit also includes unrelated workspace files: the `ai-sdk` and `migrate-ai-sdk-v6-to-v7` skill installs (`.agents/`, `.claude/skills/` symlinks, `skills-lock.json`) and `context/changes/simple-code-reviewer/change.md`
+
+      ## Verification
+      - `grep -rn review-schema packages/code-reviewer`: no matches
+      - `npx tsc --noEmit -p .`: pass
+      - `npx eslint packages/code-reviewer` and `npm run lint`: 0 errors
+      - The barrel import with stdin closed prints `true`, and the schema and prompt text are byte-identical to the pre-change snapshot
+      - The failure paths (truncated run, API error passthrough, diff cap, option validation) were checked with a stubbed `generate()`; no automated tests, per the plan
+      - Manual: `git diff HEAD~1 | npm run review` prints a valid `ReviewResult` (confirmed by the owner)
+
+      🤖 Generated with [Claude Code](https://claude.com/claude-code)
+  assert:
+    - type: javascript
+      value: output.verdict === "pass"

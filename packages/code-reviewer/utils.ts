@@ -1,4 +1,6 @@
+import type { FinishReason, LanguageModelUsage } from "ai";
 import { DEFAULT_MAX_DIFF_CHARS } from "./config";
+import type { ToolCallRecord } from "./tools";
 
 /**
  * Upper bound on bytes read from stdin. A UTF-8 character takes at most four
@@ -58,4 +60,37 @@ export async function readDiff(maxBytes = MAX_STDIN_BYTES): Promise<ReadDiffResu
   }
   console.error("error: no diff on stdin (usage: git diff | npx tsx packages/code-reviewer/review.ts)");
   return { error: "empty" };
+}
+
+/**
+ * The run fields the usage line reports, as `ReviewRun` and `ReviewRunError`
+ * carry them (declared here, not picked from `ReviewRun`: `agent.ts` reaches
+ * this module through `prompts/reviewer.ts`, so importing it back would be a
+ * cycle); a failed run may lack a finish reason.
+ */
+export interface UsageLineRun {
+  model: string;
+  usage: LanguageModelUsage;
+  /** `null` when no step reported a cost. */
+  costUsd: number | null;
+  toolCalls: readonly ToolCallRecord[];
+  finishReason?: FinishReason;
+}
+
+/**
+ * One stderr line with the model, finish reason, token counts and cost of a
+ * run, as the CLI and the session demo print it; a value the provider did not
+ * report is printed as `unknown`.
+ */
+export function formatUsageLine({ model, finishReason, usage, costUsd, toolCalls }: UsageLineRun): string {
+  return [
+    `model=${model}`,
+    `finishReason=${finishReason ?? "unknown"}`,
+    `input_tokens=${usage.inputTokens ?? "unknown"}`,
+    `output_tokens=${usage.outputTokens ?? "unknown"}`,
+    `total_tokens=${usage.totalTokens ?? "unknown"}`,
+    // `null` means no step reported a cost, which is not the same as free.
+    `cost_usd=${costUsd ?? "unknown"}`,
+    `tool_calls=${toolCalls.length}`,
+  ].join(" ");
 }

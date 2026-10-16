@@ -7,6 +7,7 @@ export {
   reviewDiff,
   ReviewRunError,
   DiffTooLargeError,
+  UnreviewableDiffError,
   verdictFromScores,
   type ReviewerOptions,
   type ReviewRun,
@@ -17,6 +18,7 @@ export {
   repoToolsInstructions,
   buildReviewPrompt,
   type PullRequestContext,
+  type ReviewPromptOptions,
   type RepoToolBudget,
 } from "./prompts/reviewer";
 export {
@@ -34,6 +36,7 @@ export {
   DEFAULT_MAX_STEPS,
   DEFAULT_MAX_OUTPUT_TOKENS,
   DEFAULT_MAX_DIFF_CHARS,
+  BINARY_EXTENSIONS,
   MAX_PR_BODY_CHARS,
   DEFAULT_REVIEW_TIMEOUT_MS,
   EVIDENCE_PHASE_MS,

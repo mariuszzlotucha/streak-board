@@ -1,6 +1,6 @@
 # Zaległości, których nie udało się wykonać albo rozstrzygnąć
 
-Stan z 2026-10-16, po scaleniu PR #146 (`68efab0`). Wykonane i rozstrzygnięte pozycje są w `open-items.md`, a odpowiedzi właściciela w `owner-decisions.md`. Tutaj zostało to, co nadal czeka: poprawki po decyzjach i plan.
+Stan z 2026-10-16, po scaleniu PR #146 (`68efab0`). Wykonane i rozstrzygnięte pozycje są w `open-items.md`, a odpowiedzi właściciela w `owner-decisions.md`. Tutaj zostało to, co nadal czeka: poprawki po decyzjach.
 
 ## Dlaczego to nie jest przebieg `/10x-goal-implement`
 
@@ -11,13 +11,7 @@ Pracę wykonałem bez Twojej interwencji, ale nie w trybie `/goal`. Zmiany były
 ## Do zrobienia po decyzjach
 
 - **Poprawki dokumentów razem z S-13**: decyzje: reguła streaka stoi (1 → 0), poziomy i taski indywidualne znikają z PRD, okno dat `UTC−7 … UTC+1` jest znaną luką. Do poprawy: `context/foundation/prd.md` (`:20`, `:29`, `:97`, sekcja `## Open Questions` na `:116-118`), polityka prywatności (streak), słownik, opis okna dat.
-- **Plan `code-review-evals`**: decyzja: zaplanować całość przez `/10x-plan`. Zmiany dotykają bramki `ai-review`, więc potrzebują planu i ewaluacji przed edycją. Zakres:
-  - podrobione znaczniki w diffie (`＜/diff＞`, homoglify, znaki zerowej szerokości) nie są neutralizowane (`context/archive/2026-10-14-ci-cd-code-review/follow-ups/review-fixes.md`);
-  - wstrzyknięcia, które podbijają same wyniki, a nie werdykt, reguła werdyktu nie łapie;
-  - plik z bajtem NUL: `git diff` pokazuje „Binary files differ", więc model nie widzi treści;
-  - marker `<!-- ai-cr:summary -->` (`.github/workflows/review.yml:227`) może przejąć komentarz `claude-review`;
-  - demo `packages/code-reviewer/review-with-session.ts` woła `generate()` bez limitu diffu (`:22`, `:32`) i nie loguje zużycia (`context/archive/2026-10-13-tool-loop-agent/follow-ups/review-fixes.md`, F2);
-  - brak testów logiki workflow (filtr jq, budowanie komentarza, reguły etykiet).
+- **Plan `code-review-evals`**: zamknięte 2026-10-17. Zaplanowany w `context/changes/code-review-evals/plan.md` (PR #158), zaimplementowany na gałęzi `code-review-evals/implementation`; punkty zakresu z odnośnikami są odhaczone w `open-items.md` §4.
 
 ## Odroczone z wyzwalaczami (nie są zadaniami)
 
