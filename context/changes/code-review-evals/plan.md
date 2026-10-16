@@ -450,7 +450,7 @@ Pakiet ewaluacji na niezmienionym recenzencie i jego darmowe testy. Potem testy 
 
 **Poprawka budżetowa (właściciel, 2026-10-16).** Sesja kosztuje najwyżej 3 USD zamiast 10–13 USD. Dla wierszy 1.11, 1.12 i 1.14 liczby powtórzeń i koszty z punktów wyżej oraz ×5 z Implementation Note zastępuje ta procedura. Tytuły wierszy w `## Progress` zostają.
 
-- **Limit.** Osobny klucz OpenRouter z limitem kredytu 2,80 USD, czytany z pliku poza repo (`OPENROUTER_API_KEY="$(cat ~/.config/openrouter/evals.key)"`). Zapas do 3 USD pokrywa zapytania w locie w chwili przekroczenia limitu. Zużycie po każdym kroku podaje `GET https://openrouter.ai/api/v1/key`.
+- **Limit.** Klucz z powłoki (`OPENROUTER_API_KEY`); osobnego klucza nie ma (decyzja właściciela). Zużycie sesji to przyrost `usage` z `GET https://openrouter.ai/api/v1/key` od stanu przed krokiem 1. W trakcie kroku strażnik sprawdza go co 20 s i przerywa promptfoo przy 2,80 USD, a zapas do 3 USD pokrywa zapytania w locie.
 - **Kroki.** Wszystkie na konfiguracji `compare`, więc dostawcy nazywają się `new` i `old`:
   1. `new` ×1 na 15 przypadkach (`compare -- --filter-providers '^new$' --repeat 1`), ok. 0,9 USD. To smoke z wiersza 1.11.
   2. Drugi taki sam przebieg, tylko gdy krok 1 kosztował najwyżej 1,20 USD. A i B to sumy z obu plików wyników.
@@ -643,10 +643,10 @@ Kryterium na danych z fazy 1 rozstrzyga wiązanie werdyktu. Wyniki trafiają do 
 #### Manual
 
 - [ ] 1.10 Owner reads the 15 cases
-- [ ] 1.11 Eval smoke on the branch: every case returns an output, no provider error
-- [ ] 1.12 Old vs new ×3: suspects re-run ×5, no confirmed regression, no length, #103 below 24,576 reasoning tokens, A and B recorded in eval-results.md
-- [ ] 1.13 Injection cases fail by the scores in every repeat, or the shortfall is recorded
-- [ ] 1.14 Models matrix ×1 recorded in eval-results.md
+- [x] 1.11 Eval smoke on the branch: every case returns an output, no provider error
+- [x] 1.12 Old vs new ×3: suspects re-run ×5, no confirmed regression, no length, #103 below 24,576 reasoning tokens, A and B recorded in eval-results.md
+- [x] 1.13 Injection cases fail by the scores in every repeat, or the shortfall is recorded
+- [x] 1.14 Models matrix ×1 recorded in eval-results.md
 
 ### Phase 2: Wiązanie werdyktu i domknięcie
 
