@@ -7,16 +7,29 @@ import { link, ul } from "./styles";
 <PolicySection title="Deleting your account">
   <ul class:list={ul}>
     <li>
-      There is no delete button yet. Write to <ContactEmail class:list={link} /> from your account's e-mail address, and
-      your account and the data kept until deletion (see "How long we keep it") are deleted within one month.
+      You can delete your account yourself with "Delete account" on the settings page. After you confirm, it is deleted
+      right away, it cannot be restored, and you are signed out.
     </li>
     <li>
-      If you own a group, the group is deleted with all its tasks and every member's participation and the days or weeks
-      they marked done in it; the other members keep their accounts.
+      Deleted with it: your account, your nickname, your group membership, your participation in tasks and the days or
+      weeks you marked done, your sessions, the ways you sign in (password or Google) and the security log entries that
+      name you.
     </li>
     <li>
-      Tasks you created in someone else's group are deleted together with the other members' participation and the days
-      or weeks they marked done on them.
+      Tasks you created stay in their group with the other members' participation and the days or weeks they marked
+      done. They pass to the group's owner and no longer record you as their creator.
+    </li>
+    <li>
+      If you own a group with other members, you choose one of them to take it over before your account is deleted. If
+      you are its only member, the group is deleted with its tasks and the days or weeks marked done in it.
+    </li>
+    <li>
+      If you cannot sign in any more, write to <ContactEmail class:list={link} /> from your account's e-mail address,
+      and your account is deleted the same way within one month.
+    </li>
+    <li>
+      Request logs and error reports that contain your user id are not deleted with the account; they expire after the
+      periods in "How long we keep it".
     </li>
     <li>Leaving a group keeps your account.</li>
   </ul>

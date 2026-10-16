@@ -1,5 +1,5 @@
 import { groupErrorMessage } from "@/lib/group-errors";
-import { getMyGroup, type MyGroup } from "@/lib/groups";
+import { getMyGroup, listGroupMembers, type GroupMember, type MyGroup } from "@/lib/groups";
 import { reportError, type ReportContext } from "@/lib/log";
 import type { createClient } from "@/lib/supabase";
 
@@ -14,22 +14,26 @@ export interface SettingsInput {
 
 export interface SettingsData {
   group: MyGroup | null;
+  /** The members of the caller's group (the owner chooses a successor among them); empty without a group. */
+  members: GroupMember[];
   loadFailed: boolean;
   /** Set only when the load failed: the fixed message the page shows. */
   error: string | null;
 }
 
 /**
- * The settings page needs only the caller's group: the owner check is `group.owner_id`, and every action posts to a
- * route that acts on the caller's own group. Without a Supabase client there is no group.
+ * The settings page needs the caller's group and its members: the owner check is `group.owner_id`, the members are the
+ * choices of the ownership transfer, and every action posts to a route that acts on the caller's own group. Without a
+ * Supabase client there is no group. A failed read of the group or of its members fails the whole load.
  */
 export async function loadSettings({ createSupabase, log }: SettingsInput): Promise<SettingsData> {
   try {
     const supabase = createSupabase();
     const group = supabase ? await getMyGroup(supabase) : null;
-    return { group, loadFailed: false, error: null };
+    const members = supabase && group ? await listGroupMembers(supabase, group.id) : [];
+    return { group, members, loadFailed: false, error: null };
   } catch (cause) {
     reportError("settings.load.failed", cause, log);
-    return { group: null, loadFailed: true, error: groupErrorMessage("unknown") };
+    return { group: null, members: [], loadFailed: true, error: groupErrorMessage("unknown") };
   }
 }

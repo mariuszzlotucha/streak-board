@@ -7,6 +7,8 @@ export interface MyGroup {
   name: string;
   join_code: string;
   owner_id: string;
+  /** Set by an ownership transfer: the new owner sees a one-time notice on the dashboard until they dismiss it. */
+  owner_notice_pending: boolean;
 }
 
 /** A member as the app sees them: named by nickname (null until the account chooses one), never by e-mail address. */
@@ -19,7 +21,10 @@ export interface GroupMember {
 
 /** The caller's own group, or null. RLS limits the select to it. Throws on a Supabase error. */
 export async function getMyGroup(supabase: Supabase): Promise<MyGroup | null> {
-  const { data, error } = await supabase.from("groups").select("id, name, join_code, owner_id").maybeSingle();
+  const { data, error } = await supabase
+    .from("groups")
+    .select("id, name, join_code, owner_id, owner_notice_pending")
+    .maybeSingle();
   if (error) throw error;
   return data;
 }

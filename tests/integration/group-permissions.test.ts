@@ -3,6 +3,7 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import {
   adminClient,
   adminMemberIds,
+  anonClient,
   createGroupAs,
   createTestUser,
   joinGroupAs,
@@ -10,13 +11,17 @@ import {
   type TestUser,
 } from "../helpers/supabase";
 
-// Expectations come from the PRD (Access Control, FR-003): the group creator
+// Expectations come from the PRD (Access Control, FR-003): the group owner
 // manages the group (renames it, deletes it, removes members); every other
 // member is an equal, and outsiders have no say. A regular member may leave.
-// The creator stays in the group and leaves it only by deleting it.
+// The owner stays in the group while they own it; since S-15 they hand it over
+// to another member (transfer_group_ownership), then stay as a regular member
+// who may leave. The new owner's one-time notice is the owner_notice_pending
+// flag, which only the owner clears.
 
 const GA_NAME = "Group A";
 const PERMISSION_DENIED = "42501";
+const INVALID_SUCCESSOR = "P0003";
 
 describe("creator-only group permissions", () => {
   let a: TestUser; // owner of GA
@@ -220,6 +225,112 @@ describe("creator-only group permissions", () => {
       expect(leaveError).toBeNull();
       expect(left).toEqual([{ user_id: m.id }]);
       expect(await adminMemberIdsOfA()).toEqual([a.id, m2.id].sort());
+    });
+  });
+
+  describe("ownership transfer", () => {
+    async function adminOwnership() {
+      const { data, error } = await adminClient()
+        .from("groups")
+        .select("owner_id, owner_notice_pending")
+        .eq("id", ga.id)
+        .single();
+      expect(error).toBeNull();
+      return data;
+    }
+
+    it("A hands GA over to M: M owns it with the notice pending, A stays a member and can then leave", async () => {
+      const { error } = await a.client.rpc("transfer_group_ownership", { p_new_owner: m.id });
+      expect(error).toBeNull();
+      expect(await adminOwnership()).toEqual({ owner_id: m.id, owner_notice_pending: true });
+      expect(await adminMemberIdsOfA()).toEqual(allMembers());
+
+      // The former owner is a regular member now: group_members_delete_self lets them leave.
+      const { data: left, error: leaveError } = await a.client
+        .from("group_members")
+        .delete()
+        .eq("group_id", ga.id)
+        .eq("user_id", a.id)
+        .select("user_id");
+      expect(leaveError).toBeNull();
+      expect(left).toEqual([{ user_id: a.id }]);
+      expect(await adminMemberIdsOfA()).toEqual([m.id, m2.id].sort());
+
+      // And the new owner cannot leave their own membership any more.
+      const { data: stayed, error: stayError } = await m.client
+        .from("group_members")
+        .delete()
+        .eq("group_id", ga.id)
+        .eq("user_id", m.id)
+        .select("user_id");
+      expect(stayError).toBeNull();
+      expect(stayed).toEqual([]);
+    });
+
+    it("a non-owner (member or outsider) cannot transfer GA (42501); GA unchanged", async () => {
+      for (const user of [m, x]) {
+        const { error } = await user.client.rpc("transfer_group_ownership", { p_new_owner: m2.id });
+        expect(error?.code).toBe(PERMISSION_DENIED);
+        await expectGaUntouched();
+      }
+      expect((await adminOwnership())?.owner_notice_pending).toBe(false);
+    });
+
+    it("A cannot hand GA over to an outsider, to themselves or to a random id (P0003); GA unchanged", async () => {
+      for (const successor of [x.id, a.id, randomUUID()]) {
+        const { error } = await a.client.rpc("transfer_group_ownership", { p_new_owner: successor });
+        expect(error?.code).toBe(INVALID_SUCCESSOR);
+        await expectGaUntouched();
+      }
+      expect((await adminOwnership())?.owner_notice_pending).toBe(false);
+    });
+
+    it("the anonymous client cannot call transfer_group_ownership; authenticated cannot call the _for variant", async () => {
+      const { error: anonError } = await anonClient().rpc("transfer_group_ownership", { p_new_owner: m.id });
+      expect(anonError?.code).toBe(PERMISSION_DENIED);
+
+      const { error: innerError } = await a.client.rpc("transfer_group_ownership_for", {
+        p_owner: a.id,
+        p_new_owner: m.id,
+      });
+      expect(innerError?.code).toBe(PERMISSION_DENIED);
+      await expectGaUntouched();
+    });
+  });
+
+  describe("the new owner's notice", () => {
+    it("only the owner clears owner_notice_pending; a member changes no row; owner_id stays out of reach", async () => {
+      const { error: transferError } = await a.client.rpc("transfer_group_ownership", { p_new_owner: m.id });
+      expect(transferError).toBeNull();
+
+      for (const user of [a, m2, x]) {
+        const { data, error } = await user.client
+          .from("groups")
+          .update({ owner_notice_pending: false })
+          .eq("id", ga.id)
+          .select("id");
+        expect(error).toBeNull();
+        expect(data).toEqual([]);
+      }
+
+      // The new owner cannot take the flag's grant as a way to rewrite owner_id.
+      const { error: ownerIdError } = await m.client.from("groups").update({ owner_id: a.id }).eq("id", ga.id);
+      expect(ownerIdError?.code).toBe(PERMISSION_DENIED);
+
+      const { data: cleared, error } = await m.client
+        .from("groups")
+        .update({ owner_notice_pending: false })
+        .eq("id", ga.id)
+        .select("id, owner_notice_pending");
+      expect(error).toBeNull();
+      expect(cleared).toEqual([{ id: ga.id, owner_notice_pending: false }]);
+
+      const { data: admin } = await adminClient()
+        .from("groups")
+        .select("owner_id, owner_notice_pending")
+        .eq("id", ga.id)
+        .single();
+      expect(admin).toEqual({ owner_id: m.id, owner_notice_pending: false });
     });
   });
 

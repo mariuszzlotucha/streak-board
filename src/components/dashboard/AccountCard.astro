@@ -1,4 +1,5 @@
 ---
+import ConfirmAction from "@/components/groups/ConfirmAction";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -7,12 +8,39 @@ interface Props {
   email: string | undefined;
   /** Null for an account that has not chosen one yet (the settings page normally sees it set). */
   nickname: string | null;
+  /**
+   * What deleting the account does to the user's group, worked out by `SettingsView`: nothing without a group, the
+   * member leaves it (their tasks pass to the owner), the sole member deletes it, an owner with members hands it over.
+   */
+  deletion:
+    | { kind: "no-group" }
+    | { kind: "member"; groupName: string; ownerName: string }
+    | { kind: "sole-owner"; groupName: string }
+    | { kind: "owner"; groupName: string; successors: { value: string; label: string }[] };
 }
 
-const { email, nickname } = Astro.props;
+const { email, nickname, deletion } = Astro.props;
+
+// The dialog says plainly what goes and what stays: the shared part, then the user's situation in their group.
+const DELETED_RIGHT_AWAY = "Your account, nickname and check-offs are deleted right away. This cannot be undone.";
+const groupConsequence =
+  deletion.kind === "member"
+    ? `You leave ${deletion.groupName}. Tasks you created stay in the group with everyone's progress and pass to its owner, ${deletion.ownerName}.`
+    : deletion.kind === "sole-owner"
+      ? `Your group ${deletion.groupName} is deleted with all its tasks and check-offs.`
+      : deletion.kind === "owner"
+        ? `Choose who takes over ${deletion.groupName}. They also take over the tasks you created; everyone keeps their progress.`
+        : null;
+const description = groupConsequence === null ? DELETED_RIGHT_AWAY : `${DELETED_RIGHT_AWAY} ${groupConsequence}`;
+// Only an owner with other members has to name a successor; members are named by nickname, the value posted is the id.
+const choice =
+  deletion.kind === "owner"
+    ? { name: "successor_id", label: "New owner", placeholder: "Choose a member", options: deletion.successors }
+    : undefined;
 ---
 
-{/* The account behind the session: its nickname (what the group sees) and its e-mail address (only the user sees it). */}
+{/* The account behind the session: its nickname (what the group sees) and its e-mail address (only the user sees it),
+    with the dangerous action last. */}
 <Card>
   <CardHeader>
     <CardTitle as="h2">Account</CardTitle>
@@ -32,5 +60,18 @@ const { email, nickname } = Astro.props;
     <a href="/account/nickname" class:list={buttonVariants({ variant: "outline", size: "sm" })}>
       {nickname === null ? "Choose nickname" : "Change nickname"}
     </a>
+    <div class="flex w-full flex-col items-start gap-3 border-t pt-6">
+      <p class="text-sm text-muted-foreground">Permanently delete your account. You are signed out right away.</p>
+      <ConfirmAction
+        client:load
+        action="/api/account/delete"
+        triggerLabel="Delete account"
+        title="Delete your account?"
+        description={description}
+        confirmLabel="Delete account"
+        variant="destructive"
+        choice={choice}
+      />
+    </div>
   </CardContent>
 </Card>

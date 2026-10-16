@@ -83,8 +83,8 @@ export async function adminMemberIds(groupId: string): Promise<string[]> {
   return data.map((row) => row.user_id).sort();
 }
 
-// Tasks are not tracked: they disappear through the group_id cascade in cleanupGroups and the created_by cascade in
-// cleanupUsers.
+// Tasks are not tracked: they disappear through the group_id cascade in cleanupGroups. tasks.created_by is ON DELETE
+// RESTRICT, so cleanupUsers deletes the tasks a user left behind in an untracked group before deleting the user.
 export async function createTaskAs(
   user: TestUser,
   groupId: string,
@@ -160,13 +160,19 @@ export async function cleanupGroups(): Promise<void> {
   if (error) throw new Error(`cleanupGroups failed: ${error.message}`);
 }
 
+// Groups go first (groups.owner_id is ON DELETE RESTRICT), then the tasks the users created in groups that are not
+// tracked (a creator who left the group; tasks.created_by is ON DELETE RESTRICT too), then the users. A user a test
+// already deleted (delete_own_account) answers user_not_found, which is not a failure here.
 export async function cleanupUsers(): Promise<void> {
   await cleanupGroups();
   const admin = adminClient();
   const ids = createdUserIds.splice(0);
+  if (ids.length === 0) return;
+  const { error: tasksError } = await admin.from("tasks").delete().in("created_by", ids);
+  if (tasksError) throw new Error(`cleanupUsers: deleting tasks failed: ${tasksError.message}`);
   for (const id of ids) {
     const { error } = await admin.auth.admin.deleteUser(id);
-    if (error) throw new Error(`cleanupUsers: deleteUser failed: ${error.message}`);
+    if (error && error.code !== "user_not_found") throw new Error(`cleanupUsers: deleteUser failed: ${error.message}`);
   }
 }
 

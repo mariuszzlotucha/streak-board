@@ -1,11 +1,18 @@
 export type GroupErrorCode =
-  "not_configured" | "invalid_name" | "invalid_code" | "already_in_group" | "forbidden" | "unknown";
+  | "not_configured"
+  | "invalid_name"
+  | "invalid_code"
+  | "already_in_group"
+  | "invalid_successor"
+  | "forbidden"
+  | "unknown";
 
 const GROUP_ERROR_MESSAGES: Record<GroupErrorCode, string> = {
   not_configured: "Groups are not available right now.",
   invalid_name: "Enter a group name between 1 and 80 characters.",
   invalid_code: "This invite link or code is not valid.",
   already_in_group: "You are already in a group.",
+  invalid_successor: "Choose a member of your group to take over.",
   forbidden: "You are not allowed to do that.",
   unknown: "Something went wrong. Please try again.",
 };
@@ -19,6 +26,9 @@ export function toGroupErrorCode(error: { code?: string }): GroupErrorCode {
       return "already_in_group";
     case "P0002":
       return "invalid_code";
+    // transfer_group_ownership: the chosen successor is missing, the caller, or no longer a member of the group.
+    case "P0003":
+      return "invalid_successor";
     case "42501":
       return "forbidden";
     default:

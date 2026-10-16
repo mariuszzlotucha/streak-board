@@ -16,3 +16,12 @@ export function landingRedirect(signedIn: boolean, url: URL): string | null {
   if (errorCode !== null && FLOW_STATE_ERRORS.includes(errorCode)) return "/auth/signin?error=oauth_failed";
   return null;
 }
+
+/**
+ * Whether the landing page confirms a deleted account: `/api/account/delete` ends there with `?account=deleted` after
+ * signing the visitor out. Only this exact value counts; `landingRedirect` still runs first, so a signed-in visitor never
+ * sees the line.
+ */
+export function accountDeletedNotice(url: URL): boolean {
+  return url.searchParams.get("account") === "deleted";
+}

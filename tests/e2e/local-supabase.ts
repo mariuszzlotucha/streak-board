@@ -184,6 +184,12 @@ export async function deleteAccountsByEmail(emails: string[]): Promise<void> {
     .delete()
     .in("owner_id", [...ids.values()]);
   if (groupsError) throw new Error(`deleteAccountsByEmail: deleting groups failed: ${groupsError.message}`);
+  // tasks.created_by is ON DELETE RESTRICT: tasks the accounts created in groups they did not own go before them.
+  const { error: tasksError } = await admin
+    .from("tasks")
+    .delete()
+    .in("created_by", [...ids.values()]);
+  if (tasksError) throw new Error(`deleteAccountsByEmail: deleting tasks failed: ${tasksError.message}`);
   for (const [email, id] of ids) {
     const { error } = await admin.auth.admin.deleteUser(id);
     if (error) throw new Error(`deleteAccountsByEmail: deleting ${email} failed: ${error.message}`);
@@ -192,22 +198,23 @@ export async function deleteAccountsByEmail(emails: string[]): Promise<void> {
 
 /**
  * Deletes the personas' groups (the owner foreign key is ON DELETE RESTRICT, so groups go first; members and tasks
- * cascade) and then the accounts. Every call is checked: a cleanup that fails must turn the run red, not leave
- * rows behind under a green test.
+ * cascade), then the tasks they created in other groups (the creator foreign key is ON DELETE RESTRICT too) and then
+ * the accounts. A persona the spec already deleted (account deletion in the app) answers user_not_found, which is not
+ * a failure. Every other error is: a cleanup that fails must turn the run red, not leave rows behind under a green
+ * test.
  */
 export async function deletePersonas(personas: Persona[]): Promise<void> {
   if (personas.length === 0) return;
   const admin = adminClient();
-  const { error: groupsError } = await admin
-    .from("groups")
-    .delete()
-    .in(
-      "owner_id",
-      personas.map((persona) => persona.id),
-    );
+  const ids = personas.map((persona) => persona.id);
+  const { error: groupsError } = await admin.from("groups").delete().in("owner_id", ids);
   if (groupsError) throw new Error(`deletePersonas: deleting groups failed: ${groupsError.message}`);
+  const { error: tasksError } = await admin.from("tasks").delete().in("created_by", ids);
+  if (tasksError) throw new Error(`deletePersonas: deleting tasks failed: ${tasksError.message}`);
   for (const persona of personas) {
     const { error } = await admin.auth.admin.deleteUser(persona.id);
-    if (error) throw new Error(`deletePersonas: deleting ${persona.email} failed: ${error.message}`);
+    if (error && error.code !== "user_not_found") {
+      throw new Error(`deletePersonas: deleting ${persona.email} failed: ${error.message}`);
+    }
   }
 }

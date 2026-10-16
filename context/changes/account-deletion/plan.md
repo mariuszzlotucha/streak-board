@@ -136,6 +136,7 @@ Jedna migracja z funkcjami przekazania i usunięcia, flagą banera i `restrict` 
 #### Manual Verification:
 
 - Właściciel potwierdził na produkcji `select has_table_privilege('postgres','auth.audit_log_entries','DELETE');` = `true` (przed merge'em PR)
+- Właściciel potwierdził na produkcji `select has_table_privilege('postgres','auth.flow_state','DELETE');` = `true` (przed merge'em PR; dodane w przeglądzie implementacji, F6)
 
 ---
 
@@ -414,25 +415,26 @@ Usunięcie to jedna transakcja na kilku wierszach jednej grupy; `delete` z `auth
 
 #### Automated
 
-- [ ] 1.1 Migracja przechodzi strażnika: `npm run guard:migrations`
-- [ ] 1.2 Migracja aplikuje się na czystej bazie: `npx supabase db reset`
-- [ ] 1.3 Typy są świeże: `npm run types:check`
-- [ ] 1.4 Testy (unit i integracyjne) przechodzą, w tym nowy `tests/integration/account-deletion.test.ts`: `npm test`
-- [ ] 1.5 Scenariusze RLS przechodzą: `npm run test:rls`
-- [ ] 1.6 Lint i typy: `npm run lint && npx astro check`
+- [x] 1.1 Migracja przechodzi strażnika: `npm run guard:migrations` — 2b44789
+- [x] 1.2 Migracja aplikuje się na czystej bazie: `npx supabase db reset` — 2b44789
+- [x] 1.3 Typy są świeże: `npm run types:check` — 2b44789
+- [x] 1.4 Testy (unit i integracyjne) przechodzą, w tym nowy `tests/integration/account-deletion.test.ts`: `npm test` — 2b44789
+- [x] 1.5 Scenariusze RLS przechodzą: `npm run test:rls` — 2b44789
+- [x] 1.6 Lint i typy: `npm run lint && npx astro check` — 2b44789
 
 #### Manual
 
 - [x] 1.7 Właściciel potwierdził na produkcji `select has_table_privilege('postgres','auth.audit_log_entries','DELETE');` = `true` (przed merge'em PR) — `true`, 2026-10-16
+- [ ] 1.8 Właściciel potwierdził na produkcji `select has_table_privilege('postgres','auth.flow_state','DELETE');` = `true` (przed merge'em PR; dodane w przeglądzie implementacji, F6)
 
 ### Phase 2: Przekazanie własności i baner nowego właściciela
 
 #### Automated
 
-- [ ] 2.1 Testy przechodzą (w tym `group-errors` i `settings-data`): `npm test`
-- [ ] 2.2 Lint, typy, build: `npm run lint && npx astro check && npm run build`
-- [ ] 2.3 Smoke przechodzi na lokalnym preview: `npm run smoke`
-- [ ] 2.4 E2E przechodzi: `npx playwright test tests/e2e/group-transfer.spec.ts tests/e2e/group-settings-owner.spec.ts tests/e2e/group-settings-member.spec.ts`
+- [x] 2.1 Testy przechodzą (w tym `group-errors` i `settings-data`): `npm test` — 3c1dc2f
+- [x] 2.2 Lint, typy, build: `npm run lint && npx astro check && npm run build` — 3c1dc2f
+- [x] 2.3 Smoke przechodzi na lokalnym preview: `npm run smoke` — 3c1dc2f
+- [x] 2.4 E2E przechodzi: `npx playwright test tests/e2e/group-transfer.spec.ts tests/e2e/group-settings-owner.spec.ts tests/e2e/group-settings-member.spec.ts` — 3c1dc2f
 
 #### Manual
 
@@ -443,10 +445,10 @@ Usunięcie to jedna transakcja na kilku wierszach jednej grupy; `delete` z `auth
 
 #### Automated
 
-- [ ] 3.1 Testy przechodzą (w tym `landing`): `npm test`
-- [ ] 3.2 Lint, typy, build: `npm run lint && npx astro check && npm run build`
-- [ ] 3.3 Smoke przechodzi na lokalnym preview: `npm run smoke`
-- [ ] 3.4 E2E przechodzi (cały zestaw): `npx playwright test`
+- [x] 3.1 Testy przechodzą (w tym `landing`): `npm test` — 3bc2864
+- [x] 3.2 Lint, typy, build: `npm run lint && npx astro check && npm run build` — 3bc2864
+- [x] 3.3 Smoke przechodzi na lokalnym preview: `npm run smoke` — 3bc2864
+- [x] 3.4 E2E przechodzi (cały zestaw): `npx playwright test` — 3bc2864
 
 #### Manual
 
@@ -457,9 +459,9 @@ Usunięcie to jedna transakcja na kilku wierszach jednej grupy; `delete` z `auth
 
 #### Automated
 
-- [ ] 4.1 Lint i formatowanie: `npm run lint && npx prettier --check context/foundation/prd.md context/domain CLAUDE.md README.md`
-- [ ] 4.2 Build (polityka renderuje się): `npm run build`
-- [ ] 4.3 Smoke przechodzi (strona `/privacy` i jej link `mailto:`): `npm run smoke`
+- [x] 4.1 Lint i formatowanie: `npm run lint && npx prettier --check context/foundation/prd.md context/domain CLAUDE.md README.md` — ff34e81
+- [x] 4.2 Build (polityka renderuje się): `npm run build` — ff34e81
+- [x] 4.3 Smoke przechodzi (strona `/privacy` i jej link `mailto:`): `npm run smoke` — ff34e81
 
 #### Manual
 

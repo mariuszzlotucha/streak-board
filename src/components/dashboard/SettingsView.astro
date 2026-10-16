@@ -3,12 +3,16 @@ import AccountCard from "@/components/dashboard/AccountCard.astro";
 import GroupSettingsCard from "@/components/dashboard/GroupSettingsCard.astro";
 import PageHeading from "@/components/dashboard/PageHeading.astro";
 import { buttonVariants } from "@/components/ui/button";
-import type { MyGroup } from "@/lib/groups";
+import type { GroupMember, MyGroup } from "@/lib/groups";
+import { UNKNOWN_MEMBER } from "@/lib/leaderboard-rules";
 
 // The settings page's body, rendered inside `AppLayout` by `/settings` from `loadSettings` and by the dev kitchen sink
-// from fixtures. Rename, delete and leave still redirect to `/dashboard`, where their `?error=` alert shows.
+// from fixtures. Rename, transfer, delete and leave still redirect to `/dashboard`, where their `?error=` alert shows, and
+// so does a refused account deletion (a deleted account ends signed out on the landing page).
 interface Props {
   group: MyGroup | null;
+  /** The members of the group (empty without one): the owner hands the group over to one of the others. */
+  members: GroupMember[];
   viewerId: string | undefined;
   loadFailed: boolean;
   /** The fixed message of a failed load. */
@@ -18,7 +22,27 @@ interface Props {
   nickname: string | null;
 }
 
-const { group, viewerId, loadFailed, error, email, nickname } = Astro.props;
+const { group, members, viewerId, loadFailed, error, email, nickname } = Astro.props;
+const otherMembers = members.filter((member) => member.user_id !== viewerId);
+// Members are named by nickname, never by e-mail address.
+const nameOf = (member: GroupMember | undefined) => member?.nickname ?? UNKNOWN_MEMBER;
+// What deleting the account does to the viewer's group, for the Account card's dialog.
+const deletion =
+  group === null
+    ? ({ kind: "no-group" } as const)
+    : group.owner_id !== viewerId
+      ? ({
+          kind: "member",
+          groupName: group.name,
+          ownerName: nameOf(members.find((member) => member.user_id === group.owner_id)),
+        } as const)
+      : otherMembers.length === 0
+        ? ({ kind: "sole-owner", groupName: group.name } as const)
+        : ({
+            kind: "owner",
+            groupName: group.name,
+            successors: otherMembers.map((member) => ({ value: member.user_id, label: nameOf(member) })),
+          } as const);
 ---
 
 {loadFailed ? (
@@ -34,7 +58,7 @@ const { group, viewerId, loadFailed, error, email, nickname } = Astro.props;
     <PageHeading title="Settings" />
     <div class="max-w-xl space-y-6">
       {group ? (
-        <GroupSettingsCard groupName={group.name} isOwner={group.owner_id === viewerId} />
+        <GroupSettingsCard groupName={group.name} isOwner={group.owner_id === viewerId} otherMembers={otherMembers} />
       ) : (
         <p class="text-muted-foreground">
           You are not in a group yet.{" "}
@@ -44,7 +68,7 @@ const { group, viewerId, loadFailed, error, email, nickname } = Astro.props;
           on your dashboard.
         </p>
       )}
-      <AccountCard email={email} nickname={nickname} />
+      <AccountCard email={email} nickname={nickname} deletion={deletion} />
     </div>
   </div>
 )}

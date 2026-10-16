@@ -2,14 +2,23 @@
 import ConfirmAction from "@/components/groups/ConfirmAction";
 import RenameGroupForm from "@/components/groups/RenameGroupForm";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import type { GroupMember } from "@/lib/groups";
+import { UNKNOWN_MEMBER } from "@/lib/leaderboard-rules";
 
 interface Props {
   groupName: string;
-  /** The owner renames and deletes the group; a member can only leave it. */
+  /** The owner renames, hands over and deletes the group; a member can only leave it. */
   isOwner: boolean;
+  /** The members other than the viewer: the owner can hand the group over to one of them. */
+  otherMembers: GroupMember[];
 }
 
-const { groupName, isOwner } = Astro.props;
+const { groupName, isOwner, otherMembers } = Astro.props;
+// Members are named by nickname, never by e-mail address; the value posted is the member's id.
+const successors = otherMembers.map((member) => ({
+  value: member.user_id,
+  label: member.nickname ?? UNKNOWN_MEMBER,
+}));
 ---
 
 {/* Group management on the settings page, with the dangerous action last. */}
@@ -22,6 +31,29 @@ const { groupName, isOwner } = Astro.props;
     {isOwner ? (
       <>
         <RenameGroupForm client:load name={groupName} />
+        {/* Without another member there is nobody to hand the group over to, so the action is not offered. */}
+        {successors.length > 0 && (
+          <div class="flex flex-col items-start gap-3 border-t pt-6">
+            <p class="text-sm text-muted-foreground">
+              Hand this group over to another member. You stay in it as a member.
+            </p>
+            <ConfirmAction
+              client:load
+              action="/api/groups/transfer"
+              triggerLabel="Transfer ownership"
+              title="Transfer ownership?"
+              description={`The member you choose becomes the owner of ${groupName}. You stay in the group as a member and can leave it afterwards.`}
+              confirmLabel="Transfer ownership"
+              variant="outline"
+              choice={{
+                name: "new_owner_id",
+                label: "New owner",
+                placeholder: "Choose a member",
+                options: successors,
+              }}
+            />
+          </div>
+        )}
         <div class="flex flex-col items-start gap-3 border-t pt-6">
           <p class="text-sm text-muted-foreground">
             Permanently delete this group. Every member loses it and the invite link stops working.

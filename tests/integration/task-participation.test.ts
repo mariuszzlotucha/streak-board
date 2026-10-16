@@ -264,7 +264,7 @@ describe("task participation", () => {
       expect(await adminParticipants(taskId)).toEqual([]);
     });
 
-    it("deleting an account that created a task and still participates removes its rows without error", async () => {
+    it("deleting a task creator's account through the admin API fails; the task and every participation stay", async () => {
       const d = await createTestUser();
       await joinGroupAs(d, ga.joinCode);
       const dTaskId = await createTaskAs(d, ga.id, "Feed the cat", "daily");
@@ -273,11 +273,27 @@ describe("task participation", () => {
       expect(await adminParticipants(dTaskId)).toEqual(sorted(d.id, m.id));
       expect(await adminParticipants(taskId)).toEqual(sorted(c.id, d.id));
 
+      // tasks.created_by is ON DELETE RESTRICT: the account goes only through delete_account, which first passes the
+      // tasks to the group's owner. GoTrue answers 500 without the SQLSTATE (23503 is asserted in the RLS scenarios).
+      const { error } = await adminClient().auth.admin.deleteUser(d.id);
+      expect(error?.status).toBe(500);
+      expect(error?.message).toBe("Database error deleting user");
+
+      expect(await adminTask(dTaskId)).toMatchObject({ id: dTaskId, created_by: d.id });
+      expect(await adminParticipants(dTaskId)).toEqual(sorted(d.id, m.id));
+      expect(await adminParticipants(taskId)).toEqual(sorted(c.id, d.id));
+    });
+
+    it("deleting a participant who created no task removes only their participation", async () => {
+      const d = await createTestUser();
+      await joinGroupAs(d, ga.joinCode);
+      await joinTaskAs(d, taskId);
+      expect(await adminParticipants(taskId)).toEqual(sorted(c.id, d.id));
+
       await deleteTestUser(d);
 
-      expect(await adminTask(dTaskId)).toBeNull();
-      expect(await adminParticipants(dTaskId)).toEqual([]);
       expect(await adminParticipants(taskId)).toEqual([c.id]);
+      expect(await adminTask(taskId)).not.toBeNull();
     });
 
     it("deleting the group removes the participants of its tasks without error", async () => {

@@ -30,7 +30,13 @@ type Supabase = NonNullable<ReturnType<typeof createClient>>;
 const supabase = {} as Supabase;
 const cookies = {} as AstroCookies;
 const user = { id: "u-owner", email: "owner@example.com" } as User;
-const group: MyGroup = { id: "g-1", name: "Runners", join_code: "abc", owner_id: "u-owner" };
+const group: MyGroup = {
+  id: "g-1",
+  name: "Runners",
+  join_code: "abc",
+  owner_id: "u-owner",
+  owner_notice_pending: false,
+};
 const members: GroupMember[] = [
   { user_id: "u-owner", nickname: "Owner", joined_at: "2026-09-28T08:00:00Z", is_owner: true },
   { user_id: "u-2", nickname: "Two", joined_at: "2026-09-29T08:00:00Z", is_owner: false },

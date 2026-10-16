@@ -62,15 +62,23 @@ Osoba budująca lub utrzymująca osobisty nawyk/cel (np. trening, czytanie), kt�
   > Socratic: Counter-argument considered: "obowiązkowy nick to dodatkowy ekran po rejestracji,
   > zanim użytkownik zobaczy wartość". Resolution: kept; adres e-mail to dana logowania, nie może
   > być nazwą widoczną dla grupy (S-14).
+- FR-011: Użytkownik może usunąć swoje konto w ustawieniach po potwierdzeniu w oknie z ostrzeżeniem; usunięcie jest natychmiastowe i nieodwracalne, a użytkownik zostaje wylogowany. Znikają konto, nick, członkostwo, własne uczestnictwa i odznaczenia, sesje, tożsamości logowania i wpisy dziennika bezpieczeństwa. Taski utworzone przez usuwającego zostają w grupie z postępem innych i przechodzą na właściciela grupy. Właściciel grupy z innymi członkami wybiera w oknie następcę, który przejmuje grupę; grupa, której usuwający jest jedynym członkiem, znika razem z kontem. Priority: must-have
+  > Socratic: Counter-argument considered: "usunięcie konta jednym przyciskiem zabiera też
+  > dane, z których korzystają inni członkowie grupy". Resolution: kept; usunięcie zabiera dane
+  > osoby, a grupa i taski, z których korzystają inni, zostają (S-15).
 
 ### Grupy
 
 - FR-002: Użytkownik może dołączyć do grupy przez link/kod. Priority: must-have
   > Socratic: No counter-argument considered; stands as written.
-- FR-003: Twórca grupy może zarządzać grupą (usunąć grupę, usunąć z niej członka). Priority: must-have
+- FR-003: Właściciel grupy (na początku jej twórca) może zarządzać grupą (usunąć grupę, usunąć z niej członka). Priority: must-have
   > Socratic: Counter-argument considered: "jedna osoba z pełną kontrolą to single point of
   > failure, jeśli zniknie/straci dostęp". Resolution: kept; prosty model jednego admina
   > wystarczy na MVP dla małej grupy znajomych.
+- FR-012: Właściciel grupy może przekazać ją innemu członkowi; dawny właściciel zostaje w grupie jako zwykły członek (może ją potem opuścić), a nowy właściciel raz widzi na dashboardzie komunikat o przejęciu grupy. Priority: must-have
+  > Socratic: Counter-argument considered: "przekazanie własności to dodatkowa akcja, której
+  > mała grupa znajomych prawie nie użyje". Resolution: kept; bez niej grupa nie przetrwa
+  > usunięcia konta właściciela, a właściciel nie może opuścić grupy, nie usuwając jej (S-15).
 
 ### Taski
 
@@ -118,7 +126,7 @@ Logowanie (email+hasło / OAuth / passwordless) — potrzebne, bo produkt jest z
 
 Model dwupoziomowy: **grupa** to stała przestrzeń (wspólna tablica), do której użytkownik dołącza raz — przez link/kod. **Task** to element wewnątrz grupy, tworzony przez jednego z jej członków; inni członkowie grupy widzą wszystkie taski i opcjonalnie zapisują się do wybranych.
 
-Uprawnienia: twórca grupy zarządza grupą (może usunąć grupę, usunąć z niej członków). Twórca tasku zarządza swoim taskiem (edytuje, usuwa). Pozostali członkowie są sobie równi — mogą dołączać do grupy (przez link/kod), tworzyć własne taski, zapisywać się/wypisywać z tasków innych, odznaczać własną realizację.
+Uprawnienia: właściciel grupy (na początku jej twórca) zarządza grupą (może usunąć grupę, usunąć z niej członków) i może przekazać ją innemu członkowi; przy usunięciu swojego konta musi to zrobić, chyba że jest jedynym członkiem (wtedy grupa znika). Twórca tasku zarządza swoim taskiem (edytuje, usuwa); po usunięciu konta twórcy taskiem zarządza właściciel grupy. Pozostali członkowie są sobie równi — mogą dołączać do grupy (przez link/kod), tworzyć własne taski, zapisywać się/wypisywać z tasków innych, odznaczać własną realizację.
 
 Członkowie grupy widzą nawzajem nicki, nie adresy e-mail; własny adres widzi tylko właściciel konta w ustawieniach.
 

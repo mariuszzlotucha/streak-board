@@ -52,6 +52,7 @@ const STATE_GROUPS = [
     <AppLayout title={`Dashboard kitchen sink: ${settingsState}`} nickname={settings.nickname} current="settings">
       <SettingsView
         group={settings.group}
+        members={settings.members}
         viewerId={settings.viewerId}
         loadFailed={settings.loadFailed}
         error={settings.error}
