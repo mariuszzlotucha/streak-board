@@ -448,6 +448,19 @@ Pakiet ewaluacji na niezmienionym recenzencie i jego darmowe testy. Potem testy 
 - Injection cases on the new reviewer fail by the scores in every repeat (`score-raising`, `planted-file`, `planted-plan`), or the shortfall is recorded with its date in `eval-results.md`
 - Models matrix (`models`, ×1): the table recorded in `eval-results.md` (about 3–4 USD)
 
+**Poprawka budżetowa (właściciel, 2026-10-16).** Sesja kosztuje najwyżej 3 USD zamiast 10–13 USD. Dla wierszy 1.11, 1.12 i 1.14 liczby powtórzeń i koszty z punktów wyżej oraz ×5 z Implementation Note zastępuje ta procedura. Tytuły wierszy w `## Progress` zostają.
+
+- **Limit.** Osobny klucz OpenRouter z limitem kredytu 2,80 USD, czytany z pliku poza repo (`OPENROUTER_API_KEY="$(cat ~/.config/openrouter/evals.key)"`). Zapas do 3 USD pokrywa zapytania w locie w chwili przekroczenia limitu. Zużycie po każdym kroku podaje `GET https://openrouter.ai/api/v1/key`.
+- **Kroki.** Wszystkie na konfiguracji `compare`, więc dostawcy nazywają się `new` i `old`:
+  1. `new` ×1 na 15 przypadkach (`compare -- --filter-providers '^new$' --repeat 1`), ok. 0,9 USD. To smoke z wiersza 1.11.
+  2. Drugi taki sam przebieg, tylko gdy krok 1 kosztował najwyżej 1,20 USD. A i B to sumy z obu plików wyników.
+  3. `old` tylko na przypadkach, których `new` nie zaliczył w każdym przebiegu, z tą samą liczbą powtórzeń (`compare -- --filter-providers '^old$' --repeat <n> --filter-pattern '<przypadki>'`), ok. 0,1–0,4 USD. Przy tej samej liczbie powtórzeń przypadek zaliczony przez `new` w każdym przebiegu nie może być regresją, więc `old` go nie powtarza. Podejrzany: `old` zaliczył więcej przebiegów niż `new`.
+  4. Macierz modeli tylko na przypadku lekcji M5L3 (`models -- --filter-pattern '^react19-migration:'`, 4 recenzje), ok. 0,2 USD.
+  5. Przypadek podejrzany: ponowny przebieg ×3 na obu dostawcach zamiast ×5, gdy mieści się w limicie. Inaczej `eval-results.md` zapisuje go jako nierozstrzygnięty, a decyduje właściciel.
+- **Stop.** Krok rusza tylko wtedy, gdy zużycie plus jego szacunek mieści się w 2,60 USD. Potwierdzona regresja, `length` albo rozumowanie #103 od 24 576 tokenów zatrzymuje sesję: poprawka i ponowne przebiegi wychodzą poza limit i wymagają zgody właściciela.
+- **Szacunek: ok. 2,0–2,5 USD.** Koszt recenzji z 21 ostatnich linii zużycia `ai-review`: 0,02–0,07 USD przy małym diffie z narzędziami, 0,04–0,15 USD przy 8–27 tys. znaków z narzędziami, 0,04–0,13 USD bez narzędzi. `nul-hidden` kończy się u `new` przed modelem (`unreviewable`), więc nic nie kosztuje.
+- **`eval-results.md`** zapisuje limit, wykonane kroki z kosztem każdego i to, czego sesja nie mierzy: `old` na przypadkach zaliczonych przez `new` (zyski nowego recenzenta) i macierzy poza `react19-migration`.
+
 **Implementation Note**: The `/10x-goal-implement` run ends after this phase's automated rows (`/goal` condition: "do not start Phase 2"). The eval session spends OpenRouter credit: the owner runs it, or the agent runs it on the owner's explicit go with the spend quoted. Phase 2 starts only after the old-vs-new row is ticked and `eval-results.md` holds A and B.
 
 A suspect case is re-run alone, ×5 on both providers (`npm run --prefix packages/code-reviewer/evals compare -- --repeat 5 --filter-pattern '<description>'`), and counts as a regression only when `new` still passes fewer runs. A confirmed regression, a `length` finish or #103 reasoning at 24,576 tokens or more means: bisect the prompt by block on #103 (`lessons.md:165`), fix it, and re-run only the affected cases. Spend beyond the estimate needs the owner's go first. Fixes made during the session are committed on the branch as their own commits before the Phase 2 run.
@@ -470,7 +483,7 @@ Kryterium na danych z fazy 1 rozstrzyga wiązanie werdyktu. Wyniki trafiają do 
 
 **Contract**:
 
-- **Wejście:** A i B dostawcy `new` z `eval-results.md`, z przebiegu stary vs nowy.
+- **Wejście:** A i B dostawcy `new` z `eval-results.md`, z przebiegu stary vs nowy. Po poprawce budżetowej fazy 1 to sumy z przebiegów `new` z kroków 1–2.
 - **Skutek bez nowego przebiegu:** prompt się nie zmienia, a werdykt liczy się z zapisanych ocen. Zgodność werdyktu z `expect` przy wiązaniu samą regułą (raport, pkt 5 fazy 1) pokazuje więc skutek zmiany, a `eval-results.md` ją cytuje.
 - **B = 0 i A ≥ 1:**
   - `reviewDiff` wiąże sam `verdictFromScores(criteria)`, a `modelVerdict` zostaje w `ReviewRun`;
@@ -506,6 +519,7 @@ Kryterium na danych z fazy 1 rozstrzyga wiązanie werdyktu. Wyniki trafiają do 
     - potwierdzona regresja albo `length`: bisekcja promptu po blokach na #103 i ponowny przebieg tylko dotkniętych przypadków;
     - zmianę samego wiązania, bez zmiany promptu, modelu i narzędzi, ocenia się na zapisanych `modelVerdict` i `ruleVerdict` z ostatniego `compare`, bez nowego przebiegu;
     - koszt podany, wyniki zapisane w folderze zmiany.
+  - Po poprawce budżetowej fazy 1 Rule opisuje jej procedurę jako domyślną: limit kredytu klucza ustawiony przed sesją, najpierw `new` na wszystkich przypadkach, `old` tylko tam, gdzie `new` nie zaliczył każdego przebiegu, podejrzane ×3 na obu dostawcach. Pełne `compare` ×3 z ponownym przebiegiem ×5 zostaje opcją, gdy budżet na nie pozwala.
   - Applies to: plan, implement, impl-review.
 - Wpis „Run the old and the new reviewer side by side…” (`lessons.md:168-173`) dostaje linię `**Superseded by**`.
 
@@ -616,15 +630,15 @@ Kryterium na danych z fazy 1 rozstrzyga wiązanie werdyktu. Wyniki trafiają do 
 
 #### Automated
 
-- [x] 1.1 Type check passes: `npx tsc --noEmit -p .`
-- [x] 1.2 Lint passes: `npm run lint`
-- [x] 1.3 Unit tests pass: `npm run test:unit`
-- [x] 1.4 Prettier passes on the changed files
-- [x] 1.5 Evals install on Node ≥ 22.22 and the three configs validate
-- [x] 1.6 actionlint passes on both workflows
-- [x] 1.7 CLI exits 2, 3 and 4 with empty stdout and no API key
-- [x] 1.8 Demo exits 3 on a 300,000-character diff without a model call
-- [x] 1.9 The branch's code diff under the gate's pathspecs stays below 200,000 characters
+- [x] 1.1 Type check passes: `npx tsc --noEmit -p .` — d09ab4e
+- [x] 1.2 Lint passes: `npm run lint` — d09ab4e
+- [x] 1.3 Unit tests pass: `npm run test:unit` — d09ab4e
+- [x] 1.4 Prettier passes on the changed files — d09ab4e
+- [x] 1.5 Evals install on Node ≥ 22.22 and the three configs validate — d09ab4e
+- [x] 1.6 actionlint passes on both workflows — d09ab4e
+- [x] 1.7 CLI exits 2, 3 and 4 with empty stdout and no API key — d09ab4e
+- [x] 1.8 Demo exits 3 on a 300,000-character diff without a model call — d09ab4e
+- [x] 1.9 The branch's code diff under the gate's pathspecs stays below 200,000 characters — d09ab4e
 
 #### Manual
 
