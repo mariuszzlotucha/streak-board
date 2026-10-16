@@ -2,7 +2,7 @@
 project: streak-board
 based_on: context/foundation/infrastructure.md
 platform: Cloudflare Workers
-status: phases_0-16_done
+status: phases_0-16_done_17_partial
 last_updated: 2026-10-16
 ---
 
@@ -302,6 +302,28 @@ Turns "rollback works in theory" into a proven, once-rehearsed step before you n
 - [x] Ruleset additions (plan row 6.7, owner, GitHub → Settings → Rules → "master protection", id `24254172`): done by the owner on 2026-10-16 at 01:58 CEST (23:58 UTC on 2026-10-15) as a full-rules PUT (README, Break-glass) with the agent's prepared payload: `ci`, `smoke`, `e2e` and `compat` added to the required status checks next to `integration` and `ai-review`, each with `integration_id` 15368 (GitHub Actions); `deletion` and `non_fast_forward` unchanged, `strict` false, no bypass actors. The read-back (`gh api repos/mariuszzlotucha/streak-board/rulesets/24254172`) lists all six. The GET output from before the PUT was saved first. The agent did not edit the ruleset itself (plan, "What We're NOT Doing"): its attempt was refused by the permission classifier and the owner ran the command.
 - [x] Production check after the Phase 6 release (plan row 6.10, owner, `https://streakboard.app`): done by the owner on 2026-10-16 after release run 38825633332 (Cloudflare version `afcb86c6…`): sign-in, the dashboard with the group and its tasks, a task ticked and the tick undone, all ok. The Worker code is unchanged by the slice; the check proves the release path with the tag step.
 - Rollback: code only, there is no schema change. `npx wrangler rollback` returns to the previous version; afterwards the owner moves the tag by hand to the rolled-back commit (`git tag -f production <sha> && git push --force origin refs/tags/production`, README, Rollback), otherwise `compat` tests code that is no longer live. Reverting the merged PR on `master` switches the gate, the tag step and the `e2e` job off again; the tag itself can stay as documentation or be deleted (`git push origin --delete refs/tags/production`).
+
+## Phase 17 — S-12 manual checks, closeout (branch `docs/open-items-closeout`, 2026-10-16)
+
+**Status: Partly done (2026-10-16)** — the manual rows still unticked in the archived S-12 plan (`context/archive/2026-10-06-refactor-opportunities/plan.md`, read-only, so the results are recorded here, as for S-10 in Phase 16) were run locally at the owner's request. Basis: `origin/master` `ea4564a`. Baseline before any change: `npm test`, 40 files, 743 tests, all passed. Nothing was pushed to a scratch branch, merged, released or run against the hosted project. Four rows need the owner (below).
+
+- [x] **1.6** (PostgREST down, local stack): `docker stop supabase_rest_10x-astro-starter`, then `GET /dashboard` as a signed-in test user: **503** with the page "The dashboard didn't load" and "Try again", answered after 8.6 s (the plan expected about 60 s; the local gateway failed at once with `name resolution failed`). The dev log gained exactly one `dashboard.load.failed` line with `route`, `userId`, `ray` (null locally) and the cause; the new lines held no e-mail, password or cookie. The container was started again, and `/dashboard` answered 200 afterwards. The test user was deleted.
+- [x] **2.6** (migration guard, on local scratch branches that were never pushed and were then deleted): a statement edit of a merged migration → exit 1; a comment-only edit → exit 0; a new migration with `drop policy` and no marker → exit 1, the same with `-- compat: <reason>` → exit 0; a new migration with an older timestamp → exit 1; an allowlist entry from `--entry` → exit 0 with one warning; editing the allowlisted file again → exit 1. **Deviation:** a duplicate allowlist line in the same branch → exit 0 with two warnings (the plan expected exit 1). The variant "a line already at base" could not be run, because `origin/master` has no `supabase/checks/migration-edit-allowlist.txt` yet. Owner decision: whether a duplicate line should fail the guard.
+- [x] **2.7** (`types:check`): renaming `join_code` to `join_code_renamed` in `src/types.ts` → exit 1 with the diff; restored → exit 0.
+- [x] **2.9** (docs read-through): the README commands `guard:migrations` and `types:check`, the `npx supabase gen types typescript --local` command in CLAUDE.md and README, the CI job that runs both (`integration`, step `Check migrations`) and the S-12 lessons entry match the code. One correction in this change: the `test-plan.md` header said `Last updated: 2026-10-15`, while its §8 ledger records the 2026-10-16 edits; the header now says 2026-10-16.
+- [x] **3.4** (route tests in `tests/integration/data-routes.test.ts`; each break restored with `git checkout --`): name limit 81 in `group-rules.ts` → 1 test red (`81-character name: invalid_name`); 42501 and 23505 swapped in `group-errors.ts` → several red; the zero-row redirect of `rename.ts:41` changed to `/dashboard` → 1 red; the `reportError("uncheck.failed", …)` line removed from `uncheck.ts:41` → 2 red.
+- [x] **3.5** (coverage guard, `coverage guard` in `data-routes.test.ts`): an empty `src/pages/api/tasks/probe.ts` → 1 failing; file removed → 2 passing.
+- [~] **3.6** (test names): a red row names its route and case (e.g. `POST /api/groups/rename > update touches no row (not the owner): forbidden, quiet`). Of the 150 names in that file, 42 start with an SQLSTATE or `XX000` code (e.g. `42501: forbidden with an error line carrying the status`) and read as labels rather than sentences. Not renamed here; a style decision for the owner.
+- [x] **4.5** (contract tests in `tests/unit/group-rules.test.ts` and `tests/unit/task-rules.test.ts`): limit 81 → 3 red; NBSP added to the trim set → 2 red; `"monthly"` in `TASK_RECURRENCES` → 2 red; each restored.
+- [x] **5.5** (privileges, local database only): `revoke select, delete on public.groups, public.group_members, public.tasks from authenticated` → the S-12 block fails with `S-12 authenticated holds exactly DELETE,SELECT on groups -- expected DELETE,SELECT, got NULL` (exit 3). Re-applying `20261015180024_grant_core_table_privileges.sql` brings all 300 assertions back, and `information_schema.role_table_grants` equals the table taken before the revoke.
+
+Not run, owner needed:
+
+- [ ] **2.8**: a draft PR from a scratch branch that edits `20260925011727_harden_group_rls.sql`, to see `integration` go red. The plan requires the owner's go-ahead, and it adds CI runs.
+- [ ] **4.6** and **5.6**: `npx supabase db reset` on the local database. The plan requires the owner's go-ahead, and it wipes local data.
+- [ ] **5.12**: the optional read of Project Settings → API → Max rows on the hosted project (owner only).
+
+Observation, not investigated: before the 1.6 check, the dev server logged `Invalid hook call` and `TypeError: Cannot read properties of null (reading 'useContext')` from `lucide-react` inside a React island, after a `[vite] program reload`. It did not recur during the check. It appears in dev only; the production build was not checked for it.
 
 ## Verification checklist (end-to-end, once unblocked)
 
