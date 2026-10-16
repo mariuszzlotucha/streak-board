@@ -96,8 +96,8 @@ jobs:
         run: supabase stop --no-backup
 
   # The Playwright suite (tests/e2e/) in both projects, desktop and phone, against the production preview. The `release`
-  # job waits for it on a `master` push, and it is a required check of the `master` ruleset since 2026-10-16 (with `ci`,
-  # `smoke` and `compat`), so its id and name stay as they are.
+  # job waits for it on a `master` push, and since 2026-10-16 it is one of the six required checks of the `master` ruleset
+  # (`ci`, `smoke`, `e2e`, `integration`, `compat` and `ai-review`), so its id and name stay as they are.
   e2e:
     needs: changes
     if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
