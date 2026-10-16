@@ -9,6 +9,8 @@ export type TestClient = SupabaseClient<Database>;
 export interface TestUser {
   id: string;
   email: string;
+  /** Every test user has a nickname, as every real account has one before it reaches a group. */
+  nickname: string;
   client: TestClient;
 }
 
@@ -31,8 +33,10 @@ export function anonClient(): TestClient {
 }
 
 export async function createTestUser(): Promise<TestUser> {
-  const email = `${TEST_EMAIL_PREFIX}${randomUUID()}@${TEST_EMAIL_DOMAIN}`;
-  const { data, error } = await adminClient().auth.admin.createUser({
+  const uuid = randomUUID();
+  const email = `${TEST_EMAIL_PREFIX}${uuid}@${TEST_EMAIL_DOMAIN}`;
+  const admin = adminClient();
+  const { data, error } = await admin.auth.admin.createUser({
     email,
     password: TEST_PASSWORD,
     email_confirm: true,
@@ -40,11 +44,16 @@ export async function createTestUser(): Promise<TestUser> {
   if (error) throw new Error(`createTestUser: admin.createUser failed: ${error.message}`);
   createdUserIds.push(data.user.id);
 
+  // The service key keeps Supabase's default privileges on nicknames; the row goes with the user (cascade).
+  const nickname = `vt-${uuid.replaceAll("-", "").slice(0, 12)}`;
+  const { error: nicknameError } = await admin.from("nicknames").insert({ user_id: data.user.id, nickname });
+  if (nicknameError) throw new Error(`createTestUser: nickname insert failed: ${nicknameError.message}`);
+
   const client = anonClient();
   const { error: signInError } = await client.auth.signInWithPassword({ email, password: TEST_PASSWORD });
   if (signInError) throw new Error(`createTestUser: sign-in failed: ${signInError.message}`);
 
-  return { id: data.user.id, email, client };
+  return { id: data.user.id, email, nickname, client };
 }
 
 export async function createGroupAs(user: TestUser, name: string): Promise<TestGroup> {

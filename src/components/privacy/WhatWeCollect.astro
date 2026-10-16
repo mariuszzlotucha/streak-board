@@ -6,13 +6,14 @@ import { ul } from "./styles";
 <PolicySection title="What we collect">
   <ul class:list={ul}>
     <li>
-      <strong class="text-foreground">Your account:</strong> your e-mail address, a hash of your password kept by our
-      sign-in provider, Supabase Auth (the app itself never stores your password), and when you signed up and last
-      signed in.
+      <strong class="text-foreground">Your account:</strong> your e-mail address, your nickname (2 to 24 characters,
+      chosen by you and shown to the members of your group), a hash of your password kept by our sign-in provider,
+      Supabase Auth (the app itself never stores your password), and when you signed up and last signed in.
     </li>
     <li>
       <strong class="text-foreground">With "Continue with Google":</strong> the name, e-mail address and profile picture
-      that Google shares. The app uses only the e-mail address.
+      that Google shares. The app uses the e-mail address and proposes the name as your nickname; the profile picture is
+      not used.
     </li>
     <li>
       <strong class="text-foreground">Your sessions:</strong> for each signed-in session, the IP address and the browser

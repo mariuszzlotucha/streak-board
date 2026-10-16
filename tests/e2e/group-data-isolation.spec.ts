@@ -51,7 +51,7 @@ test.describe("risk #2: group data isolation", () => {
     await expect(page.getByText("1 member", { exact: true })).toBeVisible();
     await expect(page.getByText("1 task", { exact: true })).toBeVisible();
 
-    // The business outcome: nothing of Alpha's (group name, owner email, task title) is on Bravo's page.
+    // The business outcome: nothing of Alpha's (group name, owner nickname, task title) is on Bravo's page.
     await expect(page.getByText(alpha)).toHaveCount(0);
   });
 });

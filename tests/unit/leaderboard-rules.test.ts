@@ -8,9 +8,10 @@
  * Totals and positions
  *   - a member's total is the sum of their task streaks; members are ranked by total, highest first
  *   - equal totals share the position and the next position is skipped: 5, 5, 3 -> 1, 1, 3; 7, 5, 5, 5, 3 -> 1, 2, 2, 2, 5
- *   - equal totals are listed alphabetically by e-mail, ignoring case; a missing e-mail counts as "Unknown member";
- *     the user id is the last resort. E-mails are compared lower-cased and by code unit, so the order is
- *     alice@ < bob@ < "unknown member" < zed@ (the plan leaves the direction of the case fold open)
+ *   - equal totals are listed alphabetically by nickname, ignoring case; a missing nickname counts as "Unknown member";
+ *     the user id is the last resort (S-14). Nicknames are compared lower-cased and by code unit, so the order is
+ *     Alice < Bob < "unknown member" < Zed, and "Kasia" and "kasia" (two different nicknames) are ordered by user id
+ *     (the plan leaves the direction of the case fold open)
  *   - every member is listed, with a total of 0 at least; a participant who is not a member is not
  *
  * Board example. now = 2026-10-02T10:00:00Z = Friday 12:00 in Warsaw (CEST), so the daily period is 2026-10-02 and
@@ -23,7 +24,7 @@
  *                 B takes part and never checked                                          -> 0
  *                 C checked the weeks of 09-07 and 09-14 (1, 2), missed 09-21 (floor(2/2) = 1), this week open -> 1
  *                 C does not take part in T1
- *   totals        A = 5 + 3 = 8, B = 1 + 0 = 1, C = 1  ->  positions A 1, B 2, C 2 (B before C by e-mail)
+ *   totals        A = 5 + 3 = 8, B = 1 + 0 = 1, C = 1  ->  positions A 1, B 2, C 2 (B before C by nickname)
  *
  *   What each viewer's task rows need (the snapshot is the state before the current period):
  *     B, T1: base 2 at 09-30, not checked, period 2026-10-02    B, T2: no base, not checked, period 2026-09-28
@@ -59,30 +60,21 @@ describe("groupPeriodsByEnrolment", () => {
   });
 });
 
-const row = (userId: string, email: string | null, total: number): StandingInput => ({ userId, email, total });
+const row = (userId: string, nickname: string | null, total: number): StandingInput => ({ userId, nickname, total });
 
 describe("rankStandings", () => {
   it("shares a position between equal totals and skips the next (5, 5, 3 -> 1, 1, 3)", () => {
-    const ranked = rankStandings(
-      [row("u3", "carol@example.com", 3), row("u2", "bob@example.com", 5), row("u1", "alice@example.com", 5)],
-      "u1",
-    );
-    expect(ranked.map((r) => [r.email, r.total, r.position])).toEqual([
-      ["alice@example.com", 5, 1],
-      ["bob@example.com", 5, 1],
-      ["carol@example.com", 3, 3],
+    const ranked = rankStandings([row("u3", "Carol", 3), row("u2", "Bob", 5), row("u1", "Alice", 5)], "u1");
+    expect(ranked.map((r) => [r.nickname, r.total, r.position])).toEqual([
+      ["Alice", 5, 1],
+      ["Bob", 5, 1],
+      ["Carol", 3, 3],
     ]);
   });
 
   it("counts only strictly higher totals for the position (7, 5, 5, 5, 3 -> 1, 2, 2, 2, 5)", () => {
     const ranked = rankStandings(
-      [
-        row("u1", "a@example.com", 3),
-        row("u2", "b@example.com", 5),
-        row("u3", "c@example.com", 7),
-        row("u4", "d@example.com", 5),
-        row("u5", "e@example.com", 5),
-      ],
+      [row("u1", "Aa", 3), row("u2", "Bb", 5), row("u3", "Cc", 7), row("u4", "Dd", 5), row("u5", "Ee", 5)],
       "u1",
     );
     expect(ranked.map((r) => [r.userId, r.position])).toEqual([
@@ -95,34 +87,49 @@ describe("rankStandings", () => {
   });
 
   it("puts everybody at position 1 when all totals are 0", () => {
-    const ranked = rankStandings([row("u2", "b@example.com", 0), row("u1", "a@example.com", 0)], "u1");
+    const ranked = rankStandings([row("u2", "Bb", 0), row("u1", "Aa", 0)], "u1");
     expect(ranked.map((r) => r.position)).toEqual([1, 1]);
   });
 
   it("flags only the viewer's own row", () => {
-    const ranked = rankStandings([row("u1", "a@example.com", 2), row("u2", "b@example.com", 1)], "u2");
+    const ranked = rankStandings([row("u1", "Aa", 2), row("u2", "Bb", 1)], "u2");
     expect(ranked.map((r) => [r.userId, r.isYou])).toEqual([
       ["u1", false],
       ["u2", true],
     ]);
   });
 
-  it("orders equal totals by e-mail ignoring case, a missing e-mail as 'Unknown member', then by user id", () => {
+  it("orders equal totals by nickname ignoring case, a missing nickname as 'Unknown member', then by user id", () => {
     const ranked = rankStandings(
-      [
-        row("u5", "zed@example.com", 2),
-        row("u4", "Bob@example.com", 2),
-        row("u3", null, 2),
-        row("u2", "alice@example.com", 2),
-        row("u1", "bob@example.com", 2),
-      ],
+      [row("u5", "Zed", 2), row("u4", "Bob", 2), row("u3", null, 2), row("u2", "alice", 2), row("u1", "bob", 2)],
       "u1",
     );
-    // alice, then both bobs (the same e-mail ignoring case: user id u1 before u4), then "unknown member", then zed
+    // alice, then both bobs (the same nickname ignoring case: user id u1 before u4), then "unknown member", then Zed
     expect(ranked.map((r) => r.userId)).toEqual(["u2", "u1", "u4", "u3", "u5"]);
   });
 
-  it("orders two members without an e-mail by user id, whatever the input order", () => {
+  it("orders 'Kasia' and 'kasia' (two different nicknames) by user id, whatever the input order", () => {
+    // Lower-cased, both are "kasia": only the user id tells them apart, so the capital letter decides nothing
+    const upper = row("u2", "Kasia", 3);
+    const lower = row("u1", "kasia", 3);
+    expect(rankStandings([upper, lower], "u1").map((r) => [r.userId, r.nickname, r.position])).toEqual([
+      ["u1", "kasia", 1],
+      ["u2", "Kasia", 1],
+    ]);
+    expect(rankStandings([lower, upper], "u1").map((r) => r.userId)).toEqual(["u1", "u2"]);
+  });
+
+  it("sorts a missing nickname exactly where 'Unknown member' would sort", () => {
+    // "unknown member" lower-cased: after "Unknowm" ('m' < 'n' at the sixth letter), before "Unknown members"
+    const ranked = rankStandings([row("u1", "Unknown members", 1), row("u2", null, 1), row("u3", "Unknowm", 1)], "u1");
+    expect(ranked.map((r) => [r.userId, r.nickname])).toEqual([
+      ["u3", "Unknowm"],
+      ["u2", null],
+      ["u1", "Unknown members"],
+    ]);
+  });
+
+  it("orders two members without a nickname by user id, whatever the input order", () => {
     // Both sort as "Unknown member", so the user id is the last resort (the rankStandings comment): u1 before u2
     // from either input order, never the order the rows happened to arrive in
     const u1 = row("u1", null, 4);
@@ -138,16 +145,17 @@ describe("rankStandings", () => {
   });
 
   it("orders by code units, not by locale, and folds case downwards", () => {
-    // '2' (0x32) sorts before '@' (0x40); localeCompare says the opposite
-    const byCodeUnit = rankStandings([row("u1", "john@example.com", 1), row("u2", "john2@example.com", 1)], "u1");
+    // '2' (0x32) sorts before '_' (0x5F); localeCompare puts punctuation before digits, so it says the opposite
+    const byCodeUnit = rankStandings([row("u1", "Kasia_", 1), row("u2", "Kasia2", 1)], "u1");
     expect(byCodeUnit.map((r) => r.userId)).toEqual(["u2", "u1"]);
     // The plan leaves the fold direction open; the implementation lower-cases, so '_' (0x5F) sorts before 'n' (0x6E)
-    const byFold = rankStandings([row("u1", "johnny@x.io", 1), row("u2", "john_smith@x.io", 1)], "u1");
+    // (upper-cased, 'N' (0x4E) would sort before '_')
+    const byFold = rankStandings([row("u1", "Johnny", 1), row("u2", "John_Smith", 1)], "u1");
     expect(byFold.map((r) => r.userId)).toEqual(["u2", "u1"]);
   });
 
   it("does not change its input", () => {
-    const input = [row("u2", "b@example.com", 1), row("u1", "a@example.com", 2)];
+    const input = [row("u2", "Bb", 1), row("u1", "Aa", 2)];
     const copy = structuredClone(input);
     rankStandings(input, "u1");
     expect(input).toEqual(copy);
@@ -157,9 +165,9 @@ describe("rankStandings", () => {
 describe("buildBoard", () => {
   const NOW = new Date("2026-10-02T10:00:00Z"); // Friday 12:00 in Warsaw: daily period 2026-10-02, week of 2026-09-28
   const members = [
-    { user_id: "user-a", email: "alice@example.com" },
-    { user_id: "user-b", email: "bob@example.com" },
-    { user_id: "user-c", email: "carol@example.com" },
+    { user_id: "user-a", nickname: "Alice" },
+    { user_id: "user-b", nickname: "Bob" },
+    { user_id: "user-c", nickname: "Carol" },
   ];
   const tasks: { id: string; recurrence: TaskRecurrence }[] = [
     { id: "t1", recurrence: "daily" },
@@ -189,9 +197,9 @@ describe("buildBoard", () => {
 
   it("sums every member's task streaks", () => {
     expect(boardFor("user-b").totals).toEqual([
-      { userId: "user-a", email: "alice@example.com", total: 8 },
-      { userId: "user-b", email: "bob@example.com", total: 1 },
-      { userId: "user-c", email: "carol@example.com", total: 1 },
+      { userId: "user-a", nickname: "Alice", total: 8 },
+      { userId: "user-b", nickname: "Bob", total: 1 },
+      { userId: "user-c", nickname: "Carol", total: 1 },
     ]);
   });
 
@@ -227,14 +235,14 @@ describe("buildBoard", () => {
 
   it("lists a member who takes part in no task with a total of 0", () => {
     const board = buildBoard({
-      members: [...members, { user_id: "user-d", email: null }],
+      members: [...members, { user_id: "user-d", nickname: null }],
       tasks,
       participantsByTask,
       periodsByEnrolment,
       viewerId: "user-a",
       now: NOW,
     });
-    expect(board.totals.at(-1)).toEqual({ userId: "user-d", email: null, total: 0 });
+    expect(board.totals.at(-1)).toEqual({ userId: "user-d", nickname: null, total: 0 });
   });
 
   it("gives the viewer a snapshot and the current period for each task they take part in", () => {
@@ -262,7 +270,7 @@ describe("buildBoard", () => {
   it("takes the period from the Warsaw clock, not the UTC date", () => {
     // 2026-10-04T22:30:00Z is Monday 00:30 in Warsaw while the UTC date is still Sunday: a new day and a new week
     const board = buildBoard({
-      members: [{ user_id: "user-a", email: "alice@example.com" }],
+      members: [{ user_id: "user-a", nickname: "Alice" }],
       tasks: [
         { id: "t1", recurrence: "daily" },
         { id: "t2", recurrence: "weekly" },
@@ -287,13 +295,13 @@ describe("buildBoard", () => {
       currentPeriod: "2026-10-05",
     });
     // t1: nothing checked = 0; t2: the old week was checked and the new one is open = 1; t3: once, checked = 1
-    expect(board.totals).toEqual([{ userId: "user-a", email: "alice@example.com", total: 2 }]);
+    expect(board.totals).toEqual([{ userId: "user-a", nickname: "Alice", total: 2 }]);
   });
 
   it("scales linearly with the stored periods (scale guard)", () => {
     const MS_PER_DAY = 86_400_000;
     const today = Date.UTC(2026, 9, 2) / MS_PER_DAY; // 2026-10-02
-    const scaleMembers = Array.from({ length: 5 }, (_, i) => ({ user_id: `user-${i}`, email: `user${i}@example.com` }));
+    const scaleMembers = Array.from({ length: 5 }, (_, i) => ({ user_id: `user-${i}`, nickname: `User ${i}` }));
     const scaleTasks: { id: string; recurrence: TaskRecurrence }[] = ["t1", "t2", "t3"].map((id) => ({
       id,
       recurrence: "daily",
@@ -354,9 +362,9 @@ describe("buildBoard", () => {
 describe("applyDeltas", () => {
   const NOW = new Date("2026-10-02T10:00:00Z");
   const members = [
-    { user_id: "user-a", email: "alice@example.com" },
-    { user_id: "user-b", email: "bob@example.com" },
-    { user_id: "user-c", email: "carol@example.com" },
+    { user_id: "user-a", nickname: "Alice" },
+    { user_id: "user-b", nickname: "Bob" },
+    { user_id: "user-c", nickname: "Carol" },
   ];
   const START = { "user-a": ["2026-09-30", "2026-10-01"], "user-b": ["2026-10-01"], "user-c": [] as string[] };
   const totalsFor = (periods: Record<string, string[]>): StandingInput[] =>

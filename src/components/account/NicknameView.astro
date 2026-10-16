@@ -1,0 +1,49 @@
+---
+import NicknameForm from "@/components/account/NicknameForm";
+import PageHeading from "@/components/dashboard/PageHeading.astro";
+import { CircleAlert } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { buttonVariants } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+
+// The nickname page's body, rendered inside `AppLayout` (without the Main nav) by `/account/nickname` and by the dev
+// kitchen sink from fixtures. "choose" is the first choice that every account goes through before the dashboard;
+// "change" is reached from the Account card on `/settings`.
+interface Props {
+  mode: "choose" | "change";
+  /** The current nickname, a suggestion from the sign-in provider, or "". */
+  suggestion: string;
+  /** The fixed message of a rejected save (`?error=`). */
+  error: string | null;
+}
+
+const { mode, suggestion, error } = Astro.props;
+const choosing = mode === "choose";
+---
+
+<div class="max-w-xl space-y-6">
+  <PageHeading
+    title={choosing ? "Choose your nickname" : "Your nickname"}
+    description={
+      choosing
+        ? "Members of your group will see it instead of your e-mail address."
+        : "Members of your group see this name."
+    }
+  />
+  {error && (
+    <Alert variant="destructive">
+      <CircleAlert />
+      <AlertDescription>{error}</AlertDescription>
+    </Alert>
+  )}
+  <Card>
+    <CardContent>
+      <NicknameForm client:load initialValue={suggestion} submitLabel={choosing ? "Continue" : "Save nickname"} />
+    </CardContent>
+  </Card>
+  {!choosing && (
+    <a href="/settings" class:list={buttonVariants({ variant: "ghost" })}>
+      Back to settings
+    </a>
+  )}
+</div>

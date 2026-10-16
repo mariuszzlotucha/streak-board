@@ -1,0 +1,20 @@
+---
+import NicknameView from "@/components/account/NicknameView.astro";
+import ClearErrorParam from "@/components/site/ClearErrorParam.astro";
+import AppLayout from "@/layouts/AppLayout.astro";
+import { resolveNicknameError } from "@/lib/nickname-errors";
+import { suggestNickname } from "@/lib/nicknames";
+
+// Protected by the middleware (prefix `/account`), which also reads the user's own nickname into `locals`. A user
+// without one is sent here from every other protected path; this page and its route are the exceptions.
+const { user, nickname } = Astro.locals;
+
+const error = resolveNicknameError(Astro.url.searchParams.get("error"));
+const mode = nickname === null ? "choose" : "change";
+const suggestion = suggestNickname(nickname, user?.user_metadata);
+---
+
+<AppLayout title="Nickname" nickname={nickname}>
+  <NicknameView mode={mode} suggestion={suggestion} error={error} />
+  <ClearErrorParam />
+</AppLayout>

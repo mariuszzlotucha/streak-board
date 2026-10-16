@@ -16,6 +16,13 @@ const { group, loadFailed, error } = await loadSettings({
 if (loadFailed) Astro.response.status = 503;
 ---
 
-<AppLayout title="Settings" email={user?.email} current="settings">
-  <SettingsView group={group} viewerId={user?.id} loadFailed={loadFailed} error={error} />
+<AppLayout title="Settings" nickname={Astro.locals.nickname} current="settings">
+  <SettingsView
+    group={group}
+    viewerId={user?.id}
+    loadFailed={loadFailed}
+    error={error}
+    email={user?.email}
+    nickname={Astro.locals.nickname}
+  />
 </AppLayout>

@@ -65,7 +65,7 @@ describe("cross-group data isolation", () => {
           p_group_id: ga.id,
         });
         expect(listError).toBeNull();
-        expect((listed ?? []).map((row) => row.email).sort()).toEqual([a.email, a2.email].sort());
+        expect((listed ?? []).map((row) => row.nickname).sort()).toEqual([a.nickname, a2.nickname].sort());
       }
     });
 

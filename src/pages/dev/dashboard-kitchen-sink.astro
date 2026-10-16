@@ -3,19 +3,23 @@ import AppLayout from "@/layouts/AppLayout.astro";
 import Layout from "@/layouts/Layout.astro";
 import DashboardView from "@/components/dashboard/DashboardView.astro";
 import SettingsView from "@/components/dashboard/SettingsView.astro";
+import NicknameView from "@/components/account/NicknameView.astro";
 import DashboardControlStates from "@/components/dev/DashboardControlStates";
 import {
   DASHBOARD_STATES,
+  NICKNAME_STATES,
   SETTINGS_STATES,
   dashboardFixture,
   isDashboardStateId,
+  isNicknameStateId,
   isSettingsStateId,
+  nicknameFixture,
   settingsFixture,
 } from "@/components/dev/dashboard-fixtures";
 
-// Dev-only visual gate for `/dashboard` and `/settings`: in a production build the route answers 404 with an empty body.
-// `?state=<id>` renders one page state the way its page renders it (same `AppLayout`, same `DashboardView` or
-// `SettingsView`) from fixture data, with no Supabase call; without a known state the page lists the states of both
+// Dev-only visual gate for `/dashboard`, `/settings` and `/account/nickname`: in a production build the route answers 404
+// with an empty body. `?state=<id>` renders one page state the way its page renders it (same `AppLayout`, same
+// `DashboardView`, `SettingsView` or `NicknameView`; the nickname page without the Main nav) from fixture data, with no Supabase call; without a known state the page lists the states of both
 // pages and shows the control states. The fixtures are built by a function call, and only in dev.
 // Every page here cancels every native form submit: the real endpoints act on the signed-in caller's own group, so a
 // confirmed "Delete group" here would delete it. The islands' submit handlers still run and show their pending state.
@@ -24,30 +28,42 @@ if (!isDev) Astro.response.status = 404;
 const requested = Astro.url.searchParams.get("state");
 const dashboardState = isDev && isDashboardStateId(requested) ? requested : null;
 const settingsState = isDev && isSettingsStateId(requested) ? requested : null;
+const nicknameState = isDev && isNicknameStateId(requested) ? requested : null;
 const dashboard = dashboardState ? dashboardFixture(dashboardState, Astro.url.origin) : null;
 const settings = settingsState ? settingsFixture(settingsState) : null;
+const nicknamePage = nicknameState ? nicknameFixture(nicknameState) : null;
 const STATE_GROUPS = [
   { title: "Dashboard states", states: DASHBOARD_STATES },
   { title: "Settings states", states: SETTINGS_STATES },
+  { title: "Nickname states", states: NICKNAME_STATES },
 ];
 ---
 
 {isDev &&
   (dashboard ? (
-    <AppLayout title={`Dashboard kitchen sink: ${dashboardState}`} email={dashboard.email} current="dashboard">
+    <AppLayout title={`Dashboard kitchen sink: ${dashboardState}`} nickname={dashboard.nickname} current="dashboard">
       <DashboardView {...dashboard} />
       <script is:inline>
         window.addEventListener("submit", (event) => event.preventDefault(), true);
       </script>
     </AppLayout>
   ) : settings ? (
-    <AppLayout title={`Dashboard kitchen sink: ${settingsState}`} email={settings.email} current="settings">
+    <AppLayout title={`Dashboard kitchen sink: ${settingsState}`} nickname={settings.nickname} current="settings">
       <SettingsView
         group={settings.group}
         viewerId={settings.viewerId}
         loadFailed={settings.loadFailed}
         error={settings.error}
+        email={settings.email}
+        nickname={settings.nickname}
       />
+      <script is:inline>
+        window.addEventListener("submit", (event) => event.preventDefault(), true);
+      </script>
+    </AppLayout>
+  ) : nicknamePage ? (
+    <AppLayout title={`Dashboard kitchen sink: ${nicknameState}`} nickname={nicknamePage.nickname}>
+      <NicknameView mode={nicknamePage.mode} suggestion={nicknamePage.suggestion} error={nicknamePage.error} />
       <script is:inline>
         window.addEventListener("submit", (event) => event.preventDefault(), true);
       </script>

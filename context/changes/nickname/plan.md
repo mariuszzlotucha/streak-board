@@ -459,17 +459,17 @@ Brama dodaje jeden odczyt PostgREST po kluczu głównym na każde żądanie chro
 
 #### Automated
 
-- [ ] 1.1 Strażnik migracji przyjmuje migrację A ze znacznikiem
-- [ ] 1.2 Migracja A stosuje się na czystym stosie, a wygenerowane typy są świeże
-- [ ] 1.3 Lint, kontrola typów Astro i build przechodzą
-- [ ] 1.4 Testy jednostkowe przechodzą
-- [ ] 1.5 Testy integracyjne przechodzą
-- [ ] 1.6 Scenariusze RLS z sekcją S-14 przechodzą
-- [ ] 1.7 Smoke z krokami bramy, nicków i wykluczeniem adresów przechodzi
-- [ ] 1.8 Testy e2e w obu projektach przechodzą
-- [ ] 1.9 Reguły zależności przechodzą
-- [ ] 1.10 Zawężone mutacje nowych modułów i remisu uruchamiają testy
-- [ ] 1.11 Zrzuty stanów kitchen sinka powstają bez błędu konsoli
+- [x] 1.1 Strażnik migracji przyjmuje migrację A ze znacznikiem
+- [x] 1.2 Migracja A stosuje się na czystym stosie, a wygenerowane typy są świeże
+- [x] 1.3 Lint, kontrola typów Astro i build przechodzą
+- [x] 1.4 Testy jednostkowe przechodzą
+- [x] 1.5 Testy integracyjne przechodzą
+- [x] 1.6 Scenariusze RLS z sekcją S-14 przechodzą
+- [x] 1.7 Smoke z krokami bramy, nicków i wykluczeniem adresów przechodzi
+- [x] 1.8 Testy e2e w obu projektach przechodzą
+- [x] 1.9 Reguły zależności przechodzą
+- [x] 1.10 Zawężone mutacje nowych modułów i remisu uruchamiają testy
+- [x] 1.11 Zrzuty stanów kitchen sinka powstają bez błędu konsoli
 
 #### Manual
 

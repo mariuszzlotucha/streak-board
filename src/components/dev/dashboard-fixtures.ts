@@ -1,18 +1,21 @@
 // Fixture data for the dev-only dashboard kitchen sink (`src/pages/dev/dashboard-kitchen-sink.astro`): every page state
-// of `DashboardView`, built from plain objects and the real board rules, with no Supabase call. E-mails use the
-// reserved `.test` domain.
+// of `DashboardView`, `SettingsView` and `NicknameView`, built from plain objects and the real board rules, with no
+// Supabase call. Members are named by nickname; the smoke test pins the nickname `Olivia` on a state page in dev (and its
+// absence in a production build). The e-mail addresses, shown only on the settings page's Account card, use the reserved
+// `.test` domain.
 import type { DashboardData } from "@/lib/dashboard-data";
 import { groupErrorMessage } from "@/lib/group-errors";
+import { nicknameErrorMessage } from "@/lib/nickname-errors";
 import type { GroupMember, MyGroup } from "@/lib/groups";
 import { buildBoard, groupPeriodsByEnrolment, rankStandings, type EnrolmentPeriods } from "@/lib/leaderboard-rules";
 import { groupParticipantsByTask } from "@/lib/task-rules";
 import type { GroupTask } from "@/lib/tasks";
 
-/** What a state page renders: `DashboardView`'s props (the loaded data plus the viewer) and the e-mail `AppLayout` shows. */
+/** What a state page renders: `DashboardView`'s props (the loaded data plus the viewer) and the nickname `AppLayout` shows. */
 export interface DashboardViewProps extends DashboardData {
   viewerId: string | undefined;
   inviteLink: string | null;
-  email: string | undefined;
+  nickname: string | null;
 }
 
 export const DASHBOARD_STATES = [
@@ -30,7 +33,11 @@ export const DASHBOARD_STATES = [
     description: "Owner; the participants could not be loaded",
   },
   { id: "checkoffs-failed", label: "Check-offs failed", description: "Owner; the check-offs could not be loaded" },
-  { id: "long-text", label: "Long text", description: "80-character group name and task title, a long e-mail" },
+  {
+    id: "long-text",
+    label: "Long text",
+    description: "80-character group name and task title, a 24-character nickname",
+  },
 ] as const;
 
 export type DashboardStateId = (typeof DASHBOARD_STATES)[number]["id"];
@@ -53,13 +60,40 @@ export function isSettingsStateId(value: string | null): value is SettingsStateI
   return SETTINGS_STATES.some((state) => state.id === value);
 }
 
-/** What a settings state page renders: `SettingsView`'s props and the e-mail `AppLayout` shows. */
+/** What a settings state page renders: `SettingsView`'s props (the Account card shows the e-mail) and the nickname `AppLayout` shows. */
 export interface SettingsViewProps {
   group: MyGroup | null;
   viewerId: string | undefined;
   loadFailed: boolean;
   error: string | null;
   email: string | undefined;
+  nickname: string | null;
+}
+
+// The states of `/account/nickname` (`NicknameView`); ids start with `nickname-`, like the settings states.
+export const NICKNAME_STATES = [
+  { id: "nickname-choose", label: "Choose", description: "First choice, empty field" },
+  {
+    id: "nickname-suggested",
+    label: "Suggested",
+    description: "First choice, the field prefilled with the name from Google",
+  },
+  { id: "nickname-change", label: "Change", description: "Changing an existing nickname, reached from settings" },
+  { id: "nickname-error", label: "Error", description: "First choice after a rejected save (`?error=nickname_taken`)" },
+] as const;
+
+export type NicknameStateId = (typeof NICKNAME_STATES)[number]["id"];
+
+export function isNicknameStateId(value: string | null): value is NicknameStateId {
+  return NICKNAME_STATES.some((state) => state.id === value);
+}
+
+/** What a nickname state page renders: `NicknameView`'s props and the nickname `AppLayout` shows (null on a first choice). */
+export interface NicknameViewProps {
+  mode: "choose" | "change";
+  suggestion: string;
+  error: string | null;
+  nickname: string | null;
 }
 
 // A fixed instant (a Sunday in Warsaw), so the current day and week, and with them every streak, never change.
@@ -70,18 +104,22 @@ const MEMBER_ID = "00000000-0000-4000-8000-00000000000b";
 const THIRD_ID = "00000000-0000-4000-8000-00000000000c";
 const OUTSIDER_ID = "00000000-0000-4000-8000-00000000000d";
 
+const OWNER_NICKNAME = "Olivia";
+const MEMBER_NICKNAME = "Max";
+const OUTSIDER_NICKNAME = "Nora";
+// Exactly 24 characters, the longest a nickname may be, with no space to break at.
+const LONG_NICKNAME = "Bartholomew_Featherstone";
 const OWNER_EMAIL = "olivia@example.test";
 const MEMBER_EMAIL = "max@example.test";
 const OUTSIDER_EMAIL = "nora@example.test";
-const LONG_EMAIL = "alexandra.konstantynopolitanczykiewicz.longname@department-of-habits.example.test";
 // Both exactly 80 characters, the longest a group name and a task title may be.
 const LONG_GROUP_NAME = "The Saturday Morning Long Run, Book Swap and Very Ambitious Sourdough Society 26";
 const LONG_TASK_TITLE = "Run five kilometres before breakfast and post the route in the group chat, daily";
 
 const JOIN_CODE = "5f3a9c1e7b2d";
 
-function member(user_id: string, email: string, is_owner = false): GroupMember {
-  return { user_id, email, joined_at: "2026-09-28T08:00:00Z", is_owner };
+function member(user_id: string, nickname: string, is_owner = false): GroupMember {
+  return { user_id, nickname, joined_at: "2026-09-28T08:00:00Z", is_owner };
 }
 
 function task(id: string, title: string, recurrence: GroupTask["recurrence"], created_by: string): GroupTask {
@@ -95,11 +133,7 @@ const MORNING_CREW: MyGroup = {
   owner_id: OWNER_ID,
 };
 
-const MEMBERS = [
-  member(OWNER_ID, OWNER_EMAIL, true),
-  member(MEMBER_ID, MEMBER_EMAIL),
-  member(THIRD_ID, "sam@example.test"),
-];
+const MEMBERS = [member(OWNER_ID, OWNER_NICKNAME, true), member(MEMBER_ID, MEMBER_NICKNAME), member(THIRD_ID, "Sam")];
 
 // Seen by the owner: daily, weekly and once, each ticked and not ticked in the current period; a task the owner does not
 // take part in; tasks created by someone else; and a task with no participants.
@@ -188,7 +222,7 @@ function emptyData(): DashboardData {
 /** A viewer in a group, with every read succeeded unless `failed` says otherwise. */
 function inGroup(
   origin: string,
-  viewer: { id: string; email: string },
+  viewer: { id: string; nickname: string },
   {
     group = MORNING_CREW,
     members = MEMBERS,
@@ -216,23 +250,23 @@ function inGroup(
   if (failed === "checkoffs") data.checkoffsFailed = true;
   // The board needs all three reads, as in `loadDashboard`.
   if (!failed) data.board = board(members, data.tasks, data.participantsByTask, viewer.id);
-  return { ...data, viewerId: viewer.id, email: viewer.email, inviteLink: `${origin}/join/${group.join_code}` };
+  return { ...data, viewerId: viewer.id, nickname: viewer.nickname, inviteLink: `${origin}/join/${group.join_code}` };
 }
 
 function withoutGroup(data: Partial<DashboardData> = {}): DashboardViewProps {
-  return { ...emptyData(), ...data, viewerId: OUTSIDER_ID, email: OUTSIDER_EMAIL, inviteLink: null };
+  return { ...emptyData(), ...data, viewerId: OUTSIDER_ID, nickname: OUTSIDER_NICKNAME, inviteLink: null };
 }
 
 /** The props `DashboardView` gets in one state. Builds fresh objects on every call; `origin` makes the invite link. */
 export function dashboardFixture(id: DashboardStateId, origin: string): DashboardViewProps {
-  const owner = { id: OWNER_ID, email: OWNER_EMAIL };
+  const owner = { id: OWNER_ID, nickname: OWNER_NICKNAME };
   switch (id) {
     case "owner":
       return inGroup(origin, owner);
     case "member":
-      return inGroup(origin, { id: MEMBER_ID, email: MEMBER_EMAIL });
+      return inGroup(origin, { id: MEMBER_ID, nickname: MEMBER_NICKNAME });
     case "sole-member":
-      return inGroup(origin, owner, { members: [member(OWNER_ID, OWNER_EMAIL, true)], tasks: [] });
+      return inGroup(origin, owner, { members: [member(OWNER_ID, OWNER_NICKNAME, true)], tasks: [] });
     case "no-group":
       return withoutGroup();
     case "pending-invite":
@@ -250,10 +284,10 @@ export function dashboardFixture(id: DashboardStateId, origin: string): Dashboar
     case "long-text":
       return inGroup(
         origin,
-        { id: OWNER_ID, email: LONG_EMAIL },
+        { id: OWNER_ID, nickname: LONG_NICKNAME },
         {
           group: { ...MORNING_CREW, name: LONG_GROUP_NAME },
-          members: [member(OWNER_ID, LONG_EMAIL, true), ...MEMBERS.slice(1)],
+          members: [member(OWNER_ID, LONG_NICKNAME, true), ...MEMBERS.slice(1)],
           tasks: [{ ...TASKS[0], title: LONG_TASK_TITLE }, ...TASKS.slice(1)],
         },
       );
@@ -263,20 +297,37 @@ export function dashboardFixture(id: DashboardStateId, origin: string): Dashboar
 /** The props `SettingsView` gets in one state. Builds fresh objects on every call. */
 export function settingsFixture(id: SettingsStateId): SettingsViewProps {
   const healthy = { loadFailed: false, error: null };
+  const owner = { viewerId: OWNER_ID, email: OWNER_EMAIL, nickname: OWNER_NICKNAME };
   switch (id) {
     case "settings-owner":
-      return { ...healthy, group: { ...MORNING_CREW }, viewerId: OWNER_ID, email: OWNER_EMAIL };
+      return { ...healthy, ...owner, group: { ...MORNING_CREW } };
     case "settings-member":
-      return { ...healthy, group: { ...MORNING_CREW }, viewerId: MEMBER_ID, email: MEMBER_EMAIL };
-    case "settings-no-group":
-      return { ...healthy, group: null, viewerId: OUTSIDER_ID, email: OUTSIDER_EMAIL };
-    case "settings-load-failed":
       return {
-        group: null,
-        viewerId: OWNER_ID,
-        email: OWNER_EMAIL,
-        loadFailed: true,
-        error: groupErrorMessage("unknown"),
+        ...healthy,
+        group: { ...MORNING_CREW },
+        viewerId: MEMBER_ID,
+        email: MEMBER_EMAIL,
+        nickname: MEMBER_NICKNAME,
       };
+    case "settings-no-group":
+      return { ...healthy, group: null, viewerId: OUTSIDER_ID, email: OUTSIDER_EMAIL, nickname: OUTSIDER_NICKNAME };
+    case "settings-load-failed":
+      return { ...owner, group: null, loadFailed: true, error: groupErrorMessage("unknown") };
+  }
+}
+
+/** The props `NicknameView` (and `AppLayout`) get in one state. Builds fresh objects on every call. */
+export function nicknameFixture(id: NicknameStateId): NicknameViewProps {
+  const choosing = { mode: "choose", nickname: null } as const;
+  switch (id) {
+    case "nickname-choose":
+      return { ...choosing, suggestion: "", error: null };
+    case "nickname-suggested":
+      // `suggestNickname` takes the name Google puts into the account's metadata, when it passes the nickname rules.
+      return { ...choosing, suggestion: "Nora Lindqvist", error: null };
+    case "nickname-change":
+      return { mode: "change", nickname: OWNER_NICKNAME, suggestion: OWNER_NICKNAME, error: null };
+    case "nickname-error":
+      return { ...choosing, suggestion: "", error: nicknameErrorMessage("nickname_taken") };
   }
 }

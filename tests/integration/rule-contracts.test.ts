@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { normalizeGroupName, normalizeJoinCode } from "@/lib/group-rules";
+import { normalizeNickname } from "@/lib/nickname-rules";
 import { TASK_RECURRENCES, normalizeRecurrence, normalizeTaskTitle } from "@/lib/task-rules";
 import {
   adminClient,
@@ -14,7 +15,8 @@ import {
 } from "../helpers/supabase";
 
 // Contract tests for the rules that exist twice, in the TypeScript normalisers and in the database (the CHECKs
-// groups_name_length, tasks_title_length and tasks_recurrence_allowed, the join_code default and join_group). Each
+// groups_name_length, tasks_title_length, tasks_recurrence_allowed, nicknames_nickname_length and
+// nicknames_nickname_trimmed, the join_code default and join_group). Each
 // boundary input goes through both sides, so drift on either side turns red. The database side uses the real insert
 // path of a signed-in client, the way the routes write: the normalised value when TS accepts, the raw input when it
 // rejects.
@@ -35,6 +37,8 @@ const NUL = String.fromCodePoint(0x0000);
 
 const ASCII_80 = "a".repeat(80);
 const EMOJI_80 = "😀".repeat(80);
+const ASCII_24 = "n".repeat(24);
+const EMOJI_24 = "🙂".repeat(24);
 
 // Inputs both sides accept, with the value TS hands to the database.
 const ACCEPTED_NAMES: { label: string; input: string; normalized: string }[] = [
@@ -201,6 +205,52 @@ describe("rules duplicated in SQL and TS", () => {
         expect(error?.code, JSON.stringify(recurrence)).toBe(CHECK_VIOLATION);
         expect(data, JSON.stringify(recurrence)).toBeNull();
       }
+    });
+  });
+
+  // set_nickname is the routes' write path: an upsert of the caller's own row, so one user tries every value in turn.
+  // The values are unlikely to clash with another account's nickname (test users get `vt-<hex>`), and the rows go with
+  // the users (cascade).
+  describe("nickname: normalizeNickname and nicknames_nickname_length/trimmed", () => {
+    async function adminNicknameOf(user: TestUser): Promise<string | null> {
+      const { data, error } = await adminClient().from("nicknames").select("nickname").eq("user_id", user.id).single();
+      if (error) throw new Error(`adminNicknameOf failed: ${error.message}`);
+      return data.nickname;
+    }
+
+    it("both accept 2 characters, 24 ASCII, 24 emoji, NBSP twice and the padded 24", async () => {
+      const accepted = [
+        { label: "2 characters", input: "ab", normalized: "ab" },
+        { label: "24 ASCII", input: ASCII_24, normalized: ASCII_24 },
+        { label: "24 emoji", input: EMOJI_24, normalized: EMOJI_24 },
+        { label: "NBSP twice", input: `${NBSP}${NBSP}`, normalized: `${NBSP}${NBSP}` },
+        { label: "5 spaces + 24 characters + 2 tabs", input: `     ${ASCII_24}\t\t`, normalized: ASCII_24 },
+      ];
+      for (const { label, input, normalized } of accepted) {
+        expect(normalizeNickname(input), label).toBe(normalized);
+
+        const { error } = await owner.client.rpc("set_nickname", { p_nickname: normalized });
+        expect(error, label).toBeNull();
+        expect(await adminNicknameOf(owner), label).toBe(normalized);
+      }
+    });
+
+    it("both reject empty, 1 character, 25 ASCII, 25 emoji and the padded 25 (23514)", async () => {
+      const before = await adminNicknameOf(joiner);
+      const rejected = [
+        { label: "empty", input: "" },
+        { label: "1 character", input: "a" },
+        { label: "25 ASCII", input: "n".repeat(25) },
+        { label: "25 emoji", input: "🙂".repeat(25) },
+        { label: "5 spaces + 25 characters + 2 tabs", input: `     ${"n".repeat(25)}\t\t` },
+      ];
+      for (const { label, input } of rejected) {
+        expect(normalizeNickname(input), label).toBeNull();
+
+        const { error } = await joiner.client.rpc("set_nickname", { p_nickname: input });
+        expect(error?.code, label).toBe(CHECK_VIOLATION);
+      }
+      expect(await adminNicknameOf(joiner)).toBe(before);
     });
   });
 

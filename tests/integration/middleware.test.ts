@@ -11,6 +11,12 @@ const runWithSentry = vi.hoisted(() => vi.fn((_context: unknown, handler: () => 
 vi.mock("@/lib/sentry", () => ({ runWithSentry }));
 
 const getUser = vi.fn();
+// The nickname read: `from("nicknames").select("nickname").eq("user_id", id).maybeSingle()` answers `nicknameResult`.
+let nicknameResult: { data: { nickname: string } | null; error: unknown };
+const maybeSingle = vi.fn(() => Promise.resolve(nicknameResult));
+const eq = vi.fn(() => ({ maybeSingle }));
+const select = vi.fn(() => ({ eq }));
+const from = vi.fn(() => ({ select }));
 
 type Handler = (context: APIContext, next: () => Promise<Response>) => Promise<Response>;
 
@@ -19,7 +25,7 @@ async function loadOnRequest() {
   vi.resetModules();
   const { createClient: freshCreateClient } = await import("@/lib/supabase");
   vi.mocked(freshCreateClient).mockImplementation(
-    () => ({ auth: { getUser } }) as unknown as ReturnType<typeof createClient>,
+    () => ({ auth: { getUser }, from }) as unknown as ReturnType<typeof createClient>,
   );
   const { onRequest } = await import("@/middleware");
   return { onRequest: onRequest as unknown as Handler, createClient: vi.mocked(freshCreateClient) };
@@ -32,7 +38,7 @@ function buildContext(path: string, headers: Record<string, string> = {}) {
     request: new Request(url, { headers }),
     cookies: {},
     routePattern: path,
-    locals: { user: null } as { user: { id: string } | null },
+    locals: { user: null, nickname: null } as { user: { id: string } | null; nickname: string | null },
     redirect: (to: string) => new Response(null, { status: 302, headers: { Location: to } }),
   } as unknown as APIContext;
 }
@@ -44,6 +50,12 @@ let infoSpy: MockInstance<typeof console.info>;
 
 beforeEach(() => {
   getUser.mockReset();
+  // A signed-in user on a protected path has a nickname unless a test says otherwise.
+  nicknameResult = { data: { nickname: "Kasia" }, error: null };
+  from.mockClear();
+  select.mockClear();
+  eq.mockClear();
+  maybeSingle.mockClear();
   runWithSentry.mockClear();
   errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
   infoSpy = vi.spyOn(console, "info").mockImplementation(() => undefined);
@@ -151,6 +163,138 @@ describe("middleware", () => {
     expect(response.status).toBe(200);
     expect(context.locals.user).toEqual({ id: "u1" });
     expect(errorSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe("middleware nickname gate", () => {
+  it("reads the user's own row once and puts the nickname into locals", async () => {
+    const { onRequest } = await loadOnRequest();
+    getUser.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
+    const context = buildContext("/dashboard");
+
+    const response = await onRequest(context, next);
+
+    expect(response.status).toBe(200);
+    expect(context.locals.nickname).toBe("Kasia");
+    expect(from).toHaveBeenCalledOnce();
+    expect(from).toHaveBeenCalledWith("nicknames");
+    expect(select).toHaveBeenCalledWith("nickname");
+    expect(eq).toHaveBeenCalledWith("user_id", "u1");
+    expect(maybeSingle).toHaveBeenCalledOnce();
+  });
+
+  it.each(["/dashboard", "/settings", "/api/tasks/checkoff", "/api/groups/join"])(
+    "redirects a signed-in user without a nickname from %s to the nickname page",
+    async (path) => {
+      const { onRequest } = await loadOnRequest();
+      getUser.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
+      nicknameResult = { data: null, error: null };
+      const pass = vi.fn(next);
+
+      const response = await onRequest(buildContext(path), pass);
+
+      expect(response.status).toBe(302);
+      expect(response.headers.get("Location")).toBe("/account/nickname");
+      expect(pass).not.toHaveBeenCalled();
+      expect(errorSpy).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each(["/account/nickname", "/api/account/nickname"])(
+    "lets a signed-in user without a nickname reach %s, with locals.nickname null",
+    async (path) => {
+      const { onRequest } = await loadOnRequest();
+      getUser.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
+      nicknameResult = { data: null, error: null };
+      const context = buildContext(path);
+      const pass = vi.fn(next);
+
+      const response = await onRequest(context, pass);
+
+      expect(response.status).toBe(200);
+      expect(pass).toHaveBeenCalledOnce();
+      expect(context.locals.nickname).toBeNull();
+      expect(maybeSingle).toHaveBeenCalledOnce();
+    },
+  );
+
+  it("reads the nickname on the nickname page too, so the route knows a first choice from a change", async () => {
+    const { onRequest } = await loadOnRequest();
+    getUser.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
+    const context = buildContext("/api/account/nickname");
+
+    const response = await onRequest(context, next);
+
+    expect(response.status).toBe(200);
+    expect(context.locals.nickname).toBe("Kasia");
+  });
+
+  it("answers 503 and logs nickname.lookup.failed once when the read fails", async () => {
+    const { onRequest } = await loadOnRequest();
+    getUser.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
+    nicknameResult = { data: null, error: { code: "", message: "TypeError: fetch failed" } };
+    const pass = vi.fn(next);
+
+    const response = await onRequest(buildContext("/dashboard", { "cf-ray": "r1" }), pass);
+
+    expect(response.status).toBe(503);
+    expect(response.headers.get("Retry-After")).toBe("30");
+    expect(response.headers.get("Content-Type")).toContain("text/html");
+    expect(pass).not.toHaveBeenCalled();
+    expect(errorSpy).toHaveBeenCalledOnce();
+    expect(errorSpy.mock.calls[0][0]).toMatchObject({
+      level: "error",
+      event: "nickname.lookup.failed",
+      route: "/dashboard",
+      userId: "u1",
+      ray: "r1",
+    });
+  });
+
+  it("answers 503 JSON on an API path when the read fails", async () => {
+    const { onRequest } = await loadOnRequest();
+    getUser.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
+    nicknameResult = { data: null, error: { code: "XX000", message: "boom" } };
+
+    const response = await onRequest(buildContext("/api/account/nickname", { Accept: "application/json" }), next);
+
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ ok: false, error: "unavailable" });
+    expect(errorSpy.mock.calls[0][0]).toMatchObject({ event: "nickname.lookup.failed", userId: "u1" });
+  });
+
+  it("sends an anonymous visitor to sign-in without reading a nickname", async () => {
+    const { onRequest } = await loadOnRequest();
+    getUser.mockResolvedValue({ data: { user: null }, error: new AuthSessionMissingError() });
+
+    const response = await onRequest(buildContext("/account/nickname"), next);
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get("Location")).toBe("/auth/signin");
+    expect(from).not.toHaveBeenCalled();
+  });
+
+  it("does not read a nickname on a public page", async () => {
+    const { onRequest } = await loadOnRequest();
+    getUser.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
+    nicknameResult = { data: null, error: null };
+    const context = buildContext("/privacy");
+
+    const response = await onRequest(context, next);
+
+    expect(response.status).toBe(200);
+    expect(from).not.toHaveBeenCalled();
+    expect(context.locals.nickname).toBeNull();
+  });
+
+  it("does not treat a path that only starts with the same letters as protected", async () => {
+    const { onRequest } = await loadOnRequest();
+    getUser.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
+
+    const response = await onRequest(buildContext("/accounts"), next);
+
+    expect(response.status).toBe(200);
+    expect(from).not.toHaveBeenCalled();
   });
 
   it("reports an exception from next() as request.unhandled and rethrows the same error", async () => {

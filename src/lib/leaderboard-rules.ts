@@ -26,7 +26,7 @@ export function groupPeriodsByEnrolment(
 /** One member's line before ranking. */
 export interface StandingInput {
   userId: string;
-  email: string | null;
+  nickname: string | null;
   total: number;
 }
 
@@ -35,7 +35,10 @@ export interface Standing extends StandingInput {
   isYou: boolean;
 }
 
-/** What a member without an e-mail is called, both where the ranking sorts them and wherever the UI displays them. */
+/**
+ * What a member without a nickname (or a participant without a member row) is called, both where the ranking sorts
+ * them and wherever the UI displays them.
+ */
 export const UNKNOWN_MEMBER = "Unknown member";
 
 // Code-unit order, not `localeCompare`: the ranking must be the same on the server and in every browser locale.
@@ -43,12 +46,12 @@ const compareCodeUnits = (a: string, b: string): number => (a < b ? -1 : a > b ?
 
 /**
  * Members ranked by total, highest first; equal totals share the position (`1 +` the number of strictly higher totals,
- * so 5, 5, 3 gives 1, 1, 3) and are listed by e-mail ignoring case (a missing e-mail sorts as "Unknown member"), then by
- * user id. The input is not changed.
+ * so 5, 5, 3 gives 1, 1, 3) and are listed by nickname in lower case (a missing nickname sorts as "Unknown member"),
+ * then by user id, so "Kasia" and "kasia" are ordered by user id. The input is not changed.
  */
 export function rankStandings(rows: readonly StandingInput[], viewerId: string): Standing[] {
   const ordered = rows
-    .map((row) => ({ row, name: (row.email ?? UNKNOWN_MEMBER).toLowerCase() }))
+    .map((row) => ({ row, name: (row.nickname ?? UNKNOWN_MEMBER).toLowerCase() }))
     .sort(
       (a, b) =>
         b.row.total - a.row.total || compareCodeUnits(a.name, b.name) || compareCodeUnits(a.row.userId, b.row.userId),
@@ -82,7 +85,7 @@ export interface ViewerTask {
  * total.
  */
 export interface BoardInput {
-  members: readonly { user_id: string; email: string | null }[];
+  members: readonly { user_id: string; nickname: string | null }[];
   tasks: readonly { id: string; recurrence: TaskRecurrence }[];
   /** Task id -> ids of the users who take part in it (`groupParticipantsByTask`). */
   participantsByTask: ReadonlyMap<string, readonly string[]>;
@@ -133,7 +136,11 @@ export function buildBoard({
   }
 
   return {
-    totals: members.map(({ user_id, email }) => ({ userId: user_id, email, total: totalByUser.get(user_id) ?? 0 })),
+    totals: members.map(({ user_id, nickname }) => ({
+      userId: user_id,
+      nickname,
+      total: totalByUser.get(user_id) ?? 0,
+    })),
     viewerTasks,
   };
 }
