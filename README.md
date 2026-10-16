@@ -23,8 +23,8 @@ StreakBoard is a habit tracker for a group of friends: everyone tracks the same 
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/przeprogramowani/10x-astro-starter.git
-cd 10x-astro-starter
+git clone https://github.com/mariuszzlotucha/streak-board.git
+cd streak-board
 ```
 
 2. Install dependencies:
@@ -62,20 +62,29 @@ npm run dev
 - `npm run test:rls` - Run the SQL RLS scenario checks against the local database
 - `npm run guard:migrations` - Check the migrations of this branch against `origin/master` (`-- --base <ref>` for another base): immutability of merged files, the `-- compat:` marker, ordering (see [Deployment](#deployment))
 - `npm run types:check` - Diff `src/types.ts` against a fresh generation from the local stack (non-zero with the diff when it is stale)
+- `npm run deps` - Check the import rules with dependency-cruiser (`.dependency-cruiser.cjs`): no circular imports, `src/lib` must not import components or pages, `src/components` must not import pages; CI does not run it
 - `npm run review` - Run the AI code reviewer on a diff read from stdin (`git diff | npm run --silent review`; see `packages/code-reviewer/README.md`)
 
 ## Project Structure
 
-```md
+```text
 .
+├── .github/              # CI, release and review workflows
+├── context/              # Foundation docs, change folders and archive
+├── packages/
+│   └── code-reviewer/    # AI code reviewer (npm run review)
+├── public/               # Public assets
+├── scripts/              # Helper scripts: smoke, token contrast, migrations, e2e setup
 ├── src/
-│ ├── layouts/ # Astro layouts
-│ ├── pages/ # Astro pages
-│ │ └── api/ # API endpoints
-│ ├── components/ # UI components (Astro & React)
-│ └── assets/ # Static assets
-├── public/ # Public assets
-├── wrangler.jsonc # Cloudflare Workers config
+│   ├── components/       # UI components (Astro & React)
+│   ├── layouts/          # Astro layouts
+│   ├── lib/              # Services and helpers
+│   ├── pages/            # Astro pages
+│   │   └── api/          # API endpoints
+│   └── styles/           # Global styles and design tokens (global.css)
+├── supabase/             # Migrations, local config and RLS checks
+├── tests/                # Unit, integration and e2e (Playwright) tests
+└── wrangler.jsonc        # Cloudflare Workers config
 ```
 
 ## Supabase Configuration
@@ -223,8 +232,8 @@ This project deploys to [Cloudflare Workers](https://workers.cloudflare.com/) th
 
 ### Release
 
-1. Merge the PR to `master`. The `ci`, `smoke` and `integration` jobs run first.
-2. When all three pass, the `release` job waits for approval in the GitHub `production` environment (Actions run page → **Review deployments**). **Before approving, check `supabase/migrations/` in the merge commit**: the approval comes before the job prints `supabase migration list`, so this is the moment to see which migrations will reach production.
+1. Merge the PR to `master`. The `ci`, `smoke`, `e2e` and `integration` jobs run first.
+2. When all four pass, the `release` job waits for approval in the GitHub `production` environment (Actions run page → **Review deployments**). **Before approving, check `supabase/migrations/` in the merge commit**: the approval comes before the job prints `supabase migration list`, so this is the moment to see which migrations will reach production.
 3. After approval the job runs in this order: link the hosted Supabase project, `supabase migration list`, `npm run build` (so a build failure cannot leave the schema ahead), `supabase db push --yes` (schema before code), `npx wrangler deploy`, then moves the `production` tag to the deployed commit (`git tag -f production` and a force push of `refs/tags/production`; the `compat` job builds whatever the tag points at), and finally checks the live URL (`/` must answer 200; `/privacy` must answer 200 with a plain `mailto:` contact link (not rewritten by Cloudflare's e-mail obfuscation) and the body of `/` must link it with `href="/privacy"`, all retried together up to 10 times, 3 s apart, because only the new Worker version passes them; `/dashboard` and `/auth/callback` must answer 302 to `/auth/signin`, and the Google flow must answer in two hops: `POST /api/auth/google` 302 to Supabase's `/auth/v1/authorize?provider=google`, and that URL 302 to `https://accounts.google.com/`; each hop is tried up to 3 times).
 4. If a release fails, fix the cause and re-run the failed jobs from the Actions run page: `db push` is idempotent and skips migrations that are already applied.
 
@@ -409,7 +418,7 @@ The `production` tag marks the commit that is live on production. The `release` 
 
 ### AI code review (`ai-review`)
 
-`.github/workflows/review.yml` runs the reviewer in `packages/code-reviewer` on every PR to `master` (opened, pushed, reopened, labeled). Its job `ai-review` is a required check of ruleset "master protection" (id `24254172`) next to `ci`, `smoke`, `e2e`, `integration` and `compat`, so the workflow has no path filters and the job never skips: a docs-only PR passes as `skipped`.
+`.github/workflows/review.yml` runs the reviewer in `packages/code-reviewer` on every PR to `master` (opened, pushed, reopened, labeled). Its job `ai-review` is a required check of ruleset "master protection" (id `24254172`) next to `ci`, `smoke`, `e2e`, `integration` and `compat`, so the workflow has no path filters and the job never skips. On a docs-only PR it runs, reports `skipped` for the empty code diff and passes.
 
 - **Input** — the code diff against `master` without `context/`, Markdown files and `package-lock.json`, plus the PR title and description and the list of every path the PR touches, all given to the model as untrusted data. The reviewer may also read the repository with two read-only tools (`readFile`, `searchCode`) at the commit the PR branched from (its merge base with the base commit), the source of the project rules (`CLAUDE.md`, `context/foundation/lessons.md`), and at the head commit, as untrusted content (the changed files in full, the change's `plan.md`). Both are git object reads in the job's checkout; the reviewer writes nothing, and only the workflow comments and labels. A code diff over 50,000 characters is reviewed without the tools (a `tools: skipped` line in the log), since every extra call resends the diff and a large one runs out of the timeout. Each tool call is one line in the run log, and the job summary's usage line counts them (`tool_calls=`). The model scores the six criteria and gives its own verdict; the stricter of that verdict and the written rule binds, so a model `fail` stands even when the scores pass (see `packages/code-reviewer/README.md`, Input format and verdict rule). The run's job summary lists the six scores and a `note:` line when the two verdicts disagree.
 - **Reviewer from the base commit** — the job checks out the PR's base commit at the workspace root and runs the composite action `.github/actions/ai-reviewer` and the reviewer from there. The PR is fetched as git objects only and never checked out, so no PR file lands where npm (ancestor `node_modules/.bin`, `workspaces`, `.npmrc`) or git (`.gitattributes`) would read it, and no token is left in the git config. This protects the reviewer, its prompt and the action from the PR's own changes, not the workflow file: on `pull_request` GitHub runs the PR's version of `review.yml`, so a PR that changes `.github/workflows/` or `.github/actions/` can change the gate (the same holds for `integration`). The owner reads such a PR before merging; its green checks are no evidence. A fix to the reviewer, its prompt or the action must therefore land on `master` first, in its own PR (which the old reviewer still judges); then merge `master` into a waiting branch and push, since a label alone keeps the old base.
