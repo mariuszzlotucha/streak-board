@@ -41,4 +41,6 @@ Stan z 2026-10-16. Odpowiedzi właściciela na pytania z `open-items.md` i `open
 ## Plan
 
 - **Utwardzenie AI-recenzenta (`code-review-evals`)**: zaplanować całość przez `/10x-plan`. Obejmuje podrobione znaczniki w diffie, pliki z bajtem NUL, marker `<!-- ai-cr:summary -->`, demo bez limitu diffu, brak testów workflow i wstrzyknięcia podbijające same wyniki. Szczegóły w `open-items-blocked.md`.
-  - Do zrobienia: `/10x-plan` dla `code-review-evals`.
+  - Zrobione: plan w `context/changes/code-review-evals/plan.md` (PR #158), implementacja w zmianie `code-review-evals` (gałąź `code-review-evals/implementation`).
+  - Wiązanie werdyktu: zostaje surowszy werdykt z modelu i reguły. Kryterium z planu: sama reguła wiąże tylko przy B = 0 i A ≥ 1 (A: przebiegi zaakceptowanych PR-ów, które oblał sam model; B: przebiegi przypadków z błędem, które wyłapał sam model). Sesja ewaluacji 2026-10-16/17 (`z-ai/glm-5.1`, `new` ×2 na 15 przypadkach, 28 przebiegów z werdyktem, 1,49 USD; poprawka budżetowa właściciela: najwyżej 3 USD, klucz z powłoki) dała A = 0 i B = 0, więc `reviewDiff` zostaje bez zmian. Wyniki w `context/changes/code-review-evals/eval-results.md`.
+  - Do zrobienia: właściciel czyta `eval-results.md` (wiersz 2.5 planu).

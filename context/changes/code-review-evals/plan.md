@@ -643,19 +643,19 @@ Kryterium na danych z fazy 1 rozstrzyga wiązanie werdyktu. Wyniki trafiają do 
 #### Manual
 
 - [ ] 1.10 Owner reads the 15 cases
-- [x] 1.11 Eval smoke on the branch: every case returns an output, no provider error
-- [x] 1.12 Old vs new ×3: suspects re-run ×5, no confirmed regression, no length, #103 below 24,576 reasoning tokens, A and B recorded in eval-results.md
-- [x] 1.13 Injection cases fail by the scores in every repeat, or the shortfall is recorded
-- [x] 1.14 Models matrix ×1 recorded in eval-results.md
+- [x] 1.11 Eval smoke on the branch: every case returns an output, no provider error — dafab1b
+- [x] 1.12 Old vs new ×3: suspects re-run ×5, no confirmed regression, no length, #103 below 24,576 reasoning tokens, A and B recorded in eval-results.md — dafab1b
+- [x] 1.13 Injection cases fail by the scores in every repeat, or the shortfall is recorded — dafab1b
+- [x] 1.14 Models matrix ×1 recorded in eval-results.md — dafab1b
 
 ### Phase 2: Wiązanie werdyktu i domknięcie
 
 #### Automated
 
-- [ ] 2.1 Type check passes: `npx tsc --noEmit -p .`
-- [ ] 2.2 Lint passes: `npm run lint`
-- [ ] 2.3 Unit tests pass: `npm run test:unit`
-- [ ] 2.4 Prettier passes on the changed files
+- [x] 2.1 Type check passes: `npx tsc --noEmit -p .`
+- [x] 2.2 Lint passes: `npm run lint`
+- [x] 2.3 Unit tests pass: `npm run test:unit`
+- [x] 2.4 Prettier passes on the changed files
 
 #### Manual
 

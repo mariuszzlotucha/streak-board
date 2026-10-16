@@ -55,6 +55,15 @@ Każda recenzja z werdyktem skończyła się `finishReason: stop`. `pr-103` szed
 
 A = 0 i B = 0, więc kryterium daje `stricter`: sama reguła wiązałaby tylko przy B = 0 i A ≥ 1. W 28 przebiegach z werdyktem model i reguła ani razu się nie rozjechały, także na `pr-116-7d319c1`, gdzie w CI fail dał sam model. `nul-hidden` (`unreviewable`) nie wchodzi do liczników.
 
+## Decyzja fazy 2: wiązanie werdyktu
+
+- **Wynik:** kryterium daje `stricter` (B = 0, A = 0; sama reguła wiązałaby tylko przy B = 0 i A ≥ 1), więc zostaje surowszy werdykt z modelu i reguły.
+- **Kod:** `reviewDiff` bez zmian, tak samo linia `note:` w CLI i testy. `README.md` (`## CI`) już opisuje surowsze wiązanie i też zostaje.
+- **Skutek wiązania samą regułą:** zgodność z `expect` na zapisanych werdyktach byłaby 28/28, tak jak dziś (tabela wyżej), więc na tych danych zmiana nic by nie dała.
+- **Dokumenty:** README recenzenta zapisuje surowszy werdykt z licznikami (Input format and verdict rule) i datowane wyniki wstrzyknięć (Known limits).
+- **Próbka:** jest mała (28 przebiegów, dwa na przypadek zamiast trzech), więc następna zmiana recenzenta albo wiązania sprawdza kryterium na nowo (lekcja „Run the eval suite, old against new, before shipping a reviewer change” w `context/foundation/lessons.md`).
+- **2.5 (odczyt właściciela):** czeka na właściciela.
+
 ## Wiersze fazy 1
 
 - **1.10 (przypadki):** czeka na właściciela.
