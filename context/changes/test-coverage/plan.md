@@ -566,7 +566,7 @@ No schema change and no data migration. The `production` tag is new repository m
 
 - [ ] 6.4 With the owner's go-ahead, a scratch draft PR that adds a migration the deployed code cannot survive (for example a `drop column` on a column it reads) shows `compat` failing in the deployed commit's smoke; closed unmerged, branch deleted
 - [ ] 6.5 With the owner's go-ahead, a scratch draft PR that adds a compatible, additive migration shows `compat` passing; closed unmerged, branch deleted
-- [ ] 6.6 Release and tag move: after the merge, the owner approves the `release` run; `git fetch --tags origin && git rev-parse production` equals the merge commit and the live check passes
+- [x] 6.6 Release and tag move: after the merge, the owner approves the `release` run; `git fetch --tags origin && git rev-parse production` equals the merge commit and the live check passes — run 38825633332 approved by the owner, `production` at 45b7657 (moved by the job, "forced update" from fb62d74), live check green, 2026-10-16
 - [x] 6.7 The owner adds `ci`, `smoke`, `e2e` and `compat` to the required checks of the `master` ruleset; `gh api repos/mariuszzlotucha/streak-board/rulesets/24254172` lists `integration`, `ai-review`, `ci`, `smoke`, `e2e` and `compat` — owner's PUT on 2026-10-16, read back the same day
 - [ ] 6.8 README (CI, Release, Rollback), test-plan §3, §5, §6.5, §7, §8 and the lessons entry read correctly
 - [ ] 6.9 The `deployment-plan.md` Phase 16 entry is written with every S-10 release run, the initial tag, the hosted Auth read-back and the ruleset change; the rows that need this PR's own checks, release or the ruleset change are ticked in a small closing docs PR
