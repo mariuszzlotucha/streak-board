@@ -85,5 +85,8 @@ test.describe("risk #6 and #2: an invite link joins a new member to the group", 
     await expect(memberRows.filter({ has: page.getByText("You", { exact: true }) }).first()).toBeVisible();
     const ownerRows = page.getByRole("listitem").filter({ hasText: owner.nickname });
     await expect(ownerRows.filter({ has: page.getByText("Owner", { exact: true }) })).toBeVisible();
+    // Each nickname is part of its account's address, so the row filters above would also match addresses: pin that
+    // none is shown.
+    await expect(page.getByRole("main")).not.toContainText("@");
   });
 });

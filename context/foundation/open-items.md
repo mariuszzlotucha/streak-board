@@ -2,7 +2,7 @@
 
 Stan z 2026-10-16, po scaleniu PR #146 (`68efab0`). Decyzje właściciela z tego dnia są w `context/foundation/owner-decisions.md`. `[x]` oznacza wykonane albo rozstrzygnięte, `[ ]` oznacza, że zostało do zrobienia. Powody i szczegóły przy punktach, które czekają, są w `context/foundation/open-items-blocked.md`.
 
-Poza tą listą: otwarte wycinki roadmapy (`context/foundation/roadmap.md`) to S-14 `nickname` (plan z 2026-10-16, `context/changes/nickname/plan.md`) i S-13 `checkoff-grid`. Decyzja właściciela z 2026-10-16: S-14 idzie pierwszy i wchodzi do „Done when” M-2, więc M-2 jest spełniony po zamknięciu obu, a roadmapa nie ma następnego kamienia milowego.
+Poza tą listą: otwarty wycinek roadmapy (`context/foundation/roadmap.md`) to S-13 `checkoff-grid`. S-14 `nickname` wydany 2026-10-16 w dwóch wydaniach (`deployment-plan.md`, Phase 18), zostało jego archiwum (`/10x-archive nickname`). Decyzja właściciela z 2026-10-16: S-14 wchodzi do „Done when” M-2, więc M-2 jest spełniony po zamknięciu S-13, a roadmapa nie ma następnego kamienia milowego.
 
 ## 1. Ręczne sprawdzenia S-12
 
@@ -29,7 +29,7 @@ Wiersze nieodhaczone w `context/archive/2026-10-06-refactor-opportunities/plan.m
 Sprawdzone i zamknięte (nie szukać ponownie):
 
 - Q-07: na produkcji tylko kody długości 12 (`deployment-plan.md`, Phase 7).
-- Q-05: dziś członkowie grupy widzą nawzajem e-mail (`src/components/privacy/WhoCanSee.astro`). Decyzja 2026-10-16: to się zmienia, nick zastępuje e-mail; wycinek S-14 `nickname` (`owner-decisions.md`, `context/changes/nickname/frame.md`).
+- Q-05: rozstrzygnięte 2026-10-16: członkowie grupy widzą nawzajem nick, nie e-mail (S-14 `nickname`; wydanie 1 o 15:53 UTC, wydanie 2 o 16:22:56 UTC usunęło e-mail z `list_group_members`; `deployment-plan.md`, Phase 18; `src/components/privacy/WhoCanSee.astro`).
 - Q-09: usunięcie konta właściciela kasuje grupę z jej zadaniami (`src/components/privacy/AccountDeletion.astro`).
 
 ## 3. Decyzje właściciela (2026-10-16)
@@ -57,9 +57,10 @@ Plan `code-review-evals` jest tylko w follow-upach, nie w roadmapie. Wymaga plan
 
 Odroczone świadomie, z wyzwalaczami w planach. Nie są zadaniami, dopóki wyzwalacz się nie pojawi:
 
-- OPP-6, OPP-7 i OPP-8 z S-12 (info trace, szkielet tras, jeden klient Supabase na żądanie): wyzwalacze w sekcji „What We're NOT Doing" planu S-12, m.in. czternasta trasa danych.
+- OPP-6, OPP-7 i OPP-8 z S-12 (info trace, szkielet tras, jeden klient Supabase na żądanie): wyzwalacze w sekcji „What We're NOT Doing" planu S-12, m.in. czternasta trasa danych. Ten wyzwalacz zapalił się 2026-10-16: S-14 dodał czternastą trasę danych `POST /api/account/nickname` (strażnik pokrycia w `tests/integration/data-routes.test.ts` liczy 14 plików). Czy otworzyć zmianę, decyduje właściciel.
 - OPP-10 z S-12 (ochrona każdej `/api/*`): wyzwalacz to nowa rodzina `/api/*`. Wyzwalacz zapala S-14 (`/api/account`, plan z 2026-10-16); plan S-14 dopisuje rodzinę do `PROTECTED_ROUTES` i zostawia OPP-10 jako osobną zmianę, bo zmienia odpowiedź nieznanych ścieżek `/api/*` z 404 na 302.
 - CODEOWNERS dla `.github/`: decyzja 2026-10-16 to odroczyć, bo repozytorium ma jednego właściciela.
+- S-14 `nickname`, dwie rzeczy poza zakresem: (1) baza nie wymusza, że członek grupy ma nick, więc bezpośrednie wywołanie `join_group` przez PostgREST własnym tokenem dodaje członka widocznego jako „Unknown member” (sekcja „What We're NOT Doing” planu, `context/changes/nickname/plan.md`); (2) nicki z łudząco podobnych liter (np. cyrylickie „а”) są dozwolone, bo nie ma kontroli confusables (przegląd fazy 1, F3). Wyzwalacz: „Unknown member” w grupie, której wszyscy członkowie logowali się po 2026-10-16, albo zgłoszony nick podszywający się pod innego członka.
 
 ## 5. Porządki lokalne i ustawienia repozytorium
 
@@ -70,6 +71,6 @@ Odroczone świadomie, z wyzwalaczami w planach. Nie są zadaniami, dopóki wyzwa
 
 ## Sugerowana kolejność (aktualna)
 
-1. S-14 `nickname`: scalenie PR-a planistycznego, potem `/goal` z `/10x-goal-implement nickname`, jeden przebieg na fazę, bo fazę 2 wolno zacząć dopiero po wydaniu fazy 1 (dwie fazy, dwa wydania).
+1. S-14 `nickname`: oba wydania są na produkcji; zostało `/10x-archive nickname`.
 2. S-13 `checkoff-grid` (`/10x-frame`), razem z poprawkami dokumentów (streak, poziomy, okno dat).
 3. `/10x-plan` dla `code-review-evals`.
