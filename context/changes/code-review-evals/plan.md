@@ -652,10 +652,10 @@ Kryterium na danych z fazy 1 rozstrzyga wiązanie werdyktu. Wyniki trafiają do 
 
 #### Automated
 
-- [x] 2.1 Type check passes: `npx tsc --noEmit -p .`
-- [x] 2.2 Lint passes: `npm run lint`
-- [x] 2.3 Unit tests pass: `npm run test:unit`
-- [x] 2.4 Prettier passes on the changed files
+- [x] 2.1 Type check passes: `npx tsc --noEmit -p .` — bfeefb5
+- [x] 2.2 Lint passes: `npm run lint` — bfeefb5
+- [x] 2.3 Unit tests pass: `npm run test:unit` — bfeefb5
+- [x] 2.4 Prettier passes on the changed files — bfeefb5
 
 #### Manual
 
