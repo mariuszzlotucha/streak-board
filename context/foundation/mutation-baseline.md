@@ -24,15 +24,17 @@ How to read it:
 | `landing`           |      15 |      14 |        1 |           0 |              0 |        0 |     93.33 % |         — |       3 s |
 | `leaderboard-rules` |      75 |      70 |        4 |           1 |              0 |        0 |     93.33 % |   92.00 % |       6 s |
 | `nickname-errors`   |      26 |      25 |        1 |           0 |              0 |        0 |     96.15 % |         — |     6 s ¹ |
-| `nickname-rules`    |      23 |      23 |        0 |           0 |              0 |        0 |    100.00 % |         — |     6 s ¹ |
+| `nickname-rules`    |      83 |      82 |        1 |           0 |              0 |        0 |     98.80 % |         — |     6 s ² |
 | `nicknames`         |      18 |      18 |        0 |           0 |              0 |        0 |    100.00 % |         — |     6 s ¹ |
 | `redact`            |      21 |      21 |        0 |           0 |              0 |        0 |    100.00 % |         — |       7 s |
 | `streak-rules`      |     130 |     107 |       23 |           0 |              0 |        0 |     82.31 % |         — |      23 s |
 | `task-errors`       |      16 |      15 |        1 |           0 |              0 |        0 |     93.75 % |         — |       3 s |
 | `task-rules`        |      31 |      31 |        0 |           0 |              0 |        0 |    100.00 % |   87.10 % |       4 s |
-| **All 17**          | **740** | **699** |   **38** |       **1** |          **0** |    **2** | **94.73 %** |           |           |
+| **All 17**          | **800** | **758** |   **39** |       **1** |          **0** |    **2** | **95.00 %** |           |           |
 
 ¹ Added in S-14 `nickname` (2026-10-16), measured in one narrowed run together with `leaderboard-rules.ts:52-66` (see "S-14 re-run" below); the wall time is that run's.
+
+² Re-measured alone after the Phase 1 impl review (F3, 2026-10-16) added the visible-character rule: `npm run test:mutation -- --mutate src/lib/nickname-rules.ts --logLevel info`. The 23 mutants of the S-14 re-run below are a subset; the new ones are the two code-point range lists and the pattern builder.
 
 Every runtime mutant that was not `NoCoverage` ran at least one test (`testsCompleted >= 1`), with two kinds of exception, both listed under their module: the five static mutants of `streak-rules` that throw at import (verdict `import-time throw`) and the two `Timeout` mutants of `checkoff-client`, which are detected, not survived (the test that catches them never settles, so no test completes).
 
@@ -144,6 +146,12 @@ No survivors.
 | Id  | Line | Mutator               | Replaces                  | Verdict                                                                                                                                |
 | --- | ---: | --------------------- | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
 | 48  |   27 | ConditionalExpression | `param !== null` → `true` | equivalent: `Object.hasOwn(NICKNAME_ERROR_MESSAGES, null)` looks up `"null"`, which does not exist, so `null` still resolves to `null` |
+
+### `nickname-rules`
+
+| Id  | Line | Mutator               | Replaces                               | Verdict                                                                                                          |
+| --- | ---: | --------------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| 45  |   68 | ConditionalExpression | `from === to` → `false` in `charClass` | equivalent: a one-code-point range is written `\u{x}-\u{x}` instead of `\u{x}`, which matches the same character |
 
 ### `redact`
 

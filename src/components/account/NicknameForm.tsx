@@ -3,7 +3,13 @@ import { Check, UserRound } from "lucide-react";
 import { FormField } from "@/components/forms/FormField";
 import { SubmitButton } from "@/components/forms/SubmitButton";
 import { useFormSubmitting } from "@/components/hooks/useFormSubmitting";
-import { MAX_NICKNAME_LENGTH, MIN_NICKNAME_LENGTH, normalizeNickname, trimNickname } from "@/lib/nickname-rules";
+import {
+  MAX_NICKNAME_LENGTH,
+  MIN_NICKNAME_LENGTH,
+  isVisibleNickname,
+  normalizeNickname,
+  trimNickname,
+} from "@/lib/nickname-rules";
 
 interface NicknameFormProps {
   /** The current nickname, a suggestion from the sign-in provider, or "". */
@@ -18,8 +24,11 @@ export default function NicknameForm({ initialValue, submitLabel }: NicknameForm
 
   function validate() {
     let next: string | undefined;
-    if (!trimNickname(nickname)) {
+    const trimmed = trimNickname(nickname);
+    if (!trimmed) {
       next = "Nickname is required";
+    } else if (!isVisibleNickname(trimmed)) {
+      next = "Nickname must use visible characters, without control or format characters";
     } else if (!normalizeNickname(nickname)) {
       // Counted in code points, like the server and the database; a maxLength attribute would count UTF-16 units.
       next = `Nickname must be ${MIN_NICKNAME_LENGTH} to ${MAX_NICKNAME_LENGTH} characters`;

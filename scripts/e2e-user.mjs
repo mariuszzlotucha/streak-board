@@ -98,7 +98,11 @@ async function main() {
   // part, cut to 24 characters), repeated here because this script runs as plain Node; seed.spec.ts expects it.
   const nickname = email.split("@")[0].slice(0, 24);
   const { error: nicknameError } = await admin.from("nicknames").insert({ user_id: data.user.id, nickname });
-  if (nicknameError) throw new Error(`nickname insert failed: ${nicknameError.message}`);
+  if (nicknameError) {
+    // Nothing prints the account's credentials on this path, so it would leak.
+    await admin.auth.admin.deleteUser(data.user.id);
+    throw new Error(`nickname insert failed: ${nicknameError.message}`);
+  }
 
   // Exactly these two lines on stdout, nothing else: the CI step appends them to $GITHUB_ENV.
   console.log(`E2E_USERNAME=${email}`);

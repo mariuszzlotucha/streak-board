@@ -1242,7 +1242,7 @@ $$;
 
 -- ---------------------------------------------------------------------------
 -- S-14: nicknames (20261016162551_add_nicknames.sql): a user reads only their own row and writes it only through
--- set_nickname; the database enforces exact uniqueness, the trim and the length; the row goes with the account
+-- set_nickname; the database enforces exact uniqueness, the trim, the length and visible characters; the row goes with the account
 -- ---------------------------------------------------------------------------
 
 do $$
@@ -1275,6 +1275,9 @@ begin
   perform rls_check.expect_error('23514', $q$select public.set_nickname('a')$q$, 'S-14 a 1-character nickname is rejected (23514)');
   perform rls_check.expect_error('23514', format('select public.set_nickname(%L)', repeat('n', 25)), 'S-14 a 25-character nickname is rejected (23514)');
   perform rls_check.expect_error('23514', $q$select public.set_nickname(' ab ')$q$, 'S-14 an untrimmed nickname is rejected (23514)');
+  perform rls_check.expect_error('23514', $q$select public.set_nickname(E'  ')$q$, 'S-14 a nickname with nothing visible is rejected (23514)');
+  perform rls_check.expect_error('23514', $q$select public.set_nickname(E'ab​cd')$q$, 'S-14 a zero-width space is rejected (23514)');
+  perform rls_check.expect_error('23514', $q$select public.set_nickname(E'ab‮cd')$q$, 'S-14 a bidi override is rejected (23514)');
 
   perform rls_check.as_anon();
   perform rls_check.expect_error('42501', 'select count(*) from public.nicknames', 'S-14 anon cannot read nicknames');

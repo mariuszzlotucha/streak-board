@@ -19,8 +19,9 @@ import {
 
 // Dev-only visual gate for `/dashboard`, `/settings` and `/account/nickname`: in a production build the route answers 404
 // with an empty body. `?state=<id>` renders one page state the way its page renders it (same `AppLayout`, same
-// `DashboardView`, `SettingsView` or `NicknameView`; the nickname page without the Main nav) from fixture data, with no Supabase call; without a known state the page lists the states of both
-// pages and shows the control states. The fixtures are built by a function call, and only in dev.
+// `DashboardView`, `SettingsView` or `NicknameView`; the nickname page without the Main nav) from fixture data, with no
+// Supabase call; without a known state the page lists the states of the three pages and shows the control states.
+// The fixtures are built by a function call, and only in dev.
 // Every page here cancels every native form submit: the real endpoints act on the signed-in caller's own group, so a
 // confirmed "Delete group" here would delete it. The islands' submit handlers still run and show their pending state.
 const isDev = import.meta.env.DEV;

@@ -1,11 +1,12 @@
 -- nickname (S-14), release 1: a mandatory nickname replaces the e-mail address as a member's name in the group.
 --
 -- What this adds:
---   - public.nicknames: one nickname per account, 2 to 24 code points after trimming space, tab, CR and LF, unique
---     exactly as typed across the whole app ("Kasia" and "kasia" are two different nicknames).
+--   - public.nicknames: one nickname per account, 2 to 24 code points after trimming space, tab, CR and LF, with no
+--     control or format character and at least one visible one, unique exactly as typed across the whole app
+--     ("Kasia" and "kasia" are two different nicknames).
 --   - public.set_nickname(text): the only client write path. SECURITY DEFINER, it upserts the caller's own row, so the
 --     table needs no INSERT/UPDATE/DELETE policy or grant and the database settles a race between two tabs. Violations
---     surface on their own: 23505 (taken), 23514 (length or untrimmed), 42501 (anon, no EXECUTE).
+--     surface on their own: 23505 (taken), 23514 (length, untrimmed or invisible), 42501 (anon, no EXECUTE).
 --   - list_group_members gains a nickname column (left join: a member without a row stays listed with NULL, which the
 --     app shows as "Unknown member").
 --
@@ -28,7 +29,15 @@ create table public.nicknames (
   created_at timestamptz not null default now(),
   constraint nicknames_nickname_key unique (nickname),
   constraint nicknames_nickname_trimmed check (nickname = btrim(nickname, E' \t\r\n')),
-  constraint nicknames_nickname_length check (char_length(nickname) between 2 and 24)
+  constraint nicknames_nickname_length check (char_length(nickname) between 2 and 24),
+  -- No control or format character (Unicode Cc and Cf except the joiners U+200C and U+200D; NUL cannot be in text),
+  -- and at least one character outside the blank set (spaces, separators, joiners, Hangul fillers, braille blank,
+  -- variation selectors), so a nickname never renders empty or reorders the text around it. The same ranges are
+  -- FORBIDDEN_NICKNAME_RANGES and BLANK_NICKNAME_RANGES in src/lib/nickname-rules.ts.
+  constraint nicknames_nickname_visible check (
+    nickname !~ '[\u0001-\u001f\u007f-\u009f­؀-؅؜۝܏࢐-࢑࣢᠎​‎-‏‪-‮⁠-⁤⁦-⁯﻿￹-￻\U000110bd\U000110cd\U00013430-\U0001343f\U0001bca0-\U0001bca3\U0001d173-\U0001d17a\U000e0001\U000e0020-\U000e007f]'
+    and nickname ~ '[^  ᅟ-ᅠ  - ‌-‍ -   ⠀　ㅤ︀-️ﾠ]'
+  )
 );
 
 -- ---------------------------------------------------------------------------
@@ -55,7 +64,7 @@ create policy "nicknames_select_self" on public.nicknames
 -- ---------------------------------------------------------------------------
 
 -- Sets or changes the caller's nickname. The value is stored as given: the app trims it first, and the CHECKs reject
--- anything that is not already trimmed or has the wrong length.
+-- anything that is not already trimmed, has the wrong length or is not visible.
 create function public.set_nickname(p_nickname text)
 returns void
 language sql
