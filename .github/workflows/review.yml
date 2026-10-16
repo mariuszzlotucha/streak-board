@@ -14,8 +14,16 @@
 #   reviewed  — label ai-cr:passed / ai-cr:failed; the check follows the verdict
 #   skipped   — no code diff after the exclusions; no label; the check passes
 #   too-large — the code diff is over the reviewer's limit; label ai-cr:failed; the check fails
+#   unreviewable — the diff shows a source file as binary (usually a NUL byte), so the reviewer cannot read it;
+#                  label ai-cr:failed; the check fails
 #   error     — API, network, timeout or setup failure (also an empty outcome); no label; the check fails
-# Every review posts or edits one comment marked <!-- ai-cr:summary -->.
+# Every review posts or edits one comment of github-actions[bot] that starts with the marker <!-- ai-cr:summary -->
+# and the heading "## AI code review: " on the next line.
+#
+# The code diff leaves out context/, Markdown, both package-lock.json files (the root one and the eval suite's)
+# and the YAML files of the eval cases (packages/code-reviewer/evals/cases/*.yaml). The cases are data, never
+# imported: they hold deliberately broken code and text addressed to the reviewer. Their paths are still in the
+# changed-files list the reviewer gets, and any other file in cases/ stays in the diff.
 #
 # Labels: ai-cr:review re-runs the review (after an error, not to re-roll a fail) and is removed as it starts.
 # Any other label re-evaluates instead of skipping: a skipped job would report `skipped`, which satisfies the
@@ -118,8 +126,12 @@ jobs:
           persist-credentials: false
 
       # The PR head as git objects only, diffed against its merge base with the base commit. Code only: context/
-      # documents, Markdown at any depth (`*` matches `/` in a pathspec) and the lockfile are left out. An empty
-      # result is reviewed as `skipped`.
+      # documents, Markdown at any depth (`*` matches `/` in a pathspec), the root lockfile, the eval suite's
+      # lockfile and the eval cases' YAML files are left out. Every exclusion names an exact path, because `*`
+      # also matches `/`: another file in cases/ and any other *package-lock.json stay in the diff. The cases are
+      # data, never imported (deliberately broken code and text addressed to the reviewer); their paths are still
+      # listed in the changed files. packages/code-reviewer/evals/provider.ts (CI_DIFF_PATHSPECS) mirrors this
+      # pathspec, and a unit test compares the two. An empty result is reviewed as `skipped`.
       - name: Compute the code diff
         if: steps.mode.outputs.mode == 'review'
         env:
@@ -127,7 +139,7 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           git fetch --no-tags --quiet origin "$HEAD_SHA"
-          git diff "$BASE_SHA...$HEAD_SHA" -- . ':(exclude)context' ':(exclude)*.md' ':(exclude)package-lock.json' > "$RUNNER_TEMP/pr.diff"
+          git diff "$BASE_SHA...$HEAD_SHA" -- . ':(exclude)context' ':(exclude)*.md' ':(exclude)package-lock.json' ':(exclude)packages/code-reviewer/evals/package-lock.json' ':(exclude)packages/code-reviewer/evals/cases/*.yaml' > "$RUNNER_TEMP/pr.diff"
           echo "Code diff: $(wc -c < "$RUNNER_TEMP/pr.diff") bytes"
 
       - name: Review the diff
@@ -194,13 +206,19 @@ jobs:
             lines.push(
               "## AI code review: `skipped`",
               "",
-              "No code diff to review after the exclusions (`context/`, `*.md`, `package-lock.json`). The check passes.",
+              "No code diff to review after the exclusions (`context/`, `*.md`, `package-lock.json`, `packages/code-reviewer/evals/package-lock.json` and the eval cases `packages/code-reviewer/evals/cases/*.yaml`). The check passes.",
             );
           } else if (outcome === "too-large") {
             lines.push(
               "## AI code review: `too-large`",
               "",
               "The code diff is over the reviewer's limit, so it was not reviewed and the check fails. Split the pull request, or see the break-glass procedure in the README (CI section).",
+            );
+          } else if (outcome === "unreviewable") {
+            lines.push(
+              "## AI code review: `unreviewable`",
+              "",
+              "The diff shows a source file as binary (usually a NUL byte in it), so the reviewer cannot read it and the check fails. Remove the byte, or, for a truly binary file type, add its extension to the reviewer's list (`BINARY_EXTENSIONS`) on `master` first (see the README, CI section). The paths are in the run log.",
             );
           } else {
             lines.push(
@@ -218,13 +236,15 @@ jobs:
           # inside a function called with ||, so every call in it returns explicitly on failure.
           failed=0
 
-          # Sticky comment: edit the marked comment of github-actions[bot] (claude-review comments as the same bot,
-          # so the marker, not the author, identifies it), or create it.
+          # Sticky comment: edit the comment of github-actions[bot] that starts with the two lines the builder above
+          # writes (the marker, then "## AI code review: "), or create it. claude-review comments as the same bot
+          # and its prompt forbids the marker; matching the heading too keeps a comment that only starts with the
+          # marker from being taken over.
           write_comment() {
             local comment_ids comment_id
             echo "Looking up the summary comment"
             comment_ids=$(gh api --paginate "repos/$REPO/issues/$PR/comments" \
-              --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("<!-- ai-cr:summary -->"))) | .id') || return 1
+              --jq '.[] | select(.user.login == "github-actions[bot]" and (.body | startswith("<!-- ai-cr:summary -->\n## AI code review: "))) | .id') || return 1
             comment_id=${comment_ids%%$'\n'*}
             if [ -n "$comment_id" ]; then
               echo "Editing comment $comment_id"
@@ -252,7 +272,7 @@ jobs:
           }
           case "$outcome:$VERDICT" in
             reviewed:pass) add_label ai-cr:passed || failed=1; remove_label ai-cr:failed || failed=1 ;;
-            reviewed:fail | too-large:*) add_label ai-cr:failed || failed=1; remove_label ai-cr:passed || failed=1 ;;
+            reviewed:fail | too-large:* | unreviewable:*) add_label ai-cr:failed || failed=1; remove_label ai-cr:passed || failed=1 ;;
             *) remove_label ai-cr:passed || failed=1; remove_label ai-cr:failed || failed=1 ;;
           esac
           exit "$failed"

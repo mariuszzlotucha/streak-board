@@ -10,6 +10,7 @@ import {
 } from "ai";
 import { openrouter } from "@openrouter/ai-sdk-provider";
 import {
+  BINARY_EXTENSIONS,
   DEFAULT_MAX_DIFF_CHARS,
   DEFAULT_MAX_OUTPUT_TOKENS,
   DEFAULT_MAX_STEPS,
@@ -116,6 +117,58 @@ export class DiffTooLargeError extends Error {
 }
 
 /**
+ * Thrown by `reviewDiff`, before any model call, when the diff shows a file as
+ * binary (`Binary files <a> and <b> differ`) whose path does not end with one
+ * of `BINARY_EXTENSIONS`: usually a source file with a NUL byte in it, whose
+ * change the reviewer cannot read. `paths` lists every such side as git
+ * prints it (`a/src/x.ts`, `b/src/x.ts`, or a quoted path), so a caller can
+ * name them without parsing the message.
+ */
+export class UnreviewableDiffError extends Error {
+  readonly paths: string[];
+
+  constructor(paths: string[]) {
+    super(
+      "reviewDiff: the diff shows files without a binary extension (BINARY_EXTENSIONS) as binary, " +
+        `so it cannot be reviewed: ${JSON.stringify(paths)}`,
+    );
+    this.name = "UnreviewableDiffError";
+    this.paths = paths;
+  }
+}
+
+/** The line git prints instead of a hunk for a binary file; the two sides are split at the last " and ". */
+const BINARY_MARKER = /^Binary files (.+) and (.+) differ$/;
+
+/** Whether a side of a binary marker (a path as git prints it, maybe quoted) ends with a `BINARY_EXTENSIONS` entry. */
+function hasBinaryExtension(side: string): boolean {
+  const path = side.endsWith('"') ? side.slice(0, -1) : side;
+  const name = path.slice(path.lastIndexOf("/") + 1);
+  const dot = name.lastIndexOf(".");
+  return dot >= 0 && BINARY_EXTENSIONS.includes(name.slice(dot + 1).toLowerCase());
+}
+
+/**
+ * Every side of a `Binary files … differ` line in `diff` that is neither
+ * `/dev/null` nor a path with a binary extension. A name holding " and " can
+ * split the line wrongly; then a side usually ends without an extension and is
+ * listed, which fails closed.
+ */
+function hiddenBinaryPaths(diff: string): string[] {
+  const paths: string[] = [];
+  for (const line of diff.split("\n")) {
+    // The cheap checks first, so a long hunk line never reaches the backtracking pattern.
+    if (!line.startsWith("Binary files ") || !line.endsWith(" differ")) continue;
+    const match = BINARY_MARKER.exec(line);
+    if (!match) continue;
+    for (const side of [match[1], match[2]]) {
+      if (side !== "/dev/null" && !hasBinaryExtension(side)) paths.push(side);
+    }
+  }
+  return paths;
+}
+
+/**
  * The written verdict rule of `REVIEWER_INSTRUCTIONS` as code: `"fail"` when
  * `implementationCorrectness` or `securitySafety` is 4 or lower, or any
  * criterion is 2 or lower; otherwise `"pass"`. Keep the two in step.
@@ -198,8 +251,10 @@ function buildExplorer(
  * PR's changed paths (`listChangedFiles`, unless `pullRequest.changedFiles` is
  * given); without it a review is one model call on the diff. Before any
  * model call it throws an `Error` for an empty or whitespace-only diff or an
- * invalid `maxDiffChars`, and `DiffTooLargeError` for a diff longer than
- * `maxDiffChars` (default `DEFAULT_MAX_DIFF_CHARS`). A diff longer than
+ * invalid `maxDiffChars`, `DiffTooLargeError` for a diff longer than
+ * `maxDiffChars` (default `DEFAULT_MAX_DIFF_CHARS`), and, after that check,
+ * `UnreviewableDiffError` for a diff that shows a file without a
+ * `BINARY_EXTENSIONS` extension as binary. A diff longer than
  * `maxDiffCharsForTools` (default `MAX_DIFF_CHARS_FOR_TOOLS`) is reviewed
  * without the repo tools even with `repo` (`toolsSkipped`). With repo tools and
  * `maxSteps` above 1 a review has two phases: up to `maxSteps - 1` calls that
@@ -236,6 +291,9 @@ export async function reviewDiff(
     throw new Error(`reviewDiff: maxDiffChars must be an integer >= 1 or Infinity, got ${maxDiffChars}`);
   }
   if (diff.length > maxDiffChars) throw new DiffTooLargeError(diff.length, maxDiffChars);
+  // A file the diff shows as binary hides its change from the reviewer, so the review fails closed.
+  const hidden = hiddenBinaryPaths(diff);
+  if (hidden.length > 0) throw new UnreviewableDiffError(hidden);
 
   const resolved = resolveOptions(reviewerOptions);
   const { model } = resolved;

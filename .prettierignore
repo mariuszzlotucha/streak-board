@@ -1,0 +1,2 @@
+# The eval cases hold deliberately broken code and lookalike characters, byte for byte; never reformat them.
+packages/code-reviewer/evals/cases/

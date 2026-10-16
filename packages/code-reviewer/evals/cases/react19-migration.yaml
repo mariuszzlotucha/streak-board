@@ -1,0 +1,130 @@
+# Seeded flaws (M5L3 lesson): a React 16 class component rewritten as a React 19 function component with
+# three planted bugs: defaultProps on a function component, a string ref read through `this.refs`, and a
+# useEffect that subscribes to window without a cleanup.
+- description: "react19-migration: class component to React 19 function component with three planted flaws"
+  metadata:
+    kind: bug
+    expect: fail
+  vars:
+    title: Migrate SearchPanel to a React 19 function component
+    body: |-
+      Upgrades React from 16 to 19 and rewrites `SearchPanel` as a function component with hooks.
+      Behaviour is unchanged: the placeholder and the callback keep their defaults, the Focus button
+      focuses the input, and the panel tracks the window width for its compact layout.
+    files:
+      base:
+        package.json: |
+          {
+            "name": "search-demo",
+            "private": true,
+            "dependencies": {
+              "react": "^16.14.0",
+              "react-dom": "^16.14.0"
+            }
+          }
+        src/components/SearchPanel.jsx: |
+          import React from "react";
+
+          export default class SearchPanel extends React.Component {
+            static defaultProps = { placeholder: "Search…", onSearch: () => {} };
+
+            state = { query: "", width: window.innerWidth };
+
+            handleResize = () => this.setState({ width: window.innerWidth });
+
+            componentDidMount() {
+              window.addEventListener("resize", this.handleResize);
+            }
+
+            componentWillUnmount() {
+              window.removeEventListener("resize", this.handleResize);
+            }
+
+            focusInput = () => {
+              this.inputRef.focus();
+            };
+
+            render() {
+              const { placeholder, onSearch } = this.props;
+              const compact = this.state.width < 600;
+              return (
+                <form
+                  className={compact ? "search search--compact" : "search"}
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    onSearch(this.state.query);
+                  }}
+                >
+                  <input
+                    ref={(node) => (this.inputRef = node)}
+                    value={this.state.query}
+                    placeholder={placeholder}
+                    onChange={(event) => this.setState({ query: event.target.value })}
+                  />
+                  <button type="button" onClick={this.focusInput}>
+                    Focus
+                  </button>
+                  <button type="submit">Search</button>
+                </form>
+              );
+            }
+          }
+      head:
+        package.json: |
+          {
+            "name": "search-demo",
+            "private": true,
+            "dependencies": {
+              "react": "^19.0.0",
+              "react-dom": "^19.0.0"
+            }
+          }
+        src/components/SearchPanel.jsx: |
+          import { useEffect, useState } from "react";
+
+          export default function SearchPanel({ placeholder, onSearch }) {
+            const [query, setQuery] = useState("");
+            const [width, setWidth] = useState(window.innerWidth);
+
+            useEffect(() => {
+              window.addEventListener("resize", () => setWidth(window.innerWidth));
+            }, []);
+
+            function focusInput() {
+              this.refs.queryInput.focus();
+            }
+
+            const compact = width < 600;
+            return (
+              <form
+                className={compact ? "search search--compact" : "search"}
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  onSearch(query);
+                }}
+              >
+                <input
+                  ref="queryInput"
+                  value={query}
+                  placeholder={placeholder}
+                  onChange={(event) => setQuery(event.target.value)}
+                />
+                <button type="button" onClick={focusInput}>
+                  Focus
+                </button>
+                <button type="submit">Search</button>
+              </form>
+            );
+          }
+
+          SearchPanel.defaultProps = { placeholder: "Search…", onSearch: () => {} };
+  assert:
+    - type: javascript
+      value: output.verdict === "fail"
+    - type: llm-rubric
+      transform: output.summary
+      value: >-
+        The review identifies all three planted flaws and explains why each one breaks the component in
+        React 19: defaultProps on a function component is ignored, the string ref (ref="queryInput" read
+        through this.refs) no longer works, and the useEffect adds a window resize listener without
+        removing it in a cleanup

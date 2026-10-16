@@ -46,3 +46,6 @@ playwright/.cache/
 
 # code-reviewer demo output
 packages/code-reviewer/cost.json
+
+# code-reviewer eval results (promptfoo output)
+packages/code-reviewer/evals/results/

@@ -1,0 +1,96 @@
+# Historical PR #103 (merge 78a47e3): base is the merge's first parent, head its second parent.
+# Title and body copied once from `gh pr view 103 --json title,body`.
+- description: "pr-103: dashboard UI phase 2, the largest baseline diff (95,919 characters, reviewed without the repo tools)"
+  metadata:
+    kind: regression
+    expect: pass
+  vars:
+    base: 7ca79420ed4e61d3e9d844baa4bdd1e574400ac7
+    head: b2e14f93c79972cd98731912bcf01b70d69fcd85
+    title: "S-11 dashboard UI phase 2: the dashboard view and its states"
+    body: |
+      Phase 2 of `dashboard-ui` (S-11, roadmap MS-04). Plan: [`context/changes/dashboard-ui/plan.md`](https://github.com/mariuszzlotucha/streak-board/blob/s-11/dashboard-ui/phase-2/context/changes/dashboard-ui/plan.md). The owner's decisions after the manual check amend it in [`change.md`](https://github.com/mariuszzlotucha/streak-board/blob/s-11/dashboard-ui/phase-2/context/changes/dashboard-ui/change.md).
+
+      This phase rebuilds `/dashboard` on the Phase 1 design system. It also moves group management to a new `/settings` page.
+
+      ## What changes
+
+      - **Signed-in shell.** `AppLayout.astro` holds:
+        - a brand header with the Main nav ("Dashboard" and "Settings", with `aria-current="page"`) and the only "Sign out";
+        - `<main>`, up to `max-w-5xl`;
+        - a quiet "Signed in as" line, then the footer.
+
+        `SiteHeader` now serves both layouts. The public pages are pixel-identical to Phase 1's.
+      - **Layout.** In a group:
+        - the `?error=` alert comes first, then the "Your group" eyebrow and the group name as the `<h1>`;
+        - from 1024 px, Tasks takes three fifths, and the Leaderboard and Members (with the invite link) two fifths;
+        - phones show the same order in one column.
+      - **Task row.** It has three lines:
+        - the title, the "How often" badge and the creator's quiet Edit and Delete;
+        - "Mark done", or the success-coloured "Done today" with Undo, and a larger streak figure;
+        - the participants, with outline Join and Leave.
+
+        "Add a task" is a native disclosure, open when there are no tasks.
+      - **States.**
+        - No group: the `<h1>` "Start or join a group" with one sentence.
+        - Pending invite: the `<h1>` "Join {group}?" with the only "Join group". Create and "Join with code" sit under "Or start your own group".
+        - Partial failures are warning notices (`role="status"`) where the content is missing.
+        - A failed load is an error page with "Try again", and answers 503 (G5).
+        - An inline script removes `?error=` from the address.
+      - **Group settings on `/settings`** (an owner decision after the manual check).
+        - It is a new protected page: Rename and Delete for the owner, Leave for a member.
+        - `loadSettings` reads only the group, reports `settings.load.failed` and answers 503 on failure.
+        - Rename, delete and leave still redirect to `/dashboard`; S-08 is unchanged.
+      - **Components.**
+        - New: `PageHeading`, `GroupSettingsCard` and `SettingsView`.
+        - Added: a `warning` variant on `Alert`, `triggerVariant` on `ConfirmAction` (quiet row-level Delete and Remove), and `emphasis` on `CopyInviteLink` (for a sole member).
+        - Removed: `AccountCard`, `GroupHeaderCard`, `OwnerActions` and `LeaveGroupCard`.
+      - **Gate.** The kitchen sink renders its states inside `AppLayout`. It adds four settings states and more control states. The `after-*` screenshots cover the 7-state matrix at 1280×800 and 375×812.
+      - **Smoke.**
+        - The dashboard and pending-invite steps are rewritten.
+        - New steps cover the layout order, the header, where the invite and the `?error=` alert sit, and `/settings` (anonymous, no group, owner, member).
+      - **Docs.**
+        - README and CLAUDE.md describe `AppLayout`, `/settings`, `PROTECTED_ROUTES` and the 503.
+        - `change.md` records C1–C5, D1–D6 and the S-12 and S-13 handoffs.
+        - S-12's plan gets a note about the 503.
+
+      No migration.
+
+      ## Deviations from the plan
+
+      - **The owner's decisions after the manual check.** They are recorded in `change.md`; `plan.md` is left unchanged.
+        - Group settings live on `/settings` instead of at the end of the dashboard's right column.
+        - The header gets a Main nav.
+        - The grid is 3:2 instead of about two thirds.
+      - **Fixes from the phase review**, in [`reviews/impl-review-phase-2.md`](https://github.com/mariuszzlotucha/streak-board/blob/s-11/dashboard-ui/phase-2/context/changes/dashboard-ui/reviews/impl-review-phase-2.md): APPROVED, all six findings fixed.
+        - The view-file lint guard and its CLAUDE.md rule also cover `src/pages/settings.astro` (F1).
+        - "Or start your own group" takes its typography from `CardTitle`, so Phase 1's check 1.11 passes again (F2).
+        - The owner's settings smoke step also asserts the delete control, and a step that repeated another step's fixed-text check is removed (F3).
+        - `loadSettings` has a test for a throwing client factory (F4).
+        - The `/settings` 503 was checked with PostgREST stopped, and the result is recorded in `change.md` (F5).
+        - The participants-failed notice now says that tasks can't be marked done and the leaderboard is hidden, as the check-offs notice does (F6).
+
+      ## Verification
+
+      - **Automated, run locally after the review fixes.** All of these pass:
+        - lint, the literal scan, `node scripts/token-contrast.mjs`, `astro check` and the build;
+        - `npm test` (409/409);
+        - smoke against the production preview (227/227, `INFO  production build`);
+        - Playwright (3/3);
+        - the reference `rg` scans, and Phase 1's check 1.11.
+
+        Locally, smoke needs `CONTACT_EMAIL`; CI sets it.
+      - **With PostgREST stopped on the production preview** (review F5): `/settings` and `/dashboard` answer 503 with their error pages, and after the restart "Try again" loads.
+      - **Manual, by the owner:**
+        - the 7-state matrix;
+        - the layout at 1280 and 375 px;
+        - the 503;
+        - the action error;
+        - the keyboard and screen-reader pass;
+        - the pending invite;
+        - the records in `change.md`.
+
+      🤖 Generated with [Claude Code](https://claude.com/claude-code)
+  assert:
+    - type: javascript
+      value: output.verdict === "pass"

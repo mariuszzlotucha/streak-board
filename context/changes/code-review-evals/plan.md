@@ -616,15 +616,15 @@ Kryterium na danych z fazy 1 rozstrzyga wiązanie werdyktu. Wyniki trafiają do 
 
 #### Automated
 
-- [ ] 1.1 Type check passes: `npx tsc --noEmit -p .`
-- [ ] 1.2 Lint passes: `npm run lint`
-- [ ] 1.3 Unit tests pass: `npm run test:unit`
-- [ ] 1.4 Prettier passes on the changed files
-- [ ] 1.5 Evals install on Node ≥ 22.22 and the three configs validate
-- [ ] 1.6 actionlint passes on both workflows
-- [ ] 1.7 CLI exits 2, 3 and 4 with empty stdout and no API key
-- [ ] 1.8 Demo exits 3 on a 300,000-character diff without a model call
-- [ ] 1.9 The branch's code diff under the gate's pathspecs stays below 200,000 characters
+- [x] 1.1 Type check passes: `npx tsc --noEmit -p .`
+- [x] 1.2 Lint passes: `npm run lint`
+- [x] 1.3 Unit tests pass: `npm run test:unit`
+- [x] 1.4 Prettier passes on the changed files
+- [x] 1.5 Evals install on Node ≥ 22.22 and the three configs validate
+- [x] 1.6 actionlint passes on both workflows
+- [x] 1.7 CLI exits 2, 3 and 4 with empty stdout and no API key
+- [x] 1.8 Demo exits 3 on a 300,000-character diff without a model call
+- [x] 1.9 The branch's code diff under the gate's pathspecs stays below 200,000 characters
 
 #### Manual
 

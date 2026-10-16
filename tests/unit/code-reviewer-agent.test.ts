@@ -1,4 +1,4 @@
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -9,8 +9,14 @@ import type { RepoContext } from "../../packages/code-reviewer/tools";
 // The reviewer builds its model with `openrouter(...)`; each test sets the mock it answers with.
 let model: MockLanguageModelV4;
 vi.mock("@openrouter/ai-sdk-provider", () => ({ openrouter: () => model }));
+// A fixed fence suffix (8 hex characters, "abababab"), so the prompt's tags can be matched in full.
+vi.mock("node:crypto", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("node:crypto")>()),
+  randomBytes: (size: number) => Buffer.alloc(size, 0xab),
+}));
+const SUFFIX = "abababab";
 
-const { reviewDiff, ReviewRunError } = await import("../../packages/code-reviewer/agent");
+const { reviewDiff, ReviewRunError, UnreviewableDiffError } = await import("../../packages/code-reviewer/agent");
 
 const usage = {
   inputTokens: { total: 10, noCache: 10, cacheRead: undefined, cacheWrite: undefined },
@@ -106,7 +112,9 @@ describe("reviewDiff with a repo", () => {
     expect(evidence.responseFormat?.type ?? "text").toBe("text");
     expect(final.tools ?? []).toEqual([]);
     expect(final.responseFormat?.type).toBe("json");
-    expect(JSON.stringify(evidence.prompt)).toContain("<changed-files>\\nA a.ts\\n</changed-files>");
+    expect(JSON.stringify(evidence.prompt)).toContain(
+      `<changed-files-${SUFFIX}>\\nA a.ts\\n</changed-files-${SUFFIX}>`,
+    );
     expect(JSON.stringify(evidence.prompt)).toContain("You can read the repository");
     expect(JSON.stringify(final.prompt)).toContain(JSON.stringify(result).slice(1, -1));
     expect(JSON.stringify(final.prompt)).toContain("The evidence phase is over");
@@ -159,7 +167,7 @@ describe("reviewDiff with a repo", () => {
     expect(run.toolsSkipped).toBe(true);
     expect(model.doGenerateCalls).toHaveLength(1);
     expect(model.doGenerateCalls[0].tools ?? []).toEqual([]);
-    expect(JSON.stringify(model.doGenerateCalls[0].prompt)).toContain("<changed-files>");
+    expect(JSON.stringify(model.doGenerateCalls[0].prompt)).toContain(`<changed-files-${SUFFIX}>\\nA a.ts\\n`);
     expect(JSON.stringify(model.doGenerateCalls[0].prompt)).not.toContain("You can read the repository");
   });
 
@@ -169,5 +177,56 @@ describe("reviewDiff with a repo", () => {
     expect(model.doGenerateCalls).toHaveLength(1);
     expect(model.doGenerateCalls[0].tools ?? []).toEqual([]);
     expect(model.doGenerateCalls[0].responseFormat?.type).toBe("json");
+  });
+});
+
+describe("reviewDiff on a diff that shows a file as binary", () => {
+  const marker = (a: string, b: string) => `diff --git a/x b/x\nBinary files ${a} and ${b} differ\n`;
+
+  it("throws UnreviewableDiffError with the paths of a source file before any model call", async () => {
+    model = new MockLanguageModelV4({ doGenerate: answer });
+    const error = await reviewDiff(`+x\n${marker("a/src/x.ts", "b/src/x.ts")}`, { repo }).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(UnreviewableDiffError);
+    expect((error as InstanceType<typeof UnreviewableDiffError>).paths).toEqual(["a/src/x.ts", "b/src/x.ts"]);
+    expect(model.doGenerateCalls).toHaveLength(0);
+  });
+
+  it("reviews a new image and an upper-case binary extension as usual", async () => {
+    model = new MockLanguageModelV4({ doGenerate: answer });
+    await reviewDiff(`${marker("/dev/null", "b/logo.png")}${marker("a/IMG.PNG", "b/IMG.PNG")}`);
+    expect(model.doGenerateCalls).toHaveLength(1);
+  });
+
+  it("rejects a quoted path that ends in .ts after the closing quote is dropped", async () => {
+    model = new MockLanguageModelV4({ doGenerate: answer });
+    const quoted = '"b/caf\\303\\251.ts"';
+    const error = await reviewDiff(marker("/dev/null", quoted)).catch((e: unknown) => e);
+    expect((error as InstanceType<typeof UnreviewableDiffError>).paths).toEqual([quoted]);
+    expect(model.doGenerateCalls).toHaveLength(0);
+  });
+
+  it("rejects a name holding ' and ' unless both sides of the split end with a binary extension", async () => {
+    model = new MockLanguageModelV4({ doGenerate: answer });
+    const error = await reviewDiff(marker("a/fish and chips.png", "b/fish and chips.png")).catch((e: unknown) => e);
+    expect((error as InstanceType<typeof UnreviewableDiffError>).paths).toEqual(["a/fish and chips.png and b/fish"]);
+    await reviewDiff(marker("a/before.png and after.png", "b/before.png and after.png"));
+    expect(model.doGenerateCalls).toHaveLength(1);
+  });
+});
+
+describe("the CLI on a diff that shows a source file as binary", () => {
+  it("exits 4 with empty stdout and the paths on stderr, without an API key", () => {
+    const root = join(import.meta.dirname, "../..");
+    // Unset, not empty: the OpenRouter provider sends a request with an empty key.
+    const { OPENROUTER_API_KEY: _key, REVIEW_BASE_REF: _base, REVIEW_HEAD_REF: _head, ...env } = process.env;
+    const result = spawnSync(
+      join(root, "node_modules/.bin/tsx"),
+      [join(root, "packages/code-reviewer/review.ts")],
+      // A directory without a .env, which the CLI would load.
+      { cwd: dir, env, input: "diff --git a/x.ts b/x.ts\nBinary files a/x.ts and b/x.ts differ\n", encoding: "utf8" },
+    );
+    expect(result.status).toBe(4);
+    expect(result.stdout).toBe("");
+    expect(result.stderr).toMatch(/^error: .*\["a\/x\.ts","b\/x\.ts"\]$/m);
   });
 });

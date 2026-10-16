@@ -1,0 +1,26 @@
+# Historical PR #110 (merge 9bf63eb): base is the merge's first parent, head its second parent.
+# Title and body copied once from `gh pr view 110 --json title,body`.
+- description: "pr-110: m5l2 code-reviewer package; review.ts does not load .env"
+  metadata:
+    kind: regression
+    expect: fail
+  vars:
+    base: 98ef9d036d84149b6744ef299e6d1326cd077704
+    head: 7f607bc6212f5489cd4857864cc59452bb3df0f9
+    title: "m5l2: code-reviewer package (AI SDK ToolLoopAgent)"
+    body: |-
+      Adds the M5L2 code-reviewer package and its lesson setup.
+
+      - `packages/code-reviewer/`: a one-file `ToolLoopAgent` reviewer (`review.ts`) that returns a structured verdict (six 1–10 criteria, pass/fail, markdown summary) from `review-schema.ts`, plus three lesson demos (`review-with-session.ts`, `cost-report.ts`, `rules-inject.ts`).
+      - `npm run review` (`git diff | tsx packages/code-reviewer/review.ts`), with `ai@7`, `@openrouter/ai-sdk-provider@3` and `zod` added to `package.json`.
+      - The M5L2 section in `CLAUDE.md`, the review-schema config template, and the 10x CLI manifest update.
+
+      #109 (the `tool-loop-agent` plan) is stacked on this branch. Merge this PR first, then retarget #109 to `master`.
+
+      🤖 Generated with [Claude Code](https://claude.com/claude-code)
+  assert:
+    - type: javascript
+      value: output.verdict === "fail"
+    - type: llm-rubric
+      transform: output.summary
+      value: The review points out that packages/code-reviewer/review.ts does not load the .env file, while the other scripts of the package do

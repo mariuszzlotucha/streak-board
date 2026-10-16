@@ -127,7 +127,8 @@ const scriptsConfig = defineConfig({
   rules: { "no-console": "off" },
 });
 
-// The code-reviewer CLI and demos print by design; its library modules must stay side-effect free.
+// The code-reviewer CLI, demos and eval report print by design; its library modules (and the eval provider) must
+// stay side-effect free.
 const codeReviewerConfig = defineConfig(
   {
     files: ["packages/code-reviewer/**/*.ts"],
@@ -140,6 +141,7 @@ const codeReviewerConfig = defineConfig(
       "packages/code-reviewer/review-with-session.ts",
       "packages/code-reviewer/cost-report.ts",
       "packages/code-reviewer/rules-inject.ts",
+      "packages/code-reviewer/evals/report.ts",
     ],
     rules: { "no-console": "off" },
   },

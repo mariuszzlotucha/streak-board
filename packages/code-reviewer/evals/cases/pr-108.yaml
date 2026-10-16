@@ -1,0 +1,13 @@
+# Historical PR #108 (merge 98ef9d0): base is the merge's first parent, head its second parent.
+# Title and body copied once from `gh pr view 108 --json title,body`.
+- description: "pr-108: m5l1 lesson files"
+  metadata:
+    kind: regression
+    expect: pass
+  vars:
+    base: eca4a6c6963c357ebb3d174dab840086632c5767
+    head: 818c9bcd58a8b9c776210d28ffda5dd45ee599c3
+    title: m5l1
+  assert:
+    - type: javascript
+      value: output.verdict === "pass"
