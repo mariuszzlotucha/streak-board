@@ -190,23 +190,24 @@ function common(route: RouteId): Row[] {
   ];
 }
 
-// A redirect route's mutation outcomes: the 42501 and unmapped reports and, when given, the quiet domain codes.
-function mutationFailures(route: RouteId, preRead: ScriptedResult[], quiet: [string, string][]): Row[] {
+// A redirect route's mutation outcomes: the 42501 and unmapped reports and, when given, the quiet domain codes,
+// each with the words that name its case in the row title.
+function mutationFailures(route: RouteId, preRead: ScriptedResult[], quiet: [string, string, string][]): Row[] {
   return [
     {
-      name: "42501: forbidden with an error line carrying the status",
+      name: "permission error: forbidden, with an error line carrying the status",
       route,
       script: [...preRead, RLS],
       expect: { location: FORBIDDEN, errors: [failed(route, "forbidden", "42501", 403)] },
     },
-    ...quiet.map(([code, outcome]): Row => ({
-      name: `${code}: ${outcome}, quiet`,
+    ...quiet.map(([code, outcome, label]): Row => ({
+      name: `${label}: ${outcome}, quiet`,
       route,
       script: [...preRead, err(code, 400)],
       expect: { location: `/dashboard?error=${outcome}` },
     })),
     {
-      name: "XX000: unknown with an error line carrying the status",
+      name: "unexpected error: unknown, with an error line carrying the status",
       route,
       script: [...preRead, UNMAPPED],
       expect: { location: UNKNOWN, errors: [failed(route, "unknown", "XX000", 500)] },
@@ -263,8 +264,8 @@ const ROWS: Row[] = [
     "groups/create",
     [],
     [
-      ["23514", "invalid_name"],
-      ["23505", "already_in_group"],
+      ["23514", "invalid_name", "the name fails its check constraint"],
+      ["23505", "already_in_group", "the user already has a group"],
     ],
   ),
   nonFormBody("groups/create"),
@@ -285,25 +286,25 @@ const ROWS: Row[] = [
     expect: { location: DASHBOARD, cookie: "cleared", calls: [rpc("join_group", { p_join_code: CODE })] },
   },
   {
-    name: "P0002: invalid_code, quiet, the spent invite cleared",
+    name: "no group matches the code: invalid_code, quiet, the spent invite cleared",
     route: "groups/join",
     script: [err("P0002", 400)],
     expect: { location: "/dashboard?error=invalid_code", cookie: "cleared" },
   },
   {
-    name: "23505: already_in_group, quiet, the spent invite cleared",
+    name: "the user already has a group: already_in_group, quiet, the spent invite cleared",
     route: "groups/join",
     script: [err("23505", 409)],
     expect: { location: "/dashboard?error=already_in_group", cookie: "cleared" },
   },
   {
-    name: "42501: forbidden with an error line carrying the status and the code length, invite kept",
+    name: "permission error: forbidden, with an error line carrying the status and the code length, invite kept",
     route: "groups/join",
     script: [RLS],
     expect: { location: FORBIDDEN, errors: [{ ...failed("groups/join", "forbidden", "42501", 403), codeLength: 12 }] },
   },
   {
-    name: "XX000: unknown with an error line, invite kept for a retry",
+    name: "unexpected error: unknown, with an error line, invite kept for a retry",
     route: "groups/join",
     script: [UNMAPPED],
     expect: { location: UNKNOWN, errors: [{ ...failed("groups/join", "unknown", "XX000", 500), codeLength: 12 }] },
@@ -348,7 +349,7 @@ const ROWS: Row[] = [
     script: [ok(GROUP), ok([])],
     expect: { location: FORBIDDEN },
   },
-  ...mutationFailures("groups/rename", [ok(GROUP)], [["23514", "invalid_name"]]),
+  ...mutationFailures("groups/rename", [ok(GROUP)], [["23514", "invalid_name", "the name fails its check constraint"]]),
   nonFormBody("groups/rename"),
 
   // groups/leave
@@ -505,7 +506,11 @@ const ROWS: Row[] = [
       ],
     },
   },
-  ...mutationFailures("tasks/create", [ok(GROUP)], [["23514", "invalid_title"]]),
+  ...mutationFailures(
+    "tasks/create",
+    [ok(GROUP)],
+    [["23514", "invalid_title", "the title fails its check constraint"]],
+  ),
   nonFormBody("tasks/create"),
 
   // tasks/update
@@ -556,7 +561,11 @@ const ROWS: Row[] = [
     script: [ok(task("daily")), ok([])],
     expect: { location: FORBIDDEN },
   },
-  ...mutationFailures("tasks/update", [ok(task("daily"))], [["23514", "invalid_title"]]),
+  ...mutationFailures(
+    "tasks/update",
+    [ok(task("daily"))],
+    [["23514", "invalid_title", "the title fails its check constraint"]],
+  ),
   nonFormBody("tasks/update"),
 
   // tasks/delete
@@ -615,13 +624,13 @@ const ROWS: Row[] = [
     },
   },
   {
-    name: "23505 (already joined): dashboard, quiet",
+    name: "the user already joined the task: dashboard, quiet",
     route: "tasks/join",
     script: [ok({ id: TASK }), err("23505", 409)],
     expect: { location: DASHBOARD },
   },
   {
-    name: "23503 (task deleted meanwhile): dashboard, quiet",
+    name: "the task was deleted meanwhile: dashboard, quiet",
     route: "tasks/join",
     script: [ok({ id: TASK }), err("23503", 409)],
     expect: { location: DASHBOARD },
@@ -752,13 +761,13 @@ const ROWS: Row[] = [
     expect: { status: 200, json: { ok: true, period: DAILY_PERIOD } },
   },
   {
-    name: "23505 (already ticked): dashboard, quiet",
+    name: "the period is already ticked: dashboard, quiet",
     route: "tasks/checkoff",
     script: [ok(task("daily")), err("23505", 409)],
     expect: { location: DASHBOARD },
   },
   {
-    name: "42501: forbidden with the data layer's error line (ids and status, no route)",
+    name: "permission error: forbidden, with the data layer's error line (ids and status, no route)",
     route: "tasks/checkoff",
     script: [ok(task("daily")), RLS],
     expect: {
@@ -776,14 +785,14 @@ const ROWS: Row[] = [
     },
   },
   {
-    name: "42501, JSON: 403 forbidden",
+    name: "permission error, JSON: 403 forbidden",
     route: "tasks/checkoff",
     headers: JSON_HEADERS,
     script: [ok(task("daily")), RLS],
     expect: { status: 403, json: { ok: false, error: "forbidden" }, errors: [{ event: "checkoff.forbidden" }] },
   },
   {
-    name: "23503 (not enrolled): forbidden with an info line",
+    name: "the user is not enrolled in the task: forbidden, with an info line",
     route: "tasks/checkoff",
     script: [ok(task("daily")), err("23503", 409)],
     expect: {
@@ -792,7 +801,7 @@ const ROWS: Row[] = [
     },
   },
   {
-    name: "XX000: unknown with the route's failed line carrying the task id",
+    name: "unexpected error: unknown, with the route's failed line carrying the task id",
     route: "tasks/checkoff",
     script: [ok(task("daily")), UNMAPPED],
     expect: {
@@ -809,7 +818,7 @@ const ROWS: Row[] = [
     },
   },
   {
-    name: "XX000, JSON: 500 unknown",
+    name: "unexpected error, JSON: 500 unknown",
     route: "tasks/checkoff",
     headers: JSON_HEADERS,
     script: [ok(task("daily")), UNMAPPED],
@@ -950,7 +959,7 @@ const ROWS: Row[] = [
     },
   },
   {
-    name: "42501: forbidden with the data layer's error line",
+    name: "permission error: forbidden, with the data layer's error line",
     route: "tasks/uncheck",
     script: [ok(task("daily")), RLS],
     expect: {
@@ -968,14 +977,14 @@ const ROWS: Row[] = [
     },
   },
   {
-    name: "42501, JSON: 403 forbidden",
+    name: "permission error, JSON: 403 forbidden",
     route: "tasks/uncheck",
     headers: JSON_HEADERS,
     script: [ok(task("daily")), RLS],
     expect: { status: 403, json: { ok: false, error: "forbidden" }, errors: [{ event: "uncheck.forbidden" }] },
   },
   {
-    name: "23503 (not enrolled): forbidden with an info line",
+    name: "the user is not enrolled in the task: forbidden, with an info line",
     route: "tasks/uncheck",
     script: [ok(task("daily")), err("23503", 409)],
     expect: {
@@ -984,7 +993,7 @@ const ROWS: Row[] = [
     },
   },
   {
-    name: "XX000: unknown with the route's failed line carrying the task id",
+    name: "unexpected error: unknown, with the route's failed line carrying the task id",
     route: "tasks/uncheck",
     script: [ok(task("daily")), UNMAPPED],
     expect: {
@@ -1001,7 +1010,7 @@ const ROWS: Row[] = [
     },
   },
   {
-    name: "XX000, JSON: 500 unknown",
+    name: "unexpected error, JSON: 500 unknown",
     route: "tasks/uncheck",
     headers: JSON_HEADERS,
     script: [ok(task("daily")), UNMAPPED],
