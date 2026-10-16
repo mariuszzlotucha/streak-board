@@ -505,7 +505,7 @@ No schema change and no data migration. The `production` tag is new repository m
 
 #### Manual
 
-- [ ] 2.6 Deliberate-break checks: each new spec turned red on its risk assertion when the behaviour it protects was broken, and green again after the revert (the break and the red line are recorded in the PR)
+- [x] 2.6 Deliberate-break checks: each new spec turned red on its risk assertion when the behaviour it protects was broken, and green again after the revert (the break and the red line are recorded in the PR) — PR #133 description, P2: `peekJoinCode` → `null` (invite spec :68), `checkOff` ok without the insert (check-off spec :77), `isOwner || true` (member spec :49), delete route no-op (owner spec :64), each red then restored; confirmed by the owner 2026-10-16
 - [ ] 2.7 Leftover check after a green and a red run: no persona accounts (admin `listUsers` by the test tokens) and no groups of theirs remain
 - [ ] 2.8 Spec titles and origin headers name the risk facet and the seed, and no spec waits on time or uses a CSS selector
 
@@ -516,7 +516,7 @@ No schema change and no data migration. The `production` tag is new repository m
 - [x] 3.1 Both projects pass locally: `npx playwright test` runs every spec in `chromium` and `mobile-chromium` and passes — 99a4f77
 - [x] 3.2 The seed script refuses a non-local stack: `TEST_SUPABASE_URL=https://example.supabase.co TEST_SUPABASE_ANON_KEY=x TEST_SUPABASE_SERVICE_ROLE_KEY=x node scripts/e2e-user.mjs` exits non-zero and creates nothing — 99a4f77
 - [x] 3.3 Lint passes, the script included: `npm run lint` — 99a4f77
-- [ ] 3.4 The `e2e` job passes on the phase PR with both projects: `gh pr checks` shows `e2e` green (ticked with the PR head SHA on the next phase branch or in the closing docs PR, never on the merged branch)
+- [x] 3.4 The `e2e` job passes on the phase PR with both projects: `gh pr checks` shows `e2e` green (ticked with the PR head SHA on the next phase branch or in the closing docs PR, never on the merged branch) — PR #133, head ed73bb0, run 38824562138
 
 #### Manual
 
@@ -530,13 +530,13 @@ No schema change and no data migration. The `production` tag is new repository m
 - [x] 4.1 Smoke passes with the new steps against the production preview: `npm run smoke` (the step count rises by the number of added steps, recorded in the PR) — 5c803b1
 - [x] 4.2 Unit and integration suites pass with the mapper tables: `npm test` — 5c803b1
 - [x] 4.3 Lint passes: `npm run lint` — 5c803b1
-- [ ] 4.4 Smoke still passes in CI: `gh pr checks` shows `smoke` green (ticked with the PR head SHA on the next branch or in the closing docs PR)
+- [x] 4.4 Smoke still passes in CI: `gh pr checks` shows `smoke` green (ticked with the PR head SHA on the next branch or in the closing docs PR) — PR #133, head ed73bb0, run 38824562138
 
 #### Manual
 
-- [ ] 4.5 Deliberate break: with `security: { checkOrigin: false }` in `astro.config.mjs` (never committed) every foreign-Origin smoke step fails and the rest passes; the file is restored afterwards
+- [x] 4.5 Deliberate break: with `security: { checkOrigin: false }` in `astro.config.mjs` (never committed) every foreign-Origin smoke step fails and the rest passes; the file is restored afterwards — PR #133 description, P4: 21 foreign-Origin steps red plus 4 state-intact steps, `astro.config.mjs` unchanged on the branch (`git diff origin/master...HEAD -- src` and the config were clean); confirmed by the owner 2026-10-16
 - [ ] 4.6 Test-plan §2 backport, §3 row 3, §5 row, §6.1, §6.4 and §6.6 read correctly
-- [ ] 4.7 The owner reads back the hosted Auth settings (sign-in/sign-up and e-mail rate limits, captcha on or off, Confirm email on) in the Supabase dashboard and records them in the PR description, to be carried into the Phase 6 deployment-plan entry
+- [x] 4.7 The owner reads back the hosted Auth settings (sign-in/sign-up and e-mail rate limits, captcha on or off, Confirm email on) in the Supabase dashboard and records them in the PR description, to be carried into the Phase 6 deployment-plan entry — read back on 2026-10-16 (sign-ups and sign-ins 30 per 5 min per IP, e-mails 30 per hour, captcha off, Confirm email on), in the PR #133 description and deployment-plan Phase 16
 
 ### Phase 5: Mutation baseline on the rule modules
 
@@ -559,15 +559,15 @@ No schema change and no data migration. The `production` tag is new repository m
 #### Automated
 
 - [x] 6.1 The initial tag exists at the confirmed deployed commit: `git ls-remote --tags origin production` shows that SHA (`fb62d74`, pushed 2026-10-16) — 577bb4e
-- [ ] 6.2 The phase PR's own CI run is green with the new jobs: `gh pr checks` shows `ci`, `smoke`, `integration`, `e2e` green and `compat` skipped (the PR adds no migration); ticked with the PR head SHA in the closing docs PR
+- [x] 6.2 The phase PR's own CI run is green with the new jobs: `gh pr checks` shows `ci`, `smoke`, `integration`, `e2e` green and `compat` skipped (the PR adds no migration); ticked with the PR head SHA in the closing docs PR — PR #133, head ed73bb0, run 38824562138
 - [x] 6.3 Lint and formatting pass on the edited documents and workflow: `npm run lint` — 81f9fdc
 
 #### Manual
 
-- [ ] 6.4 With the owner's go-ahead, a scratch draft PR that adds a migration the deployed code cannot survive (for example a `drop column` on a column it reads) shows `compat` failing in the deployed commit's smoke; closed unmerged, branch deleted
-- [ ] 6.5 With the owner's go-ahead, a scratch draft PR that adds a compatible, additive migration shows `compat` passing; closed unmerged, branch deleted
-- [ ] 6.6 Release and tag move: after the merge, the owner approves the `release` run; `git fetch --tags origin && git rev-parse production` equals the merge commit and the live check passes
-- [ ] 6.7 The owner adds `ci`, `smoke`, `e2e` and `compat` to the required checks of the `master` ruleset; `gh api repos/mariuszzlotucha/streak-board/rulesets/24254172` lists `integration`, `ai-review`, `ci`, `smoke`, `e2e` and `compat`
+- [x] 6.4 With the owner's go-ahead, a scratch draft PR that adds a migration the deployed code cannot survive (for example a `drop column` on a column it reads) shows `compat` failing in the deployed commit's smoke; closed unmerged, branch deleted — scratch PR #131 (`tasks.title` renamed), `compat` red in the deployed smoke, run 38822675599; closed unmerged, branch deleted; deployment-plan Phase 16; confirmed by the owner 2026-10-16
+- [x] 6.5 With the owner's go-ahead, a scratch draft PR that adds a compatible, additive migration shows `compat` passing; closed unmerged, branch deleted — scratch PR #132 (nullable `tasks.scratch_note`), `compat` green with 227/227 deployed smoke steps, run 38822678146; closed unmerged, branch deleted; deployment-plan Phase 16; confirmed by the owner 2026-10-16
+- [x] 6.6 Release and tag move: after the merge, the owner approves the `release` run; `git fetch --tags origin && git rev-parse production` equals the merge commit and the live check passes — run 38825633332 approved by the owner, `production` at 45b7657 (moved by the job, "forced update" from fb62d74), live check green, 2026-10-16
+- [x] 6.7 The owner adds `ci`, `smoke`, `e2e` and `compat` to the required checks of the `master` ruleset; `gh api repos/mariuszzlotucha/streak-board/rulesets/24254172` lists `integration`, `ai-review`, `ci`, `smoke`, `e2e` and `compat` — owner's PUT on 2026-10-16, read back the same day
 - [ ] 6.8 README (CI, Release, Rollback), test-plan §3, §5, §6.5, §7, §8 and the lessons entry read correctly
-- [ ] 6.9 The `deployment-plan.md` Phase 16 entry is written with every S-10 release run, the initial tag, the hosted Auth read-back and the ruleset change; the rows that need this PR's own checks, release or the ruleset change are ticked in a small closing docs PR
-- [ ] 6.10 Production check after the Phase 6 release: sign in, the dashboard shows the group and its tasks, tick a task and undo it (the Worker code is unchanged; the check proves the release path with the tag step)
+- [x] 6.9 The `deployment-plan.md` Phase 16 entry is written with every S-10 release run, the initial tag, the hosted Auth read-back and the ruleset change; the rows that need this PR's own checks, release or the ruleset change are ticked in a small closing docs PR — closeout PR #134, 2026-10-16
+- [x] 6.10 Production check after the Phase 6 release: sign in, the dashboard shows the group and its tasks, tick a task and undo it (the Worker code is unchanged; the check proves the release path with the tag step) — owner, 2026-10-16, after release run 38825633332: all ok
