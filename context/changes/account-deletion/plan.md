@@ -443,10 +443,10 @@ Usunięcie to jedna transakcja na kilku wierszach jednej grupy; `delete` z `auth
 
 #### Automated
 
-- [x] 3.1 Testy przechodzą (w tym `landing`): `npm test`
-- [x] 3.2 Lint, typy, build: `npm run lint && npx astro check && npm run build`
-- [x] 3.3 Smoke przechodzi na lokalnym preview: `npm run smoke`
-- [x] 3.4 E2E przechodzi (cały zestaw): `npx playwright test`
+- [x] 3.1 Testy przechodzą (w tym `landing`): `npm test` — 3bc2864
+- [x] 3.2 Lint, typy, build: `npm run lint && npx astro check && npm run build` — 3bc2864
+- [x] 3.3 Smoke przechodzi na lokalnym preview: `npm run smoke` — 3bc2864
+- [x] 3.4 E2E przechodzi (cały zestaw): `npx playwright test` — 3bc2864
 
 #### Manual
 
@@ -457,9 +457,9 @@ Usunięcie to jedna transakcja na kilku wierszach jednej grupy; `delete` z `auth
 
 #### Automated
 
-- [ ] 4.1 Lint i formatowanie: `npm run lint && npx prettier --check context/foundation/prd.md context/domain CLAUDE.md README.md`
-- [ ] 4.2 Build (polityka renderuje się): `npm run build`
-- [ ] 4.3 Smoke przechodzi (strona `/privacy` i jej link `mailto:`): `npm run smoke`
+- [x] 4.1 Lint i formatowanie: `npm run lint && npx prettier --check context/foundation/prd.md context/domain CLAUDE.md README.md`
+- [x] 4.2 Build (polityka renderuje się): `npm run build`
+- [x] 4.3 Smoke przechodzi (strona `/privacy` i jej link `mailto:`): `npm run smoke`
 
 #### Manual
 
