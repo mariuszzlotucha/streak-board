@@ -215,7 +215,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 - **Outcome:** zalogowany użytkownik ustawia nick, a członkowie jego grupy widzą nick zamiast jego e-maila: w widoku i w danych, które aplikacja pobiera.
 - **Change ID:** nickname
-- **PRD refs:** — (nowa funkcja; PRD nie zna nicka, FR do dopisania)
+- **PRD refs:** FR-010 (nowa funkcja)
 - **Prerequisites:** —
 - **Parallel with:** — (dotyka tych samych plików co S-13, patrz Risk; S-13 idzie po S-14)
 - **Blockers:** —

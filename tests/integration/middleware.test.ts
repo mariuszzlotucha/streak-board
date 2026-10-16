@@ -207,6 +207,8 @@ describe("middleware nickname gate", () => {
       getUser.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
       nicknameResult = { data: null, error: null };
       const context = buildContext(path);
+      // A stale value, so the null below is the middleware's write, not the fixture's.
+      context.locals.nickname = "stale";
       const pass = vi.fn(next);
 
       const response = await onRequest(context, pass);
@@ -279,6 +281,8 @@ describe("middleware nickname gate", () => {
     getUser.mockResolvedValue({ data: { user: { id: "u1" } }, error: null });
     nicknameResult = { data: null, error: null };
     const context = buildContext("/privacy");
+    // A stale value, so the null below proves the middleware resets it.
+    context.locals.nickname = "stale";
 
     const response = await onRequest(context, next);
 

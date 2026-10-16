@@ -30,6 +30,8 @@ test("risk #5: a signed-out visitor is sent to sign-in and a real sign-in lands 
   // seed account's nickname follows from its address (nicknameFor); do not change it in the UI.
   await expect(page).toHaveURL(/\/dashboard$/);
   await expect(page.getByText(`Signed in as ${nicknameFor(username)}`)).toBeVisible();
+  // The nickname is part of the address, so the line above would also match the address: pin that none is shown.
+  await expect(page.getByRole("main")).not.toContainText("@");
 
   // Nothing to clean up: no data was created. Do not sign out here: signing out is global for this user and would
   // revoke the session every other spec loads from playwright/.auth/user.json.

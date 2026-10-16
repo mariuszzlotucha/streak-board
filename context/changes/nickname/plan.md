@@ -474,11 +474,11 @@ Brama dodaje jeden odczyt PostgREST po kluczu głównym na każde żądanie chro
 #### Manual
 
 - [x] 1.12 `compat` na PR-ze fazy zielony — 62204c7
-- [ ] 1.13 Przegląd zrzutów w obu szerokościach
-- [ ] 1.14 Lokalnie nowe konto e-mail przechodzi stronę nicka, drugie konto dostaje komunikat o zajętym nicku, zaproszenie przeżywa krok nicka
-- [ ] 1.15 Lokalnie konto sprzed zmiany jest „Unknown member” do zalogowania i wyboru nicka
-- [ ] 1.16 `/settings` pokazuje kartę Account, zmiana nicka wraca na `/settings`
-- [ ] 1.17 Przegląd `/privacy`, `/auth/signup`, README i CLAUDE.md
+- [x] 1.13 Przegląd zrzutów w obu szerokościach — owner, 2026-10-16: checked, all ok
+- [x] 1.14 Lokalnie nowe konto e-mail przechodzi stronę nicka, drugie konto dostaje komunikat o zajętym nicku, zaproszenie przeżywa krok nicka — owner, 2026-10-16: checked, all ok
+- [x] 1.15 Lokalnie konto sprzed zmiany jest „Unknown member” do zalogowania i wyboru nicka — owner, 2026-10-16: checked, all ok
+- [x] 1.16 `/settings` pokazuje kartę Account, zmiana nicka wraca na `/settings` — owner, 2026-10-16: checked, all ok
+- [x] 1.17 Przegląd `/privacy`, `/auth/signup`, README i CLAUDE.md — owner, 2026-10-16: checked, all ok
 - [x] 1.18 PR scalony, `release` zatwierdzony z migracją A — 62204c7
 - [x] 1.19 Kontrola produkcji po wydaniu 1 — 62204c7
 - [x] 1.20 Konto Google na produkcji: podpowiedź imienia sprawdzona i zapisana — 62204c7
@@ -500,4 +500,4 @@ Brama dodaje jeden odczyt PostgREST po kluczu głównym na każde żądanie chro
 - [x] 2.8 Tag `production` zawiera merge fazy 1 przed otwarciem PR-a — a08916e
 - [x] 2.9 PR scalony, `release` zatwierdzony z migracją B — a08916e
 - [x] 2.10 Kontrola produkcji po wydaniu 2 — a08916e
-- [x] 2.11 Zapis wydania 2 w `deployment-plan.md` Phase 18 — a08916e
+- [x] 2.11 Zapis wydania 2 w `deployment-plan.md` Phase 18 — 40d0f1e
