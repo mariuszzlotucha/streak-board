@@ -11,8 +11,8 @@ permissions:
 
 jobs:
   # Docs-only PRs skip the slow jobs at job level, never with `paths-ignore` on the trigger: a workflow skipped by a
-  # path filter reports nothing, so the required check `integration` stays pending and the PR cannot merge, while a
-  # job skipped by `if:` reports as skipped, which satisfies it. The `if:` on those jobs fails safe: they run unless
+  # path filter reports nothing, so the required checks (`ci`, `smoke`, `e2e`, `integration` and `compat`) stay pending
+  # and the PR cannot merge, while a job skipped by `if:` reports as skipped, which satisfies them. The `if:` on those jobs fails safe: they run unless
   # this job answers `false` (a failed `changes` job leaves the output empty). The second output, `migrations`, routes
   # the `compat` job the same way: `true` when the PR touches `supabase/migrations/`, `false` otherwise and on pushes.
   changes:
@@ -96,8 +96,8 @@ jobs:
         run: supabase stop --no-backup
 
   # The Playwright suite (tests/e2e/) in both projects, desktop and phone, against the production preview. The `release`
-  # job waits for it on a `master` push. On pull requests it is advisory until the owner adds it to the ruleset's required
-  # checks; the id and name stay unique so that step is a ruleset edit only.
+  # job waits for it on a `master` push, and it is a required check of the `master` ruleset since 2026-10-16 (with `ci`,
+  # `smoke` and `compat`), so its id and name stay as they are.
   e2e:
     needs: changes
     if: ${{ !cancelled() && needs.changes.outputs.code != 'false' }}
@@ -174,7 +174,7 @@ jobs:
           version: 2.117.0
       - run: npm ci
       # Merged migrations stay immutable, a destructive new one carries `-- compat:`, and a new one sorts after every
-      # merged one. It lives in this job, not in `changes`, because only this job holds the required check.
+      # merged one. It lives in this job, not in `changes`, because this job holds a required check and `changes` does not.
       - name: Check migrations
         if: github.event_name == 'pull_request'
         env:
