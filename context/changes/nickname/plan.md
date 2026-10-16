@@ -80,7 +80,7 @@ Co istnieje i co wiąże plan:
 
 ### Overview
 
-Jeden PR i jedno wydanie: tabela `nicknames` z funkcją `set_nickname`, `list_group_members` z kolumną `nickname` obok `email`, brama w middleware, strona i trasa nicka, karta Account na `/settings`, kontrakt danych i widoki na nicku, każdy harness nadający nick, polityka prywatności, tekst rejestracji, README, CLAUDE.md, słownik, destylacja i PRD. Po merge'u właściciel zatwierdza `release` z migracją A i sprawdza produkcję. Fazę można wykonać jednym przebiegiem `/goal` (lekcja „Run a whole implementation in one goal run”), z przeglądem `/10x-impl-review nickname phase 1` przed wypchnięciem. Diff kodu fazy (bez `context/`, Markdownu i `package-lock.json`) najpewniej przekroczy 50 000 znaków, więc wymagany check `ai-review` przejrzy go bez narzędzi repo (`tools: skipped`); przed wypchnięciem zmierz go poleceniem `git diff origin/master...HEAD -- . ':!context' ':!*.md' ':!package-lock.json' | wc -c` (największy dotąd, PR #125, miał 142 055 znaków). Wynik `error` (timeout, `length`) ponawia etykieta `ai-cr:review`, wynik `fail` nigdy; powyżej 200 000 znaków (`too-large`) decyduje wyłącznie właściciel (break-glass w README, „AI code review”), a agent nie rusza bramki.
+Jeden PR i jedno wydanie: tabela `nicknames` z funkcją `set_nickname`, `list_group_members` z kolumną `nickname` obok `email`, brama w middleware, strona i trasa nicka, karta Account na `/settings`, kontrakt danych i widoki na nicku, każdy harness nadający nick, polityka prywatności, tekst rejestracji, README, CLAUDE.md, słownik, destylacja i PRD. Po merge'u właściciel zatwierdza `release` z migracją A i sprawdza produkcję. Fazę wykonuje jeden przebieg `/goal` z `/10x-goal-implement nickname phase 1` (lekcja „Implement plans with /10x-goal-implement, every phase in one run when the order allows”), a warunek `/goal` kończy go na fazie 1 („do not start Phase 2”): faza 2 nie może wejść do tego przebiegu, bo jej PR wolno otworzyć dopiero, gdy tag `production` wskaże wydany kod fazy 1. Po przebiegu, przed wypchnięciem, idzie przegląd `/10x-impl-review nickname phase 1`. Diff kodu fazy (bez `context/`, Markdownu i `package-lock.json`) najpewniej przekroczy 50 000 znaków, więc wymagany check `ai-review` przejrzy go bez narzędzi repo (`tools: skipped`); przed wypchnięciem zmierz go poleceniem `git diff origin/master...HEAD -- . ':!context' ':!*.md' ':!package-lock.json' | wc -c` (największy dotąd, PR #125, miał 142 055 znaków). Wynik `error` (timeout, `length`) ponawia etykieta `ai-cr:review`, wynik `fail` nigdy; powyżej 200 000 znaków (`too-large`) decyduje wyłącznie właściciel (break-glass w README, „AI code review”), a agent nie rusza bramki.
 
 ### Changes Required:
 
@@ -327,10 +327,10 @@ Jeden PR i jedno wydanie: tabela `nicknames` z funkcją `set_nickname`, `list_gr
 - Reguły zależności przechodzą: `npm run deps`
 - Zawężone mutacje nowych modułów i remisu uruchamiają testy: `npm run test:mutation -- --mutate src/lib/nickname-rules.ts --mutate src/lib/nickname-errors.ts --mutate src/lib/nicknames.ts --mutate "src/lib/leaderboard-rules.ts:49-63" --logLevel info` z `testsCompleted >= 1` dla każdego pokrytego mutanta w `reports/mutation/mutation.json`
 - Zrzuty stanów kitchen sinka (w tym `nickname-*`, `settings-*` z kartą Account i stany dashboardu z nickami) powstają bez błędu konsoli: `OUT_DIR=context/changes/nickname/screenshots BASE_URL=http://localhost:4321 node scripts/ui-screenshots.mjs s14 states` (przy działającym `astro dev`)
-- `compat` na PR-ze fazy zielony: smoke wdrożonego commitu przechodzi na schemacie z migracją A
 
 #### Manual Verification:
 
+- `compat` na PR-ze fazy zielony: smoke wdrożonego commitu przechodzi na schemacie z migracją A (sprawdzane na PR-ze po wypchnięciu: przebieg `/10x-goal-implement` nie ma polecenia, które by to uruchomiło, więc wiersz stoi pod Manual)
 - Przegląd zrzutów z `context/changes/nickname/screenshots/` w obu szerokościach: strona nicka (pusta, z podpowiedzią, zmiana, błąd), karta Account na ustawieniach, lista członków, uczestnicy i tablica z nickami, stan `long-text` z 24-znakowym nickiem bez przepełnienia
 - Lokalnie, nowe konto e-mail: po rejestracji i wejściu na `/dashboard` strona „Choose your nickname”, zapis kończy się na dashboardzie z „Signed in as {nick}”; drugie konto nie może wziąć tego samego nicka i widzi komunikat; link zaproszenia otwarty przed rejestracją przeżywa krok nicka i dashboard pyta o dołączenie
 - Lokalnie, konto sprzed zmiany (utworzone `admin.createUser` bez wiersza `nicknames`, będące członkiem grupy): inni widzą je jako „Unknown member”, a ono samo po zalogowaniu trafia na stronę nicka i po zapisie znika etykieta zastępcza
@@ -348,7 +348,7 @@ Jeden PR i jedno wydanie: tabela `nicknames` z funkcją `set_nickname`, `list_gr
 
 ### Overview
 
-Osobny PR, otwarty dopiero gdy tag `production` wskazuje kod fazy 1. Migracja B usuwa kolumnę `email` z `list_group_members`; `compat` uruchamia wtedy smoke fazy 1, który dopasowuje nicki i wyklucza adresy. Faza domyka obietnicę „także RPC” z ramy i zapisuje oba wydania w planie wdrożenia.
+Osobny przebieg `/goal` z `/10x-goal-implement nickname phase 2` i osobny PR, oba dopiero gdy tag `production` wskazuje kod fazy 1. Migracja B usuwa kolumnę `email` z `list_group_members`; `compat` uruchamia wtedy smoke fazy 1, który dopasowuje nicki i wyklucza adresy. Faza domyka obietnicę „także RPC” z ramy i zapisuje oba wydania w planie wdrożenia.
 
 ### Changes Required:
 
@@ -386,10 +386,10 @@ Osobny PR, otwarty dopiero gdy tag `production` wskazuje kod fazy 1. Migracja B 
 - Testy integracyjne z asercją kluczy odpowiedzi RPC przechodzą: `npm test`
 - Scenariusze RLS bez asercji e-maila i z asercją braku kolumny przechodzą: `npm run test:rls`
 - Smoke fazy 1 przechodzi bez zmian na schemacie bez kolumny `email`: `npm run build && npm run preview` oraz `BASE_URL=http://localhost:4321 npm run smoke`
-- `compat` na PR-ze fazy zielony: smoke z tagu `production` (kod fazy 1) przechodzi na schemacie z migracją B
 
 #### Manual Verification:
 
+- `compat` na PR-ze fazy zielony: smoke z tagu `production` (kod fazy 1) przechodzi na schemacie z migracją B (sprawdzane na PR-ze po wypchnięciu, jak w fazie 1)
 - Przed otwarciem PR-a: `git ls-remote --tags origin production` wskazuje commit zawierający merge fazy 1 (`git merge-base --is-ancestor <merge fazy 1> <sha tagu>` wychodzi 0)
 - PR fazy scalony przez właściciela, `release` zatwierdzony z migracją B (`<YYYYMMDDHHmmss>_drop_email_from_list_group_members.sql`), `db push` zgłasza dokładnie tę migrację
 - Kontrola produkcji (właściciel): dashboard z grupą ładuje się, lista członków, uczestnicy i tablica pokazują nicki, `/settings` pokazuje własny e-mail
@@ -470,10 +470,10 @@ Brama dodaje jeden odczyt PostgREST po kluczu głównym na każde żądanie chro
 - [ ] 1.9 Reguły zależności przechodzą
 - [ ] 1.10 Zawężone mutacje nowych modułów i remisu uruchamiają testy
 - [ ] 1.11 Zrzuty stanów kitchen sinka powstają bez błędu konsoli
-- [ ] 1.12 `compat` na PR-ze fazy zielony
 
 #### Manual
 
+- [ ] 1.12 `compat` na PR-ze fazy zielony
 - [ ] 1.13 Przegląd zrzutów w obu szerokościach
 - [ ] 1.14 Lokalnie nowe konto e-mail przechodzi stronę nicka, drugie konto dostaje komunikat o zajętym nicku, zaproszenie przeżywa krok nicka
 - [ ] 1.15 Lokalnie konto sprzed zmiany jest „Unknown member” do zalogowania i wyboru nicka
@@ -493,10 +493,10 @@ Brama dodaje jeden odczyt PostgREST po kluczu głównym na każde żądanie chro
 - [ ] 2.4 Testy integracyjne z asercją kluczy odpowiedzi RPC przechodzą
 - [ ] 2.5 Scenariusze RLS bez asercji e-maila i z asercją braku kolumny przechodzą
 - [ ] 2.6 Smoke fazy 1 przechodzi bez zmian na schemacie bez kolumny `email`
-- [ ] 2.7 `compat` na PR-ze fazy zielony
 
 #### Manual
 
+- [ ] 2.7 `compat` na PR-ze fazy zielony
 - [ ] 2.8 Tag `production` zawiera merge fazy 1 przed otwarciem PR-a
 - [ ] 2.9 PR scalony, `release` zatwierdzony z migracją B
 - [ ] 2.10 Kontrola produkcji po wydaniu 2

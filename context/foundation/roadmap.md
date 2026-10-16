@@ -242,7 +242,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-11       | dashboard-ui                   | Czytelniejszy widok grupy, tasków i tablicy wyników                                         | done                  | Zarchiwizowane 2026-10-12; `context/archive/2026-10-09-dashboard-ui/`.                                                              |
 | S-12       | refactor-opportunities         | Okazje refaktoryzacji: raportowanie dashboardu, strażnicy CI, testy tras, jawne uprawnienia | done                  | Zarchiwizowane 2026-10-15; `context/archive/2026-10-06-refactor-opportunities/`.                                                    |
 | S-13       | checkoff-grid                  | Siatka odznaczeń grupy: uczestnicy × ostatnie okresy                                        | no                    | Po S-14 (decyzja 2026-10-16). Zwykły łańcuch od `/10x-frame`; aktualizacja PRD, słownika i polityki prywatności w zakresie.         |
-| S-14       | nickname                       | Nick zamiast e-maila w widoku i w danych członków grupy                                     | planned               | Plan z 2026-10-16: `context/changes/nickname/plan.md` (dwie fazy, dwa wydania). Następny krok: `/10x-plan-review nickname`.         |
+| S-14       | nickname                       | Nick zamiast e-maila w widoku i w danych członków grupy                                     | planned               | Plan z 2026-10-16: `context/changes/nickname/plan.md` (dwie fazy, dwa wydania). Następny krok: `/10x-goal-implement nickname`.      |
 
 ## Open Roadmap Questions
 

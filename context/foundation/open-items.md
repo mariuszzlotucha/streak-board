@@ -70,6 +70,6 @@ Odroczone świadomie, z wyzwalaczami w planach. Nie są zadaniami, dopóki wyzwa
 
 ## Sugerowana kolejność (aktualna)
 
-1. S-14 `nickname`: `/10x-plan-review`, PR planistyczny, potem `/10x-implement` (dwie fazy, dwa wydania).
+1. S-14 `nickname`: scalenie PR-a planistycznego, potem `/goal` z `/10x-goal-implement nickname`, jeden przebieg na fazę, bo fazę 2 wolno zacząć dopiero po wydaniu fazy 1 (dwie fazy, dwa wydania).
 2. S-13 `checkoff-grid` (`/10x-frame`), razem z poprawkami dokumentów (streak, poziomy, okno dat).
 3. `/10x-plan` dla `code-review-evals`.
