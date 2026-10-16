@@ -536,7 +536,7 @@ No schema change and no data migration. The `production` tag is new repository m
 
 - [ ] 4.5 Deliberate break: with `security: { checkOrigin: false }` in `astro.config.mjs` (never committed) every foreign-Origin smoke step fails and the rest passes; the file is restored afterwards
 - [ ] 4.6 Test-plan §2 backport, §3 row 3, §5 row, §6.1, §6.4 and §6.6 read correctly
-- [ ] 4.7 The owner reads back the hosted Auth settings (sign-in/sign-up and e-mail rate limits, captcha on or off, Confirm email on) in the Supabase dashboard and records them in the PR description, to be carried into the Phase 6 deployment-plan entry
+- [x] 4.7 The owner reads back the hosted Auth settings (sign-in/sign-up and e-mail rate limits, captcha on or off, Confirm email on) in the Supabase dashboard and records them in the PR description, to be carried into the Phase 6 deployment-plan entry — read back on 2026-10-16 (sign-ups and sign-ins 30 per 5 min per IP, e-mails 30 per hour, captcha off, Confirm email on), in the PR #133 description and deployment-plan Phase 16
 
 ### Phase 5: Mutation baseline on the rule modules
 
@@ -569,5 +569,5 @@ No schema change and no data migration. The `production` tag is new repository m
 - [x] 6.6 Release and tag move: after the merge, the owner approves the `release` run; `git fetch --tags origin && git rev-parse production` equals the merge commit and the live check passes — run 38825633332 approved by the owner, `production` at 45b7657 (moved by the job, "forced update" from fb62d74), live check green, 2026-10-16
 - [x] 6.7 The owner adds `ci`, `smoke`, `e2e` and `compat` to the required checks of the `master` ruleset; `gh api repos/mariuszzlotucha/streak-board/rulesets/24254172` lists `integration`, `ai-review`, `ci`, `smoke`, `e2e` and `compat` — owner's PUT on 2026-10-16, read back the same day
 - [ ] 6.8 README (CI, Release, Rollback), test-plan §3, §5, §6.5, §7, §8 and the lessons entry read correctly
-- [ ] 6.9 The `deployment-plan.md` Phase 16 entry is written with every S-10 release run, the initial tag, the hosted Auth read-back and the ruleset change; the rows that need this PR's own checks, release or the ruleset change are ticked in a small closing docs PR
+- [x] 6.9 The `deployment-plan.md` Phase 16 entry is written with every S-10 release run, the initial tag, the hosted Auth read-back and the ruleset change; the rows that need this PR's own checks, release or the ruleset change are ticked in a small closing docs PR — closeout PR #134, 2026-10-16
 - [ ] 6.10 Production check after the Phase 6 release: sign in, the dashboard shows the group and its tasks, tick a task and undo it (the Worker code is unchanged; the check proves the release path with the tag step)
