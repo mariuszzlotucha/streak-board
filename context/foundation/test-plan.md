@@ -89,10 +89,11 @@ spadku streaka (połowa, w dół). Etapy 2 i 3 dostarczyła zmiana S-10
 (`test-coverage`): strażników mechaniki migracji (niezmienność, marker
 `-- compat:`, kolejność, świeże typy) dała wcześniej S-12, a S-10 dodała
 bramkę `compat` (kod z produkcji kontra nowy schemat, §6.5) i tag `production`.
-Nie planuję warstwy AI-native: tańsze testy deterministyczne dają ten sam
-sygnał (zasada #1). Pierwotnie plan nie przewidywał też e2e; dołączyło do stosu
-w S-10 decyzją właściciela z 2026-10-15 (§4, §5, §6.3), z asercjami
-funkcjonalnymi, bez porównań zrzutów ekranu.
+Nie planuję warstwy AI-native dla aplikacji: tańsze testy deterministyczne dają
+ten sam sygnał (zasada #1). Wyjątek to ewaluacja AI-recenzenta (§5, promptfoo
+z oceniającym LLM): sprawdza narzędzie CI, nie aplikację. Pierwotnie plan nie
+przewidywał też e2e; dołączyło do stosu w S-10 decyzją właściciela z 2026-10-15
+(§4, §5, §6.3), z asercjami funkcjonalnymi, bez porównań zrzutów ekranu.
 
 ## 4. Stack
 
@@ -229,9 +230,9 @@ respektować, dopóki nie zmieni się założenie.
 - Strategy (§1–§5) last reviewed: 2026-10-15 (etapy 1–4 wdrożone; §3 i §5 zamknięte w S-10 `test-coverage`; notatki §6.6 faz 5–6 i linia bazowa mutacji z 2026-10-16)
 - §4 (wiersz e2e), §5 (gate e2e) i §7 edited 2026-10-15 on the owner's instruction in S-10 (`test-coverage`): e2e dołączone do stosu i bramek, §6.3 wypełnione, §6.5 opisuje bramkę `compat`; 2026-10-16: §3 (ścieżka archiwum, wiersze 2 i 3) i §5 (wiersze e2e i compat po zmianie rulesetu) zaktualizowane
 - 2026-10-16, S-14 (`nickname`, faza 1): nowe testy bez zmiany strategii — brama nicka w middleware (`tests/integration/middleware.test.ts`, przekierowanie na `/account/nickname`, wyjątki strony i trasy nicka, 503 `nickname.lookup.failed`), trasa `account/nickname` w sieci charakteryzacyjnej (`tests/integration/data-routes.test.ts`, strażnik pokrycia: rodziny `account`, `groups`, `tasks`, 14 plików), kontrakt reguły nicka TS↔DB (`tests/integration/rule-contracts.test.ts`) i zachowanie bazy (`tests/integration/nicknames.test.ts`), testy jednostkowe reguł, błędów, podpowiedzi i remisu po nicku, sekcja RLS „S-14: nicknames" (`supabase/checks/rls-scenarios.sql`), kroki smoke (brama jako wynik, stan po każdym odrzuconym zapisie, zero cudzych adresów e-mail w HTML) i e2e (rejestracja przez UI przechodzi stronę nicka z oczekującym zaproszeniem; persony i konto seed z nickiem)
-- 2026-10-17, `code-review-evals`: §5 dostaje wiersz „Ewaluacja AI-recenzenta (promptfoo, `packages/code-reviewer/evals`)", bramkę ręczną (proces, nie check CI), którą wiąże lekcja „Run the eval suite, old against new, before shipping a reviewer change" (`context/foundation/lessons.md`)
+- 2026-10-17, `code-review-evals`: §5 dostaje wiersz „Ewaluacja AI-recenzenta (promptfoo, `packages/code-reviewer/evals`)", bramkę ręczną (proces, nie check CI), którą wiąże lekcja „Run the eval suite, old against new, before shipping a reviewer change" (`context/foundation/lessons.md`); §3 i linia AI-native niżej nazywają ją wyjątkiem: sprawdza narzędzie CI, nie aplikację
 - Stack versions last verified: 2026-10-15 (Vitest 5.0.3, Playwright Test 1.63.0, Stryker 10.0.0 z łatką separatora nazw testów, Supabase CLI 2.117.0 w CI)
-- AI-native tool references last verified: 2026-09-30 (brak narzędzi AI-native w planie)
+- AI-native tool references last verified: 2026-10-17 (dla aplikacji brak; ewaluacja AI-recenzenta w §5 używa promptfoo 0.124.1)
 
 Refresh (`/10x-test-plan --refresh`) when:
 

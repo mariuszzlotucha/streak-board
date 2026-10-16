@@ -6,10 +6,11 @@
  * for a composite-action step with `shell: bash`. Step `if:` conditions are
  * not evaluated.
  *
- * The step gets only the `env` it is given plus `PATH`, `HOME`, a temporary
- * `GITHUB_OUTPUT`, `GITHUB_STEP_SUMMARY` and `RUNNER_TEMP`, and for an action
- * step `GITHUB_ACTION_PATH`, `REVIEWER_ROOT` and an absolute `DIFF_FILE`. Two
- * stubs come first in `PATH`:
+ * The step gets only the `env` it is given plus `PATH`, `HOME` (the temporary
+ * directory, so no user config is read), a temporary `GITHUB_OUTPUT`,
+ * `GITHUB_STEP_SUMMARY` and `RUNNER_TEMP`, and for an action step
+ * `GITHUB_ACTION_PATH`, `REVIEWER_ROOT` and an absolute `DIFF_FILE`. Stubs come
+ * first in `PATH`:
  *
  * - `gh`: `gh api` answers from the fixtures by method and endpoint and logs
  *   the method, the endpoint and the `--input` payload. `--jq` is applied with
@@ -18,6 +19,9 @@
  *   fixture answers `HTTP 404` on stderr with exit code 1, like a label that is
  *   not on the PR; any other call without a fixture does the same.
  * - `npm`: logs its arguments and exits with the given code, stdout and stderr.
+ * - `git`, `npx` and `curl`: refused with exit code 127, so a step never
+ *   reaches the real ones, which would use the developer's config, credentials
+ *   and the network.
  *
  * `openssl`, `node` and the rest of the system `PATH` stay available.
  */
@@ -137,6 +141,13 @@ process.stderr.write(answer.stderr ?? "");
 process.exit(answer.status);
 `;
 
+/** Commands no step may reach for real; each stub says so on stderr and exits 127. */
+const REFUSED_COMMANDS = ["git", "npx", "curl"] as const;
+const REFUSED_STUB = `#!/bin/sh
+echo "workflow-steps: $(basename "$0") is not stubbed" >&2
+exit 127
+`;
+
 /** The steps of `file` (repo-relative): every job's steps of a workflow, or the steps of a composite action. */
 export function loadSteps(file: string): WorkflowStep[] {
   const doc = parse(readFileSync(join(import.meta.dirname, "../..", file), "utf8")) as {
@@ -182,6 +193,10 @@ export function runStep(file: string, name: string, options: StepOptions = {}): 
     writeFileSync(join(bin, "npm"), NPM_STUB);
     chmodSync(join(bin, "gh"), 0o755);
     chmodSync(join(bin, "npm"), 0o755);
+    for (const command of REFUSED_COMMANDS) {
+      writeFileSync(join(bin, command), REFUSED_STUB);
+      chmodSync(join(bin, command), 0o755);
+    }
     writeFileSync(join(dir, "gh-fixtures.json"), JSON.stringify(options.gh ?? []));
     writeFileSync(join(dir, "npm-answer.json"), JSON.stringify(options.npm ?? { status: 0 }));
     for (const [path, content] of Object.entries(options.files ?? {})) writeFileSync(join(dir, path), content);
@@ -194,7 +209,7 @@ export function runStep(file: string, name: string, options: StepOptions = {}): 
 
     const env: Record<string, string> = {
       PATH: `${bin}:${process.env.PATH ?? "/usr/bin:/bin"}`,
-      HOME: process.env.HOME ?? dir,
+      HOME: dir,
       WORKFLOW_STUB_DIR: dir,
       GITHUB_OUTPUT: outputFile,
       GITHUB_STEP_SUMMARY: summaryFile,

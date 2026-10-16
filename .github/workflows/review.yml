@@ -21,8 +21,9 @@
 # and the heading "## AI code review: " on the next line.
 #
 # The code diff leaves out context/, Markdown, both package-lock.json files (the root one and the eval suite's)
-# and the YAML files of the eval cases (packages/code-reviewer/evals/cases/*.yaml). The cases are data, never
-# imported: they hold deliberately broken code and text addressed to the reviewer. Their paths are still in the
+# and the YAML files of the eval cases (packages/code-reviewer/evals/cases/*.yaml). The cases are data that no
+# code imports: they hold deliberately broken code and text addressed to the reviewer, and the eval provider that
+# reads them refuses file paths inside .git and refs that are not full SHAs. Their paths are still in the
 # changed-files list the reviewer gets, and any other file in cases/ stays in the diff.
 #
 # Labels: ai-cr:review re-runs the review (after an error, not to re-roll a fail) and is removed as it starts.
@@ -129,9 +130,10 @@ jobs:
       # documents, Markdown at any depth (`*` matches `/` in a pathspec), the root lockfile, the eval suite's
       # lockfile and the eval cases' YAML files are left out. Every exclusion names an exact path, because `*`
       # also matches `/`: another file in cases/ and any other *package-lock.json stay in the diff. The cases are
-      # data, never imported (deliberately broken code and text addressed to the reviewer); their paths are still
-      # listed in the changed files. packages/code-reviewer/evals/provider.ts (CI_DIFF_PATHSPECS) mirrors this
-      # pathspec, and a unit test compares the two. An empty result is reviewed as `skipped`.
+      # data that no code imports (deliberately broken code and text addressed to the reviewer; the eval provider
+      # refuses paths inside .git and refs that are not full SHAs); their paths are still listed in the changed
+      # files. packages/code-reviewer/evals/provider.ts (CI_DIFF_PATHSPECS) mirrors this pathspec, and a unit test
+      # compares the two. An empty result is reviewed as `skipped`.
       - name: Compute the code diff
         if: steps.mode.outputs.mode == 'review'
         env:

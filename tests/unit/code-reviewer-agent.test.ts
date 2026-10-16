@@ -205,12 +205,28 @@ describe("reviewDiff on a diff that shows a file as binary", () => {
     expect(model.doGenerateCalls).toHaveLength(0);
   });
 
-  it("rejects a name holding ' and ' unless both sides of the split end with a binary extension", async () => {
+  it("rejects a name holding ' and ' unless every split at ' and ' leaves binary sides", async () => {
     model = new MockLanguageModelV4({ doGenerate: answer });
     const error = await reviewDiff(marker("a/fish and chips.png", "b/fish and chips.png")).catch((e: unknown) => e);
     expect((error as InstanceType<typeof UnreviewableDiffError>).paths).toEqual(["a/fish and chips.png and b/fish"]);
     await reviewDiff(marker("a/before.png and after.png", "b/before.png and after.png"));
     expect(model.doGenerateCalls).toHaveLength(1);
+  });
+
+  it("rejects a name that splits into a binary side and /dev/null, before any model call", async () => {
+    model = new MockLanguageModelV4({ doGenerate: answer });
+    const error = await reviewDiff(marker("/dev/null", "b/img.png and /dev/null")).catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(UnreviewableDiffError);
+    expect((error as InstanceType<typeof UnreviewableDiffError>).paths).toEqual(["b/img.png and /dev/null"]);
+    expect(model.doGenerateCalls).toHaveLength(0);
+  });
+
+  it("reads a raw path holding U+2028 like any other", async () => {
+    model = new MockLanguageModelV4({ doGenerate: answer });
+    const path = "src/x y.ts";
+    const error = await reviewDiff(marker(`a/${path}`, `b/${path}`)).catch((e: unknown) => e);
+    expect((error as InstanceType<typeof UnreviewableDiffError>).paths).toEqual([`a/${path}`, `b/${path}`]);
+    expect(model.doGenerateCalls).toHaveLength(0);
   });
 });
 

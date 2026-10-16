@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { parse } from "yaml";
 import ReviewerProvider, { buildCaseInput, CI_DIFF_PATHSPECS } from "../../packages/code-reviewer/evals/provider";
+import { readRuns, renderReport } from "../../packages/code-reviewer/evals/report";
 
 const REPO_ROOT = join(import.meta.dirname, "../..");
 const EVALS = join(REPO_ROOT, "packages/code-reviewer/evals");
@@ -129,6 +130,26 @@ describe("buildCaseInput", () => {
       /repo-relative/,
     );
   });
+
+  it("rejects a file path inside .git, which would rewrite the temporary repository's config", async () => {
+    for (const path of [".git/config", "sub/.GIT/hooks/pre-commit"]) {
+      await expect(buildCaseInput({ files: { base: { [path]: "x\n" }, head: {} } }, REPO_ROOT), path).rejects.toThrow(
+        /inside \.git/,
+      );
+    }
+  });
+
+  it("rejects base and head that are not full commit SHAs, so no value reaches git as an option", async () => {
+    const sha = "0".repeat(40);
+    const pairs: [string, string][] = [
+      ["--output=/dev/null", sha],
+      [sha, "HEAD"],
+      [sha.slice(0, 7), sha],
+    ];
+    for (const [base, head] of pairs) {
+      await expect(buildCaseInput({ base, head }, REPO_ROOT), `${base} ${head}`).rejects.toThrow(/full 40-character/);
+    }
+  });
 });
 
 describe("CI_DIFF_PATHSPECS", () => {
@@ -156,5 +177,54 @@ describe("the promptfoo configs", () => {
       },
     );
     expect(repeats).toEqual([3, 3, 1]);
+  });
+});
+
+describe("report.ts", () => {
+  const verdicts = (modelVerdict: string, ruleVerdict: string) => ({
+    outcome: "reviewed",
+    verdict: modelVerdict === "fail" || ruleVerdict === "fail" ? "fail" : "pass",
+    modelVerdict,
+    ruleVerdict,
+  });
+  const row = (description: string, expected: string, label: string, success: boolean, output?: unknown) => ({
+    provider: { id: "file://provider.ts", label },
+    testCase: { description, metadata: { expect: expected } },
+    success,
+    latencyMs: 1000,
+    cost: 0.01,
+    ...(output === undefined ? { error: "ReviewRunError: boom" } : { response: { output } }),
+  });
+  // new: A = 1 (`accepted`, a fail from the model alone), B = 0; old: A = 0, B = 1 (`flawed`). `slipped` is a suspect.
+  const resultFile = {
+    results: {
+      results: [
+        row("accepted", "pass", "new", false, verdicts("fail", "pass")),
+        row("accepted", "pass", "new", true, verdicts("pass", "pass")),
+        row("accepted", "pass", "old", false),
+        row("flawed", "fail", "new", true, verdicts("fail", "fail")),
+        row("flawed", "fail", "new", true, { outcome: "unreviewable", paths: ["a/x.ts"] }),
+        row("flawed", "fail", "old", true, verdicts("fail", "pass")),
+        row("slipped", "pass", "new", false, verdicts("fail", "fail")),
+        row("slipped", "pass", "old", true, verdicts("pass", "pass")),
+      ],
+    },
+  };
+
+  it("counts A and B over the runs with a verdict and gives the binding per provider", () => {
+    const report = renderReport(readRuns(resultFile));
+    expect(report).toContain("| new | 1 | 0 | rule | 2/4 | 3/4 |");
+    expect(report).toContain("| old | 0 | 1 | stricter | 2/2 | 1/2 |");
+  });
+
+  it("lists the suspect case with its re-run command and the run without a response", () => {
+    const report = renderReport(readRuns(resultFile));
+    expect(report).toContain("compare -- --repeat 5 --filter-pattern '^slipped$'");
+    expect(report).not.toMatch(/^- (accepted|flawed)$/m);
+    expect(report).toContain("- accepted (old): ReviewRunError: boom");
+  });
+
+  it("refuses a file that is not a promptfoo result", () => {
+    expect(() => readRuns({})).toThrow(/results\.results is missing/);
   });
 });

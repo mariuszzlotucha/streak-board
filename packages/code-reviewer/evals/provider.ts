@@ -40,6 +40,9 @@ export const CI_DIFF_PATHSPECS = [
   ":(exclude)packages/code-reviewer/evals/cases/*.yaml",
 ] as const;
 
+/** A full commit SHA: the only form a case's `base` and `head` may take, so no value reaches git as an option. */
+const FULL_SHA = /^[0-9a-f]{40}$/;
+
 /** `config` of a provider entry in a promptfoo config. */
 export interface ReviewerProviderConfig {
   /** OpenRouter model id; the loaded reviewer's `DEFAULT_REVIEWER_MODEL` when left out. */
@@ -140,7 +143,10 @@ async function git(cwd: string, args: string[]): Promise<string> {
   return stdout;
 }
 
-/** A map of repo-relative paths to file contents (`null`: delete), checked so no path leaves the repository. */
+/**
+ * A map of repo-relative paths to file contents (`null`: delete), checked so no
+ * path leaves the repository or lies inside `.git`.
+ */
 function fileMap(value: unknown, side: "base" | "head"): Map<string, string | null> {
   if (value === undefined) return new Map();
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
@@ -151,6 +157,10 @@ function fileMap(value: unknown, side: "base" | "head"): Map<string, string | nu
     const normalised = normalize(path);
     if (isAbsolute(normalised) || normalised === ".." || normalised.startsWith("../") || normalised === ".") {
       throw new Error(`files.${side}: ${JSON.stringify(path)} is not a repo-relative file path`);
+    }
+    // A file under .git/ would rewrite the temporary repository's config or hooks, which git then runs.
+    if (normalised.split("/").some((segment) => segment.toLowerCase() === ".git")) {
+      throw new Error(`files.${side}: ${JSON.stringify(path)} is inside .git`);
     }
     if (typeof content === "string" || (side === "head" && content === null)) files.set(normalised, content);
     else throw new Error(`files.${side}.${path} must be a string${side === "head" ? " or null" : ""}`);
@@ -172,10 +182,10 @@ async function applyFiles(dir: string, files: Map<string, string | null>): Promi
 }
 
 /**
- * Prepares one case for review. `base` and `head` name two commits of the
- * repository at `repoRoot`; `files: { base, head }` builds a temporary
- * repository with one commit per side instead (a `null` content in `head`
- * deletes the file), removed by `cleanup`. The diff is the CI one:
+ * Prepares one case for review. `base` and `head` are the full SHAs of two
+ * commits of the repository at `repoRoot`; `files: { base, head }` builds a
+ * temporary repository with one commit per side instead (a `null` content in
+ * `head` deletes the file), removed by `cleanup`. The diff is the CI one:
  * `git diff <base>...<head> -- . <CI_DIFF_PATHSPECS>`, run, like every git
  * call here, without the user's or the system's git config.
  */
@@ -207,6 +217,9 @@ export async function buildCaseInput(vars: Record<string, unknown>, repoRoot: st
     }
     cwd = dir;
   } else if (typeof vars.base === "string" && typeof vars.head === "string") {
+    if (!FULL_SHA.test(vars.base) || !FULL_SHA.test(vars.head)) {
+      throw new Error("vars.base and vars.head must be full 40-character commit SHAs");
+    }
     baseRef = vars.base;
     headRef = vars.head;
   } else {

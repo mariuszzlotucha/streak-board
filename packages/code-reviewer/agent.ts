@@ -137,8 +137,10 @@ export class UnreviewableDiffError extends Error {
   }
 }
 
-/** The line git prints instead of a hunk for a binary file; the two sides are split at the last " and ". */
-const BINARY_MARKER = /^Binary files (.+) and (.+) differ$/;
+/** The line git prints instead of a hunk for a binary file: `Binary files <a> and <b> differ`. */
+const BINARY_MARKER_START = "Binary files ";
+const BINARY_MARKER_END = " differ";
+const BINARY_MARKER_SEPARATOR = " and ";
 
 /** Whether a side of a binary marker (a path as git prints it, maybe quoted) ends with a `BINARY_EXTENSIONS` entry. */
 function hasBinaryExtension(side: string): boolean {
@@ -148,22 +150,38 @@ function hasBinaryExtension(side: string): boolean {
   return dot >= 0 && BINARY_EXTENSIONS.includes(name.slice(dot + 1).toLowerCase());
 }
 
+/** Whether a side of a binary marker can hide content: neither `/dev/null` nor a path with a binary extension. */
+function hidesContent(side: string): boolean {
+  return side !== "/dev/null" && !hasBinaryExtension(side);
+}
+
 /**
  * Every side of a `Binary files … differ` line in `diff` that is neither
- * `/dev/null` nor a path with a binary extension. A name holding " and " can
- * split the line wrongly; then a side usually ends without an extension and is
- * listed, which fails closed.
+ * `/dev/null` nor a path with a binary extension. A name holding " and " makes
+ * the split ambiguous (a new file `img.png and /dev/null` prints
+ * `Binary files /dev/null and b/img.png and /dev/null differ`), so a line
+ * passes only when every split at " and " leaves two such sides. The sides
+ * listed are those of the split at the last " and " or, when that split
+ * passes, of the first split that does not; a line without " and " is listed
+ * whole. Plain string search instead of a regular expression, so every
+ * character of a raw path, U+2028 included, belongs to a side.
  */
 function hiddenBinaryPaths(diff: string): string[] {
   const paths: string[] = [];
   for (const line of diff.split("\n")) {
-    // The cheap checks first, so a long hunk line never reaches the backtracking pattern.
-    if (!line.startsWith("Binary files ") || !line.endsWith(" differ")) continue;
-    const match = BINARY_MARKER.exec(line);
-    if (!match) continue;
-    for (const side of [match[1], match[2]]) {
-      if (side !== "/dev/null" && !hasBinaryExtension(side)) paths.push(side);
+    if (!line.startsWith(BINARY_MARKER_START) || !line.endsWith(BINARY_MARKER_END)) continue;
+    const sides = line.slice(BINARY_MARKER_START.length, line.length - BINARY_MARKER_END.length);
+    const hiddenBySplit: string[][] = [];
+    for (
+      let at = sides.indexOf(BINARY_MARKER_SEPARATOR, 1);
+      at !== -1;
+      at = sides.indexOf(BINARY_MARKER_SEPARATOR, at + 1)
+    ) {
+      hiddenBySplit.push([sides.slice(0, at), sides.slice(at + BINARY_MARKER_SEPARATOR.length)].filter(hidesContent));
     }
+    const last = hiddenBySplit.at(-1);
+    if (last === undefined) paths.push(sides);
+    else paths.push(...(last.length > 0 ? last : (hiddenBySplit.find((hidden) => hidden.length > 0) ?? [])));
   }
   return paths;
 }
