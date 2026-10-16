@@ -17,6 +17,9 @@ Stan z 2026-10-16. Odpowiedzi właściciela na pytania z `open-items.md` i `open
   - Do zrobienia: poprawka PRD (`prd.md:20`, `:29`) razem z S-13.
 - **Taski weekly z datą inną niż poniedziałek (Q-08)**: wynik zapytania na produkcji to 0. Podał go właściciel, nie sprawdzałem tego sam.
   - Do zrobienia: nic.
+- **Nazwa członka widoczna dla grupy (Q-05)**: e-mail przestaje być nazwą członka. Decyzje z `/10x-frame nickname` (2026-10-16): członkowie rozpoznają się po nazwie; nick obowiązkowy dla każdego konta, także istniejących; aplikacja może używać imienia przekazywanego przez Google (polityka do zmiany); własny e-mail widoczny tylko na `/settings`; ujawnieniem jest też to, co inny członek dostaje w HTML i z RPC.
+  - Decyzje z `/10x-plan nickname` (2026-10-16): unikalność nicka dosłowna w całej aplikacji („Kasia” i „kasia” to dwa nicki); długość 2–24 znaki po przycięciu, dowolne znaki jak w nazwie grupy; bez backfillu istniejących kont, czyli do pierwszego logowania inni widzą takie konto jako „Unknown member” (świadomy okres przejściowy wobec „inni nigdy nie widzą konta bez nazwy”); imię od Google tylko jako podpowiedź w polu nicka; S-14 idzie przed S-13 i wchodzi do „Done when” M-2.
+  - Do zrobienia: wycinek S-14 `nickname` według `context/changes/nickname/plan.md` (dwie fazy, dwa wydania), razem z poprawką polityki prywatności, tekstu przy rejestracji, słownika i PRD.
 
 ## Strażnik migracji i testy
 
