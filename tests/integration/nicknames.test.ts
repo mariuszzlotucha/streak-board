@@ -158,8 +158,8 @@ describe("nicknames", () => {
       expect(listed).toHaveLength(2);
       for (const row of listed ?? []) {
         expect(Object.keys(row).sort()).toEqual(["is_owner", "joined_at", "nickname", "user_id"]);
-        for (const value of Object.values(row)) expect(String(value)).not.toContain("@");
       }
+      expect(JSON.stringify(listed)).not.toContain("@");
     });
 
     it("listGroupMembers passes on exactly user_id, nickname, joined_at and is_owner (never the e-mail)", async () => {

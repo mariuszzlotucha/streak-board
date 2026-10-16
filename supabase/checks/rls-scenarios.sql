@@ -461,6 +461,7 @@ begin
   perform rls_check.expect_value(format('select nickname from public.list_group_members(%L) where user_id = %L', ga, c), 'u-' || left(c::text, 8), 'S-01 the nickname comes from nicknames');
   -- S-14 release 2: no member gets another member's e-mail address from the RPC, by any column.
   perform rls_check.expect_value($q$select ('email' = any(proargnames))::text from pg_proc where pronamespace = 'public'::regnamespace and proname = 'list_group_members'$q$, 'false', 'S-14 list_group_members has no email column');
+  perform rls_check.expect_value($q$select pg_get_function_result('public.list_group_members(uuid)'::regprocedure)$q$, 'TABLE(user_id uuid, nickname text, joined_at timestamp with time zone, is_owner boolean)', 'S-14 list_group_members returns exactly user_id, nickname, joined_at, is_owner');
 
   -- A regular member sees the same list.
   perform rls_check.as_user(c);
