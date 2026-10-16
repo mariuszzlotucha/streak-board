@@ -3,7 +3,7 @@ project: "StreakBoard"
 version: 1
 status: draft
 created: 2026-09-24
-updated: 2026-10-15
+updated: 2026-10-16
 prd_version: 1
 main_goal: market-feedback
 top_blocker: time
@@ -47,16 +47,16 @@ Grono znajomych korzystało wcześniej ze wspólnego arkusza Google, w którym r
 
 ## At a glance
 
-| ID   | Change ID                      | Outcome (user can …)                                                                                                                                     | Prerequisites                                           | PRD refs                           | Status      |
-| ---- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ---------------------------------- | ----------- |
-| S-06 | custom-domain                  | wejść na aplikację pod domeną `streakboard.app`; rejestracja, logowanie i link potwierdzający działają na tej domenie                                    | domena `streakboard.app` w Cloudflare (Registrar i DNS) | — (operacyjne; MS-01)              | done        |
-| S-07 | google-login                   | zarejestrować się i zalogować kontem Google, bez ustawiania hasła                                                                                        | S-06                                                    | FR-001 (OAuth/passwordless); MS-06 | done        |
-| S-08 | observability-swallowed-errors | (jakościowy) awaria w krytycznym przepływie nie jest połykana ani zamieniana na sukces: trafia do odpowiedzi API i do monitoringu                        | —                                                       | — (jakościowe; MS-05)              | done        |
-| S-09 | landing-page                   | zobaczyć jako niezalogowany stronę startową, która tłumaczy, czym jest aplikacja, i prowadzi do rejestracji lub logowania                                | S-06, S-07                                              | — (UI; MS-03)                      | done        |
-| S-10 | test-coverage                  | (jakościowy) zmiany w aplikacji są chronione testami wybranymi według ryzyka, a jakość testów jednostkowych jest mierzona mutacjami                      | —                                                       | — (jakościowe; MS-02)              | in-progress |
-| S-11 | dashboard-ui                   | korzystać z czytelniejszego, spójnego wizualnie widoku grupy, tasków i tablicy wyników                                                                   | S-08                                                    | — (UI; MS-04)                      | done        |
-| S-12 | refactor-opportunities         | (jakościowy) znane ciche luki są zamknięte: raportowanie błędów dashboardu, strażnicy migracji i typów w CI, testy tras i reguł, jawne uprawnienia tabel | —                                                       | — (jakościowe; MS-07)              | done        |
-| S-13 | checkoff-grid                  | zobaczyć siatkę odznaczeń grupy: kto wykonał task w każdym z ostatnich okresów                                                                           | S-11                                                    | — (UI; MS-08)                      | proposed    |
+| ID   | Change ID                      | Outcome (user can …)                                                                                                                                     | Prerequisites                                           | PRD refs                           | Status   |
+| ---- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ---------------------------------- | -------- |
+| S-06 | custom-domain                  | wejść na aplikację pod domeną `streakboard.app`; rejestracja, logowanie i link potwierdzający działają na tej domenie                                    | domena `streakboard.app` w Cloudflare (Registrar i DNS) | — (operacyjne; MS-01)              | done     |
+| S-07 | google-login                   | zarejestrować się i zalogować kontem Google, bez ustawiania hasła                                                                                        | S-06                                                    | FR-001 (OAuth/passwordless); MS-06 | done     |
+| S-08 | observability-swallowed-errors | (jakościowy) awaria w krytycznym przepływie nie jest połykana ani zamieniana na sukces: trafia do odpowiedzi API i do monitoringu                        | —                                                       | — (jakościowe; MS-05)              | done     |
+| S-09 | landing-page                   | zobaczyć jako niezalogowany stronę startową, która tłumaczy, czym jest aplikacja, i prowadzi do rejestracji lub logowania                                | S-06, S-07                                              | — (UI; MS-03)                      | done     |
+| S-10 | test-coverage                  | (jakościowy) zmiany w aplikacji są chronione testami wybranymi według ryzyka, a jakość testów jednostkowych jest mierzona mutacjami                      | —                                                       | — (jakościowe; MS-02)              | done     |
+| S-11 | dashboard-ui                   | korzystać z czytelniejszego, spójnego wizualnie widoku grupy, tasków i tablicy wyników                                                                   | S-08                                                    | — (UI; MS-04)                      | done     |
+| S-12 | refactor-opportunities         | (jakościowy) znane ciche luki są zamknięte: raportowanie błędów dashboardu, strażnicy migracji i typów w CI, testy tras i reguł, jawne uprawnienia tabel | —                                                       | — (jakościowe; MS-07)              | done     |
+| S-13 | checkoff-grid                  | zobaczyć siatkę odznaczeń grupy: kto wykonał task w każdym z ostatnich okresów                                                                           | S-11                                                    | — (UI; MS-08)                      | proposed |
 
 ## Streams
 
@@ -163,7 +163,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
   - Jak uzgodnić `test-plan.md` z decyzją o e2e: §4 mówi dziś „e2e: none — not planned", a wejście wprost wlicza e2e kluczowych przepływów (Playwright jest już skonfigurowany) — odświeżyć test-plan przed planowaniem czy uzgodnić to w planie wycinka? — Owner: user. Block: no — rozstrzyga `/10x-frame`.
 - **Źródło zakresu:** `context/foundation/roadmap-input-next-slices.md`, sekcja „2. test-coverage" (testy jednostkowe dla logiki bez testów, testy mutacyjne na modułach z regułami, e2e kluczowych przepływów zamiast wszystkiego; UI poza testami DOM wg test-planu §7).
 - **Risk:** Najszerszy wycinek M-2 i zakres bez granic: plan musi wybrać etapy z test-planu (niezrealizowane są etap 2, bramka kolejności wydania, i etap 3, granice auth i walidacja), zapisać, czego nie testuje, i może rozpaść się na kilka zmian (status przesuwa tylko pierwsza). Idzie na końcu M-2 (decyzja właściciela 2026-10-08), po S-11 i S-13, więc e2e kluczowych przepływów powstaje pod nowy wygląd; nie ma zależności technicznych, więc może też iść równolegle.
-- **Status:** in-progress
+- **Status:** done
 
 ### S-11: Czytelniejszy widok grupy, tasków i tablicy wyników
 
@@ -251,5 +251,6 @@ Brak innych otwartych pytań. (Flaga Safe Browsing zdjęta: Google zaakceptował
 - **S-07: użytkownik może zarejestrować się i zalogować kontem Google, bez ustawiania hasła.** — Archived 2026-10-06 → `context/archive/2026-10-05-google-login/`. Lesson: —.
 - **S-08: (jakościowy) awaria w krytycznym przepływie aplikacji nie jest połykana ani zamieniana na sukces: trafia do odpowiedzi API i do monitoringu.** — Archived 2026-10-02 → `context/archive/2026-10-02-observability-swallowed-errors/`. Lesson: —.
 - **S-09: niezalogowany użytkownik widzi stronę startową, która tłumaczy, czym jest aplikacja, i prowadzi do rejestracji lub logowania.** — Archived 2026-10-08 → `context/archive/2026-10-08-landing-page/`. Lesson: —.
+- **S-10: (jakościowy) zmiany w aplikacji są chronione testami wybranymi według ryzyka, a jakość testów jednostkowych jest mierzona mutacjami.** — Archived 2026-10-16 → `context/archive/2026-10-15-test-coverage/`. Lesson: —.
 - **S-11: zalogowany użytkownik korzysta z czytelniejszego, spójnego wizualnie widoku grupy, tasków i tablicy wyników.** — Archived 2026-10-12 → `context/archive/2026-10-09-dashboard-ui/`. Lesson: —.
 - **S-12: (jakościowy) znane ciche luki są zamknięte bez zmiany zachowania: błędy dashboardu trafiają do raportowania, CI pilnuje niezmienności migracji i aktualności typów, trasy i reguły mają testy charakteryzujące, a uprawnienia tabel są jawne w migracji.** — Archived 2026-10-15 → `context/archive/2026-10-06-refactor-opportunities/`. Lesson: —.
