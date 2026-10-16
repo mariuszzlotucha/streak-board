@@ -1,0 +1,36 @@
+---
+import { buttonVariants } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+interface Props {
+  /** The signed-in user's own address: the one place in the app where it is shown. */
+  email: string | undefined;
+  /** Null for an account that has not chosen one yet (the settings page normally sees it set). */
+  nickname: string | null;
+}
+
+const { email, nickname } = Astro.props;
+---
+
+{/* The account behind the session: its nickname (what the group sees) and its e-mail address (only the user sees it). */}
+<Card>
+  <CardHeader>
+    <CardTitle as="h2">Account</CardTitle>
+    <CardDescription>Only you see your e-mail address.</CardDescription>
+  </CardHeader>
+  <CardContent className="flex flex-col items-start gap-4">
+    <dl class="w-full space-y-3 text-sm">
+      <div>
+        <dt class="text-muted-foreground">Nickname</dt>
+        <dd class="font-medium wrap-anywhere">{nickname ?? "Not set yet"}</dd>
+      </div>
+      <div>
+        <dt class="text-muted-foreground">E-mail</dt>
+        <dd class="font-medium wrap-anywhere">{email}</dd>
+      </div>
+    </dl>
+    <a href="/account/nickname" class:list={buttonVariants({ variant: "outline", size: "sm" })}>
+      {nickname === null ? "Choose nickname" : "Change nickname"}
+    </a>
+  </CardContent>
+</Card>

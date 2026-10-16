@@ -81,6 +81,24 @@ export type Database = {
         };
         Relationships: [];
       };
+      nicknames: {
+        Row: {
+          created_at: string;
+          nickname: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          nickname: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          nickname?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       task_checkoffs: {
         Row: {
           checked_at: string;
@@ -199,10 +217,12 @@ export type Database = {
           email: string;
           is_owner: boolean;
           joined_at: string;
+          nickname: string;
           user_id: string;
         }[];
       };
       preview_group: { Args: { p_join_code: string }; Returns: string };
+      set_nickname: { Args: { p_nickname: string }; Returns: undefined };
     };
     Enums: {
       [_ in never]: never;

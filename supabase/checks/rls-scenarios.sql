@@ -1,4 +1,4 @@
--- RLS scenario checks for groups / group_members / tasks / task_participants / task_checkoffs (F-01 + group-rls-hardening + S-01 helper functions + S-02 tasks + S-03 participation + S-04 check-offs + S-12 table-level privileges).
+-- RLS scenario checks for groups / group_members / tasks / task_participants / task_checkoffs / nicknames and the function set_nickname (F-01 + group-rls-hardening + S-01 helper functions + S-02 tasks + S-03 participation + S-04 check-offs + S-12 table-level privileges + S-14 nicknames).
 --
 -- Run against the LOCAL Supabase database only:
 --   docker exec -i supabase_db_10x-astro-starter psql -U postgres -d postgres -X -v ON_ERROR_STOP=1 < supabase/checks/rls-scenarios.sql
@@ -24,7 +24,8 @@ grant usage on schema rls_check to public;
 create table rls_check.results (label text not null);
 grant all on rls_check.results to public;
 
--- Fresh user with no group; call as postgres. Every scenario builds its own users, so each one starts from a clean state.
+-- Fresh user with no group and the nickname 'u-<first 8 characters of the id>' (every account has one before it reaches
+-- a group, S-14); call as postgres. Every scenario builds its own users, so each one starts from a clean state.
 create function rls_check.mk_user() returns uuid
 language plpgsql
 as $$
@@ -32,6 +33,7 @@ declare
   v_id uuid := gen_random_uuid();
 begin
   insert into auth.users (id, email) values (v_id, v_id::text || '@rls-check.invalid');
+  insert into public.nicknames (user_id, nickname) values (v_id, 'u-' || left(v_id::text, 8));
   return v_id;
 end;
 $$;
@@ -311,12 +313,12 @@ do $$
 begin
   perform rls_check.expect_value(
     $q$select count(*) from pg_policies
-       where schemaname = 'public' and tablename in ('groups', 'group_members', 'tasks', 'task_participants', 'task_checkoffs')
+       where schemaname = 'public' and tablename in ('groups', 'group_members', 'tasks', 'task_participants', 'task_checkoffs', 'nicknames')
          and regexp_replace(coalesce(qual, '') || ' ' || coalesce(with_check, ''), '\( SELECT auth\.uid\(\) AS uid\)', '', 'g') ~ 'auth\.uid\(\)'$q$,
     '0', '#6 no policy uses a bare auth.uid()');
   perform rls_check.expect_value(
     $q$select (count(*) > 0)::text from pg_policies
-       where schemaname = 'public' and tablename in ('groups', 'group_members', 'tasks', 'task_participants', 'task_checkoffs')
+       where schemaname = 'public' and tablename in ('groups', 'group_members', 'tasks', 'task_participants', 'task_checkoffs', 'nicknames')
          and coalesce(qual, '') || ' ' || coalesce(with_check, '') ~ '\( SELECT auth\.uid\(\) AS uid\)'$q$,
     'true', '#6 policies do use (select auth.uid())');
   perform rls_check.expect_value(
@@ -429,7 +431,7 @@ end;
 $$;
 
 -- ---------------------------------------------------------------------------
--- S-01: list_group_members (member-only, emails, owner flag)
+-- S-01: list_group_members (member-only, emails, nicknames, owner flag)
 -- ---------------------------------------------------------------------------
 
 do $$
@@ -457,10 +459,19 @@ begin
   perform rls_check.expect_value(format('select is_owner::text from public.list_group_members(%L) where user_id = %L', ga, c), 'false', 'S-01 is_owner is false for a member');
   perform rls_check.expect_value(format('select count(*) from public.list_group_members(%L) where email is not null', ga), '2', 'S-01 every listed member has an email');
   perform rls_check.expect_value(format('select email from public.list_group_members(%L) where user_id = %L', ga, c), c::text || '@rls-check.invalid', 'S-01 the email comes from auth.users');
+  perform rls_check.expect_value(format('select count(*) from public.list_group_members(%L) where nickname is not null', ga), '2', 'S-01 every listed member has a nickname');
+  perform rls_check.expect_value(format('select nickname from public.list_group_members(%L) where user_id = %L', ga, c), 'u-' || left(c::text, 8), 'S-01 the nickname comes from nicknames');
 
   -- A regular member sees the same list.
   perform rls_check.as_user(c);
   perform rls_check.expect_value(format('select count(*) from public.list_group_members(%L)', ga), '2', 'S-01 a member sees both members');
+
+  -- A member without a nickname row (an account from before S-14) stays on the list with a NULL nickname (left join).
+  perform rls_check.as_postgres();
+  delete from public.nicknames where user_id = c;
+  perform rls_check.as_user(a);
+  perform rls_check.expect_value(format('select count(*) from public.list_group_members(%L) where user_id = %L and nickname is null', ga, c), '1', 'S-01 a member without a nickname is still listed, with a NULL nickname');
+  perform rls_check.expect_value(format('select count(*) from public.list_group_members(%L)', ga), '2', 'S-01 a missing nickname does not drop anyone from the list');
 
   perform rls_check.as_postgres();
 end;
@@ -1230,6 +1241,58 @@ end;
 $$;
 
 -- ---------------------------------------------------------------------------
+-- S-14: nicknames (20261016162551_add_nicknames.sql): a user reads only their own row and writes it only through
+-- set_nickname; the database enforces exact uniqueness, the trim, the length and visible characters; the row goes with the account
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  a uuid; b uuid; nick_a text;
+begin
+  a := rls_check.mk_user(); b := rls_check.mk_user();
+
+  perform rls_check.as_user(a);
+  perform rls_check.expect_value(format('select count(*) from public.nicknames where user_id = %L', a), '1', 'S-14 a user sees their own nickname row');
+  perform rls_check.expect_value(format('select count(*) from public.nicknames where user_id = %L', b), '0', 'S-14 a user does not see another account''s nickname row');
+  perform rls_check.expect_value('select count(*) from public.nicknames', '1', 'S-14 an unfiltered select returns only the caller''s own row');
+
+  nick_a := 'Nick ' || left(a::text, 8);
+  perform public.set_nickname(nick_a);
+  perform rls_check.expect_value(format('select nickname from public.nicknames where user_id = %L', a), nick_a, 'S-14 set_nickname changes the caller''s own nickname');
+  perform rls_check.expect_value(format('select count(*) from public.nicknames where user_id = %L', a), '1', 'S-14 a change keeps one row per account');
+
+  -- No write privilege on the table itself: set_nickname is the only way in.
+  perform rls_check.expect_error('42501', format('insert into public.nicknames (user_id, nickname) values (%L, %L)', a, 'Direct'), 'S-14 a direct insert into nicknames is denied');
+  perform rls_check.expect_error('42501', format('update public.nicknames set nickname = %L where user_id = %L', 'Direct', a), 'S-14 a direct update of nicknames is denied');
+  perform rls_check.expect_error('42501', format('delete from public.nicknames where user_id = %L', a), 'S-14 a direct delete from nicknames is denied');
+
+  perform rls_check.as_user(b);
+  perform rls_check.expect_error('23505', format('select public.set_nickname(%L)', nick_a), 'S-14 another account''s nickname is taken (23505)');
+  perform rls_check.expect_value(format('select nickname from public.nicknames where user_id = %L', b), 'u-' || left(b::text, 8), 'S-14 a refused nickname leaves the caller''s row unchanged');
+  perform public.set_nickname(upper(nick_a));
+  perform rls_check.expect_value(format('select nickname from public.nicknames where user_id = %L', b), upper(nick_a), 'S-14 the same nickname in another case is allowed (uniqueness is exact)');
+
+  perform rls_check.expect_error('23514', $q$select public.set_nickname('a')$q$, 'S-14 a 1-character nickname is rejected (23514)');
+  perform rls_check.expect_error('23514', format('select public.set_nickname(%L)', repeat('n', 25)), 'S-14 a 25-character nickname is rejected (23514)');
+  perform rls_check.expect_error('23514', $q$select public.set_nickname(' ab ')$q$, 'S-14 an untrimmed nickname is rejected (23514)');
+  perform rls_check.expect_error('23514', $q$select public.set_nickname(E'  ')$q$, 'S-14 a nickname with nothing visible is rejected (23514)');
+  perform rls_check.expect_error('23514', $q$select public.set_nickname(E'ab​cd')$q$, 'S-14 a zero-width space is rejected (23514)');
+  perform rls_check.expect_error('23514', $q$select public.set_nickname(E'ab‮cd')$q$, 'S-14 a bidi override is rejected (23514)');
+
+  perform rls_check.as_anon();
+  perform rls_check.expect_error('42501', 'select count(*) from public.nicknames', 'S-14 anon cannot read nicknames');
+  perform rls_check.expect_error('42501', $q$select public.set_nickname('Anon nick')$q$, 'S-14 anon cannot call set_nickname');
+
+  perform rls_check.as_postgres();
+  delete from auth.users where id = b;
+  perform rls_check.expect_value(format('select count(*) from public.nicknames where user_id = %L', b), '0', 'S-14 deleting an account erases its nickname');
+  perform rls_check.expect_value(format('select count(*) from public.nicknames where user_id = %L', a), '1', 'S-14 other accounts'' nicknames stay');
+
+  perform rls_check.as_postgres();
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
 -- S-12: table-level privileges (20261015180024_grant_core_table_privileges.sql), pinned in both directions
 -- ---------------------------------------------------------------------------
 
@@ -1252,6 +1315,11 @@ begin
     $q$select string_agg(privilege_type, ',' order by privilege_type) from information_schema.role_table_grants
        where table_schema = 'public' and table_name = 'task_checkoff_periods' and grantee = 'authenticated'$q$,
     'SELECT', 'S-12 authenticated holds exactly SELECT on the view task_checkoff_periods');
+  -- S-14: nicknames is read-only for authenticated (writes go through set_nickname, deletion through the cascade).
+  perform rls_check.expect_value(
+    $q$select string_agg(privilege_type, ',' order by privilege_type) from information_schema.role_table_grants
+       where table_schema = 'public' and table_name = 'nicknames' and grantee = 'authenticated'$q$,
+    'SELECT', 'S-14 authenticated holds exactly SELECT on nicknames');
   perform rls_check.expect_value(
     $q$select count(*) from information_schema.role_table_grants where table_schema = 'public' and grantee = 'anon'$q$,
     '0', 'S-12 anon holds no table-level privilege in the public schema');

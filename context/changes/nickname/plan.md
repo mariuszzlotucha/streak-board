@@ -238,7 +238,7 @@ Jeden PR i jedno wydanie: tabela `nicknames` z funkcją `set_nickname`, `list_gr
 
 **Intent**: Nowe moduły reguł wchodzą do testów mutacyjnych.
 
-**Contract**: `mutate` += `src/lib/nickname-rules.ts`, `src/lib/nickname-errors.ts`, `src/lib/nicknames.ts`; baseline dostaje wiersze tych modułów i zaktualizowany wiersz `leaderboard-rules` po zawężonym uruchomieniu (`--mutate "src/lib/leaderboard-rules.ts:49-63"`), z weryfikacją `testsCompleted >= 1` dla pokrytych mutantów (lekcja o Strykerze).
+**Contract**: `mutate` += `src/lib/nickname-rules.ts`, `src/lib/nickname-errors.ts`, `src/lib/nicknames.ts`; baseline dostaje wiersze tych modułów i zaktualizowany wiersz `leaderboard-rules` po zawężonym uruchomieniu (`--mutate "src/lib/leaderboard-rules.ts:52-66"`; przed zmianą `rankStandings` leżało w liniach 49-63), z weryfikacją `testsCompleted >= 1` dla pokrytych mutantów (lekcja o Strykerze).
 
 #### 10. Testy jednostkowe
 
@@ -325,7 +325,7 @@ Jeden PR i jedno wydanie: tabela `nicknames` z funkcją `set_nickname`, `list_gr
 - Smoke z krokami bramy, nicków i wykluczeniem adresów przechodzi na podglądzie produkcyjnym: `npm run build && npm run preview` oraz `BASE_URL=http://localhost:4321 npm run smoke`
 - Testy e2e w obu projektach przechodzą z seedem i personami z nickiem: `npx playwright test`
 - Reguły zależności przechodzą: `npm run deps`
-- Zawężone mutacje nowych modułów i remisu uruchamiają testy: `npm run test:mutation -- --mutate src/lib/nickname-rules.ts --mutate src/lib/nickname-errors.ts --mutate src/lib/nicknames.ts --mutate "src/lib/leaderboard-rules.ts:49-63" --logLevel info` z `testsCompleted >= 1` dla każdego pokrytego mutanta w `reports/mutation/mutation.json`
+- Zawężone mutacje nowych modułów i remisu uruchamiają testy: `npm run test:mutation -- --mutate "src/lib/nickname-rules.ts,src/lib/nickname-errors.ts,src/lib/nicknames.ts,src/lib/leaderboard-rules.ts:52-66" --logLevel info` (jedna lista po przecinku: powtórzone `--mutate` zostawia tylko ostatnią wartość) z `testsCompleted >= 1` dla każdego pokrytego mutanta w `reports/mutation/mutation.json`
 - Zrzuty stanów kitchen sinka (w tym `nickname-*`, `settings-*` z kartą Account i stany dashboardu z nickami) powstają bez błędu konsoli: `OUT_DIR=context/changes/nickname/screenshots BASE_URL=http://localhost:4321 node scripts/ui-screenshots.mjs s14 states` (przy działającym `astro dev`)
 
 #### Manual Verification:
@@ -348,7 +348,7 @@ Jeden PR i jedno wydanie: tabela `nicknames` z funkcją `set_nickname`, `list_gr
 
 ### Overview
 
-Osobny przebieg `/goal` z `/10x-goal-implement nickname phase 2` i osobny PR, oba dopiero gdy tag `production` wskazuje kod fazy 1. Migracja B usuwa kolumnę `email` z `list_group_members`; `compat` uruchamia wtedy smoke fazy 1, który dopasowuje nicki i wyklucza adresy. Faza domyka obietnicę „także RPC” z ramy i zapisuje oba wydania w planie wdrożenia.
+Osobny przebieg `/goal` z `/10x-goal-implement nickname phase 2` i osobny PR, oba dopiero gdy tag `production` wskazuje kod fazy 1. Migracja B usuwa kolumnę `email` z `list_group_members`; `compat` uruchamia wtedy smoke fazy 1, który dopasowuje nicki i wyklucza adresy. Faza domyka obietnicę „także RPC” z ramy i zapisuje oba wydania w planie wdrożenia. Od wydania 1 do wydania 2 polityka prywatności mówi, że członkowie nie widzą cudzego adresu, a `list_group_members` nadal go zwraca przy bezpośrednim wywołaniu PostgREST (przegląd fazy 1, F2): fazę 2 uruchom zaraz po zatwierdzeniu wydania 1 i przesunięciu tagu, przed S-13, a okno (daty obu wydań) zapisz w `deployment-plan.md` Phase 18.
 
 ### Changes Required:
 
@@ -459,17 +459,17 @@ Brama dodaje jeden odczyt PostgREST po kluczu głównym na każde żądanie chro
 
 #### Automated
 
-- [ ] 1.1 Strażnik migracji przyjmuje migrację A ze znacznikiem
-- [ ] 1.2 Migracja A stosuje się na czystym stosie, a wygenerowane typy są świeże
-- [ ] 1.3 Lint, kontrola typów Astro i build przechodzą
-- [ ] 1.4 Testy jednostkowe przechodzą
-- [ ] 1.5 Testy integracyjne przechodzą
-- [ ] 1.6 Scenariusze RLS z sekcją S-14 przechodzą
-- [ ] 1.7 Smoke z krokami bramy, nicków i wykluczeniem adresów przechodzi
-- [ ] 1.8 Testy e2e w obu projektach przechodzą
-- [ ] 1.9 Reguły zależności przechodzą
-- [ ] 1.10 Zawężone mutacje nowych modułów i remisu uruchamiają testy
-- [ ] 1.11 Zrzuty stanów kitchen sinka powstają bez błędu konsoli
+- [x] 1.1 Strażnik migracji przyjmuje migrację A ze znacznikiem — d8ae9ae
+- [x] 1.2 Migracja A stosuje się na czystym stosie, a wygenerowane typy są świeże — d8ae9ae
+- [x] 1.3 Lint, kontrola typów Astro i build przechodzą — d8ae9ae
+- [x] 1.4 Testy jednostkowe przechodzą — d8ae9ae
+- [x] 1.5 Testy integracyjne przechodzą — d8ae9ae
+- [x] 1.6 Scenariusze RLS z sekcją S-14 przechodzą — d8ae9ae
+- [x] 1.7 Smoke z krokami bramy, nicków i wykluczeniem adresów przechodzi — d8ae9ae
+- [x] 1.8 Testy e2e w obu projektach przechodzą — d8ae9ae
+- [x] 1.9 Reguły zależności przechodzą — d8ae9ae
+- [x] 1.10 Zawężone mutacje nowych modułów i remisu uruchamiają testy — d8ae9ae
+- [x] 1.11 Zrzuty stanów kitchen sinka powstają bez błędu konsoli — d8ae9ae
 
 #### Manual
 

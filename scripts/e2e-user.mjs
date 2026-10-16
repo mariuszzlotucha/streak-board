@@ -4,7 +4,8 @@
 // Run: node scripts/e2e-user.mjs
 // It resolves the stack like tests/setup/global-setup.ts (the TEST_SUPABASE_* variables first, else
 // `supabase status -o env`), refuses a non-local host, creates `e2e-ci-<token>@example.test` with a random password
-// through the admin API (email_confirm: true) and prints exactly two lines for the CI step to append to $GITHUB_ENV:
+// through the admin API (email_confirm: true), gives it its nickname (S-14) and prints exactly two lines for the CI step
+// to append to $GITHUB_ENV:
 //
 //   E2E_USERNAME=<email>
 //   E2E_PASSWORD=<password>
@@ -91,8 +92,17 @@ async function main() {
   const admin = createClient(config.url, config.serviceRoleKey, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const { error } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
+  const { data, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true });
   if (error) throw new Error(`admin.createUser failed: ${error.message}`);
+  // Every account needs a nickname before the dashboard. The rule is nicknameFor in tests/e2e/helpers.ts (the local
+  // part, cut to 24 characters), repeated here because this script runs as plain Node; seed.spec.ts expects it.
+  const nickname = email.split("@")[0].slice(0, 24);
+  const { error: nicknameError } = await admin.from("nicknames").insert({ user_id: data.user.id, nickname });
+  if (nicknameError) {
+    // Nothing prints the account's credentials on this path, so it would leak.
+    await admin.auth.admin.deleteUser(data.user.id);
+    throw new Error(`nickname insert failed: ${nicknameError.message}`);
+  }
 
   // Exactly these two lines on stdout, nothing else: the CI step appends them to $GITHUB_ENV.
   console.log(`E2E_USERNAME=${email}`);

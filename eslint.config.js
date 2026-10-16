@@ -88,8 +88,9 @@ const viewLiteralsConfig = defineConfig({
     "src/pages/dashboard.astro",
     "src/pages/settings.astro",
     "src/pages/dev/**",
+    "src/pages/account/**",
     "src/layouts/**",
-    "src/components/{dashboard,tasks,groups,forms,site,dev}/**",
+    "src/components/{dashboard,tasks,groups,forms,site,dev,account}/**",
   ],
   rules: {
     "no-restricted-syntax": [

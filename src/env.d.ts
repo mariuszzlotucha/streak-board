@@ -1,6 +1,8 @@
 declare namespace App {
   interface Locals {
     user: import("@supabase/supabase-js").User | null;
+    /** The signed-in user's own nickname, read by the middleware on protected paths; null elsewhere or when unset. */
+    nickname: string | null;
   }
 }
 

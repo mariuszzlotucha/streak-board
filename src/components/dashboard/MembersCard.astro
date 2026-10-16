@@ -29,7 +29,7 @@ const soleMember = members.length === 1;
     <ul class="divide-y">
       {members.map((member) => (
         <li class="flex flex-wrap items-center gap-x-2 gap-y-1 py-2 first:pt-0 last:pb-0">
-          <span class="min-w-0 text-sm break-all">{member.email ?? UNKNOWN_MEMBER}</span>
+          <span class="min-w-0 text-sm break-all">{member.nickname ?? UNKNOWN_MEMBER}</span>
           {member.is_owner && <Badge variant="secondary">Owner</Badge>}
           {member.user_id === viewerId && <Badge variant="outline">You</Badge>}
           {isOwner && member.user_id !== viewerId && (
@@ -39,9 +39,9 @@ const soleMember = members.length === 1;
                 action="/api/groups/remove-member"
                 fields={{ user_id: member.user_id }}
                 triggerLabel="Remove"
-                triggerAriaLabel={`Remove ${member.email ?? "this member"} from the group`}
+                triggerAriaLabel={`Remove ${member.nickname ?? "this member"} from the group`}
                 title="Remove this member?"
-                description={`${member.email ?? "This member"} will lose access to ${groupName}, and their streaks in its tasks will be lost. They can rejoin later with the invite link.`}
+                description={`${member.nickname ?? "This member"} will lose access to ${groupName}, and their streaks in its tasks will be lost. They can rejoin later with the invite link.`}
                 confirmLabel="Remove member"
                 triggerVariant="ghost"
               />

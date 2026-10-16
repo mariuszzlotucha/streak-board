@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import type { APIContext, APIRoute } from "astro";
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
 import { createClient } from "@/lib/supabase";
+import { POST as accountNickname } from "@/pages/api/account/nickname";
 import { POST as groupsCreate } from "@/pages/api/groups/create";
 import { POST as groupsDelete } from "@/pages/api/groups/delete";
 import { POST as groupsJoin } from "@/pages/api/groups/join";
@@ -24,7 +25,7 @@ import {
   type Supabase,
 } from "../helpers/fake-supabase";
 
-// Characterization of the 13 data routes: what each answers, reports and asks the client today, pinned against a
+// Characterization of the 14 data routes: what each answers, reports and asks the client today, pinned against a
 // scripted fake client (tests/helpers/fake-supabase.ts) so a later restructuring keeps the same contract. The two
 // per-route suites (groups-join-route, tasks-create-route) stay: they pin the report fields and secret scrubbing in
 // more detail. This file deliberately does not import tests/helpers/supabase.ts (database cleanup hooks).
@@ -33,6 +34,7 @@ import {
 vi.mock("@/lib/supabase", () => ({ createClient: vi.fn() }));
 
 type RouteId =
+  | "account/nickname"
   | "groups/create"
   | "groups/delete"
   | "groups/join"
@@ -53,10 +55,14 @@ interface RouteEntry {
   event: string;
   /** The form a happy-path submit carries; a row's `form` replaces it. */
   validForm: Record<string, string>;
+  /** The page the route sends a rejected submit back to, with `?error=<code>`; "/dashboard" unless given. */
+  home?: string;
 }
 
 interface Locals {
   user: { id: string } | null;
+  /** The nickname the middleware read; the nickname route picks its success target from it. */
+  nickname: string | null;
 }
 type Line = Record<string, unknown>;
 
@@ -98,7 +104,7 @@ const STRANGER = "33333333-3333-4333-8333-333333333333";
 const TASK = "44444444-4444-4444-8444-444444444444";
 const CODE = "a1b2c3d4e5f6";
 const GROUP = { id: "g-1", name: "Runners", join_code: CODE, owner_id: USER };
-const ANON: Locals = { user: null };
+const ANON: Locals = { user: null, nickname: null };
 const JSON_HEADERS = { Accept: "application/json" };
 
 // 23:30 UTC on 2026-10-07 is already 2026-10-08 in Warsaw (CEST) and still 2026-10-07 in Los Angeles, the test zone
@@ -110,6 +116,12 @@ const WEEKLY_PERIOD = "2026-10-05";
 const WEEK_END = "2026-10-11";
 
 const ROUTES: Record<RouteId, RouteEntry> = {
+  "account/nickname": {
+    POST: accountNickname,
+    event: "account.nickname",
+    validForm: { nickname: "Kasia" },
+    home: "/account/nickname",
+  },
   "groups/create": { POST: groupsCreate, event: "groups.create", validForm: { name: "  Runners  " } },
   "groups/delete": { POST: groupsDelete, event: "groups.delete", validForm: {} },
   "groups/join": { POST: groupsJoin, event: "groups.join", validForm: { code: CODE } },
@@ -175,7 +187,9 @@ const info = (route: RouteId, suffix: string, extra: Line = {}): Line => ({
 const DASHBOARD = "/dashboard";
 const FORBIDDEN = "/dashboard?error=forbidden";
 const UNKNOWN = "/dashboard?error=unknown";
-const NOT_CONFIGURED = "/dashboard?error=not_configured";
+
+/** Where the route sends a rejected submit with this error code. */
+const errorTarget = (route: RouteId, code: string): string => `${ROUTES[route].home ?? DASHBOARD}?error=${code}`;
 
 // Rows every route shares, with the route's own valid form.
 function common(route: RouteId): Row[] {
@@ -186,7 +200,12 @@ function common(route: RouteId): Row[] {
       locals: ANON,
       expect: { location: "/auth/signin", client: "none" },
     },
-    { name: "no client: not_configured after validation", route, client: "null", expect: { location: NOT_CONFIGURED } },
+    {
+      name: "no client: not_configured after validation",
+      route,
+      client: "null",
+      expect: { location: errorTarget(route, "not_configured") },
+    },
   ];
 }
 
@@ -198,19 +217,19 @@ function mutationFailures(route: RouteId, preRead: ScriptedResult[], quiet: [str
       name: "permission error: forbidden, with an error line carrying the status",
       route,
       script: [...preRead, RLS],
-      expect: { location: FORBIDDEN, errors: [failed(route, "forbidden", "42501", 403)] },
+      expect: { location: errorTarget(route, "forbidden"), errors: [failed(route, "forbidden", "42501", 403)] },
     },
     ...quiet.map(([code, outcome, label]): Row => ({
       name: `${label}: ${outcome}, quiet`,
       route,
       script: [...preRead, err(code, 400)],
-      expect: { location: `/dashboard?error=${outcome}` },
+      expect: { location: errorTarget(route, outcome) },
     })),
     {
       name: "unexpected error: unknown, with an error line carrying the status",
       route,
       script: [...preRead, UNMAPPED],
-      expect: { location: UNKNOWN, errors: [failed(route, "unknown", "XX000", 500)] },
+      expect: { location: errorTarget(route, "unknown"), errors: [failed(route, "unknown", "XX000", 500)] },
     },
   ];
 }
@@ -219,17 +238,64 @@ const nonFormBody = (route: RouteId): Row => ({
   name: "non-form body: unknown with the exception line, no client",
   route,
   body: "not a form",
-  expect: { location: UNKNOWN, client: "none", errors: [exception(route)] },
+  expect: { location: errorTarget(route, "unknown"), client: "none", errors: [exception(route)] },
 });
 
 const throwingClient = (route: RouteId): Row => ({
   name: "a thrown client error: unknown with the exception line",
   route,
   client: "throwing",
-  expect: { location: UNKNOWN, errors: [{ ...exception(route), error: { name: "Error", message: "network down" } }] },
+  expect: {
+    location: errorTarget(route, "unknown"),
+    errors: [{ ...exception(route), error: { name: "Error", message: "network down" } }],
+  },
 });
 
 const ROWS: Row[] = [
+  // account/nickname
+  ...common("account/nickname"),
+  {
+    name: "empty nickname: invalid_nickname before any client",
+    route: "account/nickname",
+    form: { nickname: "" },
+    expect: { location: "/account/nickname?error=invalid_nickname", client: "none" },
+  },
+  {
+    name: "missing nickname field: invalid_nickname",
+    route: "account/nickname",
+    form: {},
+    expect: { location: "/account/nickname?error=invalid_nickname", client: "none" },
+  },
+  {
+    name: "25-character nickname: invalid_nickname",
+    route: "account/nickname",
+    form: { nickname: "a".repeat(25) },
+    expect: { location: "/account/nickname?error=invalid_nickname", client: "none" },
+  },
+  {
+    name: "rpc ok on the first choice: dashboard, the trimmed nickname in the call",
+    route: "account/nickname",
+    form: { nickname: "  Kasia \t" },
+    script: [ok(null, 204)],
+    expect: { location: DASHBOARD, calls: [rpc("set_nickname", { p_nickname: "Kasia" })] },
+  },
+  {
+    name: "rpc ok on a change: back to settings",
+    route: "account/nickname",
+    locals: { user: { id: USER }, nickname: "Old" },
+    script: [ok(null, 204)],
+    expect: { location: "/settings", calls: [rpc("set_nickname", { p_nickname: "Kasia" })] },
+  },
+  ...mutationFailures(
+    "account/nickname",
+    [],
+    [
+      ["23505", "nickname_taken", "another account has the nickname"],
+      ["23514", "invalid_nickname", "the nickname fails its check constraint"],
+    ],
+  ),
+  nonFormBody("account/nickname"),
+
   // groups/create
   ...common("groups/create"),
   {
@@ -1060,7 +1126,7 @@ async function run(row: Row): Promise<void> {
   const context = {
     request,
     routePattern: pattern,
-    locals: row.locals ?? { user: { id: USER } },
+    locals: row.locals ?? { user: { id: USER }, nickname: null },
     cookies,
     redirect,
   } as unknown as APIContext;
@@ -1126,13 +1192,13 @@ describe("coverage guard", () => {
       .filter((entry) => entry.isDirectory() && entry.name !== "auth")
       .map((entry) => entry.name)
       .sort();
-    expect(dirs).toEqual(["groups", "tasks"]);
+    expect(dirs).toEqual(["account", "groups", "tasks"]);
     const files = dirs.flatMap((dir) =>
       readdirSync(`${apiDir}/${dir}`)
         .filter((name) => name.endsWith(".ts"))
         .map((name) => `${dir}/${name.slice(0, -3)}`),
     );
-    expect(files).toHaveLength(13);
+    expect(files).toHaveLength(14);
     const covered = new Set<string>(ROWS.map((row) => row.route));
     const withChain = new Set<string>(ROWS.filter((row) => row.expect.calls).map((row) => row.route));
     for (const file of files) {

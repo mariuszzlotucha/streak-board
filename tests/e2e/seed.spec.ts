@@ -3,7 +3,7 @@
 // Locators are role/label based, the test names its risk, waits are on state (URL, visible text, hydration), and
 // the test is independent: it signs in itself instead of relying on another test.
 import { test, expect } from "@playwright/test";
-import { waitForHydration } from "./helpers";
+import { nicknameFor, waitForHydration } from "./helpers";
 
 // The risk is the signed-out path, so this test opts out of the session saved by auth.setup.ts.
 test.use({ storageState: { cookies: [], origins: [] } });
@@ -26,9 +26,10 @@ test("risk #5: a signed-out visitor is sent to sign-in and a real sign-in lands 
   await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
 
-  // The business outcome: the visitor is signed in as this user, not just somewhere other than the sign-in page.
+  // The business outcome: the visitor is signed in as this user, not just somewhere other than the sign-in page. The
+  // seed account's nickname follows from its address (nicknameFor); do not change it in the UI.
   await expect(page).toHaveURL(/\/dashboard$/);
-  await expect(page.getByText(`Signed in as ${username}`)).toBeVisible();
+  await expect(page.getByText(`Signed in as ${nicknameFor(username)}`)).toBeVisible();
 
   // Nothing to clean up: no data was created. Do not sign out here: signing out is global for this user and would
   // revoke the session every other spec loads from playwright/.auth/user.json.

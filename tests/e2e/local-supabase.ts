@@ -12,6 +12,8 @@ type TestClient = SupabaseClient<Database>;
 export interface Persona {
   id: string;
   email: string;
+  /** The persona's nickname (S-14): its token, which the group sees instead of the address. */
+  nickname: string;
   password: string;
   client: TestClient;
 }
@@ -23,6 +25,8 @@ interface Stack {
 }
 
 const PERSONA_PASSWORD = "E2e-persona-123!";
+// The longest nickname the database accepts (nicknames_nickname_length).
+const MAX_NICKNAME_LENGTH = 24;
 const authOptions = { persistSession: false, autoRefreshToken: false } as const;
 
 let stack: Stack | undefined;
@@ -87,22 +91,35 @@ export function uniqueToken(label: string): string {
   return `${label}-${randomUUID().slice(0, 8)}`;
 }
 
-/** A confirmed account whose email contains `token`, with a signed-in client that goes through RLS. */
+/**
+ * A confirmed account whose email contains `token` and whose nickname is `token`, with a signed-in client that goes
+ * through RLS. The nickname row is written with the service role (the gate needs it before the dashboard).
+ */
 export async function createPersona(token: string): Promise<Persona> {
+  if (token.length > MAX_NICKNAME_LENGTH) {
+    throw new Error(`createPersona: the token "${token}" is longer than a nickname may be (${MAX_NICKNAME_LENGTH})`);
+  }
   const email = `e2e-${token}@example.test`;
-  const { data, error } = await adminClient().auth.admin.createUser({
+  const admin = adminClient();
+  const { data, error } = await admin.auth.admin.createUser({
     email,
     password: PERSONA_PASSWORD,
     email_confirm: true,
   });
   if (error) throw new Error(`createPersona: admin.createUser failed: ${error.message}`);
+  const { error: nicknameError } = await admin.from("nicknames").insert({ user_id: data.user.id, nickname: token });
+  if (nicknameError) {
+    // The account would leak without a Persona to clean it up.
+    await admin.auth.admin.deleteUser(data.user.id);
+    throw new Error(`createPersona: nickname insert failed: ${nicknameError.message}`);
+  }
 
   const { url, anonKey } = localStack();
   const client = createClient<Database>(url, anonKey, { auth: authOptions });
   const { error: signInError } = await client.auth.signInWithPassword({ email, password: PERSONA_PASSWORD });
   if (signInError) throw new Error(`createPersona: sign-in failed: ${signInError.message}`);
 
-  return { id: data.user.id, email, password: PERSONA_PASSWORD, client };
+  return { id: data.user.id, email, nickname: token, password: PERSONA_PASSWORD, client };
 }
 
 export async function createGroupAs(persona: Persona, name: string): Promise<string> {

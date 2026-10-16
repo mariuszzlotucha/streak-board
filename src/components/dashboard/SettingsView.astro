@@ -1,4 +1,5 @@
 ---
+import AccountCard from "@/components/dashboard/AccountCard.astro";
 import GroupSettingsCard from "@/components/dashboard/GroupSettingsCard.astro";
 import PageHeading from "@/components/dashboard/PageHeading.astro";
 import { buttonVariants } from "@/components/ui/button";
@@ -12,9 +13,12 @@ interface Props {
   loadFailed: boolean;
   /** The fixed message of a failed load. */
   error: string | null;
+  /** The signed-in user's own address, shown only here, on the Account card. */
+  email: string | undefined;
+  nickname: string | null;
 }
 
-const { group, viewerId, loadFailed, error } = Astro.props;
+const { group, viewerId, loadFailed, error, email, nickname } = Astro.props;
 ---
 
 {loadFailed ? (
@@ -28,7 +32,7 @@ const { group, viewerId, loadFailed, error } = Astro.props;
 ) : (
   <div class="space-y-6">
     <PageHeading title="Settings" />
-    <div class="max-w-xl">
+    <div class="max-w-xl space-y-6">
       {group ? (
         <GroupSettingsCard groupName={group.name} isOwner={group.owner_id === viewerId} />
       ) : (
@@ -40,6 +44,7 @@ const { group, viewerId, loadFailed, error } = Astro.props;
           on your dashboard.
         </p>
       )}
+      <AccountCard email={email} nickname={nickname} />
     </div>
   </div>
 )}

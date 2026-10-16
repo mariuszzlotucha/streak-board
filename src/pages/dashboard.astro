@@ -1,6 +1,7 @@
 ---
 import AppLayout from "@/layouts/AppLayout.astro";
 import DashboardView from "@/components/dashboard/DashboardView.astro";
+import ClearErrorParam from "@/components/site/ClearErrorParam.astro";
 import { loadDashboard } from "@/lib/dashboard-data";
 import { requestFields } from "@/lib/log";
 import { createClient } from "@/lib/supabase";
@@ -34,7 +35,7 @@ if (loadFailed) Astro.response.status = 503;
 const inviteLink = group ? `${Astro.url.origin}/join/${group.join_code}` : null;
 ---
 
-<AppLayout title="Dashboard" email={user?.email} current="dashboard">
+<AppLayout title="Dashboard" nickname={Astro.locals.nickname} current="dashboard">
   <DashboardView
     error={error}
     group={group}
@@ -51,15 +52,5 @@ const inviteLink = group ? `${Astro.url.origin}/join/${group.join_code}` : null;
     viewerId={user?.id}
     inviteLink={inviteLink}
   />
-  {/* Inline so the server HTML carries it (the site sends no CSP). The `?error=` alert shows once: removing the code
-      from the address keeps a reload or a shared link from repeating it; other parameters and the hash stay. */}
-  <script is:inline>
-    {
-      const url = new URL(window.location.href);
-      if (url.searchParams.has("error")) {
-        url.searchParams.delete("error");
-        window.history.replaceState(window.history.state, "", url);
-      }
-    }
-  </script>
+  <ClearErrorParam />
 </AppLayout>

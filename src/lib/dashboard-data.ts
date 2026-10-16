@@ -152,23 +152,23 @@ export async function loadDashboard({
 }
 
 export interface TaskParticipant {
-  email: string;
+  nickname: string;
   isYou: boolean;
 }
 
 /**
- * Participants of each task, by e-mail; someone without a matching member row (e.g. a stale participation) is
- * "Unknown member".
+ * Participants of each task, by nickname; a member without a nickname, or someone without a matching member row (e.g. a
+ * stale participation), is "Unknown member".
  */
 export function participantsResolver(
   participantsByTask: Map<string, string[]>,
   members: GroupMember[],
   viewerId: string | undefined,
 ): (taskId: string) => TaskParticipant[] {
-  const emailByUserId = new Map(members.map((member) => [member.user_id, member.email]));
+  const nicknameByUserId = new Map(members.map((member) => [member.user_id, member.nickname]));
   return (taskId) =>
     (participantsByTask.get(taskId) ?? []).map((userId) => ({
-      email: emailByUserId.get(userId) ?? UNKNOWN_MEMBER,
+      nickname: nicknameByUserId.get(userId) ?? UNKNOWN_MEMBER,
       isYou: userId === viewerId,
     }));
 }

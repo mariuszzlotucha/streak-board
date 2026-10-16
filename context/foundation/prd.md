@@ -26,13 +26,16 @@ Osoba budująca lub utrzymująca osobisty nawyk/cel (np. trening, czytanie), kt�
 ## Success Criteria
 
 ### Primary
+
 - Użytkownik otwiera aplikację (zalogowany), widzi zakładkę „Zadania" ze swoimi taskami (jednorazowymi lub powtarzalnymi — codziennie/co tydzień; indywidualnymi lub grupowymi), odznacza task jako wykonany, i przechodzi do zakładki „Tablica wyników", gdzie widzi ranking/postępy swoje i grupy. Dostarczalne w 3 tygodnie pracy po godzinach.
 
 ### Secondary
+
 - Powiadomienia/przypomnienia o niewykonanym tasku.
 - Historia/statystyki długoterminowe (wykresy streaków w czasie).
 
 ### Guardrails
+
 - Widoczność tylko dla własnej grupy — członkowie jednej grupy nie widzą tasków/wyników grupy, do której nie należą.
 - Odznaczenie tasku musi być natychmiastowe (bez zauważalnego opóźnienia) — to kluczowa interakcja motywacyjna.
 
@@ -47,12 +50,21 @@ Osoba budująca lub utrzymująca osobisty nawyk/cel (np. trening, czytanie), kt�
 ## Functional Requirements
 
 ### Autoryzacja
+
 - FR-001: Użytkownik może się zalogować (email/OAuth/passwordless). Priority: must-have
   > Socratic: Counter-argument considered: "bez logowania nie da się śledzić streaków/tożsamości
   > w czasie". Resolution: kept; trwałe konto jest wymogiem funkcjonalnym dla całej mechaniki
   > grywalizacji.
 
+### Konto
+
+- FR-010: Użytkownik ustawia nick (2–24 znaki, unikalny w aplikacji), który członkowie jego grupy widzą zamiast adresu e-mail; bez nicka nie wejdzie na dashboard. Priority: must-have
+  > Socratic: Counter-argument considered: "obowiązkowy nick to dodatkowy ekran po rejestracji,
+  > zanim użytkownik zobaczy wartość". Resolution: kept; adres e-mail to dana logowania, nie może
+  > być nazwą widoczną dla grupy (S-14).
+
 ### Grupy
+
 - FR-002: Użytkownik może dołączyć do grupy przez link/kod. Priority: must-have
   > Socratic: No counter-argument considered; stands as written.
 - FR-003: Twórca grupy może zarządzać grupą (usunąć grupę, usunąć z niej członka). Priority: must-have
@@ -61,6 +73,7 @@ Osoba budująca lub utrzymująca osobisty nawyk/cel (np. trening, czytanie), kt�
   > wystarczy na MVP dla małej grupy znajomych.
 
 ### Taski
+
 - FR-004: Użytkownik może utworzyć task w grupie (jednorazowy lub powtarzalny: dziennie/tygodniowo). Priority: must-have
   > Socratic: Counter-argument considered: "dwa typy cykli to więcej złożoności niż trzeba na
   > start". Resolution: kept; bez tego MVP nie oddaje realnego use case'u (trening codziennie,
@@ -83,6 +96,7 @@ Osoba budująca lub utrzymująca osobisty nawyk/cel (np. trening, czytanie), kt�
   > zaufanego grona znajomych, weryfikacja nie jest potrzebna w tej skali.
 
 ### Tablica wyników
+
 - FR-009: Użytkownik może zobaczyć tablicę wyników swojej grupy. Priority: must-have
   > Socratic: Counter-argument considered: "publiczna tablica wyników może zniechęcać osoby,
   > które zostają w tyle, zamiast motywować". Resolution: kept; to sedno wartości produktu —
@@ -105,6 +119,8 @@ Logowanie (email+hasło / OAuth / passwordless) — potrzebne, bo produkt jest z
 Model dwupoziomowy: **grupa** to stała przestrzeń (wspólna tablica), do której użytkownik dołącza raz — przez link/kod. **Task** to element wewnątrz grupy, tworzony przez jednego z jej członków; inni członkowie grupy widzą wszystkie taski i opcjonalnie zapisują się do wybranych.
 
 Uprawnienia: twórca grupy zarządza grupą (może usunąć grupę, usunąć z niej członków). Twórca tasku zarządza swoim taskiem (edytuje, usuwa). Pozostali członkowie są sobie równi — mogą dołączać do grupy (przez link/kod), tworzyć własne taski, zapisywać się/wypisywać z tasków innych, odznaczać własną realizację.
+
+Członkowie grupy widzą nawzajem nicki, nie adresy e-mail; własny adres widzi tylko właściciel konta w ustawieniach.
 
 ## Non-Goals
 

@@ -28,23 +28,24 @@ Używaj terminów z kolumny „Nazwa w kodzie". Nazw z kolumny „Nie nazywaj" u
 
 ## Wynik i tablica wyników
 
-| Termin               | Co znaczy                                                                              | Nazwa w kodzie                                     | Nie nazywaj                 |
-| -------------------- | -------------------------------------------------------------------------------------- | -------------------------------------------------- | --------------------------- |
-| Streak               | Wartość per uczestnik i task po uwzględnieniu spadku; dla `once` 1 albo 0              | `streakValue`, `StreakSnapshot`                    | score, points, counter      |
-| Spadek               | Każdy pominięty zamknięty okres połowi streak, w dół                                   | `decayStreak`                                      | penalty, reset, loss        |
-| Migawka              | Wartość po ostatnim odznaczonym okresie sprzed bieżącego + czy bieżący jest odznaczony | `StreakSnapshot`, `snapshotOf`                     | state, cache                |
-| Wynik członka        | Suma streaków po taskach, w których członek uczestniczy                                | `total`, `StandingInput`                           | points, score, rank         |
-| Pozycja              | Miejsce na tablicy; równe wyniki dzielą pozycję (1, 1, 3)                              | `position`, `Standing`, `rankStandings`            | level, tier                 |
-| Tablica wyników      | Lista wszystkich członków grupy z wynikiem i pozycją; nie jest osobną zakładką         | `Leaderboard`, `buildBoard`, `Board`               | scoreboard, tab, „zakładka" |
-| Optymistyczna zmiana | Natychmiastowa zmiana wyniku widza przed odpowiedzią serwera                           | `publishDelta`, `applyDeltas`, `useCheckoffDeltas` | event, log                  |
-| Nieznany członek     | Nazwa osoby bez e-maila                                                                | `UNKNOWN_MEMBER`                                   | anonymous, guest            |
+| Termin               | Co znaczy                                                                                  | Nazwa w kodzie                                     | Nie nazywaj                 |
+| -------------------- | ------------------------------------------------------------------------------------------ | -------------------------------------------------- | --------------------------- |
+| Streak               | Wartość per uczestnik i task po uwzględnieniu spadku; dla `once` 1 albo 0                  | `streakValue`, `StreakSnapshot`                    | score, points, counter      |
+| Spadek               | Każdy pominięty zamknięty okres połowi streak, w dół                                       | `decayStreak`                                      | penalty, reset, loss        |
+| Migawka              | Wartość po ostatnim odznaczonym okresie sprzed bieżącego + czy bieżący jest odznaczony     | `StreakSnapshot`, `snapshotOf`                     | state, cache                |
+| Wynik członka        | Suma streaków po taskach, w których członek uczestniczy                                    | `total`, `StandingInput`                           | points, score, rank         |
+| Pozycja              | Miejsce na tablicy; równe wyniki dzielą pozycję (1, 1, 3)                                  | `position`, `Standing`, `rankStandings`            | level, tier                 |
+| Tablica wyników      | Lista wszystkich członków grupy z wynikiem i pozycją; nie jest osobną zakładką             | `Leaderboard`, `buildBoard`, `Board`               | scoreboard, tab, „zakładka" |
+| Optymistyczna zmiana | Natychmiastowa zmiana wyniku widza przed odpowiedzią serwera                               | `publishDelta`, `applyDeltas`, `useCheckoffDeltas` | event, log                  |
+| Nieznany członek     | Nazwa osoby bez nicka (członek bez wiersza `nicknames` albo uczestnik bez wiersza członka) | `UNKNOWN_MEMBER`                                   | anonymous, guest            |
 
 ## Tożsamość
 
-| Termin     | Co znaczy                                                   | Nazwa w kodzie                                     | Nie nazywaj                                     |
-| ---------- | ----------------------------------------------------------- | -------------------------------------------------- | ----------------------------------------------- |
-| Użytkownik | Konto Supabase Auth; wyłącznie tożsamość, bez roli w grupie | `locals.user`, `auth.users`, `user_id`             | member, account (w sensie członkostwa), profile |
-| Logowanie  | E-mail + hasło albo konto Google                            | `signin`, `signup`, `google` (trasy `/api/auth/*`) | login (w nazwach tras i plików)                 |
+| Termin     | Co znaczy                                                                                                                                                                                                              | Nazwa w kodzie                                                                  | Nie nazywaj                                     |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ----------------------------------------------- |
+| Użytkownik | Konto Supabase Auth; wyłącznie tożsamość, bez roli w grupie                                                                                                                                                            | `locals.user`, `auth.users`, `user_id`                                          | member, account (w sensie członkostwa), profile |
+| Logowanie  | E-mail + hasło albo konto Google                                                                                                                                                                                       | `signin`, `signup`, `google` (trasy `/api/auth/*`)                              | login (w nazwach tras i plików)                 |
+| Nick       | Nazwa członka widoczna dla jego grupy: 2–24 znaki po przycięciu, bez znaków sterujących i formatujących, z co najmniej jednym widocznym, unikalna dosłownie w całej aplikacji, obowiązkowa przed wejściem na dashboard | `nicknames`, `nickname`, `normalizeNickname`, `set_nickname`, `locals.nickname` | username, display name, handle, profile         |
 
 ## Pojęcia, których kod nie zna — nie wprowadzaj bez decyzji
 
@@ -52,6 +53,5 @@ Używaj terminów z kolumny „Nazwa w kodzie". Nazw z kolumny „Nie nazywaj" u
 - Powiadomienia i przypomnienia.
 - Historia, statystyki, wykresy streaków, rekord streaka.
 - Task indywidualny jako osobny rodzaj tasku (każdy task należy do grupy).
-- Nazwa wyświetlana lub profil (członek jest dziś rozpoznawany po e-mailu).
 - Rotacja kodu zaproszenia, przekazanie własności grupy, wiele grup na użytkownika.
 - Konfigurowalna strefa czasowa lub konfigurowalny spadek streaka.

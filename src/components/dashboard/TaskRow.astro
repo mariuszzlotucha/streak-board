@@ -75,7 +75,7 @@ const joined = participants.some((participant) => participant.isYou);
           <span role="list" aria-label={`Participants of ${task.title}`} class="contents">
             {participants.map((participant) => (
               <span role="listitem" class="inline-flex min-w-0 items-center gap-1">
-                <span class="break-all text-foreground">{participant.email}</span>
+                <span class="break-all text-foreground">{participant.nickname}</span>
                 {participant.isYou && <Badge variant="outline">You</Badge>}
               </span>
             ))}

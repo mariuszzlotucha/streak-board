@@ -8,6 +8,14 @@ const stamp = Date.now();
 const email = `smoke-${stamp}@example.com`;
 const emailB = `smoke-b-${stamp}@example.com`;
 const emailC = `smoke-c-${stamp}@example.com`;
+// No page of the signed-in app shows another member's address (S-14): the runner checks every page read against these.
+const ALL_EMAILS = [email, emailB, emailC];
+// The members' nicknames (S-14), each at most 24 characters (`stamp` is 13 digits) and none a substring of another, so
+// the row regexes cannot mix them up. A first chooses nickA0, then changes it to nickA.
+const nickA = `Smoke A ${stamp}`;
+const nickA0 = `Smoke A0 ${stamp}`;
+const nickB = `Smoke B ${stamp}`;
+const nickC = `Smoke C ${stamp}`;
 const password = "Smoke-Test-Passw0rd!";
 const groupName = `Smoke Group ${stamp}`;
 // Deliberately not containing groupName, so "the old name is gone" can be asserted with a plain substring check.
@@ -80,6 +88,10 @@ async function request(path, { method = "GET", form, cookie, jar = jarA, origin 
   });
   if (cookie === undefined) storeCookies(response, jar);
   return {
+    path,
+    method,
+    // The session whose page this is; none when `cookie` replaced the jar.
+    jar: cookie === undefined ? jar : undefined,
     status: response.status,
     location: response.headers.get("location") ?? "",
     setCookies: response.headers.getSetCookie(),
@@ -126,12 +138,12 @@ function groupHeading(name) {
   return new RegExp(`<h1[^>]*>\\s*${escapeRegExp(name)}\\s*</h1>`);
 }
 
-// A member row (<li>) of the Members card that contains the given email followed by the given marker badge. The match
-// starts after the "Members" heading and may not cross the card's closing </ul>: the Leaderboard repeats every email and
-// the viewer's "You" pill, so an unanchored match would be satisfied by the Leaderboard row instead.
-function memberRow(memberEmail, marker) {
+// A member row (<li>) of the Members card that contains the given nickname followed by the given marker badge. The match
+// starts after the "Members" heading and may not cross the card's closing </ul>: the Leaderboard repeats every nickname
+// and the viewer's "You" pill, so an unanchored match would be satisfied by the Leaderboard row instead.
+function memberRow(memberName, marker) {
   return new RegExp(
-    `<h2[^>]*>\\s*Members\\s*</h2>(?:(?!</ul>)[\\s\\S])*?<li[^>]*>(?:(?!</li>)[\\s\\S])*${escapeRegExp(memberEmail)}(?:(?!</li>)[\\s\\S])*>\\s*${marker}\\s*<`,
+    `<h2[^>]*>\\s*Members\\s*</h2>(?:(?!</ul>)[\\s\\S])*?<li[^>]*>(?:(?!</li>)[\\s\\S])*${escapeRegExp(memberName)}(?:(?!</li>)[\\s\\S])*>\\s*${marker}\\s*<`,
   );
 }
 
@@ -152,35 +164,35 @@ function fieldError(field, text) {
   return new RegExp(`id="${escapeRegExp(field)}-error"[^>]*>(?:<svg[\\s\\S]*?</svg>)?\\s*${escapeRegExp(text)}`);
 }
 
-// A member row (<li>) that contains the given email and, after it, a form posting to the remove-member route.
-function rowWithRemoveControl(memberEmail) {
+// A member row (<li>) that contains the given nickname and, after it, a form posting to the remove-member route.
+function rowWithRemoveControl(memberName) {
   return new RegExp(
-    `<li[^>]*>(?:(?!</li>)[\\s\\S])*${escapeRegExp(memberEmail)}(?:(?!</li>)[\\s\\S])*action="/api/groups/remove-member"`,
+    `<li[^>]*>(?:(?!</li>)[\\s\\S])*${escapeRegExp(memberName)}(?:(?!</li>)[\\s\\S])*action="/api/groups/remove-member"`,
   );
 }
 
 // A member row whose remove control is the confirmation island: the form and, after it, the dialog trigger.
-function rowWithConfirmedRemoveControl(memberEmail) {
+function rowWithConfirmedRemoveControl(memberName) {
   return new RegExp(
-    `<li[^>]*>(?:(?!</li>)[\\s\\S])*${escapeRegExp(memberEmail)}(?:(?!</li>)[\\s\\S])*action="/api/groups/remove-member"(?:(?!</li>)[\\s\\S])*aria-haspopup="dialog"`,
+    `<li[^>]*>(?:(?!</li>)[\\s\\S])*${escapeRegExp(memberName)}(?:(?!</li>)[\\s\\S])*action="/api/groups/remove-member"(?:(?!</li>)[\\s\\S])*aria-haspopup="dialog"`,
   );
 }
 
 // The id the remove control in the row of the given member submits (the island's serialised props do not contain this markup).
-function removeTargetInRow(body, memberEmail) {
+function removeTargetInRow(body, memberName) {
   const row = new RegExp(
-    `<li[^>]*>(?:(?!</li>)[\\s\\S])*${escapeRegExp(memberEmail)}(?:(?!</li>)[\\s\\S])*name="user_id"[^>]*value="([0-9a-f-]{36})"`,
+    `<li[^>]*>(?:(?!</li>)[\\s\\S])*${escapeRegExp(memberName)}(?:(?!</li>)[\\s\\S])*name="user_id"[^>]*value="([0-9a-f-]{36})"`,
   );
   return body.match(row)?.[1];
 }
 
-// A task row (<li>) whose participant line lists the given email after the task title. Emails also appear in the
-// Members card, so only a row-scoped match proves who takes part in which task. With `you`, the email is directly
+// A task row (<li>) whose participant line lists the given nickname after the task title. Nicknames also appear in the
+// Members card, so only a row-scoped match proves who takes part in which task. With `you`, the nickname is directly
 // followed by the "You" marker; a marker on another participant's entry would not match.
-function taskRowListing(title, participantEmail, { you = false } = {}) {
+function taskRowListing(title, participantName, { you = false } = {}) {
   const marker = you ? `</span>\\s*<span[^>]*>\\s*You\\s*</span>` : "";
   return new RegExp(
-    `<li[^>]*>(?:(?!</li>)[\\s\\S])*${escapeRegExp(title)}(?:(?!</li>)[\\s\\S])*${escapeRegExp(participantEmail)}${marker}`,
+    `<li[^>]*>(?:(?!</li>)[\\s\\S])*${escapeRegExp(title)}(?:(?!</li>)[\\s\\S])*${escapeRegExp(participantName)}${marker}`,
   );
 }
 
@@ -231,15 +243,15 @@ function taskRowStreak(title, n) {
   );
 }
 
-// A row of the Leaderboard: a <li> inside <ol aria-label="Leaderboard"> that holds the position, the email, the "You"
+// A row of the Leaderboard: a <li> inside <ol aria-label="Leaderboard"> that holds the position, the nickname, the "You"
 // pill and the total, each in its own element and in this order. `you` true requires the pill, false forbids it,
-// undefined accepts either. The Members card repeats the emails and the pill, so only this match proves what the board
-// shows.
-function leaderboardRow(rowEmail, position, total, { you } = {}) {
+// undefined accepts either. The Members card repeats the nicknames and the pill, so only this match proves what the
+// board shows.
+function leaderboardRow(rowName, position, total, { you } = {}) {
   const pill =
     you === undefined ? "(?:<span[^>]*>\\s*You\\s*</span>\\s*)?" : you ? "<span[^>]*>\\s*You\\s*</span>\\s*" : "";
   return new RegExp(
-    `<ol[^>]*aria-label="Leaderboard"[^>]*>(?:(?!</ol>)[\\s\\S])*?<li[^>]*>\\s*<span[^>]*>\\s*${position}\\s*</span>\\s*<span[^>]*>\\s*${escapeRegExp(rowEmail)}\\s*</span>\\s*${pill}<span[^>]*>\\s*${total}\\s*</span>\\s*</li>`,
+    `<ol[^>]*aria-label="Leaderboard"[^>]*>(?:(?!</ol>)[\\s\\S])*?<li[^>]*>\\s*<span[^>]*>\\s*${position}\\s*</span>\\s*<span[^>]*>\\s*${escapeRegExp(rowName)}\\s*</span>\\s*${pill}<span[^>]*>\\s*${total}\\s*</span>\\s*</li>`,
   );
 }
 
@@ -349,9 +361,22 @@ function pageHeading(text) {
   return new RegExp(`<h1[^>]*>\\s*${escapeRegExp(text)}\\s*</h1>`);
 }
 
-// The quiet account line of the signed-in shell: the label and the address in one element right after it.
-function signedInAs(address) {
-  return new RegExp(`Signed in as\\s*<span[^>]*>\\s*${escapeRegExp(address)}\\s*</span>`);
+// The quiet account line of the signed-in shell: the label and the nickname in one element right after it.
+function signedInAs(nickname) {
+  return new RegExp(`Signed in as\\s*<span[^>]*>\\s*${escapeRegExp(nickname)}\\s*</span>`);
+}
+
+// The nickname field (S-14), with the value it starts with when given. The field is `nickname`, never `name`, which
+// the rename form's pattern below would also match.
+function nicknameField(value) {
+  const prefilled = value === undefined ? "" : `(?=[^>]*value="${escapeRegExp(value)}")`;
+  return new RegExp(`<input(?=[^>]*name="nickname")${prefilled}[^>]*>`);
+}
+
+// The settings page's Account card (S-14): its heading, and one entry of its list (label, then the value).
+const ACCOUNT_HEADING = /<h2[^>]*>\s*Account\s*<\/h2>/;
+function accountEntry(label, value) {
+  return new RegExp(`<dt[^>]*>\\s*${escapeRegExp(label)}\\s*</dt>\\s*<dd[^>]*>\\s*${escapeRegExp(value)}\\s*</dd>`);
 }
 
 // The header's Sign out: a plain form posting to the sign-out route with its submit button. Two "Sign out" anywhere
@@ -440,9 +465,9 @@ const B_NOTHING_TICKED = {
   bodyMatches: [
     taskRowWithCheckoffForm(renamedTaskTitle, "/api/tasks/checkoff"),
     taskRowStreak(renamedTaskTitle, 0),
-    leaderboardRow(email, 1, 0, { you: false }),
-    leaderboardRow(emailB, 1, 0, { you: true }),
-    leaderboardRow(emailC, 1, 0, { you: false }),
+    leaderboardRow(nickA, 1, 0, { you: false }),
+    leaderboardRow(nickB, 1, 0, { you: true }),
+    leaderboardRow(nickC, 1, 0, { you: false }),
   ],
   bodyNotMatches: [
     taskRowWithCheckoffForm(renamedTaskTitle, "/api/tasks/uncheck"),
@@ -459,9 +484,9 @@ const B_TICKED = {
     taskRowWithStatus(renamedTaskTitle, "Done today"),
     taskRowWithCheckoffForm(renamedTaskTitle, "/api/tasks/uncheck"),
     taskRowStreak(renamedTaskTitle, 1),
-    leaderboardRow(emailB, 1, 1, { you: true }),
-    leaderboardRow(email, 2, 0, { you: false }),
-    leaderboardRow(emailC, 2, 0, { you: false }),
+    leaderboardRow(nickB, 1, 1, { you: true }),
+    leaderboardRow(nickA, 2, 0, { you: false }),
+    leaderboardRow(nickC, 2, 0, { you: false }),
   ],
   bodyNotMatches: taskRowWithCheckoffForm(renamedTaskTitle, "/api/tasks/checkoff"),
   bodyExcludes: NO_ERROR_ALERT,
@@ -503,7 +528,7 @@ const steps = [
   [
     "signup page renders for anonymous user",
     () => request("/auth/signup"),
-    { status: 200, bodyIncludes: "will see your e-mail address", bodyMatches: [BRAND_LINK, linkTo("/privacy")] },
+    { status: 200, bodyIncludes: "will see your nickname", bodyMatches: [BRAND_LINK, linkTo("/privacy")] },
   ],
   [
     "signup page does not reflect a foreign error",
@@ -653,11 +678,11 @@ const steps = [
   [
     `dashboard kitchen sink ${PRODUCTION_BUILD ? "is closed in a production build" : "renders fixture data in dev"}`,
     () => request("/dev/dashboard-kitchen-sink?state=owner", { cookie: "" }),
-    // A state page renders fixture data with `@example.test` e-mails in dev (the positive control that shows the body
-    // check can fail); a production build answers 404 with neither the fixtures nor the gallery's title.
+    // A state page renders fixture data with the owner's nickname `Olivia` in dev (the positive control that shows the
+    // body check can fail); a production build answers 404 with neither the fixtures nor the gallery's title.
     PRODUCTION_BUILD
-      ? { status: 404, bodyExcludes: ["@example.test", "Dashboard kitchen sink"] }
-      : { status: 200, bodyIncludes: "@example.test" },
+      ? { status: 404, bodyExcludes: ["Olivia", "Dashboard kitchen sink"] }
+      : { status: 200, bodyIncludes: "Olivia" },
   ],
   ["brand favicon is served", () => request("/favicon.svg", { cookie: "" }), { status: 200, bodyIncludes: "<svg" }],
   [
@@ -761,6 +786,123 @@ const steps = [
     // A production build serves the session over HTTPS only; the dev server and this script's jar ignore the flag.
     { status: 302, location: "/dashboard", ...(PRODUCTION_BUILD ? { secureCookies: "sb-" } : {}) },
   ],
+  // S-14: a signed-in account without a nickname reaches no protected page and no group or task action before it
+  // chooses one; the nickname page and its route are the only exceptions.
+  [
+    "dashboard sends a user without a nickname to the nickname page",
+    () => request("/dashboard"),
+    { status: 302, locationExact: "/account/nickname" },
+  ],
+  [
+    "settings sends a user without a nickname to the nickname page",
+    () => request("/settings"),
+    { status: 302, locationExact: "/account/nickname" },
+  ],
+  [
+    // A first choice has no "Signed in as" line and no Main nav (both links would lead back here), only Sign out.
+    "nickname page asks a new user to choose a nickname",
+    () => request("/account/nickname"),
+    {
+      status: 200,
+      bodyMatches: [
+        pageHeading("Choose your nickname"),
+        formPostingTo("/api/account/nickname"),
+        nicknameField(""),
+        SIGN_OUT_FORM,
+        BRAND_LINK,
+      ],
+      bodyNotMatches: [TWO_SIGN_OUTS],
+      bodyExcludes: [NO_ERROR_ALERT, "Signed in as", 'aria-label="Main"'],
+    },
+  ],
+  [
+    "nickname page redirects an anonymous visitor to signin",
+    () => request("/account/nickname", { cookie: "" }),
+    { status: 302, locationExact: "/auth/signin" },
+  ],
+  [
+    "nickname save rejects a 1-character nickname",
+    () => request("/api/account/nickname", { method: "POST", form: { nickname: "x" } }),
+    { status: 302, locationExact: "/account/nickname?error=invalid_nickname" },
+  ],
+  [
+    // The state after the rejected save: still no nickname, so the gate still applies.
+    "user A still has no nickname after the rejected save",
+    () => request("/dashboard"),
+    { status: 302, locationExact: "/account/nickname" },
+  ],
+  [
+    "nickname page shows the invalid-nickname message and drops the code from the address",
+    () => request("/account/nickname?error=invalid_nickname"),
+    {
+      status: 200,
+      bodyMatches: [
+        alertMessage("Enter a nickname between 2 and 24 characters."),
+        pageHeading("Choose your nickname"),
+        ERROR_PARAM_SCRIPT,
+      ],
+    },
+  ],
+  [
+    "nickname page with ?error=__proto__ shows no alert",
+    () => request("/account/nickname?error=__proto__"),
+    { status: 200, bodyMatches: [pageHeading("Choose your nickname")], bodyExcludes: NO_ERROR_ALERT },
+  ],
+  [
+    // "x" is rejected by the route anyway, so nothing would change even if the Origin check were off; the next step
+    // reads the state.
+    "nickname save from a foreign origin is rejected",
+    () => request("/api/account/nickname", { method: "POST", form: { nickname: "x" }, origin: FOREIGN_ORIGIN }),
+    { status: 403 },
+  ],
+  [
+    "user A still has no nickname after the foreign-origin save",
+    () => request("/dashboard"),
+    { status: 302, locationExact: "/account/nickname" },
+  ],
+  ["nickname save does not answer GET", () => request("/api/account/nickname"), { status: 404 }],
+  [
+    "user A chooses a nickname and lands on the dashboard",
+    () => request("/api/account/nickname", { method: "POST", form: { nickname: nickA0 } }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "nickname page offers user A a change, prefilled with the nickname",
+    () => request("/account/nickname"),
+    {
+      status: 200,
+      bodyMatches: [
+        pageHeading("Your nickname"),
+        formPostingTo("/api/account/nickname"),
+        nicknameField(nickA0),
+        signedInAs(nickA0),
+        linkTo("/settings"),
+      ],
+      bodyExcludes: [NO_ERROR_ALERT, 'aria-label="Main"'],
+    },
+  ],
+  [
+    "user A changes the nickname and goes back to settings",
+    () => request("/api/account/nickname", { method: "POST", form: { nickname: nickA } }),
+    { status: 302, locationExact: "/settings" },
+  ],
+  [
+    // The settings page is the one place with the user's own address; the runner checks it shows no other one.
+    "settings shows user A's account: the new nickname, the own address and the change link",
+    () => request("/settings"),
+    {
+      status: 200,
+      bodyMatches: [
+        ACCOUNT_HEADING,
+        accountEntry("Nickname", nickA),
+        accountEntry("E-mail", email),
+        linkTo("/account/nickname"),
+        signedInAs(nickA),
+        ...mainNav("/settings"),
+      ],
+      bodyExcludes: [nickA0, NO_ERROR_ALERT],
+    },
+  ],
   [
     // User A has no group yet: the signed-in shell around the no-group page.
     "dashboard renders for signed-in user",
@@ -771,7 +913,7 @@ const steps = [
         BRAND_LINK,
         /<main[\s>]/,
         SIGN_OUT_FORM,
-        signedInAs(email),
+        signedInAs(nickA),
         pageHeading("Start or join a group"),
         linkTo("/privacy"),
         ...mainNav("/dashboard"),
@@ -966,6 +1108,39 @@ const steps = [
     { status: 302, locationExact: "/dashboard" },
   ],
   [
+    // The gate neither reads nor clears the pending invite: the nickname step must not lose it.
+    "dashboard sends user B to the nickname page and keeps the pending invite",
+    () => request("/dashboard", { jar: jarB }),
+    { status: 302, locationExact: "/account/nickname", setCookieExcludes: "join_code" },
+  ],
+  [
+    "user B cannot take user A's nickname",
+    () => request("/api/account/nickname", { method: "POST", form: { nickname: nickA }, jar: jarB }),
+    { status: 302, locationExact: "/account/nickname?error=nickname_taken", setCookieExcludes: "join_code" },
+  ],
+  [
+    "nickname page shows user B the taken message",
+    () => request("/account/nickname?error=nickname_taken", { jar: jarB }),
+    {
+      status: 200,
+      bodyMatches: [
+        alertMessage("This nickname is already taken. Pick another one."),
+        pageHeading("Choose your nickname"),
+      ],
+    },
+  ],
+  [
+    "user B still has no nickname after the refused save, and the invite is still pending",
+    () => request("/dashboard", { jar: jarB }),
+    { status: 302, locationExact: "/account/nickname", setCookieExcludes: "join_code" },
+  ],
+  [
+    // The preview step below proves the invite survived: the dashboard offers it to B.
+    "user B chooses a nickname and lands on the dashboard with the invite still pending",
+    () => request("/api/account/nickname", { method: "POST", form: { nickname: nickB }, jar: jarB }),
+    { status: 302, locationExact: "/dashboard", setCookieExcludes: "join_code" },
+  ],
+  [
     // An empty form joins nothing even if the Origin check were off (it would answer 302 invalid_code), but it would
     // clear B's pending invite cookie: no Set-Cookie for `join_code` proves the handler never ran. The preview step
     // below reads the state: B is still outside the group and the invite is still pending.
@@ -1026,13 +1201,13 @@ const steps = [
     {
       status: 200,
       // The count is one string ("2 members"): Astro drops the space between two adjacent expressions.
-      bodyIncludes: [email, emailB, INVITE_INPUT, "2 members"],
-      bodyMatches: [memberRow(email, "Owner"), memberRow(emailB, "You"), groupHeading(groupName)],
+      bodyIncludes: [nickA, nickB, INVITE_INPUT, "2 members"],
+      bodyMatches: [memberRow(nickA, "Owner"), memberRow(nickB, "You"), groupHeading(groupName)],
       // The markers sit on the right rows only, and with two members the owner is no longer told they are alone.
       // Leaving the group is on /settings.
       bodyNotMatches: [
-        memberRow(email, "You"),
-        memberRow(emailB, "Owner"),
+        memberRow(nickA, "You"),
+        memberRow(nickB, "Owner"),
         SOLE_MEMBER_INVITE,
         formPostingTo("/api/groups/leave"),
       ],
@@ -1088,10 +1263,10 @@ const steps = [
     () => request("/dashboard"),
     {
       status: 200,
-      bodyIncludes: [email, emailB, INVITE_INPUT],
-      bodyMatches: [groupHeading(renamedGroupName), memberRow(email, "Owner"), memberRow(email, "You")],
+      bodyIncludes: [nickA, nickB, INVITE_INPUT],
+      bodyMatches: [groupHeading(renamedGroupName), memberRow(nickA, "Owner"), memberRow(nickA, "You")],
       // B is neither the owner nor the current user.
-      bodyNotMatches: [memberRow(emailB, "You"), memberRow(emailB, "Owner")],
+      bodyNotMatches: [memberRow(nickB, "You"), memberRow(nickB, "Owner")],
       bodyExcludes: [groupName, ...SETTINGS_ON_DASHBOARD, NO_ERROR_ALERT],
     },
   ],
@@ -1157,7 +1332,7 @@ const steps = [
     () => request("/dashboard", { jar: jarB }),
     {
       status: 200,
-      bodyMatches: [groupHeading(renamedGroupName), memberRow(email, "Owner"), memberRow(emailB, "You")],
+      bodyMatches: [groupHeading(renamedGroupName), memberRow(nickA, "Owner"), memberRow(nickB, "You")],
       bodyExcludes: ["Create a group", NO_ERROR_ALERT],
     },
   ],
@@ -1167,6 +1342,27 @@ const steps = [
     "user C signs up",
     () => request("/api/auth/signup", { method: "POST", form: { email: emailC, password }, jar: jarC }),
     { status: 302, location: "/auth/confirm-email" },
+  ],
+  [
+    // The gate covers the group and task routes too, not only the pages.
+    "join without a nickname sends user C to the nickname page",
+    () => request("/api/groups/join", { method: "POST", form: { code: joinCode }, jar: jarC }),
+    { status: 302, locationExact: "/account/nickname" },
+  ],
+  [
+    "user C chooses a nickname and lands on the dashboard",
+    () => request("/api/account/nickname", { method: "POST", form: { nickname: nickC }, jar: jarC }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    // The gated join did not run: C is still outside the group.
+    "user C is not in the group after the gated join",
+    () => request("/dashboard", { jar: jarC }),
+    {
+      status: 200,
+      bodyMatches: [pageHeading("Start or join a group"), signedInAs(nickC)],
+      bodyExcludes: [renamedGroupName, NO_ERROR_ALERT],
+    },
   ],
   [
     "user C joins the group with the invite code",
@@ -1179,7 +1375,7 @@ const steps = [
     {
       status: 200,
       bodyIncludes: "3 members",
-      bodyMatches: [groupHeading(renamedGroupName), memberRow(email, "Owner"), memberRow(emailC, "You")],
+      bodyMatches: [groupHeading(renamedGroupName), memberRow(nickA, "Owner"), memberRow(nickC, "You")],
       bodyExcludes: ["Create a group", NO_ERROR_ALERT],
     },
   ],
@@ -1187,8 +1383,8 @@ const steps = [
     "owner dashboard offers to remove the other members and to delete the group",
     async () => {
       const result = await request("/dashboard");
-      memberIdB = removeTargetInRow(result.body, emailB);
-      memberIdC = removeTargetInRow(result.body, emailC);
+      memberIdB = removeTargetInRow(result.body, nickB);
+      memberIdC = removeTargetInRow(result.body, nickC);
       // Each control has to submit its member's real id, or the removal steps below would prove nothing.
       if (!memberIdB || memberIdB !== sessionUserId(jarB) || !memberIdC || memberIdC !== sessionUserId(jarC)) {
         console.log(
@@ -1204,11 +1400,11 @@ const steps = [
       bodyMatches: [
         groupHeading(renamedGroupName),
         // Each control sits on its member's row and opens the confirmation dialog; the owner's own row has none.
-        rowWithConfirmedRemoveControl(emailB),
-        rowWithConfirmedRemoveControl(emailC),
+        rowWithConfirmedRemoveControl(nickB),
+        rowWithConfirmedRemoveControl(nickC),
       ],
       // Deleting the group is on /settings.
-      bodyNotMatches: [rowWithRemoveControl(email), SUBMIT_IN_DESTRUCTIVE_FORM, formPostingTo("/api/groups/delete")],
+      bodyNotMatches: [rowWithRemoveControl(nickA), SUBMIT_IN_DESTRUCTIVE_FORM, formPostingTo("/api/groups/delete")],
       bodyExcludes: [...SETTINGS_ON_DASHBOARD, NO_ERROR_ALERT],
     },
   ],
@@ -1232,7 +1428,7 @@ const steps = [
     {
       status: 200,
       // B's own member row proves the member view rendered; the owner-only forms must be absent, not just unlabelled.
-      bodyMatches: [groupHeading(renamedGroupName), memberRow(emailB, "You")],
+      bodyMatches: [groupHeading(renamedGroupName), memberRow(nickB, "You")],
       bodyNotMatches: [formPostingTo("/api/groups/remove-member"), formPostingTo("/api/groups/delete")],
       bodyExcludes: [...SETTINGS_ON_DASHBOARD, NO_ERROR_ALERT],
     },
@@ -1262,7 +1458,7 @@ const steps = [
         alertBeforeHeading("You are not allowed to do that.", renamedGroupName),
         ERROR_PARAM_SCRIPT,
         // The member view itself rendered under the alert.
-        memberRow(emailB, "You"),
+        memberRow(nickB, "You"),
       ],
     },
   ],
@@ -1276,7 +1472,7 @@ const steps = [
     () => request(`/dashboard?error=${value}`, { jar: jarB }),
     {
       status: 200,
-      bodyMatches: [groupHeading(renamedGroupName), memberRow(emailB, "You")],
+      bodyMatches: [groupHeading(renamedGroupName), memberRow(nickB, "You")],
       ...(value === "__proto__"
         ? { bodyNotMatches: outsideScripts(value), bodyExcludes: NO_ERROR_ALERT }
         : { bodyExcludes: [NO_ERROR_ALERT, value] }),
@@ -1367,8 +1563,8 @@ const steps = [
     () => request("/dashboard", { jar: jarB }),
     {
       status: 200,
-      bodyIncludes: ["3 members", emailC],
-      bodyMatches: [groupHeading(renamedGroupName), memberRow(email, "Owner"), memberRow(emailB, "You")],
+      bodyIncludes: ["3 members", nickC],
+      bodyMatches: [groupHeading(renamedGroupName), memberRow(nickA, "Owner"), memberRow(nickB, "You")],
       bodyExcludes: ["Create a group", NO_ERROR_ALERT],
     },
   ],
@@ -1392,9 +1588,9 @@ const steps = [
     {
       status: 200,
       bodyIncludes: "2 members",
-      bodyMatches: [groupHeading(renamedGroupName), memberRow(email, "Owner"), rowWithConfirmedRemoveControl(emailC)],
-      bodyNotMatches: [rowWithRemoveControl(emailB)],
-      bodyExcludes: [emailB, NO_ERROR_ALERT],
+      bodyMatches: [groupHeading(renamedGroupName), memberRow(nickA, "Owner"), rowWithConfirmedRemoveControl(nickC)],
+      bodyNotMatches: [rowWithRemoveControl(nickB)],
+      bodyExcludes: [nickB, NO_ERROR_ALERT],
     },
   ],
   [
@@ -1404,8 +1600,8 @@ const steps = [
     {
       status: 200,
       bodyIncludes: "2 members",
-      bodyMatches: [groupHeading(renamedGroupName), memberRow(email, "Owner"), memberRow(emailC, "You")],
-      bodyExcludes: [emailB, "Create a group", NO_ERROR_ALERT],
+      bodyMatches: [groupHeading(renamedGroupName), memberRow(nickA, "Owner"), memberRow(nickC, "You")],
+      bodyExcludes: [nickB, "Create a group", NO_ERROR_ALERT],
     },
   ],
   [
@@ -1424,7 +1620,7 @@ const steps = [
     () => request("/dashboard", { jar: jarB }),
     {
       status: 200,
-      bodyMatches: [groupHeading(renamedGroupName), memberRow(email, "Owner"), memberRow(emailB, "You")],
+      bodyMatches: [groupHeading(renamedGroupName), memberRow(nickA, "Owner"), memberRow(nickB, "You")],
       bodyExcludes: ["Create a group", NO_ERROR_ALERT],
     },
   ],
@@ -1455,9 +1651,9 @@ const steps = [
         formPostingTo("/api/tasks/create"),
         RECURRENCE_FIELD,
         // The creator is enrolled at task insert, so the fresh row already lists them, marked as the viewer.
-        taskRowListing(taskTitle, email, { you: true }),
+        taskRowListing(taskTitle, nickA, { you: true }),
       ],
-      bodyNotMatches: [SUBMIT_IN_DESTRUCTIVE_FORM, taskRowListing(taskTitle, emailB)],
+      bodyNotMatches: [SUBMIT_IN_DESTRUCTIVE_FORM, taskRowListing(taskTitle, nickB)],
       bodyExcludes: NO_ERROR_ALERT,
     },
   ],
@@ -1562,13 +1758,13 @@ const steps = [
     {
       status: 200,
       bodyMatches: [
-        taskRowListing(renamedTaskTitle, email),
+        taskRowListing(renamedTaskTitle, nickA),
         // The creator's entry carries no "You" marker in B's view.
         taskRowWithForm(renamedTaskTitle, "/api/tasks/join"),
       ],
       bodyNotMatches: [
-        taskRowListing(renamedTaskTitle, email, { you: true }),
-        taskRowListing(renamedTaskTitle, emailB),
+        taskRowListing(renamedTaskTitle, nickA, { you: true }),
+        taskRowListing(renamedTaskTitle, nickB),
         taskRowWithConfirmedLeave(renamedTaskTitle),
       ],
       bodyExcludes: NO_ERROR_ALERT,
@@ -1585,13 +1781,13 @@ const steps = [
     {
       status: 200,
       bodyMatches: [
-        taskRowListing(renamedTaskTitle, email),
-        taskRowListing(renamedTaskTitle, emailB, { you: true }),
+        taskRowListing(renamedTaskTitle, nickA),
+        taskRowListing(renamedTaskTitle, nickB, { you: true }),
         taskRowWithConfirmedLeave(renamedTaskTitle),
       ],
       bodyNotMatches: [
         taskRowWithForm(renamedTaskTitle, "/api/tasks/join"),
-        taskRowListing(renamedTaskTitle, email, { you: true }),
+        taskRowListing(renamedTaskTitle, nickA, { you: true }),
       ],
       bodyExcludes: NO_ERROR_ALERT,
     },
@@ -1602,12 +1798,12 @@ const steps = [
     {
       status: 200,
       bodyMatches: [
-        taskRowListing(renamedTaskTitle, email, { you: true }),
-        taskRowListing(renamedTaskTitle, emailB),
+        taskRowListing(renamedTaskTitle, nickA, { you: true }),
+        taskRowListing(renamedTaskTitle, nickB),
         taskRowWithConfirmedDelete(renamedTaskTitle),
         taskRowWithConfirmedLeave(renamedTaskTitle),
       ],
-      bodyNotMatches: taskRowListing(renamedTaskTitle, emailB, { you: true }),
+      bodyNotMatches: taskRowListing(renamedTaskTitle, nickB, { you: true }),
       bodyExcludes: NO_ERROR_ALERT,
     },
   ],
@@ -1622,8 +1818,8 @@ const steps = [
     {
       status: 200,
       bodyMatches: [
-        taskRowListing(renamedTaskTitle, email),
-        taskRowListing(renamedTaskTitle, emailB, { you: true }),
+        taskRowListing(renamedTaskTitle, nickA),
+        taskRowListing(renamedTaskTitle, nickB, { you: true }),
         taskRowWithConfirmedLeave(renamedTaskTitle),
       ],
       bodyExcludes: NO_ERROR_ALERT,
@@ -1757,9 +1953,9 @@ const steps = [
       status: 200,
       bodyMatches: [
         taskRowWithForm(renamedTaskTitle, "/api/tasks/join"),
-        leaderboardRow(email, 1, 0, { you: false }),
-        leaderboardRow(emailB, 1, 0, { you: false }),
-        leaderboardRow(emailC, 1, 0, { you: true }),
+        leaderboardRow(nickA, 1, 0, { you: false }),
+        leaderboardRow(nickB, 1, 0, { you: false }),
+        leaderboardRow(nickC, 1, 0, { you: true }),
       ],
       bodyNotMatches: [
         taskRowWithCheckoffForm(renamedTaskTitle, "/api/tasks/checkoff"),
@@ -1781,9 +1977,9 @@ const steps = [
       status: 200,
       bodyMatches: [
         taskRowWithForm(renamedTaskTitle, "/api/tasks/join"),
-        leaderboardRow(email, 1, 0, { you: false }),
-        leaderboardRow(emailB, 1, 0, { you: false }),
-        leaderboardRow(emailC, 1, 0, { you: true }),
+        leaderboardRow(nickA, 1, 0, { you: false }),
+        leaderboardRow(nickB, 1, 0, { you: false }),
+        leaderboardRow(nickC, 1, 0, { you: true }),
       ],
       bodyNotMatches: [
         taskRowWithCheckoffForm(renamedTaskTitle, "/api/tasks/uncheck"),
@@ -1821,9 +2017,9 @@ const steps = [
       bodyMatches: [
         taskRowWithCheckoffForm(renamedTaskTitle, "/api/tasks/checkoff"),
         taskRowStreak(renamedTaskTitle, 0),
-        leaderboardRow(emailB, 1, 1, { you: false }),
-        leaderboardRow(email, 2, 0, { you: true }),
-        leaderboardRow(emailC, 2, 0, { you: false }),
+        leaderboardRow(nickB, 1, 1, { you: false }),
+        leaderboardRow(nickA, 2, 0, { you: true }),
+        leaderboardRow(nickC, 2, 0, { you: false }),
       ],
       bodyNotMatches: [
         taskRowWithCheckoffForm(renamedTaskTitle, "/api/tasks/uncheck"),
@@ -1872,11 +2068,11 @@ const steps = [
     {
       status: 200,
       bodyMatches: [
-        taskRowListing(renamedTaskTitle, email),
+        taskRowListing(renamedTaskTitle, nickA),
         taskRowWithForm(renamedTaskTitle, "/api/tasks/join"),
         taskRowWithBadge(renamedTaskTitle, "Daily"),
       ],
-      bodyNotMatches: [taskRowListing(renamedTaskTitle, emailB), taskRowWithConfirmedLeave(renamedTaskTitle)],
+      bodyNotMatches: [taskRowListing(renamedTaskTitle, nickB), taskRowWithConfirmedLeave(renamedTaskTitle)],
       bodyExcludes: NO_ERROR_ALERT,
     },
   ],
@@ -1888,9 +2084,9 @@ const steps = [
       status: 200,
       bodyMatches: [
         taskRowWithForm(renamedTaskTitle, "/api/tasks/join"),
-        leaderboardRow(email, 1, 0, { you: false }),
-        leaderboardRow(emailB, 1, 0, { you: true }),
-        leaderboardRow(emailC, 1, 0, { you: false }),
+        leaderboardRow(nickA, 1, 0, { you: false }),
+        leaderboardRow(nickB, 1, 0, { you: true }),
+        leaderboardRow(nickC, 1, 0, { you: false }),
       ],
       bodyNotMatches: [
         taskRowWithCheckoffForm(renamedTaskTitle, "/api/tasks/checkoff"),
@@ -1906,10 +2102,10 @@ const steps = [
     {
       status: 200,
       bodyMatches: [
-        taskRowListing(renamedTaskTitle, email, { you: true }),
+        taskRowListing(renamedTaskTitle, nickA, { you: true }),
         taskRowWithConfirmedDelete(renamedTaskTitle),
       ],
-      bodyNotMatches: taskRowListing(renamedTaskTitle, emailB),
+      bodyNotMatches: taskRowListing(renamedTaskTitle, nickB),
       bodyExcludes: NO_ERROR_ALERT,
     },
   ],
@@ -1923,8 +2119,8 @@ const steps = [
     () => request("/dashboard"),
     {
       status: 200,
-      bodyMatches: [taskRowListing(renamedTaskTitle, email, { you: true })],
-      bodyNotMatches: taskRowListing(renamedTaskTitle, emailB),
+      bodyMatches: [taskRowListing(renamedTaskTitle, nickA, { you: true })],
+      bodyNotMatches: taskRowListing(renamedTaskTitle, nickB),
       bodyExcludes: NO_ERROR_ALERT,
     },
   ],
@@ -1940,7 +2136,7 @@ const steps = [
     {
       status: 200,
       bodyMatches: [
-        taskRowListing(renamedTaskTitle, emailB, { you: true }),
+        taskRowListing(renamedTaskTitle, nickB, { you: true }),
         taskRowWithConfirmedLeave(renamedTaskTitle),
       ],
       bodyExcludes: NO_ERROR_ALERT,
@@ -1977,10 +2173,10 @@ const steps = [
       bodyMatches: [
         groupHeading(renamedGroupName),
         taskRowWithBadge(renamedTaskTitle, "Daily"),
-        taskRowListing(renamedTaskTitle, email),
+        taskRowListing(renamedTaskTitle, nickA),
         taskRowWithForm(renamedTaskTitle, "/api/tasks/join"),
       ],
-      bodyNotMatches: [taskRowListing(renamedTaskTitle, emailB), taskRowWithConfirmedLeave(renamedTaskTitle)],
+      bodyNotMatches: [taskRowListing(renamedTaskTitle, nickB), taskRowWithConfirmedLeave(renamedTaskTitle)],
       bodyExcludes: NO_ERROR_ALERT,
     },
   ],
@@ -1990,10 +2186,10 @@ const steps = [
     {
       status: 200,
       bodyMatches: [
-        taskRowListing(renamedTaskTitle, email, { you: true }),
+        taskRowListing(renamedTaskTitle, nickA, { you: true }),
         taskRowWithConfirmedDelete(renamedTaskTitle),
       ],
-      bodyNotMatches: taskRowListing(renamedTaskTitle, emailB),
+      bodyNotMatches: taskRowListing(renamedTaskTitle, nickB),
       bodyExcludes: NO_ERROR_ALERT,
     },
   ],
@@ -2031,9 +2227,9 @@ const steps = [
         taskRowWithCheckoffForm(onceTitle, "/api/tasks/checkoff"),
         // The daily task's row beside it still shows its streak, so the missing figure is not an empty page.
         taskRowStreak(renamedTaskTitle, 0),
-        leaderboardRow(email, 1, 0, { you: true }),
-        leaderboardRow(emailB, 1, 0, { you: false }),
-        leaderboardRow(emailC, 1, 0, { you: false }),
+        leaderboardRow(nickA, 1, 0, { you: true }),
+        leaderboardRow(nickB, 1, 0, { you: false }),
+        leaderboardRow(nickC, 1, 0, { you: false }),
       ],
       bodyNotMatches: [
         taskRowStreak(onceTitle),
@@ -2065,9 +2261,9 @@ const steps = [
       bodyMatches: [
         taskRowWithStatus(onceTitle, "Done"),
         taskRowWithCheckoffForm(onceTitle, "/api/tasks/uncheck"),
-        leaderboardRow(email, 1, 1, { you: true }),
-        leaderboardRow(emailB, 2, 0, { you: false }),
-        leaderboardRow(emailC, 2, 0, { you: false }),
+        leaderboardRow(nickA, 1, 1, { you: true }),
+        leaderboardRow(nickB, 2, 0, { you: false }),
+        leaderboardRow(nickC, 2, 0, { you: false }),
       ],
       bodyNotMatches: [taskRowWithCheckoffForm(onceTitle, "/api/tasks/checkoff"), taskRowStreak(onceTitle)],
       bodyExcludes: NO_ERROR_ALERT,
@@ -2085,9 +2281,9 @@ const steps = [
       status: 200,
       bodyMatches: [
         taskRowWithCheckoffForm(onceTitle, "/api/tasks/checkoff"),
-        leaderboardRow(email, 1, 0, { you: true }),
-        leaderboardRow(emailB, 1, 0, { you: false }),
-        leaderboardRow(emailC, 1, 0, { you: false }),
+        leaderboardRow(nickA, 1, 0, { you: true }),
+        leaderboardRow(nickB, 1, 0, { you: false }),
+        leaderboardRow(nickC, 1, 0, { you: false }),
       ],
       bodyNotMatches: [taskRowWithCheckoffForm(onceTitle, "/api/tasks/uncheck"), taskRowWithStatus(onceTitle, "Done")],
       bodyExcludes: NO_ERROR_ALERT,
@@ -2197,13 +2393,31 @@ const steps = [
   ["dashboard redirects after signout", () => request("/dashboard"), { status: 302, location: "/auth/signin" }],
 ];
 
+// S-14: whoever reads a page of the signed-in app never gets another member's address. The settings page shows the
+// viewer's own address (the Account card), every other page none; checked on every step that reads one of them, on
+// top of the step's own expectation.
+const OWN_EMAIL = new Map([
+  [jarA, email],
+  [jarB, emailB],
+  [jarC, emailC],
+]);
+function addressesNotShown(actual) {
+  if (actual.method !== "GET" || actual.status !== 200) return [];
+  const page = actual.path.split("?")[0];
+  if (page === "/settings") return ALL_EMAILS.filter((address) => address !== OWN_EMAIL.get(actual.jar));
+  if (page === "/dashboard" || page === "/account/nickname") return ALL_EMAILS;
+  return [];
+}
+
 let failed = 0;
 for (const [name, run, expectation] of steps) {
   const actual = await run();
   // An expectation that depends on what only this run knows (the Warsaw day, a period an earlier step read) is given
   // as a function of the result, evaluated after the request.
   const expected = typeof expectation === "function" ? expectation(actual) : expectation;
+  const hiddenAddresses = addressesNotShown(actual);
   const ok =
+    hiddenAddresses.every((address) => !actual.body.includes(address)) &&
     actual.status === expected.status &&
     (expected.location === undefined || actual.location.startsWith(expected.location)) &&
     (expected.locationExact === undefined || actual.location === expected.locationExact) &&
@@ -2239,7 +2453,8 @@ for (const [name, run, expectation] of steps) {
         (expected.bodyIncludes ? ` body includes ${JSON.stringify(expected.bodyIncludes)}` : "") +
         (expected.bodyMatches ? ` body matches ${[expected.bodyMatches].flat().join(" and ")}` : "") +
         (expected.bodyNotMatches ? ` body does not match ${[expected.bodyNotMatches].flat().join(" or ")}` : "") +
-        (expected.bodyExcludes ? ` body excludes ${JSON.stringify(expected.bodyExcludes)}` : ""),
+        (expected.bodyExcludes ? ` body excludes ${JSON.stringify(expected.bodyExcludes)}` : "") +
+        (hiddenAddresses.length > 0 ? ` and no other member's e-mail address (${hiddenAddresses.length} checked)` : ""),
     );
   }
 }

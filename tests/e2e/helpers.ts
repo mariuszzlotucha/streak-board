@@ -24,3 +24,20 @@ export async function signInThroughForm(page: Page, email: string, password: str
   await page.getByRole("button", { name: "Sign in" }).click();
   await page.waitForURL("**/dashboard");
 }
+
+/**
+ * The nickname an E2E account gets: the local part of its address, cut to the 24 characters a nickname may have. The
+ * seed account's row is written with the same rule by scripts/e2e-user.mjs (CI) or chosen through the page by
+ * auth.setup.ts (a local seed account from before S-14), so seed.spec.ts can expect it.
+ */
+export function nicknameFor(email: string): string {
+  return email.split("@")[0].slice(0, 24);
+}
+
+/** Chooses a nickname on the first-choice page (`/account/nickname`) and waits for the dashboard. */
+export async function chooseNickname(page: Page, nickname: string): Promise<void> {
+  await waitForHydration(page);
+  await page.getByLabel("Nickname").fill(nickname);
+  await page.getByRole("button", { name: "Continue" }).click();
+  await page.waitForURL("**/dashboard");
+}

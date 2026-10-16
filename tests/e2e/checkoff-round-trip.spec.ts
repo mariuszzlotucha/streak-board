@@ -26,14 +26,17 @@ function taskRow(page: Page, title: string) {
   return page.getByRole("listitem").filter({ hasText: title });
 }
 
-/** The viewer's Leaderboard line: position, e-mail, the "You" badge and the total, each in its own element. */
-function expectViewerTotal(page: Page, email: string, total: number) {
+/**
+ * The viewer's Leaderboard line: position, nickname, the "You" badge and the total, each in its own element. Members
+ * are listed by nickname, never by e-mail address.
+ */
+function expectViewerTotal(page: Page, nickname: string, total: number) {
   const row = page
     .getByRole("list", { name: "Leaderboard" })
     .getByRole("listitem")
     .filter({ has: page.getByText("You", { exact: true }) });
   // The viewer is the only member, so the position is always 1; the total is the last number on the line.
-  return expect(row).toHaveText(new RegExp(`^1\\s*${escapeRegExp(email)}\\s*You\\s*${total}$`));
+  return expect(row).toHaveText(new RegExp(`^1\\s*${escapeRegExp(nickname)}\\s*You\\s*${total}$`));
 }
 
 test.describe("risk #4: check-off round trip", () => {
@@ -64,13 +67,13 @@ test.describe("risk #4: check-off round trip", () => {
     // Positive control: the row starts unticked at streak 0 and the viewer's total is 0.
     await expect(row.getByRole("button", { name: `Mark done ${title}` })).toBeVisible();
     await expect(row.getByText("0", { exact: true })).toBeVisible();
-    await expectViewerTotal(page, owner.email, 0);
+    await expectViewerTotal(page, owner.nickname, 0);
 
     // Tick: the row and the board move without a reload.
     await row.getByRole("button", { name: `Mark done ${title}` }).click();
     await expect(row.getByText("Done today", { exact: true })).toBeVisible();
     await expect(row.getByText("1", { exact: true })).toBeVisible();
-    await expectViewerTotal(page, owner.email, 1);
+    await expectViewerTotal(page, owner.nickname, 1);
 
     // The reload must not race the save: the control keeps the button `aria-disabled` until the server has answered.
     await expect(row.getByRole("button", { name: `Undo ${title}` })).not.toHaveAttribute("aria-disabled", "true");
@@ -78,19 +81,19 @@ test.describe("risk #4: check-off round trip", () => {
     await page.reload();
     await expect(row.getByText("Done today", { exact: true })).toBeVisible();
     await expect(row.getByText("1", { exact: true })).toBeVisible();
-    await expectViewerTotal(page, owner.email, 1);
+    await expectViewerTotal(page, owner.nickname, 1);
 
     // Undo: back to 0, without a reload and then across one.
     await waitForHydration(page);
     await row.getByRole("button", { name: `Undo ${title}` }).click();
     await expect(row.getByRole("button", { name: `Mark done ${title}` })).toBeVisible();
     await expect(row.getByText("0", { exact: true })).toBeVisible();
-    await expectViewerTotal(page, owner.email, 0);
+    await expectViewerTotal(page, owner.nickname, 0);
 
     await expect(row.getByRole("button", { name: `Mark done ${title}` })).not.toHaveAttribute("aria-disabled", "true");
     await page.reload();
     await expect(row.getByRole("button", { name: `Mark done ${title}` })).toBeVisible();
     await expect(row.getByText("0", { exact: true })).toBeVisible();
-    await expectViewerTotal(page, owner.email, 0);
+    await expectViewerTotal(page, owner.nickname, 0);
   });
 });

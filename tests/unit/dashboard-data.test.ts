@@ -32,9 +32,10 @@ const cookies = {} as AstroCookies;
 const user = { id: "u-owner", email: "owner@example.com" } as User;
 const group: MyGroup = { id: "g-1", name: "Runners", join_code: "abc", owner_id: "u-owner" };
 const members: GroupMember[] = [
-  { user_id: "u-owner", email: "owner@example.com", is_owner: true },
-  { user_id: "u-2", email: "two@example.com", is_owner: false },
-] as GroupMember[];
+  { user_id: "u-owner", nickname: "Owner", joined_at: "2026-09-28T08:00:00Z", is_owner: true },
+  { user_id: "u-2", nickname: "Two", joined_at: "2026-09-29T08:00:00Z", is_owner: false },
+  { user_id: "u-3", nickname: null, joined_at: "2026-09-30T08:00:00Z", is_owner: false },
+];
 const task: GroupTask = { id: "t-1", title: "Run", recurrence: "daily", created_by: "u-owner" };
 const board = { totals: [], viewerTasks: new Map() } as unknown as ReturnType<typeof rules.buildBoard>;
 const log: ReportContext = { route: "/dashboard", userId: "u-owner", ray: "ray-1" };
@@ -241,11 +242,17 @@ describe("loadDashboard", () => {
 });
 
 describe("participantsResolver", () => {
-  it("resolves e-mails, marks the viewer and names a stale participant Unknown member", () => {
-    const participantsOf = participantsResolver(new Map([["t-1", ["u-owner", "u-gone"]]]), members, "u-owner");
+  it("resolves nicknames, marks the viewer and names a member without one or a stale participant Unknown member", () => {
+    const participantsOf = participantsResolver(
+      new Map([["t-1", ["u-owner", "u-2", "u-3", "u-gone"]]]),
+      members,
+      "u-owner",
+    );
     expect(participantsOf("t-1")).toEqual([
-      { email: "owner@example.com", isYou: true },
-      { email: rules.UNKNOWN_MEMBER, isYou: false },
+      { nickname: "Owner", isYou: true },
+      { nickname: "Two", isYou: false },
+      { nickname: rules.UNKNOWN_MEMBER, isYou: false },
+      { nickname: rules.UNKNOWN_MEMBER, isYou: false },
     ]);
     expect(participantsOf("t-none")).toEqual([]);
   });
