@@ -15,7 +15,7 @@ import {
 // public.nicknames, one row per account, written only through set_nickname (an upsert of the caller's own row), unique
 // exactly as typed; a signed-in user reads only their own row; anon has no access; list_group_members adds the
 // nickname of every member through a left join, NULL for a member without a row; and the app's listGroupMembers never
-// passes on any other field (the RPC still returns the e-mail until the second release).
+// passes on any other field. Since the second release (Phase 2, migration B) the RPC itself returns no e-mail column.
 
 const UNIQUE_VIOLATION = "23505";
 const RLS_VIOLATION = "42501";
@@ -145,6 +145,21 @@ describe("nicknames", () => {
         [owner.id, owner.nickname],
         [member.id, null],
       ]);
+    });
+
+    it("the raw RPC returns exactly is_owner, joined_at, nickname and user_id, and no value holds an address", async () => {
+      const owner = await createTestUser();
+      const member = await createTestUser();
+      const group = await createGroupAs(owner, "Nickname group");
+      await joinGroupAs(member, group.joinCode);
+
+      const { data: listed, error } = await owner.client.rpc("list_group_members", { p_group_id: group.id });
+      expect(error).toBeNull();
+      expect(listed).toHaveLength(2);
+      for (const row of listed ?? []) {
+        expect(Object.keys(row).sort()).toEqual(["is_owner", "joined_at", "nickname", "user_id"]);
+      }
+      expect(JSON.stringify(listed)).not.toContain("@");
     });
 
     it("listGroupMembers passes on exactly user_id, nickname, joined_at and is_owner (never the e-mail)", async () => {

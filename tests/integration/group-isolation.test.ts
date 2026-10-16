@@ -108,8 +108,8 @@ describe("cross-group data isolation", () => {
       }
     });
 
-    it("B and C get an empty set from list_group_members(GA); no emails leak", async () => {
-      // Control: a member gets the emails for the very same call.
+    it("B and C get an empty set from list_group_members(GA); no member rows leak", async () => {
+      // Control: a member gets the rows for the very same call.
       const { data: asMember, error: memberError } = await a.client.rpc("list_group_members", {
         p_group_id: ga.id,
       });

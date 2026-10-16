@@ -1,4 +1,4 @@
--- RLS scenario checks for groups / group_members / tasks / task_participants / task_checkoffs / nicknames and the function set_nickname (F-01 + group-rls-hardening + S-01 helper functions + S-02 tasks + S-03 participation + S-04 check-offs + S-12 table-level privileges + S-14 nicknames).
+-- RLS scenario checks for groups / group_members / tasks / task_participants / task_checkoffs / nicknames and the function set_nickname (F-01 + group-rls-hardening + S-01 helper functions + S-02 tasks + S-03 participation + S-04 check-offs + S-12 table-level privileges + S-14 nicknames, and since S-14 release 2 a list_group_members without an email column).
 --
 -- Run against the LOCAL Supabase database only:
 --   docker exec -i supabase_db_10x-astro-starter psql -U postgres -d postgres -X -v ON_ERROR_STOP=1 < supabase/checks/rls-scenarios.sql
@@ -431,7 +431,7 @@ end;
 $$;
 
 -- ---------------------------------------------------------------------------
--- S-01: list_group_members (member-only, emails, nicknames, owner flag)
+-- S-01: list_group_members (member-only, nicknames, owner flag; no email column since S-14 release 2)
 -- ---------------------------------------------------------------------------
 
 do $$
@@ -451,16 +451,17 @@ begin
   perform rls_check.as_postgres();
   update public.group_members set joined_at = joined_at + interval '1 hour' where user_id = a;
 
-  -- The owner sees both members: owner first, correct is_owner flags, emails present.
+  -- The owner sees both members: owner first, correct is_owner flags, nicknames present.
   perform rls_check.as_user(a);
   perform rls_check.expect_value(format('select count(*) from public.list_group_members(%L)', ga), '2', 'S-01 the owner sees both members');
   perform rls_check.expect_value(format('select string_agg(user_id::text, %L) from public.list_group_members(%L)', ',', ga), a::text || ',' || c::text, 'S-01 the owner is listed first, then members by joined_at');
   perform rls_check.expect_value(format('select is_owner::text from public.list_group_members(%L) where user_id = %L', ga, a), 'true', 'S-01 is_owner is true for the owner');
   perform rls_check.expect_value(format('select is_owner::text from public.list_group_members(%L) where user_id = %L', ga, c), 'false', 'S-01 is_owner is false for a member');
-  perform rls_check.expect_value(format('select count(*) from public.list_group_members(%L) where email is not null', ga), '2', 'S-01 every listed member has an email');
-  perform rls_check.expect_value(format('select email from public.list_group_members(%L) where user_id = %L', ga, c), c::text || '@rls-check.invalid', 'S-01 the email comes from auth.users');
   perform rls_check.expect_value(format('select count(*) from public.list_group_members(%L) where nickname is not null', ga), '2', 'S-01 every listed member has a nickname');
   perform rls_check.expect_value(format('select nickname from public.list_group_members(%L) where user_id = %L', ga, c), 'u-' || left(c::text, 8), 'S-01 the nickname comes from nicknames');
+  -- S-14 release 2: no member gets another member's e-mail address from the RPC, by any column.
+  perform rls_check.expect_value($q$select ('email' = any(proargnames))::text from pg_proc where pronamespace = 'public'::regnamespace and proname = 'list_group_members'$q$, 'false', 'S-14 list_group_members has no email column');
+  perform rls_check.expect_value($q$select pg_get_function_result('public.list_group_members(uuid)'::regprocedure)$q$, 'TABLE(user_id uuid, nickname text, joined_at timestamp with time zone, is_owner boolean)', 'S-14 list_group_members returns exactly user_id, nickname, joined_at, is_owner');
 
   -- A regular member sees the same list.
   perform rls_check.as_user(c);

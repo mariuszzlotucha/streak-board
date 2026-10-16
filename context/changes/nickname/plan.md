@@ -473,13 +473,13 @@ Brama dodaje jeden odczyt PostgREST po kluczu głównym na każde żądanie chro
 
 #### Manual
 
-- [ ] 1.12 `compat` na PR-ze fazy zielony
+- [x] 1.12 `compat` na PR-ze fazy zielony — 62204c7
 - [ ] 1.13 Przegląd zrzutów w obu szerokościach
 - [ ] 1.14 Lokalnie nowe konto e-mail przechodzi stronę nicka, drugie konto dostaje komunikat o zajętym nicku, zaproszenie przeżywa krok nicka
 - [ ] 1.15 Lokalnie konto sprzed zmiany jest „Unknown member” do zalogowania i wyboru nicka
 - [ ] 1.16 `/settings` pokazuje kartę Account, zmiana nicka wraca na `/settings`
 - [ ] 1.17 Przegląd `/privacy`, `/auth/signup`, README i CLAUDE.md
-- [ ] 1.18 PR scalony, `release` zatwierdzony z migracją A
+- [x] 1.18 PR scalony, `release` zatwierdzony z migracją A — 62204c7
 - [ ] 1.19 Kontrola produkcji po wydaniu 1
 - [ ] 1.20 Konto Google na produkcji: podpowiedź imienia sprawdzona i zapisana
 
@@ -487,12 +487,12 @@ Brama dodaje jeden odczyt PostgREST po kluczu głównym na każde żądanie chro
 
 #### Automated
 
-- [ ] 2.1 Strażnik migracji przyjmuje migrację B ze znacznikiem
-- [ ] 2.2 Migracja B stosuje się, a typy są świeże
-- [ ] 2.3 Lint i build przechodzą
-- [ ] 2.4 Testy integracyjne z asercją kluczy odpowiedzi RPC przechodzą
-- [ ] 2.5 Scenariusze RLS bez asercji e-maila i z asercją braku kolumny przechodzą
-- [ ] 2.6 Smoke fazy 1 przechodzi bez zmian na schemacie bez kolumny `email`
+- [x] 2.1 Strażnik migracji przyjmuje migrację B ze znacznikiem — 11985cb
+- [x] 2.2 Migracja B stosuje się, a typy są świeże — 11985cb
+- [x] 2.3 Lint i build przechodzą — 11985cb
+- [x] 2.4 Testy integracyjne z asercją kluczy odpowiedzi RPC przechodzą — 11985cb
+- [x] 2.5 Scenariusze RLS bez asercji e-maila i z asercją braku kolumny przechodzą — 11985cb
+- [x] 2.6 Smoke fazy 1 przechodzi bez zmian na schemacie bez kolumny `email` — 11985cb
 
 #### Manual
 

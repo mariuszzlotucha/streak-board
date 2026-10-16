@@ -214,7 +214,6 @@ export type Database = {
       list_group_members: {
         Args: { p_group_id: string };
         Returns: {
-          email: string;
           is_owner: boolean;
           joined_at: string;
           nickname: string;
