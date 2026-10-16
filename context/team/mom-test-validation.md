@@ -112,3 +112,17 @@ PRs: [#125](https://github.com/mariuszzlotucha/streak-board/pull/125) (Phases 1�
 7. **`/10x-status` run:** No (owner, 2026-10-15).
 8. **Most recent wrong record:** none in this slice.
 9. **Got past the review:** nothing about records. One caveat for the next reading: the guard's `ai-review` check timed out three times on #126 before passing; that was CI flakiness, not a records issue, and it cost the owner a status question and the agent a re-run and PR #127.
+
+### S-10 (`test-coverage`, archived 2026-10-16)
+
+PRs: [#133](https://github.com/mariuszzlotucha/streak-board/pull/133) (the six plan phases and the review fixes, in one goal run), [#134](https://github.com/mariuszzlotucha/streak-board/pull/134) (closeout: the CI rows, the `e2e` release prerequisite and the ruleset facts), [#135](https://github.com/mariuszzlotucha/streak-board/pull/135) (archive), and this PR, which also fixes the Backlog Handoff rows of S-10 and S-12. Logged 2026-10-16 by the agent from the session's own trace, with the owner's answers to questions 4 and 7.
+
+1. **Screen:** Yes. Plan → one implementation PR (the owner chose one goal run over the plan's per-phase PRs) → closeout PR → archive PR, with a Progress table.
+2. **Records wrong at any point:** 2. The plan's tag SHA `30c01bb` was stale (the deployed commit was `fb62d74`), caught before the tag was pushed. The Backlog Handoff rows of S-10 and S-12 still said "ready" after their archives, fixed in this PR.
+3. **Who noticed first:** the agent, both times: the stale SHA while confirming the deployed commit, the Backlog rows while checking the roadmap after the archive. The owner did not report either.
+4. **Owner's own time on records:** under 5 min (owner, 2026-10-16).
+5. **Wrong starting point, redone step or extra PR:** No wrong starting point and no redone record step. One extra PR: the archive commit could not go to `master` directly, so it went through #135.
+6. **Correction commits or PRs:** 1 (`659e7ae`, a comment reworded after an ai-review minor). The owner also decided one plan deviation, `e2e` as a prerequisite of `release` (`cf52ebc`), after a claude-review note; it is recorded in the deployment plan, not as a records correction.
+7. **`/10x-status` run:** No (owner, 2026-10-16).
+8. **Most recent wrong record:** the Backlog Handoff rows of S-10 and S-12, found after the archive. No skill or check reads that table: the archive skill updates the At a glance row, the item and the Done list only.
+9. **Got past the review:** the same Backlog rows, which no review or check reads. The stale SHA was caught before anything used it.
