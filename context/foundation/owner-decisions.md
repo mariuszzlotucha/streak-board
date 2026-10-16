@@ -20,10 +20,10 @@ Stan z 2026-10-16. Odpowiedzi właściciela na pytania z `open-items.md` i `open
 
 ## Strażnik migracji i testy
 
-- **Zduplikowana linia allowlisty (2.6)**: blokować, exit 1, jak zakłada plan S-12. Dziś strażnik przepuszcza duplikat z dwoma ostrzeżeniami.
-  - Do zrobienia: zmiana strażnika, potem ponowna kontrola 2.6 na scratch branchu, który nie jest wypychany.
-- **Nazwy testów (3.6)**: zmienić na zdania. 42 z 150 nazw w `tests/integration/data-routes.test.ts` zaczyna się od kodu SQLSTATE. Kody zostają w asercjach.
-  - Do zrobienia: zmiana nazw.
+- **Zduplikowana linia allowlisty (2.6)**: blokować, exit 1, jak zakłada plan S-12. Wcześniej strażnik przepuszczał duplikat z dwoma ostrzeżeniami.
+  - Zrobione 2026-10-16 w `scripts/migration-guard.mjs`. Kontrola na scratch branchu, który nie był wypychany: dwie identyczne linie exit 1, jedna exit 0 z jednym ostrzeżeniem.
+- **Nazwy testów (3.6)**: zmienić na zdania. 42 z 150 nazw w `tests/integration/data-routes.test.ts` zaczynało się od kodu SQLSTATE. Kody zostają w asercjach.
+  - Zrobione 2026-10-16 w `tests/integration/data-routes.test.ts`: nazwy opisują przypadek, kody zostają w asercjach.
 
 ## Zgody i ustawienia
 

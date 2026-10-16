@@ -9,13 +9,13 @@ Poza tą listą: S-13 `checkoff-grid` to jedyny otwarty wycinek roadmapy (`conte
 Wiersze nieodhaczone w `context/archive/2026-10-06-refactor-opportunities/plan.md`. Archiwum jest tylko do odczytu, więc wyniki zapisano w `deployment-plan.md` (Phase 17), tak jak dla S-10.
 
 - [x] **1.6** Zatrzymać PostgREST i wczytać `/dashboard`: 503 z komunikatem o błędzie, jedna linia `dashboard.load.failed`, po restarcie 200. Odchylenie: 503 przyszło po 8,6 s, nie po ~60 s.
-- [x] **2.6** Strażnik migracji na scratch branchach (nigdy nie wypychanych): sześć z siedmiu wariantów zgodnych z planem. Odchylenie: duplikat linii allowlisty w tej samej gałęzi przechodzi (exit 0), plan oczekiwał exit 1. Decyzja właściciela: blokować, poprawka niżej.
+- [x] **2.6** Strażnik migracji na scratch branchach (nigdy nie wypychanych): sześć z siedmiu wariantów zgodnych z planem. Odchylenie: duplikat linii allowlisty w tej samej gałęzi przechodził (exit 0), plan oczekiwał exit 1. Decyzja właściciela: blokować. Poprawka zrobiona 2026-10-16 w `scripts/migration-guard.mjs`; kontrola na scratch branchu: dwie identyczne linie exit 1, jedna exit 0.
 - [x] **2.7** Zmiana identyfikatora w `src/types.ts` → `npm run types:check` kończy się kodem 1 z diffem; po przywróceniu 0.
 - [ ] **2.8** Draft PR ze scratch brancha, który ma zaczerwienić `integration`. Decyzja 2026-10-16: pomijamy, blokada merge'a zostaje niesprawdzona.
 - [x] **2.9** Przeczytanie README, `test-plan.md`, wpisu w `CLAUDE.md` i wpisu w `lessons.md`. Poprawiona data nagłówka `test-plan.md` (2026-10-15 → 2026-10-16).
 - [x] **3.4** Cztery zmiany „zepsuj i przywróć" w testach tras: każda zaczerwieniła co najmniej jeden test.
 - [x] **3.5** Pusty `src/pages/api/tasks/probe.ts`: strażnik pokrycia czerwony; po usunięciu zielony.
-- [~] **3.6** Nazwy testów: czerwony wiersz nazywa trasę i przypadek; 42 z 150 nazw zaczyna się od kodu SQLSTATE. Decyzja 2026-10-16: zmienić na zdania (poprawka niżej).
+- [x] **3.6** Nazwy testów: czerwony wiersz nazywa trasę i przypadek; 42 z 150 nazw zaczynało się od kodu SQLSTATE. Decyzja 2026-10-16: zmienić na zdania. Zrobione 2026-10-16 w `tests/integration/data-routes.test.ts`: nazwy opisują przypadek, kody zostają w asercjach.
 - [x] **4.5** Trzy zmiany po stronie TS (limit 81, NBSP, `"monthly"`): kontrakty w `tests/unit` czerwone; przywrócone.
 - [x] **4.6** Osłabienie `groups_name_length` do 81 w scratch migracji (zgoda właściciela, 2026-10-16): `npm test` czerwony, 9 nieudanych testów w `tests/integration/rule-contracts.test.ts`. Część to kaskada: `cleanupUsers` nie usunął konta, bo grupa o 81 znakach nie została posprzątana (`owner_id … on delete restrict`, komentarz w `tests/integration/rule-contracts.test.ts:22-24`). Kolejne testy zgłosiły `group_members_user_id_key`. Po przywróceniu limitu 80 (`db reset`) wszystko zielone. Scratch migracja usunięta.
 - [x] **5.5** Lokalnie `revoke select, delete` na trzech tabelach: blok S-12 czerwony z dokładnym komunikatem; po ponownym zastosowaniu migracji 300 asercji zielonych i uprawnienia jak przed.
@@ -70,7 +70,5 @@ Odroczone świadomie, z wyzwalaczami w planach. Nie są zadaniami, dopóki wyzwa
 
 ## Sugerowana kolejność (aktualna)
 
-1. Poprawka 2.6: strażnik ma blokować duplikat linii allowlisty, potem powtórka kontroli na scratch branchu, który nie jest wypychany.
-2. Poprawka 3.6: 42 nazwy testów z kodu SQLSTATE zamienić na zdania.
-3. S-13 `checkoff-grid` (`/10x-frame`), razem z poprawkami dokumentów (streak, poziomy, okno dat).
-4. `/10x-plan` dla `code-review-evals`.
+1. S-13 `checkoff-grid` (`/10x-frame`), razem z poprawkami dokumentów (streak, poziomy, okno dat).
+2. `/10x-plan` dla `code-review-evals`.

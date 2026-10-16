@@ -10,8 +10,6 @@ Pracę wykonałem bez Twojej interwencji, ale nie w trybie `/goal`. Zmiany były
 
 ## Do zrobienia po decyzjach
 
-- **2.6, strażnik migracji**: decyzja: blokować duplikat linii allowlisty (exit 1), jak zakłada plan S-12. Wymaga zmiany `scripts/migration-guard.mjs` i testu w `tests/unit/migration-guard.test.ts`, a potem ponownej kontroli na scratch branchu, który nie jest wypychany. Wariantu „linia już w bazie" nie da się odtworzyć, dopóki `origin/master` nie ma pliku `supabase/checks/migration-edit-allowlist.txt`.
-- **3.6, nazwy testów**: decyzja: zmienić 42 nazwy z kodu SQLSTATE lub `XX000` w `tests/integration/data-routes.test.ts` na zdania, np. `42501: forbidden with an error line carrying the status`. Kody zostają w asercjach.
 - **Poprawki dokumentów razem z S-13**: decyzje: reguła streaka stoi (1 → 0), poziomy i taski indywidualne znikają z PRD, okno dat `UTC−7 … UTC+1` jest znaną luką. Do poprawy: `context/foundation/prd.md` (`:20`, `:29`, `:97`, sekcja `## Open Questions` na `:116-118`), polityka prywatności (streak), słownik, opis okna dat.
 - **Plan `code-review-evals`**: decyzja: zaplanować całość przez `/10x-plan`. Zmiany dotykają bramki `ai-review`, więc potrzebują planu i ewaluacji przed edycją. Zakres:
   - podrobione znaczniki w diffie (`＜/diff＞`, homoglify, znaki zerowej szerokości) nie są neutralizowane (`context/archive/2026-10-14-ci-cd-code-review/follow-ups/review-fixes.md`);
