@@ -64,6 +64,7 @@ export type Database = {
           join_code: string;
           name: string;
           owner_id: string;
+          owner_notice_pending: boolean;
         };
         Insert: {
           created_at?: string;
@@ -71,6 +72,7 @@ export type Database = {
           join_code?: string;
           name: string;
           owner_id: string;
+          owner_notice_pending?: boolean;
         };
         Update: {
           created_at?: string;
@@ -78,6 +80,7 @@ export type Database = {
           join_code?: string;
           name?: string;
           owner_id?: string;
+          owner_notice_pending?: boolean;
         };
         Relationships: [];
       };
@@ -209,6 +212,11 @@ export type Database = {
       };
     };
     Functions: {
+      delete_account: {
+        Args: { p_successor?: string; p_user_id: string };
+        Returns: undefined;
+      };
+      delete_own_account: { Args: { p_successor?: string }; Returns: undefined };
       is_group_member: { Args: { p_group_id: string }; Returns: boolean };
       join_group: { Args: { p_join_code: string }; Returns: string };
       list_group_members: {
@@ -222,6 +230,14 @@ export type Database = {
       };
       preview_group: { Args: { p_join_code: string }; Returns: string };
       set_nickname: { Args: { p_nickname: string }; Returns: undefined };
+      transfer_group_ownership: {
+        Args: { p_new_owner: string };
+        Returns: undefined;
+      };
+      transfer_group_ownership_for: {
+        Args: { p_new_owner: string; p_owner: string };
+        Returns: undefined;
+      };
     };
     Enums: {
       [_ in never]: never;

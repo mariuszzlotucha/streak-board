@@ -410,20 +410,39 @@ describe("task check-offs", () => {
       expect(await stored()).toEqual([]);
     });
 
-    it("deleting an account erases its check-offs, in its own tasks and in the others'", async () => {
+    it("deleting a task creator's account through the admin API fails; the task and every check-off stay", async () => {
       const d = await createTestUser();
       await joinGroupAs(d, ga.joinCode);
       const dTaskId = await createTaskAs(d, ga.id, "Feed the cat", "daily");
       await joinTaskAs(d, taskId);
+      await joinTaskAs(m, dTaskId);
       await checkOffAs(d, taskId, today);
       await checkOffAs(d, dTaskId, today);
+      await checkOffAs(m, dTaskId, today);
+      await checkOffAs(c, taskId, today);
+      expect(await stored(taskId)).toEqual(sorted(tick(c, today), tick(d, today)));
+
+      // tasks.created_by is ON DELETE RESTRICT: the account goes only through delete_account, which first passes the
+      // tasks to the group's owner. GoTrue answers 500 without the SQLSTATE (23503 is asserted in the RLS scenarios).
+      const { error } = await adminClient().auth.admin.deleteUser(d.id);
+      expect(error?.status).toBe(500);
+      expect(error?.message).toBe("Database error deleting user");
+
+      expect(await stored(taskId)).toEqual(sorted(tick(c, today), tick(d, today)));
+      expect(await stored(dTaskId)).toEqual(sorted(tick(d, today), tick(m, today)));
+    });
+
+    it("deleting an account that created no task erases its check-offs in the others' tasks", async () => {
+      const d = await createTestUser();
+      await joinGroupAs(d, ga.joinCode);
+      await joinTaskAs(d, taskId);
+      await checkOffAs(d, taskId, today);
       await checkOffAs(c, taskId, today);
       expect(await stored(taskId)).toEqual(sorted(tick(c, today), tick(d, today)));
 
       await deleteTestUser(d);
 
       expect(await stored(taskId)).toEqual([tick(c, today)]);
-      expect(await stored(dTaskId)).toEqual([]);
     });
   });
 });

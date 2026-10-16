@@ -414,12 +414,12 @@ Usunięcie to jedna transakcja na kilku wierszach jednej grupy; `delete` z `auth
 
 #### Automated
 
-- [ ] 1.1 Migracja przechodzi strażnika: `npm run guard:migrations`
-- [ ] 1.2 Migracja aplikuje się na czystej bazie: `npx supabase db reset`
-- [ ] 1.3 Typy są świeże: `npm run types:check`
-- [ ] 1.4 Testy (unit i integracyjne) przechodzą, w tym nowy `tests/integration/account-deletion.test.ts`: `npm test`
-- [ ] 1.5 Scenariusze RLS przechodzą: `npm run test:rls`
-- [ ] 1.6 Lint i typy: `npm run lint && npx astro check`
+- [x] 1.1 Migracja przechodzi strażnika: `npm run guard:migrations`
+- [x] 1.2 Migracja aplikuje się na czystej bazie: `npx supabase db reset`
+- [x] 1.3 Typy są świeże: `npm run types:check`
+- [x] 1.4 Testy (unit i integracyjne) przechodzą, w tym nowy `tests/integration/account-deletion.test.ts`: `npm test`
+- [x] 1.5 Scenariusze RLS przechodzą: `npm run test:rls`
+- [x] 1.6 Lint i typy: `npm run lint && npx astro check`
 
 #### Manual
 

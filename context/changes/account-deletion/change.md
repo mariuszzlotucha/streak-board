@@ -1,7 +1,7 @@
 ---
 change_id: account-deletion
 title: Account deletion
-status: plan_reviewed
+status: implementing
 created: 2026-10-16
 updated: 2026-10-16
 ---

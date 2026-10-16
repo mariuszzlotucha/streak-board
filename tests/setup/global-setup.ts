@@ -93,10 +93,17 @@ async function sweepLeftovers(config: StackConfig): Promise<void> {
       .delete()
       .in("owner_id", leftovers.slice(i, i + chunkSize));
     if (groupsError) throw groupsError;
+    // tasks.created_by is ON DELETE RESTRICT: tasks a leftover user created in a group they did not own go too.
+    const { error: tasksError } = await admin
+      .from("tasks")
+      .delete()
+      .in("created_by", leftovers.slice(i, i + chunkSize));
+    if (tasksError) throw tasksError;
   }
   for (const id of leftovers) {
     const { error } = await admin.auth.admin.deleteUser(id);
-    if (error) throw error;
+    // An account deleted between the listing and here (delete_own_account in a test) is already gone.
+    if (error && error.code !== "user_not_found") throw error;
   }
 }
 

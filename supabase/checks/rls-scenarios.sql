@@ -1,4 +1,4 @@
--- RLS scenario checks for groups / group_members / tasks / task_participants / task_checkoffs / nicknames and the function set_nickname (F-01 + group-rls-hardening + S-01 helper functions + S-02 tasks + S-03 participation + S-04 check-offs + S-12 table-level privileges + S-14 nicknames, and since S-14 release 2 a list_group_members without an email column).
+-- RLS scenario checks for groups / group_members / tasks / task_participants / task_checkoffs / nicknames and the functions set_nickname, transfer_group_ownership and delete_account (F-01 + group-rls-hardening + S-01 helper functions + S-02 tasks + S-03 participation + S-04 check-offs + S-12 table-level privileges + S-14 nicknames, and since S-14 release 2 a list_group_members without an email column + S-15 ownership transfer and account deletion).
 --
 -- Run against the LOCAL Supabase database only:
 --   docker exec -i supabase_db_10x-astro-starter psql -U postgres -d postgres -X -v ON_ERROR_STOP=1 < supabase/checks/rls-scenarios.sql
@@ -381,7 +381,7 @@ begin
   ga := rls_check.new_group(a);
   perform rls_check.expect_error('42501', format('update public.groups set join_code = %L where id = %L', 'aaaaaaaaaaaa', ga), '#8 UPDATE of join_code is denied');
   perform rls_check.expect_error('42501', format('update public.groups set id = gen_random_uuid() where id = %L', ga), '#8 UPDATE of id is denied');
-  perform rls_check.expect_error('42501', format('update public.groups set owner_id = %L where id = %L', b, ga), '#8 UPDATE of owner_id is denied (no ownership transfer)');
+  perform rls_check.expect_error('42501', format('update public.groups set owner_id = %L where id = %L', b, ga), '#8 UPDATE of owner_id is denied (a transfer goes through transfer_group_ownership)');
   perform rls_check.expect_error('23514', format('update public.groups set name = %L where id = %L', '', ga), '#8 UPDATE name to empty is rejected by the CHECK');
   perform rls_check.expect_rows(format('update public.groups set name = %L where id = %L', 'renamed', ga), 1, '#8 the owner can update name');
 
@@ -627,16 +627,23 @@ begin
   perform rls_check.as_user(a);
   perform rls_check.expect_value(format('select count(*) from public.tasks where id = %L', t), '1', 'S-02 the task stays visible to the group after its creator left');
 
-  -- Cascade on user delete (M is not a group owner, so the owner_id restrict does not apply).
+  -- Deleting the group cascades to its tasks.
   perform rls_check.as_user(b);
   perform rls_check.expect_rows(format('insert into public.tasks (group_id, created_by, title, recurrence) values (%L, %L, %L, %L)', gb, b, 'B task', 'once'), 1, 'S-02 setup: B created a task in group B');
   perform rls_check.as_postgres();
   select id into tb from public.tasks where group_id = gb;
   delete from public.groups where id = gb;
   perform rls_check.expect_value(format('select count(*) from public.tasks where id = %L', tb), '0', 'S-02 deleting the group cascades to its tasks');
-  perform rls_check.expect_value(format('select count(*) from public.tasks where id = %L', t), '1', 'S-02 setup: the orphaned task still exists before its creator is deleted');
-  delete from auth.users where id = m;
-  perform rls_check.expect_value(format('select count(*) from public.tasks where id = %L', t), '0', 'S-02 deleting the creator''s account cascades to their tasks');
+
+  -- S-15: the creator's account no longer takes the task along (tasks.created_by is ON DELETE RESTRICT; M is not a group
+  -- owner, so the owner_id restrict does not apply). The account goes through delete_account, which passes the task of
+  -- a creator who left the group to that group's owner.
+  perform rls_check.expect_value(format('select count(*) from public.tasks where id = %L', t), '1', 'S-02 setup: the left-behind task still exists before its creator is deleted');
+  perform rls_check.expect_error('23503', format('delete from auth.users where id = %L', m), 'S-15 deleting a task creator''s account directly is refused (foreign_key_violation)');
+  perform rls_check.expect_value(format('select created_by::text from public.tasks where id = %L', t), m::text, 'S-15 the refused delete leaves the task with its creator');
+  perform public.delete_account(m);
+  perform rls_check.expect_value(format('select count(*) from auth.users where id = %L', m), '0', 'S-15 delete_account removes the creator''s account');
+  perform rls_check.expect_value(format('select created_by::text from public.tasks where id = %L', t), a::text, 'S-15 delete_account passes the task of a creator who left the group to the group''s owner');
 
   perform rls_check.as_postgres();
 end;
@@ -1288,6 +1295,132 @@ begin
   delete from auth.users where id = b;
   perform rls_check.expect_value(format('select count(*) from public.nicknames where user_id = %L', b), '0', 'S-14 deleting an account erases its nickname');
   perform rls_check.expect_value(format('select count(*) from public.nicknames where user_id = %L', a), '1', 'S-14 other accounts'' nicknames stay');
+
+  perform rls_check.as_postgres();
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- S-15: ownership transfer (20261016180000_account_deletion_and_ownership_transfer.sql): the owner hands the group over
+-- to another member, who gets the notice flag; the former owner stays a regular member and may leave
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  a uuid; c uuid; m uuid; x uuid; ga uuid; code_a text;
+begin
+  a := rls_check.mk_user(); c := rls_check.mk_user(); m := rls_check.mk_user(); x := rls_check.mk_user();
+
+  perform rls_check.as_user(a);
+  ga := rls_check.new_group(a);
+  code_a := rls_check.code_of(ga);
+  perform rls_check.as_user(c);
+  perform rls_check.expect_value(format('select public.join_group(%L)', code_a), ga::text, 'S-15 transfer setup: C joined group A');
+  perform rls_check.as_user(m);
+  perform rls_check.expect_value(format('select public.join_group(%L)', code_a), ga::text, 'S-15 transfer setup: M joined group A');
+
+  -- Only the owner transfers, and only to another member.
+  perform rls_check.as_user(m);
+  perform rls_check.expect_error('42501', format('select public.transfer_group_ownership(%L)', c), 'S-15 a member cannot transfer the group (42501)');
+  perform rls_check.as_user(x);
+  perform rls_check.expect_error('42501', format('select public.transfer_group_ownership(%L)', c), 'S-15 a user without a group cannot transfer anything (42501)');
+  perform rls_check.as_user(a);
+  perform rls_check.expect_error('P0003', format('select public.transfer_group_ownership(%L)', x), 'S-15 the owner cannot hand the group to a non-member (P0003)');
+  perform rls_check.expect_error('P0003', format('select public.transfer_group_ownership(%L)', a), 'S-15 the owner cannot hand the group to themselves (P0003)');
+  perform rls_check.expect_error('P0003', 'select public.transfer_group_ownership(null)', 'S-15 the owner cannot hand the group to nobody (P0003)');
+  perform rls_check.expect_value(format('select owner_id::text || %L || owner_notice_pending::text from public.groups where id = %L', ',', ga), a::text || ',false', 'S-15 the refused transfers changed nothing');
+
+  -- The internal layer is not callable by clients; anon reaches neither layer.
+  perform rls_check.expect_error('42501', format('select public.transfer_group_ownership_for(%L, %L)', a, c), 'S-15 authenticated cannot call transfer_group_ownership_for');
+  perform rls_check.expect_error('42501', format('select public.delete_account(%L)', a), 'S-15 authenticated cannot call delete_account');
+  perform rls_check.as_anon();
+  perform rls_check.expect_error('42501', format('select public.transfer_group_ownership(%L)', c), 'S-15 anon cannot call transfer_group_ownership');
+  perform rls_check.expect_error('42501', 'select public.delete_own_account()', 'S-15 anon cannot call delete_own_account');
+
+  -- The transfer.
+  perform rls_check.as_user(a);
+  perform public.transfer_group_ownership(c);
+  perform rls_check.expect_value(format('select owner_id::text || %L || owner_notice_pending::text from public.groups where id = %L', ',', ga), c::text || ',true', 'S-15 the chosen member owns the group with the notice pending');
+  perform rls_check.expect_error('42501', format('select public.transfer_group_ownership(%L)', m), 'S-15 the former owner cannot transfer again (42501)');
+
+  -- The notice flag: only the owner clears it, and its grant does not open owner_id.
+  perform rls_check.as_user(m);
+  perform rls_check.expect_rows(format('update public.groups set owner_notice_pending = false where id = %L', ga), 0, 'S-15 a member cannot clear the owner''s notice');
+  perform rls_check.as_user(c);
+  perform rls_check.expect_error('42501', format('update public.groups set owner_id = %L where id = %L', a, ga), 'S-15 the new owner still cannot UPDATE owner_id');
+  perform rls_check.expect_rows(format('update public.groups set owner_notice_pending = false where id = %L', ga), 1, 'S-15 the new owner clears the notice');
+
+  -- The former owner is a regular member now: they may leave; the new owner may not.
+  perform rls_check.expect_rows(format('delete from public.group_members where user_id = %L', c), 0, 'S-15 the new owner cannot delete their own membership');
+  perform rls_check.as_user(a);
+  perform rls_check.expect_rows(format('delete from public.group_members where user_id = %L', a), 1, 'S-15 the former owner can leave the group');
+
+  perform rls_check.as_postgres();
+end;
+$$;
+
+-- S-15: delete_account hands the group and the tasks over, keeps everyone else's progress and removes the person's
+-- data, including their security log entries; a missing successor or account changes nothing.
+do $$
+declare
+  a uuid; m uuid; s uuid; ga uuid; gs uuid; code_a text; t uuid; ts uuid;
+  d0 date := rls_check.utc_today();
+begin
+  a := rls_check.mk_user(); m := rls_check.mk_user(); s := rls_check.mk_user();
+
+  perform rls_check.as_user(a);
+  ga := rls_check.new_group(a);
+  code_a := rls_check.code_of(ga);
+  perform rls_check.as_user(m);
+  perform rls_check.expect_value(format('select public.join_group(%L)', code_a), ga::text, 'S-15 deletion setup: M joined group A');
+  perform rls_check.as_user(a);
+  perform rls_check.expect_rows(format('insert into public.tasks (group_id, created_by, title, recurrence) values (%L, %L, %L, %L)', ga, a, 'Owner task', 'daily'), 1, 'S-15 deletion setup: A created a task');
+  select id into t from public.tasks where group_id = ga;
+  perform rls_check.expect_rows(rls_check.tick(t, a, d0), 1, 'S-15 deletion setup: A checked off');
+  perform rls_check.as_user(m);
+  perform rls_check.expect_rows(format('insert into public.task_participants (task_id, user_id) values (%L, %L)', t, m), 1, 'S-15 deletion setup: M joined the task');
+  perform rls_check.expect_rows(rls_check.tick(t, m, d0), 1, 'S-15 deletion setup: M checked off');
+
+  -- Security log entries naming A as the actor and in the traits (the shapes GoTrue writes), and one naming M.
+  perform rls_check.as_postgres();
+  insert into auth.audit_log_entries (id, payload, created_at)
+  values
+    (gen_random_uuid(), json_build_object('action', 'login', 'actor_id', a::text), now()),
+    (gen_random_uuid(), json_build_object('action', 'user_signedup', 'actor_id', '00000000-0000-0000-0000-000000000000', 'traits', json_build_object('user_id', a::text)), now()),
+    (gen_random_uuid(), json_build_object('action', 'login', 'actor_id', m::text), now());
+
+  -- An owner with another member needs a valid successor; a refusal changes nothing.
+  perform rls_check.expect_error('P0003', format('select public.delete_account(%L)', a), 'S-15 an owner with members cannot be deleted without a successor (P0003)');
+  perform rls_check.expect_error('P0003', format('select public.delete_account(%L, %L)', a, s), 'S-15 an owner cannot be deleted with a non-member as successor (P0003)');
+  perform rls_check.expect_value(format('select count(*) from auth.users where id = %L', a), '1', 'S-15 the refused deletion keeps the account');
+  perform rls_check.expect_value(format('select owner_id::text from public.groups where id = %L', ga), a::text, 'S-15 the refused deletion keeps the owner');
+  perform rls_check.expect_value(format('select count(*) from auth.audit_log_entries where payload->>%L = %L or payload->%L->>%L = %L', 'actor_id', a, 'traits', 'user_id', a), '2', 'S-15 the refused deletion keeps the security log entries');
+
+  -- With M as successor.
+  perform public.delete_account(a, m);
+  perform rls_check.expect_value(format('select count(*) from auth.users where id = %L', a), '0', 'S-15 delete_account removes the owner''s account');
+  perform rls_check.expect_value(format('select owner_id::text || %L || owner_notice_pending::text from public.groups where id = %L', ',', ga), m::text || ',true', 'S-15 the successor owns the group with the notice pending');
+  perform rls_check.expect_value(format('select created_by::text from public.tasks where id = %L', t), m::text, 'S-15 the owner''s task passes to the successor');
+  perform rls_check.expect_value(format('select string_agg(user_id::text, %L) from public.task_checkoffs where task_id = %L', ',', t), m::text, 'S-15 the successor''s check-off stays and the deleted owner''s is gone');
+  perform rls_check.expect_value(format('select string_agg(user_id::text, %L) from public.group_members where group_id = %L', ',', ga), m::text, 'S-15 only the successor is left in the group');
+  perform rls_check.expect_value(format('select count(*) from public.nicknames where user_id = %L', a), '0', 'S-15 the deleted owner''s nickname is gone');
+  perform rls_check.expect_value(format('select count(*) from auth.audit_log_entries where payload->>%L = %L or payload->%L->>%L = %L', 'actor_id', a, 'traits', 'user_id', a), '0', 'S-15 the deleted owner''s security log entries are gone');
+  perform rls_check.expect_value(format('select count(*) from auth.audit_log_entries where payload->>%L = %L', 'actor_id', m), '1', 'S-15 another account''s security log entry stays');
+
+  perform rls_check.expect_error('P0002', format('select public.delete_account(%L)', gen_random_uuid()), 'S-15 deleting an account that does not exist -> P0002');
+
+  -- The owner who is the only member deletes their own account: the group and its tasks go with it.
+  perform rls_check.as_user(s);
+  gs := rls_check.new_group(s);
+  perform rls_check.expect_rows(format('insert into public.tasks (group_id, created_by, title, recurrence) values (%L, %L, %L, %L)', gs, s, 'Solo task', 'daily'), 1, 'S-15 solo setup: S created a task');
+  select id into ts from public.tasks where group_id = gs;
+  perform rls_check.expect_rows(rls_check.tick(ts, s, d0), 1, 'S-15 solo setup: S checked off');
+  perform public.delete_own_account();
+  perform rls_check.as_postgres();
+  perform rls_check.expect_value(format('select count(*) from auth.users where id = %L', s), '0', 'S-15 delete_own_account removes the caller''s account');
+  perform rls_check.expect_value(format('select count(*) from public.groups where id = %L', gs), '0', 'S-15 the only member''s group goes with the account');
+  perform rls_check.expect_value(format('select count(*) from public.tasks where id = %L', ts), '0', 'S-15 the only member''s tasks go with the group');
+  perform rls_check.expect_value(format('select count(*) from public.task_checkoffs where task_id = %L', ts), '0', 'S-15 the only member''s check-offs go with the tasks');
 
   perform rls_check.as_postgres();
 end;
