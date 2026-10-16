@@ -37,8 +37,8 @@ export async function listGroupMembers(supabase: Supabase, groupId: string): Pro
   const { data, error } = await supabase.rpc("list_group_members", { p_group_id: groupId });
   if (error) throw error;
   // The generated types say every row has a nickname and the result is never null; at runtime either can be NULL.
-  // Until the release that drops it, the RPC also returns each member's email, which the app must never pass on, so
-  // every row is copied field by field instead of being returned as it came.
+  // Every row is copied field by field instead of being returned as it came, so a column the RPC might gain later never
+  // reaches the dashboard without a change here.
   if (!Array.isArray(data)) return [];
   return data.map((row) => {
     const nickname: string | null = row.nickname;

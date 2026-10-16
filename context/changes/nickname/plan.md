@@ -487,12 +487,12 @@ Brama dodaje jeden odczyt PostgREST po kluczu głównym na każde żądanie chro
 
 #### Automated
 
-- [ ] 2.1 Strażnik migracji przyjmuje migrację B ze znacznikiem
-- [ ] 2.2 Migracja B stosuje się, a typy są świeże
-- [ ] 2.3 Lint i build przechodzą
-- [ ] 2.4 Testy integracyjne z asercją kluczy odpowiedzi RPC przechodzą
-- [ ] 2.5 Scenariusze RLS bez asercji e-maila i z asercją braku kolumny przechodzą
-- [ ] 2.6 Smoke fazy 1 przechodzi bez zmian na schemacie bez kolumny `email`
+- [x] 2.1 Strażnik migracji przyjmuje migrację B ze znacznikiem
+- [x] 2.2 Migracja B stosuje się, a typy są świeże
+- [x] 2.3 Lint i build przechodzą
+- [x] 2.4 Testy integracyjne z asercją kluczy odpowiedzi RPC przechodzą
+- [x] 2.5 Scenariusze RLS bez asercji e-maila i z asercją braku kolumny przechodzą
+- [x] 2.6 Smoke fazy 1 przechodzi bez zmian na schemacie bez kolumny `email`
 
 #### Manual
 

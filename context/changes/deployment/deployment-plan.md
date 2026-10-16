@@ -2,7 +2,7 @@
 project: streak-board
 based_on: context/foundation/infrastructure.md
 platform: Cloudflare Workers
-status: phases_0-16_done_17_partial
+status: phases_0-16_done_17_partial_18_partial
 last_updated: 2026-10-16
 ---
 
@@ -329,6 +329,34 @@ Not run:
 - [ ] **5.12**: skipped by the owner on 2026-10-16 (optional, owner only).
 
 Observation, not investigated: before the 1.6 check, the dev server logged `Invalid hook call` and `TypeError: Cannot read properties of null (reading 'useContext')` from `lucide-react` inside a React island, after a `[vite] program reload`. It did not recur during the check. It appears in dev only; the production build was not checked for it.
+
+## Phase 18 — S-14 nickname: two releases (change `nickname`, S-14)
+
+**Status: Partly done (2026-10-16)** — the change ships in two releases, because the `compat` job runs the smoke of the commit under the `production` tag against the PR's migrations (`context/changes/nickname/plan.md`, "Critical Implementation Details"). Release 1 (plan Phase 1) added the nickname next to the e-mail address in `list_group_members` and switched all the code to it; it is released, and the owner's two production checks are still open. Release 2 (plan Phase 2) drops the `email` column from `list_group_members`; its PR may be opened only while the tag points at a commit that contains the Phase 1 merge, and its record below is filled in by the closing docs PR after its own release (lesson "Close every slice by merging to master, approving the production release and checking the production URL").
+
+Release 1 (migration A):
+
+- [x] Code: PR #150 (branch `s-14/nickname/implementation`, https://github.com/mariuszzlotucha/streak-board/pull/150), merged on 2026-10-16 at 15:47 UTC as merge commit `62204c7`. `compat` ran green on the PR (the smoke of the then-deployed commit `144fd2a` against migration A).
+- [x] `release` for PR #150: CI run 38926815420 on the `master` push of `62204c7`: `ci`, `smoke`, `e2e` and `integration` green, `compat` skipped on `master` (it runs on PRs only); `release` was approved by the owner, and its job ran from 15:52:29 to 15:53:37 UTC with every step green. `supabase db push` applied exactly one migration, `20261016162551_add_nicknames.sql`; `wrangler deploy` printed `Current Version ID: cba83d63-5e2a-4fcd-96b2-ede52cf879eb`; "Mark the deployed commit" moved the tag `144fd2a...62204c7 production -> production (forced update)`. `git ls-remote --tags origin production` showed `62204c78e2b2ca631a488db6bf26f985fdfb5a9a` on 2026-10-16.
+- [x] Anonymous live check by the agent (2026-10-16, about 15:56 UTC, `https://streakboard.app`): `/` 200; `/privacy` 200 with the new nickname text ("The other members of your group see your nickname … They do not see your e-mail address."); `/dashboard` 302 to `/auth/signin`; `/account/nickname` 302 to `/auth/signin`.
+- [ ] Owner's signed-in production check (plan row 1.19): pending, owner. Expected: the own account reaches the nickname page once and after saving the dashboard shows the nickname in the member list and on the leaderboard; members who have not signed in since show as "Unknown member"; `/settings` shows the own e-mail address; `/privacy` has the new text. Result: _(to be recorded by the owner, with the date)_.
+- [ ] Google account on production (plan row 1.20): pending, owner (the local stack has no Google provider). Result: _(to be recorded: the nickname page proposed the name from Google, or the field stayed empty, with the date)_.
+- RLS scenario assertions: 326 after Phase 1 (the S-14 section and the nickname rows of S-01).
+
+Release 2 (migration B, `20261016175817_drop_email_from_list_group_members.sql`):
+
+- Code: branch `s-14/nickname/phase-2`, cut from `origin/master` `62204c7`. Migration B drops and recreates `list_group_members` with `returns table (user_id uuid, nickname text, joined_at timestamptz, is_owner boolean)`, without the join of `auth.users`. The RLS scenarios lose the two e-mail assertions of S-01 and gain "S-14 list_group_members has no email column": 325 assertions.
+- [ ] Tag check before the PR is opened (plan row 2.8): `git ls-remote --tags origin production` must name a commit that contains the Phase 1 merge `62204c7` (`git merge-base --is-ancestor 62204c7 <tag sha>` exits 0). On 2026-10-16 the tag was at `62204c7` itself. Result: _(date and tag SHA when the PR is opened)_.
+- [ ] `compat` on the PR (plan row 2.7): the smoke of the tagged Phase 1 commit against migration B. Result: _(PR URL, run number)_.
+- [ ] `release` for the Phase 2 PR (plan row 2.9): _(date, merge commit, run number, job times, `db push` output naming exactly `20261016175817_drop_email_from_list_group_members.sql`, Cloudflare version, tag move)_.
+- [ ] Owner's production check after release 2 (plan row 2.10): the dashboard with a group loads, the member list, the task participants and the leaderboard show nicknames, `/settings` shows the own e-mail address. Result: _(to be recorded by the owner, with the date)_.
+
+E-mail exposure window (Phase 1 review, F2): from release 1 the privacy policy says the other members do not see a member's e-mail address, while `list_group_members` still returned it to any member who called the RPC directly through PostgREST (the app itself no longer passed it on). The window opened with release 1 on 2026-10-16 at 15:53 UTC and closes with release 2: _(date and time of the release 2 job, to be filled in)_.
+
+Rollback:
+
+- Code: `npx wrangler rollback` to the previous Worker version, then the owner moves the tag by hand to the rolled-back commit (`git tag -f production <sha> && git push --force origin refs/tags/production`, README, Rollback), otherwise `compat` tests code that is no longer live.
+- Schema: not rolled back. Rolling the code back to release 1 (`cba83d63-5e2a-4fcd-96b2-ede52cf879eb`, `62204c7`) is safe after migration B, because that code reads only `user_id`, `nickname`, `joined_at` and `is_owner`. Code from before release 1 reads `email`, which no longer exists after migration B, so a rollback below release 1 needs a separate migration that restores the column first. Migration A adds a table, a function and a column, so code from before release 1 runs on it unchanged as long as migration B is not applied.
 
 ## Verification checklist (end-to-end, once unblocked)
 
