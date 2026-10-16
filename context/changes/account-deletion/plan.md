@@ -457,9 +457,9 @@ Usunięcie to jedna transakcja na kilku wierszach jednej grupy; `delete` z `auth
 
 #### Automated
 
-- [x] 4.1 Lint i formatowanie: `npm run lint && npx prettier --check context/foundation/prd.md context/domain CLAUDE.md README.md`
-- [x] 4.2 Build (polityka renderuje się): `npm run build`
-- [x] 4.3 Smoke przechodzi (strona `/privacy` i jej link `mailto:`): `npm run smoke`
+- [x] 4.1 Lint i formatowanie: `npm run lint && npx prettier --check context/foundation/prd.md context/domain CLAUDE.md README.md` — ff34e81
+- [x] 4.2 Build (polityka renderuje się): `npm run build` — ff34e81
+- [x] 4.3 Smoke przechodzi (strona `/privacy` i jej link `mailto:`): `npm run smoke` — ff34e81
 
 #### Manual
 
