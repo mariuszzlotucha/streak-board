@@ -480,8 +480,8 @@ Brama dodaje jeden odczyt PostgREST po kluczu głównym na każde żądanie chro
 - [ ] 1.16 `/settings` pokazuje kartę Account, zmiana nicka wraca na `/settings`
 - [ ] 1.17 Przegląd `/privacy`, `/auth/signup`, README i CLAUDE.md
 - [x] 1.18 PR scalony, `release` zatwierdzony z migracją A — 62204c7
-- [ ] 1.19 Kontrola produkcji po wydaniu 1
-- [ ] 1.20 Konto Google na produkcji: podpowiedź imienia sprawdzona i zapisana
+- [x] 1.19 Kontrola produkcji po wydaniu 1 — 62204c7
+- [x] 1.20 Konto Google na produkcji: podpowiedź imienia sprawdzona i zapisana — 62204c7
 
 ### Phase 2: Wydanie 2: `list_group_members` bez e-maila
 
@@ -496,8 +496,8 @@ Brama dodaje jeden odczyt PostgREST po kluczu głównym na każde żądanie chro
 
 #### Manual
 
-- [ ] 2.7 `compat` na PR-ze fazy zielony
-- [ ] 2.8 Tag `production` zawiera merge fazy 1 przed otwarciem PR-a
-- [ ] 2.9 PR scalony, `release` zatwierdzony z migracją B
-- [ ] 2.10 Kontrola produkcji po wydaniu 2
-- [ ] 2.11 Zapis wydania 2 w `deployment-plan.md` Phase 18
+- [x] 2.7 `compat` na PR-ze fazy zielony — a08916e
+- [x] 2.8 Tag `production` zawiera merge fazy 1 przed otwarciem PR-a — a08916e
+- [x] 2.9 PR scalony, `release` zatwierdzony z migracją B — a08916e
+- [x] 2.10 Kontrola produkcji po wydaniu 2 — a08916e
+- [x] 2.11 Zapis wydania 2 w `deployment-plan.md` Phase 18 — a08916e
