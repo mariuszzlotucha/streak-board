@@ -24,7 +24,7 @@ milestone_status: open
 
 - **Intent:** Po zamknięciu pierwszego pełnego cyklu (M-1) doprowadzić wdrożone MVP do stanu, w którym można je pokazać realnym użytkownikom i zbierać od nich informację zwrotną: własny adres, łatwe logowanie kontem Google, strona startowa tłumacząca produkt, czytelniejszy widok grupy, testy chroniące zmiany oraz awarie, które nie giną po cichu.
 - **Source materials:** `context/foundation/roadmap-input-next-slices.md` (MS-01 do MS-05, zakres uzgodniony z użytkownikiem po zamknięciu wszystkich pozycji M-1), późniejszy opis użytkownika (MS-06) oraz FR-001 z PRD v1 („email/OAuth/passwordless"), na którym opiera się MS-06. Poza FR-001 ten kamień milowy nie realizuje nowych FR-ów.
-- **Done when:** każdy S-06 do S-13 poniżej ma status `done`.
+- **Done when:** każdy S-06 do S-14 poniżej ma status `done` (S-14 dołączony decyzją właściciela 2026-10-16).
 - **Scope anchors:** źródło nie ma własnych identyfikatorów, więc zakres jest zapisany jako kotwice `MS-NN`, po jednej na wycinek: MS-01 do MS-05 z wyników opisanych w pliku wejściowym, MS-06 z późniejszego opisu użytkownika:
   - MS-01: użytkownik wchodzi na aplikację pod własną domeną właściciela, a rejestracja, logowanie i link potwierdzający działają na tej domenie.
   - MS-02: (jakościowy) zmiany w aplikacji są chronione testami wybranymi według ryzyka, a jakość testów jednostkowych jest mierzona mutacjami.
@@ -34,6 +34,7 @@ milestone_status: open
   - MS-06: użytkownik może zalogować się kontem Google (logowanie bez hasła); to ta część FR-001 z PRD (OAuth/passwordless), która nie weszła do M-1.
   - MS-07: (jakościowy) wybrane okazje refaktoryzacji z analizy data-access są wdrożone bez zmiany zachowania widocznego dla użytkownika (decyzja użytkownika 2026-10-08: istniejąca zmiana `refactor-opportunities` staje się wycinkiem).
   - MS-08: członek grupy widzi siatkę odznaczeń: uczestnicy × ostatnie okresy tasku, wykonane i niewykonane (decyzja użytkownika 2026-10-08: odparkowanie historii w zakresie prostej siatki, bez wykresów i statystyk).
+  - MS-09: członkowie grupy widzą nawzajem nick zamiast adresu e-mail, a własny adres widzi tylko właściciel konta w ustawieniach (decyzja użytkownika 2026-10-16: S-14 dołączony do M-2, przed S-13).
 
 ## Vision recap
 
@@ -47,16 +48,17 @@ Grono znajomych korzystało wcześniej ze wspólnego arkusza Google, w którym r
 
 ## At a glance
 
-| ID   | Change ID                      | Outcome (user can …)                                                                                                                                     | Prerequisites                                           | PRD refs                           | Status   |
-| ---- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ---------------------------------- | -------- |
-| S-06 | custom-domain                  | wejść na aplikację pod domeną `streakboard.app`; rejestracja, logowanie i link potwierdzający działają na tej domenie                                    | domena `streakboard.app` w Cloudflare (Registrar i DNS) | — (operacyjne; MS-01)              | done     |
-| S-07 | google-login                   | zarejestrować się i zalogować kontem Google, bez ustawiania hasła                                                                                        | S-06                                                    | FR-001 (OAuth/passwordless); MS-06 | done     |
-| S-08 | observability-swallowed-errors | (jakościowy) awaria w krytycznym przepływie nie jest połykana ani zamieniana na sukces: trafia do odpowiedzi API i do monitoringu                        | —                                                       | — (jakościowe; MS-05)              | done     |
-| S-09 | landing-page                   | zobaczyć jako niezalogowany stronę startową, która tłumaczy, czym jest aplikacja, i prowadzi do rejestracji lub logowania                                | S-06, S-07                                              | — (UI; MS-03)                      | done     |
-| S-10 | test-coverage                  | (jakościowy) zmiany w aplikacji są chronione testami wybranymi według ryzyka, a jakość testów jednostkowych jest mierzona mutacjami                      | —                                                       | — (jakościowe; MS-02)              | done     |
-| S-11 | dashboard-ui                   | korzystać z czytelniejszego, spójnego wizualnie widoku grupy, tasków i tablicy wyników                                                                   | S-08                                                    | — (UI; MS-04)                      | done     |
-| S-12 | refactor-opportunities         | (jakościowy) znane ciche luki są zamknięte: raportowanie błędów dashboardu, strażnicy migracji i typów w CI, testy tras i reguł, jawne uprawnienia tabel | —                                                       | — (jakościowe; MS-07)              | done     |
-| S-13 | checkoff-grid                  | zobaczyć siatkę odznaczeń grupy: kto wykonał task w każdym z ostatnich okresów                                                                           | S-11                                                    | — (UI; MS-08)                      | proposed |
+| ID   | Change ID                      | Outcome (user can …)                                                                                                                                     | Prerequisites                                           | PRD refs                            | Status   |
+| ---- | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- | ----------------------------------- | -------- |
+| S-06 | custom-domain                  | wejść na aplikację pod domeną `streakboard.app`; rejestracja, logowanie i link potwierdzający działają na tej domenie                                    | domena `streakboard.app` w Cloudflare (Registrar i DNS) | — (operacyjne; MS-01)               | done     |
+| S-07 | google-login                   | zarejestrować się i zalogować kontem Google, bez ustawiania hasła                                                                                        | S-06                                                    | FR-001 (OAuth/passwordless); MS-06  | done     |
+| S-08 | observability-swallowed-errors | (jakościowy) awaria w krytycznym przepływie nie jest połykana ani zamieniana na sukces: trafia do odpowiedzi API i do monitoringu                        | —                                                       | — (jakościowe; MS-05)               | done     |
+| S-09 | landing-page                   | zobaczyć jako niezalogowany stronę startową, która tłumaczy, czym jest aplikacja, i prowadzi do rejestracji lub logowania                                | S-06, S-07                                              | — (UI; MS-03)                       | done     |
+| S-10 | test-coverage                  | (jakościowy) zmiany w aplikacji są chronione testami wybranymi według ryzyka, a jakość testów jednostkowych jest mierzona mutacjami                      | —                                                       | — (jakościowe; MS-02)               | done     |
+| S-11 | dashboard-ui                   | korzystać z czytelniejszego, spójnego wizualnie widoku grupy, tasków i tablicy wyników                                                                   | S-08                                                    | — (UI; MS-04)                       | done     |
+| S-12 | refactor-opportunities         | (jakościowy) znane ciche luki są zamknięte: raportowanie błędów dashboardu, strażnicy migracji i typów w CI, testy tras i reguł, jawne uprawnienia tabel | —                                                       | — (jakościowe; MS-07)               | done     |
+| S-13 | checkoff-grid                  | zobaczyć siatkę odznaczeń grupy: kto wykonał task w każdym z ostatnich okresów                                                                           | S-11, S-14                                              | — (UI; MS-08)                       | proposed |
+| S-14 | nickname                       | ustawić nick, który inni członkowie grupy widzą zamiast e-maila                                                                                          | —                                                       | — (nowa funkcja; PRD nie zna nicka) | planning |
 
 ## Streams
 
@@ -198,7 +200,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Outcome:** członek grupy widzi dla każdego tasku siatkę: uczestnicy × ostatnie okresy, z zaznaczeniem, kto w danym okresie wykonał task, a kto nie.
 - **Change ID:** checkoff-grid
 - **PRD refs:** — (UI; MS-08)
-- **Prerequisites:** S-11
+- **Prerequisites:** S-11, S-14 (decyzja właściciela 2026-10-16: nick przed siatką, bo oba wycinki edytują politykę prywatności, PRD, słownik, `dashboard-data.ts`, smoke i fixture'y, a siatka ma od razu pokazywać nicki)
 - **Parallel with:** S-10, S-12
 - **Blockers:** —
 - **Unknowns:**
@@ -208,6 +210,25 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Stan wejściowy (2026-10-08):** po podziale `dashboard.astro` nowy odczyt wielu okresów trafia do `loadDashboard` (`src/lib/dashboard-data.ts`, z testami jednostkowymi), a siatka to nowy komponent obok `TaskRow`/`TasksCard` w `src/components/dashboard/`. Polityka prywatności też jest podzielona na sekcje (`src/components/privacy/`), więc zmiana „kto co widzi” to edycja `WhoCanSee.astro`.
 - **Risk:** Dane już są (`task_checkoffs` per okres), więc to głównie nowy odczyt i widok. Idzie po S-11, żeby nie stylować siatki dwa razy. Zmienia, co członkowie grupy widzą o sobie nawzajem (historia zamiast bieżącego okresu), więc w tej samej zmianie trzeba zaktualizować politykę prywatności, słownik (`glossary.md` dziś zalicza historię do rzeczy, których aplikacja nie obiecuje) i PRD. Odczyt wielu okresów dokłada pracy do `/dashboard`, którego czas CPU nie był mierzony (otwarte ryzyko po S-04).
 - **Status:** proposed
+
+### S-14: Nick zamiast e-maila
+
+- **Outcome:** zalogowany użytkownik ustawia nick, a członkowie jego grupy widzą nick zamiast jego e-maila: w widoku i w danych, które aplikacja pobiera.
+- **Change ID:** nickname
+- **PRD refs:** — (nowa funkcja; PRD nie zna nicka, FR do dopisania)
+- **Prerequisites:** —
+- **Parallel with:** — (dotyka tych samych plików co S-13, patrz Risk; S-13 idzie po S-14)
+- **Blockers:** —
+- **Unknowns:**
+  - Gdzie pokazujemy nick, a gdzie e-mail? — Owner: user. Block: no. Rozstrzygnięte (2026-10-16, `/10x-frame`): nick we wszystkich czterech miejscach (lista członków, uczestnicy tasków, tablica wyników, linia „Signed in as” na dashboardzie); własny e-mail może zostać tylko na `/settings`; ujawnieniem jest też to, co inny członek dostaje w tle (HTML, RPC), więc `list_group_members` przestaje zwracać e-mail.
+  - Kto ustawia nick i co z kontami, które go nie mają? — Owner: user. Block: no. Rozstrzygnięte (2026-10-16, `/10x-frame`): nick obowiązkowy dla każdego konta, także istniejących; inni nigdy nie widzą konta bez nazwy; członkowie rozpoznają się po nazwie; aplikacja może używać imienia, które Google przekazuje przy logowaniu (polityka „The app uses only the e-mail address” do zmiany). Mechanika wymuszenia i sposób użycia imienia od Google: `/10x-plan`.
+  - Reguły nicka: długość (propozycja: 2–24 znaki) i unikalność w całej aplikacji (propozycja: tak, żeby lista członków była jednoznaczna). — Owner: user. Block: no. Rozstrzygnięte (2026-10-16, `/10x-plan`): 2–24 znaki po przycięciu spacji, tabulatora, CR i LF (punkty kodowe), dowolne znaki jak w nazwie grupy, unikalność dosłowna w całej aplikacji („Kasia” i „kasia” to dwa nicki); istniejące konta bez backfillu (do pierwszego logowania inni widzą „Unknown member”); imię od Google tylko jako podpowiedź. Plan: `context/changes/nickname/plan.md`.
+  - Kolejność względem S-13: oba wycinki zmieniają `WhoCanSee.astro`, PRD i słownik. — Owner: user. Block: no. Rozstrzygnięte (2026-10-16): S-14 pierwszy; S-14 jest warunkiem wstępnym S-13.
+  - Czy nick należy do M-2? „Done when” M-2 (`roadmap.md:27`) obejmowało tylko S-06 do S-13. — Owner: user. Block: no. Rozstrzygnięte (2026-10-16): tak, S-14 wchodzi do „Done when” M-2 (kotwica MS-09).
+- **Źródło zakresu:** opis użytkownika z 2026-10-16: nick zamiast e-maila w aplikacji.
+- **Stan wejściowy (2026-10-16):** e-mail członka pokazują `src/layouts/AppLayout.astro:47` („Signed in as”, dashboard i ustawienia), `src/components/dashboard/MembersCard.astro:32` (także potwierdzenie usunięcia, `:42–44`), `src/components/dashboard/TaskRow.astro:78` (uczestnicy tasków) i `src/components/tasks/Leaderboard.tsx:32` (tablica wyników; sortowanie po e-mailu w `src/lib/leaderboard-rules.ts:51`). Mapę e-maili uczestników buduje `src/lib/dashboard-data.ts:168–171`. Dane pochodzą z RPC `list_group_members` (`supabase/migrations/20260925161234_add_group_member_list_and_preview.sql`), które zwraca e-mail każdemu członkowi grupy (`src/lib/groups.ts:36`). Teksty o widoczności: `src/pages/auth/signup.astro:17`, `src/components/privacy/WhoCanSee.astro:9,15,17` i `src/components/privacy/WhatWeCollect.astro:14–15`. Testy i fixture'y: `tests/integration/group-isolation.test.ts:111`, `tests/e2e/checkoff-round-trip.spec.ts:29–36`, `src/components/dev/dashboard-fixtures.ts`.
+- **Risk:** Samo ukrycie w widoku nie chroni danych: RPC nadal zwracałby e-maile każdemu członkowi grupy, więc zmiana obejmuje też RPC i wygenerowany `src/types.ts`. Nowa tabela z nickiem wymaga RLS i polityk per operacja i rolę (CLAUDE.md). Polityka prywatności opisuje dziś e-mail jako widoczny dla członków grupy, więc zmienia się razem z kodem, a z nią tekst przy rejestracji i PRD. Wycinek dotyka tych samych plików co S-13 (`WhoCanSee.astro`, PRD, słownik, `src/lib/dashboard-data.ts`), więc nie idzie równolegle bez uzgodnienia kolejności. Konta sprzed zmiany nie mają nicka, a wariant z pytania o ustawianie nicka decyduje, czy przy pierwszym wejściu pojawi się ekran wyboru.
+- **Status:** planning
 
 ## Backlog Handoff
 
@@ -220,7 +241,8 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-10       | test-coverage                  | Testy dobrane według ryzyka: jednostkowe, mutacyjne i e2e kluczowych przepływów             | done                  | Zarchiwizowane 2026-10-16; `context/archive/2026-10-15-test-coverage/`.                                                             |
 | S-11       | dashboard-ui                   | Czytelniejszy widok grupy, tasków i tablicy wyników                                         | done                  | Zarchiwizowane 2026-10-12; `context/archive/2026-10-09-dashboard-ui/`.                                                              |
 | S-12       | refactor-opportunities         | Okazje refaktoryzacji: raportowanie dashboardu, strażnicy CI, testy tras, jawne uprawnienia | done                  | Zarchiwizowane 2026-10-15; `context/archive/2026-10-06-refactor-opportunities/`.                                                    |
-| S-13       | checkoff-grid                  | Siatka odznaczeń grupy: uczestnicy × ostatnie okresy                                        | no                    | S-11 zrobione, więc nic nie blokuje. Zwykły łańcuch od `/10x-frame`; aktualizacja PRD, słownika i polityki prywatności w zakresie.  |
+| S-13       | checkoff-grid                  | Siatka odznaczeń grupy: uczestnicy × ostatnie okresy                                        | no                    | Po S-14 (decyzja 2026-10-16). Zwykły łańcuch od `/10x-frame`; aktualizacja PRD, słownika i polityki prywatności w zakresie.         |
+| S-14       | nickname                       | Nick zamiast e-maila w widoku i w danych członków grupy                                     | planned               | Plan z 2026-10-16: `context/changes/nickname/plan.md` (dwie fazy, dwa wydania). Następny krok: `/10x-plan-review nickname`.         |
 
 ## Open Roadmap Questions
 
