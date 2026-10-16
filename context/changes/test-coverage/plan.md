@@ -505,7 +505,7 @@ No schema change and no data migration. The `production` tag is new repository m
 
 #### Manual
 
-- [ ] 2.6 Deliberate-break checks: each new spec turned red on its risk assertion when the behaviour it protects was broken, and green again after the revert (the break and the red line are recorded in the PR)
+- [x] 2.6 Deliberate-break checks: each new spec turned red on its risk assertion when the behaviour it protects was broken, and green again after the revert (the break and the red line are recorded in the PR) — PR #133 description, P2: `peekJoinCode` → `null` (invite spec :68), `checkOff` ok without the insert (check-off spec :77), `isOwner || true` (member spec :49), delete route no-op (owner spec :64), each red then restored; confirmed by the owner 2026-10-16
 - [ ] 2.7 Leftover check after a green and a red run: no persona accounts (admin `listUsers` by the test tokens) and no groups of theirs remain
 - [ ] 2.8 Spec titles and origin headers name the risk facet and the seed, and no spec waits on time or uses a CSS selector
 
@@ -534,7 +534,7 @@ No schema change and no data migration. The `production` tag is new repository m
 
 #### Manual
 
-- [ ] 4.5 Deliberate break: with `security: { checkOrigin: false }` in `astro.config.mjs` (never committed) every foreign-Origin smoke step fails and the rest passes; the file is restored afterwards
+- [x] 4.5 Deliberate break: with `security: { checkOrigin: false }` in `astro.config.mjs` (never committed) every foreign-Origin smoke step fails and the rest passes; the file is restored afterwards — PR #133 description, P4: 21 foreign-Origin steps red plus 4 state-intact steps, `astro.config.mjs` unchanged on the branch (`git diff origin/master...HEAD -- src` and the config were clean); confirmed by the owner 2026-10-16
 - [ ] 4.6 Test-plan §2 backport, §3 row 3, §5 row, §6.1, §6.4 and §6.6 read correctly
 - [x] 4.7 The owner reads back the hosted Auth settings (sign-in/sign-up and e-mail rate limits, captcha on or off, Confirm email on) in the Supabase dashboard and records them in the PR description, to be carried into the Phase 6 deployment-plan entry — read back on 2026-10-16 (sign-ups and sign-ins 30 per 5 min per IP, e-mails 30 per hour, captcha off, Confirm email on), in the PR #133 description and deployment-plan Phase 16
 
@@ -564,8 +564,8 @@ No schema change and no data migration. The `production` tag is new repository m
 
 #### Manual
 
-- [ ] 6.4 With the owner's go-ahead, a scratch draft PR that adds a migration the deployed code cannot survive (for example a `drop column` on a column it reads) shows `compat` failing in the deployed commit's smoke; closed unmerged, branch deleted
-- [ ] 6.5 With the owner's go-ahead, a scratch draft PR that adds a compatible, additive migration shows `compat` passing; closed unmerged, branch deleted
+- [x] 6.4 With the owner's go-ahead, a scratch draft PR that adds a migration the deployed code cannot survive (for example a `drop column` on a column it reads) shows `compat` failing in the deployed commit's smoke; closed unmerged, branch deleted — scratch PR #131 (`tasks.title` renamed), `compat` red in the deployed smoke, run 38822675599; closed unmerged, branch deleted; deployment-plan Phase 16; confirmed by the owner 2026-10-16
+- [x] 6.5 With the owner's go-ahead, a scratch draft PR that adds a compatible, additive migration shows `compat` passing; closed unmerged, branch deleted — scratch PR #132 (nullable `tasks.scratch_note`), `compat` green with 227/227 deployed smoke steps, run 38822678146; closed unmerged, branch deleted; deployment-plan Phase 16; confirmed by the owner 2026-10-16
 - [x] 6.6 Release and tag move: after the merge, the owner approves the `release` run; `git fetch --tags origin && git rev-parse production` equals the merge commit and the live check passes — run 38825633332 approved by the owner, `production` at 45b7657 (moved by the job, "forced update" from fb62d74), live check green, 2026-10-16
 - [x] 6.7 The owner adds `ci`, `smoke`, `e2e` and `compat` to the required checks of the `master` ruleset; `gh api repos/mariuszzlotucha/streak-board/rulesets/24254172` lists `integration`, `ai-review`, `ci`, `smoke`, `e2e` and `compat` — owner's PUT on 2026-10-16, read back the same day
 - [ ] 6.8 README (CI, Release, Rollback), test-plan §3, §5, §6.5, §7, §8 and the lessons entry read correctly
