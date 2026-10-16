@@ -6,10 +6,12 @@ import { createClient } from "@/lib/supabase";
 import { POST as accountNickname } from "@/pages/api/account/nickname";
 import { POST as groupsCreate } from "@/pages/api/groups/create";
 import { POST as groupsDelete } from "@/pages/api/groups/delete";
+import { POST as groupsDismissOwnerNotice } from "@/pages/api/groups/dismiss-owner-notice";
 import { POST as groupsJoin } from "@/pages/api/groups/join";
 import { POST as groupsLeave } from "@/pages/api/groups/leave";
 import { POST as groupsRemoveMember } from "@/pages/api/groups/remove-member";
 import { POST as groupsRename } from "@/pages/api/groups/rename";
+import { POST as groupsTransfer } from "@/pages/api/groups/transfer";
 import { POST as tasksCheckoff } from "@/pages/api/tasks/checkoff";
 import { POST as tasksCreate } from "@/pages/api/tasks/create";
 import { POST as tasksDelete } from "@/pages/api/tasks/delete";
@@ -25,7 +27,7 @@ import {
   type Supabase,
 } from "../helpers/fake-supabase";
 
-// Characterization of the 14 data routes: what each answers, reports and asks the client today, pinned against a
+// Characterization of the 16 data routes: what each answers, reports and asks the client today, pinned against a
 // scripted fake client (tests/helpers/fake-supabase.ts) so a later restructuring keeps the same contract. The two
 // per-route suites (groups-join-route, tasks-create-route) stay: they pin the report fields and secret scrubbing in
 // more detail. This file deliberately does not import tests/helpers/supabase.ts (database cleanup hooks).
@@ -37,10 +39,12 @@ type RouteId =
   | "account/nickname"
   | "groups/create"
   | "groups/delete"
+  | "groups/dismiss-owner-notice"
   | "groups/join"
   | "groups/leave"
   | "groups/remove-member"
   | "groups/rename"
+  | "groups/transfer"
   | "tasks/checkoff"
   | "tasks/create"
   | "tasks/delete"
@@ -103,7 +107,7 @@ const OTHER = "22222222-2222-4222-8222-222222222222";
 const STRANGER = "33333333-3333-4333-8333-333333333333";
 const TASK = "44444444-4444-4444-8444-444444444444";
 const CODE = "a1b2c3d4e5f6";
-const GROUP = { id: "g-1", name: "Runners", join_code: CODE, owner_id: USER };
+const GROUP = { id: "g-1", name: "Runners", join_code: CODE, owner_id: USER, owner_notice_pending: true };
 const ANON: Locals = { user: null, nickname: null };
 const JSON_HEADERS = { Accept: "application/json" };
 
@@ -124,10 +128,12 @@ const ROUTES: Record<RouteId, RouteEntry> = {
   },
   "groups/create": { POST: groupsCreate, event: "groups.create", validForm: { name: "  Runners  " } },
   "groups/delete": { POST: groupsDelete, event: "groups.delete", validForm: {} },
+  "groups/dismiss-owner-notice": { POST: groupsDismissOwnerNotice, event: "groups.owner_notice", validForm: {} },
   "groups/join": { POST: groupsJoin, event: "groups.join", validForm: { code: CODE } },
   "groups/leave": { POST: groupsLeave, event: "groups.leave", validForm: {} },
   "groups/remove-member": { POST: groupsRemoveMember, event: "groups.remove_member", validForm: { user_id: OTHER } },
   "groups/rename": { POST: groupsRename, event: "groups.rename", validForm: { name: "  Runners  " } },
+  "groups/transfer": { POST: groupsTransfer, event: "groups.transfer", validForm: { new_owner_id: OTHER } },
   "tasks/checkoff": { POST: tasksCheckoff, event: "checkoff", validForm: { task_id: TASK } },
   "tasks/create": { POST: tasksCreate, event: "tasks.create", validForm: { title: "  Run  ", recurrence: "daily" } },
   "tasks/delete": { POST: tasksDelete, event: "tasks.delete", validForm: { task_id: TASK } },
@@ -153,7 +159,11 @@ const task = (recurrence: string) => ({ id: TASK, title: "Run", recurrence, crea
 const step = (method: string, ...args: unknown[]): RecordedStep => ({ method, args });
 const from = (name: string, ...chain: RecordedStep[]): RecordedCall => ({ kind: "from", name, chain });
 const rpc = (name: string, params: unknown): RecordedCall => ({ kind: "rpc", name, chain: [step("rpc", params)] });
-const MY_GROUP = from("groups", step("select", "id, name, join_code, owner_id"), step("maybeSingle"));
+const MY_GROUP = from(
+  "groups",
+  step("select", "id, name, join_code, owner_id, owner_notice_pending"),
+  step("maybeSingle"),
+);
 const GET_TASK = from(
   "tasks",
   step("select", "id, title, recurrence, created_by"),
@@ -533,6 +543,108 @@ const ROWS: Row[] = [
   },
   ...mutationFailures("groups/remove-member", [ok(GROUP)], []),
   nonFormBody("groups/remove-member"),
+
+  // groups/transfer
+  ...common("groups/transfer"),
+  {
+    name: "missing new_owner_id field: invalid_successor before any client",
+    route: "groups/transfer",
+    form: {},
+    expect: { location: "/dashboard?error=invalid_successor", client: "none" },
+  },
+  {
+    name: "malformed new_owner_id: invalid_successor before any client",
+    route: "groups/transfer",
+    form: { new_owner_id: "not-a-uuid" },
+    expect: { location: "/dashboard?error=invalid_successor", client: "none" },
+  },
+  {
+    name: "rpc ok with an uppercase id: dashboard, the lowercased successor in the call",
+    route: "groups/transfer",
+    form: { new_owner_id: OTHER.toUpperCase() },
+    script: [ok(null, 204)],
+    expect: { location: DASHBOARD, calls: [rpc("transfer_group_ownership", { p_new_owner: OTHER })] },
+  },
+  ...mutationFailures(
+    "groups/transfer",
+    [],
+    [["P0003", "invalid_successor", "the successor is the caller or not a member of the group"]],
+  ),
+  nonFormBody("groups/transfer"),
+  throwingClient("groups/transfer"),
+
+  // groups/dismiss-owner-notice: every outcome ends on the plain dashboard, where an uncleared notice shows again.
+  {
+    name: "anonymous: redirects to sign-in before any client or report",
+    route: "groups/dismiss-owner-notice",
+    locals: ANON,
+    expect: { location: "/auth/signin", client: "none" },
+  },
+  {
+    name: "no client: dashboard, quiet",
+    route: "groups/dismiss-owner-notice",
+    client: "null",
+    expect: { location: DASHBOARD },
+  },
+  {
+    name: "no group: dashboard, quiet",
+    route: "groups/dismiss-owner-notice",
+    script: [ok(null)],
+    expect: { location: DASHBOARD, calls: [MY_GROUP] },
+  },
+  {
+    name: "update ok: dashboard, the notice cleared on the caller's group only",
+    route: "groups/dismiss-owner-notice",
+    script: [ok(GROUP), ok([{ id: GROUP.id }])],
+    expect: {
+      location: DASHBOARD,
+      calls: [
+        MY_GROUP,
+        from(
+          "groups",
+          step("update", { owner_notice_pending: false }),
+          step("eq", "id", GROUP.id),
+          step("select", "id"),
+        ),
+      ],
+    },
+  },
+  {
+    name: "update touches no row (not the owner): dashboard, quiet",
+    route: "groups/dismiss-owner-notice",
+    script: [ok({ ...GROUP, owner_id: STRANGER }), ok([])],
+    expect: { location: DASHBOARD },
+  },
+  {
+    name: "permission error: dashboard, with an error line carrying the status",
+    route: "groups/dismiss-owner-notice",
+    script: [ok(GROUP), RLS],
+    expect: { location: DASHBOARD, errors: [failed("groups/dismiss-owner-notice", "forbidden", "42501", 403)] },
+  },
+  {
+    name: "unexpected error: dashboard, with an error line carrying the status",
+    route: "groups/dismiss-owner-notice",
+    script: [ok(GROUP), UNMAPPED],
+    expect: { location: DASHBOARD, errors: [failed("groups/dismiss-owner-notice", "unknown", "XX000", 500)] },
+  },
+  {
+    name: "group read fails: the helper throws, dashboard with the exception line",
+    route: "groups/dismiss-owner-notice",
+    script: [UNMAPPED],
+    expect: {
+      location: DASHBOARD,
+      errors: [{ ...exception("groups/dismiss-owner-notice"), error: { code: "XX000" } }],
+    },
+  },
+  {
+    name: "a thrown client error: dashboard with the exception line",
+    route: "groups/dismiss-owner-notice",
+    client: "throwing",
+    expect: {
+      location: DASHBOARD,
+      errors: [{ ...exception("groups/dismiss-owner-notice"), error: { name: "Error", message: "network down" } }],
+    },
+  },
 
   // tasks/create
   ...common("tasks/create"),
@@ -1198,7 +1310,7 @@ describe("coverage guard", () => {
         .filter((name) => name.endsWith(".ts"))
         .map((name) => `${dir}/${name.slice(0, -3)}`),
     );
-    expect(files).toHaveLength(14);
+    expect(files).toHaveLength(16);
     const covered = new Set<string>(ROWS.map((row) => row.route));
     const withChain = new Set<string>(ROWS.filter((row) => row.expect.calls).map((row) => row.route));
     for (const file of files) {

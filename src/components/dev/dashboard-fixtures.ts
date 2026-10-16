@@ -20,6 +20,11 @@ export interface DashboardViewProps extends DashboardData {
 
 export const DASHBOARD_STATES = [
   { id: "owner", label: "Owner", description: "Owner of a group with members and tasks of every kind" },
+  {
+    id: "new-owner",
+    label: "New owner",
+    description: "The owner right after an ownership transfer: the one-time notice with Got it",
+  },
   { id: "member", label: "Member", description: "The same group seen by a member who is not the owner" },
   { id: "sole-member", label: "Sole member", description: "Alone in a new group, no tasks yet" },
   { id: "no-group", label: "No group", description: "Signed in, not in a group" },
@@ -48,7 +53,16 @@ export function isDashboardStateId(value: string | null): value is DashboardStat
 
 // The states of `/settings` (`SettingsView`); ids start with `settings-` so one `?state=` names either page.
 export const SETTINGS_STATES = [
-  { id: "settings-owner", label: "Owner", description: "Rename the group, then delete it last" },
+  {
+    id: "settings-owner",
+    label: "Owner",
+    description: "Rename the group, transfer ownership to another member, then delete it last",
+  },
+  {
+    id: "settings-owner-alone",
+    label: "Owner, alone",
+    description: "The only member: rename and delete, no transfer",
+  },
   { id: "settings-member", label: "Member", description: "Leave the group" },
   { id: "settings-no-group", label: "No group", description: "Not in a group: a link to the dashboard" },
   { id: "settings-load-failed", label: "Load failed", description: "The group could not be read" },
@@ -63,6 +77,7 @@ export function isSettingsStateId(value: string | null): value is SettingsStateI
 /** What a settings state page renders: `SettingsView`'s props (the Account card shows the e-mail) and the nickname `AppLayout` shows. */
 export interface SettingsViewProps {
   group: MyGroup | null;
+  members: GroupMember[];
   viewerId: string | undefined;
   loadFailed: boolean;
   error: string | null;
@@ -131,6 +146,7 @@ const MORNING_CREW: MyGroup = {
   name: "Morning crew",
   join_code: JOIN_CODE,
   owner_id: OWNER_ID,
+  owner_notice_pending: false,
 };
 
 const MEMBERS = [member(OWNER_ID, OWNER_NICKNAME, true), member(MEMBER_ID, MEMBER_NICKNAME), member(THIRD_ID, "Sam")];
@@ -265,6 +281,8 @@ export function dashboardFixture(id: DashboardStateId, origin: string): Dashboar
       return inGroup(origin, owner);
     case "member":
       return inGroup(origin, { id: MEMBER_ID, nickname: MEMBER_NICKNAME });
+    case "new-owner":
+      return inGroup(origin, owner, { group: { ...MORNING_CREW, owner_notice_pending: true } });
     case "sole-member":
       return inGroup(origin, owner, { members: [member(OWNER_ID, OWNER_NICKNAME, true)], tasks: [] });
     case "no-group":
@@ -300,19 +318,29 @@ export function settingsFixture(id: SettingsStateId): SettingsViewProps {
   const owner = { viewerId: OWNER_ID, email: OWNER_EMAIL, nickname: OWNER_NICKNAME };
   switch (id) {
     case "settings-owner":
-      return { ...healthy, ...owner, group: { ...MORNING_CREW } };
+      return { ...healthy, ...owner, group: { ...MORNING_CREW }, members: [...MEMBERS] };
+    case "settings-owner-alone":
+      return { ...healthy, ...owner, group: { ...MORNING_CREW }, members: [member(OWNER_ID, OWNER_NICKNAME, true)] };
     case "settings-member":
       return {
         ...healthy,
         group: { ...MORNING_CREW },
+        members: [...MEMBERS],
         viewerId: MEMBER_ID,
         email: MEMBER_EMAIL,
         nickname: MEMBER_NICKNAME,
       };
     case "settings-no-group":
-      return { ...healthy, group: null, viewerId: OUTSIDER_ID, email: OUTSIDER_EMAIL, nickname: OUTSIDER_NICKNAME };
+      return {
+        ...healthy,
+        group: null,
+        members: [],
+        viewerId: OUTSIDER_ID,
+        email: OUTSIDER_EMAIL,
+        nickname: OUTSIDER_NICKNAME,
+      };
     case "settings-load-failed":
-      return { ...owner, group: null, loadFailed: true, error: groupErrorMessage("unknown") };
+      return { ...owner, group: null, members: [], loadFailed: true, error: groupErrorMessage("unknown") };
   }
 }
 

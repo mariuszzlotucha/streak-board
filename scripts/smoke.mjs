@@ -44,6 +44,8 @@ let onceTaskId;
 let tickedPeriod;
 // A well-formed task id that no task has.
 const UNKNOWN_TASK_ID = "00000000-0000-4000-8000-000000000000";
+// A well-formed user id that no member of the smoke group has (the successor of a refused ownership transfer).
+const NON_MEMBER_ID = "00000000-0000-4000-8000-0000000000ff";
 // A well-formed auth code that no flow state has: the real GoTrue answers it with a stale-flow error.
 const UNKNOWN_FLOW_CODE = "11111111-1111-4111-8111-111111111111";
 // Makes a check-off route answer in JSON instead of redirecting.
@@ -261,9 +263,10 @@ function dialogTrigger(label) {
   return new RegExp(`<button[^>]*aria-haspopup="dialog"[^>]*>\\s*${escapeRegExp(label)}\\s*<`);
 }
 
-// The server-rendered destructive forms hold hidden fields only; a submit button inside one would skip the confirmation.
+// The server-rendered destructive forms (and the ownership transfer's) hold hidden fields only; a submit button inside one
+// would skip the confirmation.
 const SUBMIT_IN_DESTRUCTIVE_FORM =
-  /<form[^>]*action="\/api\/(?:groups\/(?:delete|remove-member)|tasks\/delete)"[^>]*>(?:(?!<\/form>)[\s\S])*type="submit"/;
+  /<form[^>]*action="\/api\/(?:groups\/(?:delete|remove-member|transfer)|tasks\/delete)"[^>]*>(?:(?!<\/form>)[\s\S])*type="submit"/;
 
 // The Tasks card heading (an error alert or another card would not match).
 const TASKS_HEADING = /<h2[^>]*>\s*Tasks\s*<\/h2>/;
@@ -398,7 +401,7 @@ const INVITE_IN_MEMBERS =
 const IN_GROUP_ORDER = /<h2[^>]*>\s*Tasks\s*<\/h2>[\s\S]*aria-label="Leaderboard"[\s\S]*<h2[^>]*>\s*Members\s*<\/h2>/;
 
 // Group management lives on /settings: none of its texts may be on the dashboard (the dialogs' island props included).
-const SETTINGS_ON_DASHBOARD = ["Group settings", "Rename group", "Delete group", "Leave group"];
+const SETTINGS_ON_DASHBOARD = ["Group settings", "Rename group", "Delete group", "Leave group", "Transfer ownership"];
 
 // The Main nav of the signed-in header: the current page's link carries aria-current="page" and the other one does not.
 function mainNav(current) {
@@ -421,7 +424,7 @@ function groupSettingsFor(name) {
 }
 const DASHBOARD_LINK_IN_MAIN = /<main[^>]*>(?:(?!<\/main>)[\s\S])*<a\s[^>]*href="\/dashboard"/;
 // Every group form; the no-group settings page has none of them.
-const GROUP_FORMS = ["create", "join", "rename", "delete", "leave"].map((action) =>
+const GROUP_FORMS = ["create", "join", "rename", "delete", "leave", "transfer"].map((action) =>
   formPostingTo(`/api/groups/${action}`),
 );
 
@@ -451,6 +454,16 @@ function alertBeforeHeading(text, name) {
 function outsideScripts(text) {
   return new RegExp(`(?<!<script\\b[^>]*>(?:(?!</script>)[\\s\\S])*)${escapeRegExp(text)}`);
 }
+
+// The new owner's one-time notice (a status, not an error alert) with its "Got it" form, inside <main> before the group's
+// <h1>, so above every card. The members card's copy hint is a `role="status"` too, but it comes after the <h1>.
+function ownerNotice(name) {
+  return new RegExp(
+    `<main[^>]*>(?:(?!<h1|</main>)[\\s\\S])*role="status"[^>]*>(?:(?!</div>)[\\s\\S])*<div[^>]*data-slot="alert-description"[^>]*>\\s*<p[^>]*>\\s*You are now the owner of\\s+${escapeRegExp(name)}\\.(?:(?!<h1|</main>)[\\s\\S])*<form[^>]*action="/api/groups/dismiss-owner-notice"[^>]*>(?:(?!</form>)[\\s\\S])*<button[^>]*type="submit"[^>]*>\\s*Got it\\s*</button>`,
+  );
+}
+// Any trace of the notice: its sentence or its form.
+const OWNER_NOTICE_TRACES = ["You are now the owner of", "/api/groups/dismiss-owner-notice"];
 
 // The inline script that drops `?error=` from the address after the page has shown the alert.
 const ERROR_PARAM_SCRIPT =
@@ -1083,8 +1096,13 @@ const steps = [
         dialogTrigger("Delete group"),
         ...mainNav("/settings"),
       ],
-      bodyNotMatches: [formPostingTo("/api/groups/leave"), SUBMIT_IN_DESTRUCTIVE_FORM],
-      bodyExcludes: ["Leave group", NO_ERROR_ALERT],
+      // Alone in the group, the owner has nobody to hand it over to.
+      bodyNotMatches: [
+        formPostingTo("/api/groups/leave"),
+        formPostingTo("/api/groups/transfer"),
+        SUBMIT_IN_DESTRUCTIVE_FORM,
+      ],
+      bodyExcludes: ["Leave group", "Transfer ownership", NO_ERROR_ALERT],
     },
   ],
   [
@@ -1227,8 +1245,12 @@ const steps = [
         dialogTrigger("Leave group"),
         ...mainNav("/settings"),
       ],
-      bodyNotMatches: [formPostingTo("/api/groups/rename"), formPostingTo("/api/groups/delete")],
-      bodyExcludes: ["Rename group", "Delete group", NO_ERROR_ALERT],
+      bodyNotMatches: [
+        formPostingTo("/api/groups/rename"),
+        formPostingTo("/api/groups/delete"),
+        formPostingTo("/api/groups/transfer"),
+      ],
+      bodyExcludes: ["Rename group", "Delete group", "Transfer ownership", NO_ERROR_ALERT],
     },
   ],
   [
@@ -1279,10 +1301,13 @@ const steps = [
         groupSettingsFor(renamedGroupName),
         formPostingTo("/api/groups/rename"),
         /<input[^>]*name="name"/,
+        // With a member to hand it to, the owner is offered the transfer, through its dialog.
+        formPostingTo("/api/groups/transfer"),
+        dialogTrigger("Transfer ownership"),
         formPostingTo("/api/groups/delete"),
         dialogTrigger("Delete group"),
       ],
-      bodyNotMatches: [formPostingTo("/api/groups/leave")],
+      bodyNotMatches: [formPostingTo("/api/groups/leave"), SUBMIT_IN_DESTRUCTIVE_FORM],
       bodyExcludes: [groupName, "Leave group", NO_ERROR_ALERT],
     },
   ],
@@ -1443,8 +1468,12 @@ const steps = [
         formPostingTo("/api/groups/leave"),
         dialogTrigger("Leave group"),
       ],
-      bodyNotMatches: [formPostingTo("/api/groups/delete"), formPostingTo("/api/groups/remove-member")],
-      bodyExcludes: ["Delete group", NO_ERROR_ALERT],
+      bodyNotMatches: [
+        formPostingTo("/api/groups/delete"),
+        formPostingTo("/api/groups/remove-member"),
+        formPostingTo("/api/groups/transfer"),
+      ],
+      bodyExcludes: ["Delete group", "Transfer ownership", NO_ERROR_ALERT],
     },
   ],
   [
@@ -2326,6 +2355,203 @@ const steps = [
     "deleting the task again is a quiet redirect",
     () => request("/api/tasks/delete", { method: "POST", form: { task_id: taskId } }),
     { status: 302, locationExact: "/dashboard" },
+  ],
+  // S-15: the ownership transfer, at the end of the owner-member sequence so the steps above keep their owner. A hands
+  // the group to B, B sees the one-time notice and dismisses it, and B hands it back so A deletes the group below.
+  [
+    "settings offers the owner of three members the transfer through its dialog",
+    () => request("/settings"),
+    {
+      status: 200,
+      bodyMatches: [
+        groupSettingsFor(renamedGroupName),
+        formPostingTo("/api/groups/transfer"),
+        dialogTrigger("Transfer ownership"),
+      ],
+      bodyNotMatches: [SUBMIT_IN_DESTRUCTIVE_FORM, formPostingTo("/api/groups/leave")],
+      bodyExcludes: NO_ERROR_ALERT,
+    },
+  ],
+  [
+    "transfer by a member is rejected",
+    () => request("/api/groups/transfer", { method: "POST", form: { new_owner_id: memberIdC }, jar: jarB }),
+    { status: 302, locationExact: "/dashboard?error=forbidden" },
+  ],
+  [
+    // The owner's own session and a real member's id: only the Origin check stands between the request and the change.
+    // The step below reads the state.
+    "transfer from a foreign origin is rejected",
+    () =>
+      request("/api/groups/transfer", { method: "POST", form: { new_owner_id: memberIdB }, origin: FOREIGN_ORIGIN }),
+    { status: 403 },
+  ],
+  [
+    "transfer without a chosen member is rejected",
+    () => request("/api/groups/transfer", { method: "POST", form: {} }),
+    { status: 302, locationExact: "/dashboard?error=invalid_successor" },
+  ],
+  [
+    "transfer to the owner themselves is rejected",
+    () => request("/api/groups/transfer", { method: "POST", form: { new_owner_id: sessionUserId(jarA) } }),
+    { status: 302, locationExact: "/dashboard?error=invalid_successor" },
+  ],
+  ["transfer does not answer GET", () => request("/api/groups/transfer"), { status: 404 }],
+  ["dismiss-owner-notice does not answer GET", () => request("/api/groups/dismiss-owner-notice"), { status: 404 }],
+  [
+    "ownership is unchanged after the rejected transfers",
+    () => request("/dashboard", { jar: jarB }),
+    {
+      status: 200,
+      bodyMatches: [groupHeading(renamedGroupName), memberRow(nickA, "Owner"), memberRow(nickB, "You")],
+      bodyNotMatches: [memberRow(nickB, "Owner"), formPostingTo("/api/groups/remove-member")],
+      bodyExcludes: [...OWNER_NOTICE_TRACES, NO_ERROR_ALERT],
+    },
+  ],
+  [
+    "transfer to member B succeeds",
+    () => request("/api/groups/transfer", { method: "POST", form: { new_owner_id: memberIdB } }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "new owner B's dashboard shows the notice above the cards, and the owner's controls",
+    () => request("/dashboard", { jar: jarB }),
+    {
+      status: 200,
+      bodyMatches: [
+        ownerNotice(renamedGroupName),
+        memberRow(nickB, "Owner"),
+        memberRow(nickB, "You"),
+        rowWithConfirmedRemoveControl(nickA),
+        rowWithConfirmedRemoveControl(nickC),
+      ],
+      bodyNotMatches: [memberRow(nickA, "Owner"), rowWithRemoveControl(nickB)],
+      bodyExcludes: [...SETTINGS_ON_DASHBOARD, NO_ERROR_ALERT],
+    },
+  ],
+  [
+    "former owner A's dashboard shows neither the notice nor the owner's controls",
+    () => request("/dashboard"),
+    {
+      status: 200,
+      bodyMatches: [groupHeading(renamedGroupName), memberRow(nickB, "Owner"), memberRow(nickA, "You")],
+      bodyNotMatches: [memberRow(nickA, "Owner"), formPostingTo("/api/groups/remove-member")],
+      bodyExcludes: [...OWNER_NOTICE_TRACES, NO_ERROR_ALERT],
+    },
+  ],
+  [
+    // The former owner is a member now: they may leave the group, and manage it no longer.
+    "former owner A's settings offer leave and no owner controls",
+    () => request("/settings"),
+    {
+      status: 200,
+      bodyMatches: [
+        groupSettingsFor(renamedGroupName),
+        formPostingTo("/api/groups/leave"),
+        dialogTrigger("Leave group"),
+      ],
+      bodyNotMatches: [
+        formPostingTo("/api/groups/rename"),
+        formPostingTo("/api/groups/delete"),
+        formPostingTo("/api/groups/transfer"),
+      ],
+      bodyExcludes: ["Delete group", "Transfer ownership", NO_ERROR_ALERT],
+    },
+  ],
+  [
+    "new owner B's settings offer rename, transfer and delete, and no leave",
+    () => request("/settings", { jar: jarB }),
+    {
+      status: 200,
+      bodyMatches: [
+        groupSettingsFor(renamedGroupName),
+        formPostingTo("/api/groups/rename"),
+        formPostingTo("/api/groups/transfer"),
+        dialogTrigger("Transfer ownership"),
+        formPostingTo("/api/groups/delete"),
+        dialogTrigger("Delete group"),
+      ],
+      bodyNotMatches: [formPostingTo("/api/groups/leave"), SUBMIT_IN_DESTRUCTIVE_FORM],
+      bodyExcludes: ["Leave group", NO_ERROR_ALERT],
+    },
+  ],
+  [
+    // B's own session: only the Origin check stands between the request and the cleared notice (read below).
+    "dismiss-owner-notice from a foreign origin is rejected",
+    () => request("/api/groups/dismiss-owner-notice", { method: "POST", form: {}, jar: jarB, origin: FOREIGN_ORIGIN }),
+    { status: 403 },
+  ],
+  [
+    // Only the owner may clear the notice: the former owner's "Got it" is a quiet no-op (read below).
+    "dismiss-owner-notice by the former owner changes nothing",
+    () => request("/api/groups/dismiss-owner-notice", { method: "POST", form: {} }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "new owner B still sees the notice after the rejected dismissals",
+    () => request("/dashboard", { jar: jarB }),
+    { status: 200, bodyMatches: [ownerNotice(renamedGroupName)], bodyExcludes: NO_ERROR_ALERT },
+  ],
+  [
+    "new owner B dismisses the notice",
+    () => request("/api/groups/dismiss-owner-notice", { method: "POST", form: {}, jar: jarB }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "the notice is gone from B's dashboard and the owner's controls stay",
+    () => request("/dashboard", { jar: jarB }),
+    {
+      status: 200,
+      bodyMatches: [groupHeading(renamedGroupName), memberRow(nickB, "Owner"), rowWithConfirmedRemoveControl(nickA)],
+      bodyExcludes: [...OWNER_NOTICE_TRACES, NO_ERROR_ALERT],
+    },
+  ],
+  [
+    // From the former owner this would be `forbidden`; from the owner it reaches the successor check.
+    "transfer by the new owner to someone outside the group is rejected",
+    () => request("/api/groups/transfer", { method: "POST", form: { new_owner_id: NON_MEMBER_ID }, jar: jarB }),
+    { status: 302, locationExact: "/dashboard?error=invalid_successor" },
+  ],
+  [
+    "transfer by the former owner is rejected",
+    () => request("/api/groups/transfer", { method: "POST", form: { new_owner_id: memberIdC } }),
+    { status: 302, locationExact: "/dashboard?error=forbidden" },
+  ],
+  [
+    "dashboard shows the invalid-successor message first",
+    () => request("/dashboard?error=invalid_successor", { jar: jarB }),
+    {
+      status: 200,
+      bodyMatches: [
+        alertBeforeHeading("Choose a member of your group to take over.", renamedGroupName),
+        ERROR_PARAM_SCRIPT,
+        memberRow(nickB, "Owner"),
+      ],
+    },
+  ],
+  [
+    "ownership stays with B after the rejected transfers",
+    () => request("/dashboard", { jar: jarC }),
+    {
+      status: 200,
+      bodyMatches: [groupHeading(renamedGroupName), memberRow(nickB, "Owner"), memberRow(nickC, "You")],
+      bodyNotMatches: [memberRow(nickA, "Owner"), memberRow(nickC, "Owner")],
+      bodyExcludes: [...OWNER_NOTICE_TRACES, NO_ERROR_ALERT],
+    },
+  ],
+  [
+    "new owner B hands the group back to A",
+    () => request("/api/groups/transfer", { method: "POST", form: { new_owner_id: sessionUserId(jarA) }, jar: jarB }),
+    { status: 302, locationExact: "/dashboard" },
+  ],
+  [
+    "A owns the group again and sees the notice",
+    () => request("/dashboard"),
+    {
+      status: 200,
+      bodyMatches: [ownerNotice(renamedGroupName), memberRow(nickA, "Owner"), rowWithConfirmedRemoveControl(nickB)],
+      bodyNotMatches: [memberRow(nickB, "Owner")],
+      bodyExcludes: NO_ERROR_ALERT,
+    },
   ],
   [
     "delete by the owner succeeds",

@@ -414,12 +414,12 @@ Usunięcie to jedna transakcja na kilku wierszach jednej grupy; `delete` z `auth
 
 #### Automated
 
-- [x] 1.1 Migracja przechodzi strażnika: `npm run guard:migrations`
-- [x] 1.2 Migracja aplikuje się na czystej bazie: `npx supabase db reset`
-- [x] 1.3 Typy są świeże: `npm run types:check`
-- [x] 1.4 Testy (unit i integracyjne) przechodzą, w tym nowy `tests/integration/account-deletion.test.ts`: `npm test`
-- [x] 1.5 Scenariusze RLS przechodzą: `npm run test:rls`
-- [x] 1.6 Lint i typy: `npm run lint && npx astro check`
+- [x] 1.1 Migracja przechodzi strażnika: `npm run guard:migrations` — 2b44789
+- [x] 1.2 Migracja aplikuje się na czystej bazie: `npx supabase db reset` — 2b44789
+- [x] 1.3 Typy są świeże: `npm run types:check` — 2b44789
+- [x] 1.4 Testy (unit i integracyjne) przechodzą, w tym nowy `tests/integration/account-deletion.test.ts`: `npm test` — 2b44789
+- [x] 1.5 Scenariusze RLS przechodzą: `npm run test:rls` — 2b44789
+- [x] 1.6 Lint i typy: `npm run lint && npx astro check` — 2b44789
 
 #### Manual
 
@@ -429,10 +429,10 @@ Usunięcie to jedna transakcja na kilku wierszach jednej grupy; `delete` z `auth
 
 #### Automated
 
-- [ ] 2.1 Testy przechodzą (w tym `group-errors` i `settings-data`): `npm test`
-- [ ] 2.2 Lint, typy, build: `npm run lint && npx astro check && npm run build`
-- [ ] 2.3 Smoke przechodzi na lokalnym preview: `npm run smoke`
-- [ ] 2.4 E2E przechodzi: `npx playwright test tests/e2e/group-transfer.spec.ts tests/e2e/group-settings-owner.spec.ts tests/e2e/group-settings-member.spec.ts`
+- [x] 2.1 Testy przechodzą (w tym `group-errors` i `settings-data`): `npm test`
+- [x] 2.2 Lint, typy, build: `npm run lint && npx astro check && npm run build`
+- [x] 2.3 Smoke przechodzi na lokalnym preview: `npm run smoke`
+- [x] 2.4 E2E przechodzi: `npx playwright test tests/e2e/group-transfer.spec.ts tests/e2e/group-settings-owner.spec.ts tests/e2e/group-settings-member.spec.ts`
 
 #### Manual
 

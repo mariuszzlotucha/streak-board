@@ -5,9 +5,9 @@ import PageHeading from "@/components/dashboard/PageHeading.astro";
 import PendingInviteCard from "@/components/dashboard/PendingInviteCard.astro";
 import TasksCard from "@/components/dashboard/TasksCard.astro";
 import Leaderboard from "@/components/tasks/Leaderboard";
-import { CircleAlert, TriangleAlert } from "lucide-react";
+import { CircleAlert, Crown, TriangleAlert } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { DashboardData } from "@/lib/dashboard-data";
 
@@ -36,6 +36,8 @@ const {
 } = Astro.props;
 
 const isOwner = group !== null && group.owner_id === viewerId;
+// Set by an ownership transfer and shown to the new owner until they dismiss it.
+const ownerNoticeGroupName = isOwner && group.owner_notice_pending ? group.name : null;
 ---
 
 {loadFailed ? (
@@ -52,6 +54,24 @@ const isOwner = group !== null && group.owner_id === viewerId;
       <Alert variant="destructive">
         <CircleAlert />
         <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    )}
+
+    {/* Not an error: a status the new owner reads once, under any error alert and above the group's cards. */}
+    {ownerNoticeGroupName !== null && (
+      <Alert role="status">
+        <Crown />
+        <AlertDescription>
+          <p>
+            You are now the owner of {ownerNoticeGroupName}. You can rename it, remove members or hand it over in
+            Settings.
+          </p>
+          <form method="POST" action="/api/groups/dismiss-owner-notice">
+            <Button type="submit" variant="outline" size="sm">
+              Got it
+            </Button>
+          </form>
+        </AlertDescription>
       </Alert>
     )}
 

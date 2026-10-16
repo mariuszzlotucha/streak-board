@@ -3,13 +3,14 @@ import { groupErrorMessage, resolveGroupError, toGroupErrorCode, type GroupError
 
 // Oracle values come from the SQLSTATE comments in src/lib/group-errors.ts and the README (Observability), not from
 // running the mapper: 23514 is the CHECK on the name, 23505 the one-group-per-user unique index, P0002 the
-// join_group "no such code" raise, 42501 an RLS refusal.
+// join_group "no such code" raise, P0003 the transfer_group_ownership "invalid successor" raise, 42501 an RLS refusal.
 
 const ALL_CODES: GroupErrorCode[] = [
   "not_configured",
   "invalid_name",
   "invalid_code",
   "already_in_group",
+  "invalid_successor",
   "forbidden",
   "unknown",
 ];
@@ -19,13 +20,14 @@ describe("toGroupErrorCode", () => {
     ["23514", "invalid_name"],
     ["23505", "already_in_group"],
     ["P0002", "invalid_code"],
+    ["P0003", "invalid_successor"],
     ["42501", "forbidden"],
   ])("maps SQLSTATE %s to %s", (sqlstate, code) => {
     expect(toGroupErrorCode({ code: sqlstate })).toBe(code);
   });
 
   it("maps every other SQLSTATE to unknown", () => {
-    for (const sqlstate of ["XX000", "22P02", "23503", "PGRST116", "", "23514 "]) {
+    for (const sqlstate of ["XX000", "22P02", "23503", "PGRST116", "P0001", "P0004", "", "23514 "]) {
       expect(toGroupErrorCode({ code: sqlstate })).toBe("unknown");
     }
   });
@@ -64,6 +66,7 @@ describe("groupErrorMessage", () => {
     expect(groupErrorMessage("invalid_name")).toBe("Enter a group name between 1 and 80 characters.");
     expect(groupErrorMessage("invalid_code")).toBe("This invite link or code is not valid.");
     expect(groupErrorMessage("already_in_group")).toBe("You are already in a group.");
+    expect(groupErrorMessage("invalid_successor")).toBe("Choose a member of your group to take over.");
     expect(groupErrorMessage("forbidden")).toBe("You are not allowed to do that.");
     expect(groupErrorMessage("unknown")).toBe("Something went wrong. Please try again.");
   });

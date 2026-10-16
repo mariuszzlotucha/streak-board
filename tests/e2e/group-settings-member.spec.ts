@@ -50,6 +50,7 @@ test.describe("risk #3: group settings for a member", () => {
     // The risk assertion: none of the owner's controls render for a member.
     await expect(page.getByRole("button", { name: "Delete group" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Rename group" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Transfer ownership" })).toHaveCount(0);
     await expect(page.getByLabel("Group name")).toHaveCount(0);
 
     // The dialog names the consequence, and Cancel keeps the membership.

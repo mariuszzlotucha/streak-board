@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase";
 
 const { user } = Astro.locals;
 
-const { group, loadFailed, error } = await loadSettings({
+const { group, members, loadFailed, error } = await loadSettings({
   createSupabase: () => createClient(Astro.request.headers, Astro.cookies),
   log: requestFields(Astro),
 });
@@ -19,6 +19,7 @@ if (loadFailed) Astro.response.status = 503;
 <AppLayout title="Settings" nickname={Astro.locals.nickname} current="settings">
   <SettingsView
     group={group}
+    members={members}
     viewerId={user?.id}
     loadFailed={loadFailed}
     error={error}
