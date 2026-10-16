@@ -24,7 +24,7 @@ milestone_status: open
 
 - **Intent:** Po zamknięciu pierwszego pełnego cyklu (M-1) doprowadzić wdrożone MVP do stanu, w którym można je pokazać realnym użytkownikom i zbierać od nich informację zwrotną: własny adres, łatwe logowanie kontem Google, strona startowa tłumacząca produkt, czytelniejszy widok grupy, testy chroniące zmiany oraz awarie, które nie giną po cichu.
 - **Source materials:** `context/foundation/roadmap-input-next-slices.md` (MS-01 do MS-05, zakres uzgodniony z użytkownikiem po zamknięciu wszystkich pozycji M-1), późniejszy opis użytkownika (MS-06) oraz FR-001 z PRD v1 („email/OAuth/passwordless"), na którym opiera się MS-06. Poza FR-001 ten kamień milowy nie realizuje nowych FR-ów.
-- **Done when:** każdy S-06 do S-14 poniżej ma status `done` (S-14 dołączony decyzją właściciela 2026-10-16).
+- **Done when:** każdy S-06 do S-15 poniżej ma status `done` (S-14 i S-15 dołączone decyzjami właściciela 2026-10-16).
 - **Scope anchors:** źródło nie ma własnych identyfikatorów, więc zakres jest zapisany jako kotwice `MS-NN`, po jednej na wycinek: MS-01 do MS-05 z wyników opisanych w pliku wejściowym, MS-06 z późniejszego opisu użytkownika:
   - MS-01: użytkownik wchodzi na aplikację pod własną domeną właściciela, a rejestracja, logowanie i link potwierdzający działają na tej domenie.
   - MS-02: (jakościowy) zmiany w aplikacji są chronione testami wybranymi według ryzyka, a jakość testów jednostkowych jest mierzona mutacjami.
@@ -35,6 +35,7 @@ milestone_status: open
   - MS-07: (jakościowy) wybrane okazje refaktoryzacji z analizy data-access są wdrożone bez zmiany zachowania widocznego dla użytkownika (decyzja użytkownika 2026-10-08: istniejąca zmiana `refactor-opportunities` staje się wycinkiem).
   - MS-08: członek grupy widzi siatkę odznaczeń: uczestnicy × ostatnie okresy tasku, wykonane i niewykonane (decyzja użytkownika 2026-10-08: odparkowanie historii w zakresie prostej siatki, bez wykresów i statystyk).
   - MS-09: członkowie grupy widzą nawzajem nick zamiast adresu e-mail, a własny adres widzi tylko właściciel konta w ustawieniach (decyzja użytkownika 2026-10-16: S-14 dołączony do M-2, przed S-13).
+  - MS-10: zalogowany użytkownik może usunąć swoje konto w ustawieniach; przed usunięciem widzi okno z ostrzeżeniem (decyzja użytkownika 2026-10-16: S-15 dołączony do M-2, równolegle z S-13).
 
 ## Vision recap
 
@@ -59,6 +60,7 @@ Grono znajomych korzystało wcześniej ze wspólnego arkusza Google, w którym r
 | S-12 | refactor-opportunities         | (jakościowy) znane ciche luki są zamknięte: raportowanie błędów dashboardu, strażnicy migracji i typów w CI, testy tras i reguł, jawne uprawnienia tabel | —                                                       | — (jakościowe; MS-07)              | done     |
 | S-13 | checkoff-grid                  | zobaczyć siatkę odznaczeń grupy: kto wykonał task w każdym z ostatnich okresów                                                                           | S-11, S-14                                              | — (UI; MS-08)                      | proposed |
 | S-14 | nickname                       | ustawić nick, który inni członkowie grupy widzą zamiast e-maila                                                                                          | —                                                       | FR-010 (nowa funkcja)              | done     |
+| S-15 | account-deletion               | usunąć swoje konto w ustawieniach, po ostrzeżeniu w oknie potwierdzenia                                                                                  | S-14                                                    | — (nowa funkcja; MS-10)            | planning |
 
 ## Streams
 
@@ -70,6 +72,7 @@ Pomoc nawigacyjna — grupuje pozycje ze wspólnym łańcuchem Prerequisites. Ka
 | B      | Widok i siatka          | `S-11` → `S-13`          | Najpierw nowy wygląd (decyzja 2026-10-08), potem siatka odznaczeń w nowym widoku; `S-11` dołącza do strumienia C w `S-08`.                  |
 | D      | Siatka testów           | `S-10`                   | Na końcu M-2: testy dobrane według ryzyka i e2e pod nowy wygląd.                                                                            |
 | C      | Widoczność awarii       | `S-08` → `S-12`          | Domknięcie cichych luk po S-08; `S-12` jest niezależny technicznie i może iść równolegle z `S-10` (`S-11` jest już zrobione).               |
+| E      | Konto i prywatność      | `S-14` → `S-15`          | Nick, potem usunięcie konta z tej samej karty konta na `/settings`; idzie równolegle ze strumieniem B (`S-13`).                             |
 
 ## Baseline
 
@@ -201,7 +204,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Change ID:** checkoff-grid
 - **PRD refs:** — (UI; MS-08)
 - **Prerequisites:** S-11, S-14 (decyzja właściciela 2026-10-16: nick przed siatką, bo oba wycinki edytują politykę prywatności, PRD, słownik, `dashboard-data.ts`, smoke i fixture'y, a siatka ma od razu pokazywać nicki)
-- **Parallel with:** S-10, S-12
+- **Parallel with:** S-10, S-12, S-15
 - **Blockers:** —
 - **Unknowns:**
   - Ile okresów pokazuje siatka (np. 7 dni / 4 tygodnie) i czy zależy to od tasku `daily`/`weekly`? — Owner: user. Block: no — rozstrzyga `/10x-frame`.
@@ -230,6 +233,26 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Risk:** Samo ukrycie w widoku nie chroni danych: RPC nadal zwracałby e-maile każdemu członkowi grupy, więc zmiana obejmuje też RPC i wygenerowany `src/types.ts`. Nowa tabela z nickiem wymaga RLS i polityk per operacja i rolę (CLAUDE.md). Polityka prywatności opisuje dziś e-mail jako widoczny dla członków grupy, więc zmienia się razem z kodem, a z nią tekst przy rejestracji i PRD. Wycinek dotyka tych samych plików co S-13 (`WhoCanSee.astro`, PRD, słownik, `src/lib/dashboard-data.ts`), więc nie idzie równolegle bez uzgodnienia kolejności. Konta sprzed zmiany nie mają nicka, a wariant z pytania o ustawianie nicka decyduje, czy przy pierwszym wejściu pojawi się ekran wyboru.
 - **Status:** done
 
+### S-15: Usunięcie konta w ustawieniach
+
+- **Outcome:** zalogowany użytkownik usuwa swoje konto na `/settings`: najpierw widzi okno z ostrzeżeniem, co zniknie (także dla innych członków grupy), i dopiero po potwierdzeniu konto i jego dane są usuwane, a on zostaje wylogowany.
+- **Change ID:** account-deletion
+- **PRD refs:** — (nowa funkcja; MS-10). PRD nie ma FR o usunięciu konta; nowy FR dopisuje zmiana tego wycinka, tak jak FR-010 w S-14.
+- **Prerequisites:** S-14 (karta konta `AccountCard` na `/settings`, w której stanie przycisk)
+- **Parallel with:** S-13 (różne sekcje polityki prywatności i różne widoki; wspólne mogą być PRD, `scripts/smoke.mjs` i fixture'y kitchen sinka, więc uzgodnić kolejność merge'y)
+- **Blockers:** —
+- **Unknowns:**
+  - Jak mocne potwierdzenie w oknie: sam przycisk „Delete account” czy wpisanie nicka albo słowa? — Owner: user. Block: no — rozstrzyga `/10x-frame`.
+  - Czy wymagać ponownego zalogowania (hasło albo Google) tuż przed usunięciem? — Owner: user. Block: no.
+  - Usunięcie natychmiastowe czy z okresem karencji? Polityka obiecuje dziś usunięcie na prośbę e-mailem „within one month”. — Owner: user. Block: no.
+  - Jak serwer usuwa użytkownika z Supabase Auth: aplikacja ma tylko `SUPABASE_URL` i `SUPABASE_KEY`, bez klucza service-role, więc potrzebny jest nowy sekret albo funkcja `security definer` w bazie. — Owner: team. Block: no — rozstrzyga `/10x-plan`.
+  - Co dzieje się z grupą właściciela? — Owner: user. Block: no. Rozstrzygnięte (2026-10-16, `/10x-frame`): grupa przetrwa w tym wycinku, więc własność przechodzi na innego członka. To zmienia regułę N-02 („jeden stały właściciel”) i zamyka Q-09 w `context/domain/01-domain-distillation.md`. Kto zostaje następcą i co, gdy właściciel jest jedynym członkiem: `/10x-plan`.
+  - Co z taskami, które usuwający utworzył? — Owner: user. Block: no. Rozstrzygnięte (2026-10-16, `/10x-frame`): zostają w grupie razem z postępem innych, jak po wyjściu z grupy; dziś `tasks.created_by` kasuje je kaskadą, a polityka obiecuje ich usunięcie. Rama: `context/changes/account-deletion/frame.md`.
+- **Źródło zakresu:** opis użytkownika z 2026-10-16: usuwanie konta w ustawieniach, najpierw okno z ostrzeżeniem.
+- **Stan wejściowy (2026-10-16):** `/settings` (`SettingsView` z `GroupSettingsCard` i `AccountCard`) ma już akcje grupy (zmiana nazwy, usunięcie, opuszczenie), a `alert-dialog` jest w `src/components/ui/`. `PROTECTED_ROUTES` w `src/middleware.ts` obejmuje już `/api/account`. Polityka (`src/components/privacy/AccountDeletion.astro`) mówi „There is no delete button yet” i opisuje skutki: grupa właściciela znika ze wszystkimi taskami, uczestnictwami i odznaczeniami, taski w cudzej grupie znikają razem z uczestnictwem innych, a pozostali członkowie zachowują konta. W bazie `group_members`, `tasks`, `task_participants` i `nicknames` mają `on delete cascade` do `auth.users`, ale `groups.owner_id` ma `on delete restrict`, więc konta właściciela grupy nie da się usunąć, dopóki istnieje jego grupa.
+- **Risk:** Akcja jest nieodwracalna i dotyka innych osób: usunięcie konta właściciela kasuje grupę i postęp wszystkich członków, więc okno musi to powiedzieć wprost (inny tekst dla właściciela, inny dla członka), a usunięcie grupy i konta musi przejść razem albo wcale, żeby nie zostawić grupy bez właściciela ani konta bez danych. Klucz service-role, jeśli zostanie wybrany, rozszerza to, co może zrobić ktoś z dostępem do sekretów workera. W tej samej zmianie: polityka prywatności (`AccountDeletion.astro`), PRD (nowy FR), smoke (nowy przycisk; `role="alert"` tylko dla błędów) i kitchen sink (stany okna).
+- **Status:** planning
+
 ## Backlog Handoff
 
 | Roadmap ID | Change ID                      | Suggested issue title                                                                       | Ready for `/10x-plan` | Notes                                                                                                                               |
@@ -243,6 +266,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-12       | refactor-opportunities         | Okazje refaktoryzacji: raportowanie dashboardu, strażnicy CI, testy tras, jawne uprawnienia | done                  | Zarchiwizowane 2026-10-15; `context/archive/2026-10-06-refactor-opportunities/`.                                                    |
 | S-13       | checkoff-grid                  | Siatka odznaczeń grupy: uczestnicy × ostatnie okresy                                        | no                    | Po S-14 (decyzja 2026-10-16). Zwykły łańcuch od `/10x-frame`; aktualizacja PRD, słownika i polityki prywatności w zakresie.         |
 | S-14       | nickname                       | Nick zamiast e-maila w widoku i w danych członków grupy                                     | done                  | Zarchiwizowane 2026-10-16; `context/archive/2026-10-16-nickname/`. Dwa wydania 2026-10-16 (`deployment-plan.md`, Phase 18).         |
+| S-15       | account-deletion               | Usunięcie konta w ustawieniach, z oknem ostrzeżenia przed potwierdzeniem                    | yes                   | Najpierw `/10x-frame` (siła potwierdzenia, ponowne logowanie, karencja). Równolegle z S-13. Polityka, PRD i smoke w zakresie.       |
 
 ## Open Roadmap Questions
 
