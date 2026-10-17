@@ -23,8 +23,10 @@ type WorkerEnv = ReminderEnv & SentryEnv & { REMINDER_SENDER?: { send: ReminderS
 export default {
   fetch: astro.fetch,
   scheduled(controller: ScheduledControllerLike, env: WorkerEnv, ctx: WaitUntilContext): void {
-    // Without the binding (a local run without it) the run sends in process, as before the fan-out.
-    const send = env.REMINDER_SENDER ? env.REMINDER_SENDER.send.bind(env.REMINDER_SENDER) : undefined;
+    // Without the binding (a local run without it) the run sends in process, as before the fan-out. A closure, not
+    // `.bind`: every property of an RPC stub is itself remote, so `send.bind` would not be Function.prototype.bind.
+    const sender = env.REMINDER_SENDER;
+    const send: ReminderSend | undefined = sender ? (sub, payload, at) => sender.send(sub, payload, at) : undefined;
     ctx.waitUntil(
       runScheduledWithSentry(controller, env, ctx, () =>
         runReminders(env, new Date(controller.scheduledTime), { send }),
