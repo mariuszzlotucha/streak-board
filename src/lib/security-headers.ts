@@ -26,3 +26,24 @@ function apply(headers: Headers) {
     if (!headers.has(name)) headers.set(name, value);
   }
 }
+
+// Astro computes the page's Content-Security-Policy (`security.csp` in astro.config.mjs, the Supabase origin added by
+// src/layouts/Layout.astro). While the policy is observed, not enforced, the middleware sends it as Report-Only.
+// Enforcing it is changing this constant to "enforce".
+export const CSP_MODE: "report-only" | "enforce" = "report-only";
+
+// Moves the page's `content-security-policy` to `content-security-policy-report-only` (copying a response whose
+// headers are immutable). A response without the header (API routes, redirects) is returned as it is.
+export function toReportOnly(response: Response): Response {
+  const policy = response.headers.get("content-security-policy");
+  if (CSP_MODE !== "report-only" || policy === null) return response;
+  let target = response;
+  try {
+    target.headers.delete("content-security-policy");
+  } catch {
+    target = new Response(response.body, response);
+    target.headers.delete("content-security-policy");
+  }
+  target.headers.set("content-security-policy-report-only", policy);
+  return target;
+}

@@ -2,8 +2,10 @@
 // Shared by `/dashboard` and `/account/nickname`, the pages that show an `?error=` alert.
 ---
 
-{/* Inline so the server HTML carries it (the site sends no CSP). The `?error=` alert shows once: removing the code
-    from the address keeps a reload or a shared link from repeating it; other parameters and the hash stay. */}
+{/* Inline so the server HTML carries it. Astro does not hash `is:inline`, so the script's SHA-256 stands in
+    astro.config.mjs (`security.csp.scriptDirective.hashes`; tests/unit/csp-hash.test.ts compares them): a change to
+    its text updates that hash. The `?error=` alert shows once: removing the code from the address keeps a reload or
+    a shared link from repeating it; other parameters and the hash stay. */}
 <script is:inline>
   {
     const url = new URL(window.location.href);

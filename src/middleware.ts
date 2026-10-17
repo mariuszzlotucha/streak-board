@@ -4,7 +4,7 @@ import { resolveAuthState, unavailableResponse } from "@/lib/auth-state";
 import { reportError, requestFields } from "@/lib/log";
 import { getOwnNickname } from "@/lib/nicknames";
 import { runWithSentry } from "@/lib/sentry";
-import { withSecurityHeaders } from "@/lib/security-headers";
+import { toReportOnly, withSecurityHeaders } from "@/lib/security-headers";
 import { createClient } from "@/lib/supabase";
 
 const PROTECTED_ROUTES = [
@@ -81,7 +81,7 @@ async function handle(context: APIContext, next: MiddlewareNext): Promise<Respon
 
 // The wrapper sits inside the middleware, so the adapter's entry point stays as it is and everything the middleware
 // calls runs with a client and a scope. Every response handle() returns (503, redirect, page) gets the fixed security
-// headers; static files get them from public/_headers.
+// headers; static files get them from public/_headers. A rendered page's CSP is sent as Report-Only (toReportOnly).
 export const onRequest = defineMiddleware((context, next) =>
-  runWithSentry(context, async () => withSecurityHeaders(await handle(context, next))),
+  runWithSentry(context, async () => withSecurityHeaders(toReportOnly(await handle(context, next)))),
 );

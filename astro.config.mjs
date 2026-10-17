@@ -16,6 +16,30 @@ export default defineConfig({
     define: { __BUILD_DATE__: JSON.stringify(new Date().toISOString()) },
   },
   adapter: cloudflare(),
+  // Content-Security-Policy for rendered pages (Astro hashes its own scripts and styles). src/layouts/Layout.astro adds
+  // the Supabase origin to form-action; src/middleware.ts sends the policy as Report-Only (CSP_MODE in
+  // src/lib/security-headers.ts). CSP is not applied in `astro dev`; check it on `npm run build && npm run preview`.
+  security: {
+    csp: {
+      directives: [
+        "default-src 'self'",
+        "img-src 'self' data:",
+        "connect-src 'self'",
+        "font-src 'self'",
+        "manifest-src 'self'",
+        "worker-src 'self'",
+        "object-src 'none'",
+        "base-uri 'self'",
+        "frame-ancestors 'none'",
+        "form-action 'self' https://accounts.google.com",
+        "report-uri /api/csp-report",
+      ],
+      scriptDirective: {
+        // The `is:inline` script of src/components/site/ClearErrorParam.astro (tests/unit/csp-hash.test.ts).
+        hashes: ["sha256-y5xabdxjZ6LpYK23+LnE3VCwrcR2NDi/8ysKDc+rjdA="],
+      },
+    },
+  },
   // Supabase cookies (src/lib/supabase.ts) are the single session source of truth —
   // without this, the Cloudflare adapter auto-provisions a second, unused KV session store.
   session: false,

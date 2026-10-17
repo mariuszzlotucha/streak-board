@@ -285,10 +285,10 @@ Wycofanie: revert commitów fazy. Kroki operatora wycofuje się w panelu Cloudfl
 
 #### Automated
 
-- [x] 1.1 Unit tests pass: `npm run test:unit`
-- [x] 1.2 Integration tests pass (local Supabase stack): `npm test`
-- [x] 1.3 Lint and type check pass: `npm run lint` and `npx astro check`
-- [x] 1.4 Smoke passes: `npm run smoke`
+- [x] 1.1 Unit tests pass: `npm run test:unit` — e804b61
+- [x] 1.2 Integration tests pass (local Supabase stack): `npm test` — e804b61
+- [x] 1.3 Lint and type check pass: `npm run lint` and `npx astro check` — e804b61
+- [x] 1.4 Smoke passes: `npm run smoke` — e804b61
 
 #### Manual
 
@@ -299,11 +299,11 @@ Wycofanie: revert commitów fazy. Kroki operatora wycofuje się w panelu Cloudfl
 
 #### Automated
 
-- [ ] 2.1 Unit tests pass: `npm run test:unit`
-- [ ] 2.2 Integration tests pass (local Supabase stack): `npm test`
-- [ ] 2.3 E2E passes on the preview build: `npx playwright test`
-- [ ] 2.4 Lint, format and type check pass: `npm run lint` and `npx astro check`
-- [ ] 2.5 Smoke passes: `npm run smoke`
+- [x] 2.1 Unit tests pass: `npm run test:unit`
+- [x] 2.2 Integration tests pass (local Supabase stack): `npm test`
+- [x] 2.3 E2E passes on the preview build: `npx playwright test`
+- [x] 2.4 Lint, format and type check pass: `npm run lint` and `npx astro check`
+- [x] 2.5 Smoke passes: `npm run smoke`
 
 #### Manual
 

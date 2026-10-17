@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { SECURITY_HEADERS, withSecurityHeaders } from "@/lib/security-headers";
+import { SECURITY_HEADERS, toReportOnly, withSecurityHeaders } from "@/lib/security-headers";
 
 // The header lines of one rule in public/_headers: the indented lines under `path`, up to the next blank line.
 function headersRule(path: string): [string, string][] {
@@ -44,6 +44,49 @@ describe("withSecurityHeaders", () => {
     expect(response.headers.get("X-Content-Type-Options")).toBe("nosniff");
   });
 });
+
+describe("toReportOnly", () => {
+  const policy = "default-src 'self'; form-action 'self' http://127.0.0.1:54321";
+
+  it("moves the page's policy to the Report-Only header and leaves no enforced one", () => {
+    const response = toReportOnly(new Response("page", { headers: { "Content-Security-Policy": policy } }));
+
+    expect(response.headers.get("content-security-policy-report-only")).toBe(policy);
+    expect(response.headers.has("content-security-policy")).toBe(false);
+  });
+
+  it("leaves a response without a policy as it is", () => {
+    const original = Response.redirect("http://localhost/auth/signin", 302);
+
+    expect(toReportOnly(original)).toBe(original);
+    expect(original.headers.has("content-security-policy-report-only")).toBe(false);
+  });
+
+  it("copies a response whose headers are immutable", async () => {
+    const fetched = new Response("page", { status: 200, headers: { "Content-Security-Policy": policy } });
+    Object.defineProperty(fetched, "headers", { value: new Proxy(fetched.headers, immutable) });
+
+    const response = toReportOnly(fetched);
+
+    expect(response).not.toBe(fetched);
+    expect(response.headers.get("content-security-policy-report-only")).toBe(policy);
+    expect(response.headers.has("content-security-policy")).toBe(false);
+    expect(await response.text()).toBe("page");
+  });
+});
+
+// Headers whose writes throw, as on a fetched response.
+const immutable: ProxyHandler<Headers> = {
+  get(target, key) {
+    if (key === "set" || key === "delete" || key === "append") {
+      return () => {
+        throw new TypeError("immutable");
+      };
+    }
+    const value = Reflect.get(target, key, target) as unknown;
+    return typeof value === "function" ? (value as (...args: unknown[]) => unknown).bind(target) : value;
+  },
+};
 
 describe("public/_headers", () => {
   it("gives static files the same headers as SECURITY_HEADERS, without Cache-Control", () => {
