@@ -3,13 +3,13 @@ project: "StreakBoard"
 version: 1
 status: draft
 created: 2026-09-24
-updated: 2026-10-17
+updated: 2026-10-18
 prd_version: 1
 main_goal: market-feedback
 top_blocker: time
 milestone_id: history-and-reminders
 milestone_seq: 3
-milestone_status: done
+milestone_status: open
 ---
 
 # Roadmap: StreakBoard
@@ -20,16 +20,17 @@ milestone_status: done
 
 ## Milestone
 
-**M-3: Historia, przypomnienia i instalacja: siatka odznaczeń grupy, przypomnienie o niewykonanym tasku i aplikacja PWA** — Status: done
+**M-3: Historia, przypomnienia i instalacja: siatka odznaczeń grupy, przypomnienie o niewykonanym tasku i aplikacja PWA** — Status: open
 
 - **Intent:** Domknąć kryteria drugorzędne PRD v1 i dać aplikacji miejsce na telefonie: członek grupy widzi historię wykonania tasków w prostej siatce, którą grono prowadziło wcześniej ręcznie we wspólnym arkuszu, użytkownik dostaje przypomnienie o tasku, którego jeszcze nie odznaczył, a aplikację można zainstalować na ekranie głównym jak zwykłą aplikację (PWA). Wszystkie trzy mają podtrzymać codzienny powrót do odznaczania, a ich wartość sprawdzamy u realnych użytkowników.
-- **Source materials:** `context/foundation/prd.md` (v1), §Success Criteria → Secondary; punkty tej sekcji nie mają identyfikatorów FR ani US, więc zakres jest zapisany jako kotwice `MS-NN` poniżej. Decyzje właściciela: 2026-10-08 (z historii tylko prosta siatka, bez wykresów i statystyk) i 2026-10-17 (S-13 przeniesiony z M-2, M-3 oparty na kryteriach drugorzędnych PRD, przypomnienia odparkowane). Opis właściciela z 2026-10-17: „Żeby aplikacja była PWA” (kotwica MS-03). Prośba właściciela z 2026-10-17 o utwardzenie publicznej powierzchni po skanach botów w logach Cloudflare (kotwica MS-04). Konieczne FR z PRD (FR-001 do FR-012) pokryły M-1 i M-2 (`## Milestone History`).
-- **Done when:** każdy S-NN poniżej (S-13, S-16, S-17, S-18) ma status `done`.
+- **Source materials:** `context/foundation/prd.md` (v1), §Success Criteria → Secondary; punkty tej sekcji nie mają identyfikatorów FR ani US, więc zakres jest zapisany jako kotwice `MS-NN` poniżej. Decyzje właściciela: 2026-10-08 (z historii tylko prosta siatka, bez wykresów i statystyk) i 2026-10-17 (S-13 przeniesiony z M-2, M-3 oparty na kryteriach drugorzędnych PRD, przypomnienia odparkowane). Opis właściciela z 2026-10-17: „Żeby aplikacja była PWA” (kotwica MS-03). Prośba właściciela z 2026-10-17 o utwardzenie publicznej powierzchni po skanach botów w logach Cloudflare (kotwica MS-04). Opis właściciela z 2026-10-18: „aplikacja powinna promować bardziej PWA, instalowanie samej siebie”, i decyzja, że to jeszcze M-3 (kotwica MS-05). Konieczne FR z PRD (FR-001 do FR-012) pokryły M-1 i M-2 (`## Milestone History`).
+- **Done when:** każdy S-NN poniżej (S-13, S-16, S-17, S-18, S-19) ma status `done`.
 - **Scope anchors:** po jednej na wycinek: MS-01 i MS-02 przepisane z PRD §Success Criteria → Secondary, MS-03 z opisu właściciela:
   - MS-01: członek grupy widzi historię wykonania tasku jako prostą siatkę: uczestnicy × ostatnie okresy, wykonane i niewykonane (PRD §Vision: zielono-czerwona siatka jako pierwotna wartość, FR-013; §Success Criteria → Secondary „Historia/statystyki długoterminowe” bez zmian; decyzja właściciela 2026-10-08: w zakresie samej siatki, wykresy i statystyki zostają w `## Parked`; do 2026-10-17 kotwica MS-08 kamienia M-2).
   - MS-02: użytkownik dostaje przypomnienie o tasku, do którego jest zapisany, a którego nie odznaczył w bieżącym okresie (PRD: „Powiadomienia/przypomnienia o niewykonanym tasku”; odparkowane decyzją właściciela 2026-10-17).
   - MS-03: aplikacja jest PWA: użytkownik instaluje ją na ekranie głównym telefonu (albo na komputerze) i uruchamia jak osobną aplikację (opis właściciela 2026-10-17: „Żeby aplikacja była PWA”; działanie offline zostaje wyłączone przez PRD §Non-Goals, chyba że właściciel zdecyduje inaczej).
   - MS-04: publiczna powierzchnia aplikacji jest utwardzona: odpowiedzi niosą nagłówki bezpieczeństwa (nosniff, Referrer-Policy, ochrona przed osadzaniem w ramkach, Permissions-Policy, najpierw CSP w trybie Report-Only), jest `/.well-known/security.txt`, a operator ustawia w Cloudflare HSTS, rekordy SPF i DMARC (domena nie wysyła poczty) i regułę WAF na skany `/wp-*` i `*.php` (prośba właściciela 2026-10-17: produkcja nie wysyła żadnego nagłówka bezpieczeństwa, domena nie ma SPF ani DMARC, boty pytają o `/wp-admin/install.php`).
+  - MS-05: aplikacja sama zachęca do instalacji: użytkownik, który otwiera ją w przeglądarce, dowiaduje się, jak zainstalować ją na swoim urządzeniu i co mu to daje (na iPhonie przypomnienia działają tylko po instalacji) (opis właściciela 2026-10-18: „aplikacja powinna promować bardziej PWA, instalowanie samej siebie”; zmienia decyzję z planu S-17 z 2026-10-17, by nie robić własnego przycisku instalacji ani podpowiedzi dla iOS).
 
 ## Vision recap
 
@@ -43,12 +44,13 @@ Grono znajomych korzystało wcześniej ze wspólnego arkusza Google, w którym r
 
 ## At a glance
 
-| ID   | Change ID                | Outcome (user can …)                                                                                                                         | Prerequisites | PRD refs                                     | Status |
-| ---- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | -------------------------------------------- | ------ |
-| S-13 | checkoff-grid            | zobaczyć siatkę odznaczeń grupy: kto wykonał task w każdym z ostatnich okresów                                                               | S-11, S-14    | PRD §Vision, FR-013; MS-01                   | done   |
-| S-16 | task-reminders           | dostać przypomnienie o tasku, do którego jest zapisany, a którego nie odznaczył w bieżącym okresie                                           | —             | — (PRD §Success Criteria → Secondary; MS-02) | done   |
-| S-17 | installable-pwa          | zainstalować aplikację na ekranie głównym telefonu albo na komputerze i uruchamiać ją jak osobną aplikację (PWA)                             | —             | — (opis właściciela; MS-03)                  | done   |
-| S-18 | public-surface-hardening | odwiedzać aplikację, która wysyła nagłówki bezpieczeństwa, publikuje kontakt do zgłaszania luk i której domeny nie da się podrobić w poczcie | —             | — (prośba właściciela; MS-04)                | done   |
+| ID   | Change ID                | Outcome (user can …)                                                                                                                                      | Prerequisites | PRD refs                                     | Status   |
+| ---- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | -------------------------------------------- | -------- |
+| S-13 | checkoff-grid            | zobaczyć siatkę odznaczeń grupy: kto wykonał task w każdym z ostatnich okresów                                                                            | S-11, S-14    | PRD §Vision, FR-013; MS-01                   | done     |
+| S-16 | task-reminders           | dostać przypomnienie o tasku, do którego jest zapisany, a którego nie odznaczył w bieżącym okresie                                                        | —             | — (PRD §Success Criteria → Secondary; MS-02) | done     |
+| S-17 | installable-pwa          | zainstalować aplikację na ekranie głównym telefonu albo na komputerze i uruchamiać ją jak osobną aplikację (PWA)                                          | —             | — (opis właściciela; MS-03)                  | done     |
+| S-18 | public-surface-hardening | odwiedzać aplikację, która wysyła nagłówki bezpieczeństwa, publikuje kontakt do zgłaszania luk i której domeny nie da się podrobić w poczcie              | —             | — (prośba właściciela; MS-04)                | done     |
+| S-19 | install-promotion        | dowiedzieć się w aplikacji, jak zainstalować ją na swoim urządzeniu (na iPhonie instrukcja, w Chrome i Edge przycisk), i po co (przypomnienia na iPhonie) | S-16, S-17    | — (opis właściciela; MS-05)                  | planning |
 
 ## Baseline
 
@@ -136,6 +138,21 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Risk:** Zbyt ciasna CSP albo `X-Frame-Options` mogą zepsuć logowanie Google, push albo service worker, więc CSP idzie najpierw jako Report-Only; HSTS, DNS i WAF to kroki operatora w panelu Cloudflare (ręczne wiersze planu), nie kod.
 - **Status:** done
 
+### S-19: Zachęta do instalacji aplikacji
+
+- **Outcome:** użytkownik, który otwiera StreakBoard w przeglądarce, dowiaduje się w aplikacji, jak zainstalować ją na swoim urządzeniu: na iPhonie widzi instrukcję „Udostępnij → Do ekranu początkowego”, w Chrome i Edge przycisk instalacji, i wie, że na iPhonie przypomnienia działają tylko z zainstalowanej aplikacji. W zainstalowanej aplikacji zachęty nie ma.
+- **Change ID:** install-promotion
+- **PRD refs:** — (opis właściciela; MS-05)
+- **Prerequisites:** S-17 (aplikacja da się zainstalować), S-16 (przypomnienia, o których zachęta mówi)
+- **Parallel with:** —
+- **Blockers:** —
+- **Unknowns:**
+  - Gdzie zachęta się pokazuje (dashboard, strona główna, ustawienia przy przełączniku przypomnień) i czy da się ją zamknąć na stałe na danym urządzeniu? — Owner: user. Block: no — rozstrzyga `/10x-frame` albo `/10x-plan`.
+  - Jak rozpoznać iPhone'a z Safari i inne przeglądarki bez własnego monitu instalacji, i co pokazać w przeglądarce wbudowanej w komunikator, z której nie da się zainstalować aplikacji? — Owner: team. Block: no — rozstrzyga `/10x-research`.
+- **Źródło zakresu:** opis właściciela z 2026-10-18 po teście z kolegą na iPhonie: dziś jedyną wskazówką jest napis przy przełączniku przypomnień w ustawieniach („Install StreakBoard on your home screen to get reminders.”), a Safari na iPhonie nie pokazuje żadnego monitu instalacji.
+- **Risk:** Zachęta nie może być natrętna ani pokazywać się w zainstalowanej aplikacji; systemowy monit instalacji jest tylko w przeglądarkach Chromium, a rozpoznawanie iPhone'a po przeglądarce bywa zawodne, więc zachęta musi mieć sensowny wariant domyślny. Zmienia decyzję z planu S-17 (bez własnego przycisku i bez podpowiedzi dla iOS).
+- **Status:** planning
+
 ## Backlog Handoff
 
 | Roadmap ID | Change ID                | Suggested issue title                                                                           | Ready for `/10x-plan` | Notes                                                                                                                                                                         |
@@ -144,6 +161,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-16       | task-reminders           | Przypomnienie o niewykonanym tasku: kanał, harmonogram, zgoda                                   | yes                   | Najpierw `/10x-frame` (kanał, pora, zgoda), potem `/10x-research` (wysyłka i harmonogram na Workerze). Polityka prywatności, PRD i słownik w zakresie.                        |
 | S-17       | installable-pwa          | Aplikacja PWA: instalacja na ekranie głównym, ikony, service worker bez cache danych            | yes                   | Najpierw `/10x-frame` (offline czy nie, ikony, systemy), potem `/10x-research`. Przy kanale push w S-16 idzie przed S-16.                                                     |
 | S-18       | public-surface-hardening | Utwardzenie publicznej powierzchni: nagłówki bezpieczeństwa, security.txt, SPF/DMARC, HSTS, WAF | yes                   | Kod: nagłówki w middleware, CSP Report-Only, `security.txt`. Ręcznie w Cloudflare: HSTS, SPF/DMARC, reguła WAF.                                                               |
+| S-19       | install-promotion        | Zachęta do instalacji: instrukcja dla iPhone'a, przycisk w Chrome i Edge, powód (przypomnienia) | yes                   | Zmienia decyzję z planu S-17. Najpierw `/10x-frame` (miejsca, zamykanie, przeglądarki w komunikatorach), potem `/10x-plan`.                                                   |
 
 ## Open Roadmap Questions
 
@@ -167,6 +185,7 @@ Brak otwartych pytań na poziomie roadmapy: PRD `## Open Questions` mówi „Non
 - **M-1: Pierwszy pełny cykl: grupa → task → odznaczenie → tablica wyników** (`first-group-checkin-loop`) — closed 2026-10-02. F-01 oraz S-01 do S-05 `done`: pełny przepływ z głównego kryterium sukcesu PRD (FR-001 do FR-009) działa na produkcji, a migracje i wydania są zautomatyzowane; zmiany zarchiwizowane w `context/archive/` (2026-09-25 do 2026-10-01).
 - **M-2: Gotowość na realnych użytkowników: adres, logowanie, strona startowa, widok, testy i widoczne awarie** (`ready-for-real-users`) — closed 2026-10-17. S-06, S-07, S-08, S-09, S-10, S-11, S-12, S-14 i S-15 `done`: aplikacja działa pod `streakboard.app` z logowaniem Google, stroną startową z polityką prywatności, nowym widokiem grupy, nickami zamiast e-maili i usuwaniem konta, awarie trafiają do odpowiedzi API i do monitoringu, a testy dobrane według ryzyka (z e2e i testami mutacyjnymi) pilnują zmian; zmiany zarchiwizowane w `context/archive/` (2026-10-02 do 2026-10-16). S-13 (siatka odznaczeń, kotwica MS-08) przeniesiony do M-3 decyzją właściciela 2026-10-17.
 - **M-3: Historia, przypomnienia i instalacja: siatka odznaczeń grupy, przypomnienie o niewykonanym tasku i aplikacja PWA** (`history-and-reminders`) — closed 2026-10-17. S-13, S-16, S-17 i S-18 `done`: członek grupy widzi siatkę odznaczeń przy każdym tasku, przypomnienia Web Push przychodzą o 20:00 czasu warszawskiego, aplikację da się zainstalować jako PWA, a publiczna powierzchnia ma nagłówki bezpieczeństwa, CSP w trybie Report-Only i `security.txt`, a domeny nie da się podrobić w poczcie; zmiany zarchiwizowane w `context/archive/` (2026-10-17). Przy zamknięciu strona główna przestała opisywać aplikację jako wspólny arkusz i opisuje siatkę przy każdym tasku (PR #187). Właściciel nie otwiera kolejnego kamienia milowego (decyzja 2026-10-17).
+- **M-3: Historia, przypomnienia i instalacja: siatka odznaczeń grupy, przypomnienie o niewykonanym tasku i aplikacja PWA** (`history-and-reminders`) — reopened 2026-10-18. Decyzja właściciela: zachęta do instalacji aplikacji (S-19, kotwica MS-05) należy jeszcze do M-3, więc kamień milowy jest znowu otwarty; wpis o zamknięciu powyżej zostaje bez zmian.
 
 ## Done
 
