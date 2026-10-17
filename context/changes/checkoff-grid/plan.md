@@ -326,8 +326,8 @@ None: no schema change; `joined_at` already exists and is granted.
 
 #### Automated
 
-- [x] 4.1 Lint, format and build pass: `npm run lint`, `npx prettier --check context/changes/checkoff-grid context/foundation/prd.md context/foundation/roadmap.md context/domain/glossary.md context/domain/01-domain-distillation.md` (the files this change touches; the rest of `context/**` fails on master, owner decision 2026-10-17), `npm run build`
-- [x] 4.2 Smoke passes: `npm run smoke`
+- [x] 4.1 Lint, format and build pass: `npm run lint`, `npx prettier --check context/changes/checkoff-grid context/foundation/prd.md context/foundation/roadmap.md context/domain/glossary.md context/domain/01-domain-distillation.md` (the files this change touches; the rest of `context/**` fails on master, owner decision 2026-10-17), `npm run build` — 06921d6
+- [x] 4.2 Smoke passes: `npm run smoke` — 06921d6
 
 #### Manual
 
