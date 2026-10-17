@@ -42,3 +42,17 @@ export function groupParticipantsByTask(rows: readonly { task_id: string; user_i
   }
   return byTask;
 }
+
+/** Participation rows grouped by task id with their join time, keeping the row order within each task. Pure. */
+export function groupParticipationsByTask(
+  rows: readonly { task_id: string; user_id: string; joined_at: string }[],
+): Map<string, { userId: string; joinedAt: string }[]> {
+  const byTask = new Map<string, { userId: string; joinedAt: string }[]>();
+  for (const { task_id, user_id, joined_at } of rows) {
+    const participation = { userId: user_id, joinedAt: joined_at };
+    const list = byTask.get(task_id);
+    if (list) list.push(participation);
+    else byTask.set(task_id, [participation]);
+  }
+  return byTask;
+}

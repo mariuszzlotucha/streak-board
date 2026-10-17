@@ -8,7 +8,8 @@ import { groupErrorMessage } from "@/lib/group-errors";
 import { nicknameErrorMessage } from "@/lib/nickname-errors";
 import type { GroupMember, MyGroup } from "@/lib/groups";
 import { buildBoard, groupPeriodsByEnrolment, rankStandings, type EnrolmentPeriods } from "@/lib/leaderboard-rules";
-import { groupParticipantsByTask } from "@/lib/task-rules";
+import { buildGrids } from "@/lib/grid-rules";
+import { groupParticipantsByTask, groupParticipationsByTask } from "@/lib/task-rules";
 import type { GroupTask } from "@/lib/tasks";
 
 /** What a state page renders: `DashboardView`'s props (the loaded data plus the viewer) and the nickname `AppLayout` shows. */
@@ -200,13 +201,38 @@ const CHECKOFFS: EnrolmentPeriods[] = [
   { task_id: TASKS[6].id, user_id: THIRD_ID, periods: ["2026-10-10", "2026-10-11"] },
 ];
 
-function participantsOf(tasks: readonly GroupTask[]): Map<string, string[]> {
-  const rows = PARTICIPATION.flatMap(([participated, userIds]) =>
+// Every participation started with the group, except Sam's on "Read 20 pages": joined on Friday 9 Oct, so the grid shows
+// Sam's days before it as "not joined" beside Max's missed days, done days and today's open cell.
+const JOINED_AT = "2026-09-28T08:00:00Z";
+const LATE_JOIN = { task_id: TASKS[1].id, user_id: THIRD_ID, joined_at: "2026-10-09T07:00:00Z" };
+
+function participationRows(tasks: readonly GroupTask[]) {
+  return PARTICIPATION.flatMap(([participated, userIds]) =>
     tasks.some((t) => t.id === participated.id)
-      ? userIds.map((user_id) => ({ task_id: participated.id, user_id }))
+      ? userIds.map((user_id) => ({
+          task_id: participated.id,
+          user_id,
+          joined_at:
+            participated.id === LATE_JOIN.task_id && user_id === LATE_JOIN.user_id ? LATE_JOIN.joined_at : JOINED_AT,
+        }))
       : [],
   );
-  return groupParticipantsByTask(rows);
+}
+
+function participantsOf(tasks: readonly GroupTask[]): Map<string, string[]> {
+  return groupParticipantsByTask(participationRows(tasks));
+}
+
+/** The grids as `loadDashboard` computes them: the real rules, at the same fixed instant as the board. */
+function grids(members: GroupMember[], tasks: GroupTask[], viewerId: string) {
+  return buildGrids({
+    members,
+    tasks,
+    participations: groupParticipationsByTask(participationRows(tasks)),
+    periodsByEnrolment: groupPeriodsByEnrolment(CHECKOFFS),
+    viewerId,
+    now: NOW,
+  });
 }
 
 /** The board as `loadDashboard` computes it: the real rules, at the fixed instant. */
@@ -243,6 +269,7 @@ function emptyData(): DashboardData {
     participantsFailed: false,
     checkoffsFailed: false,
     board: null,
+    grids: null,
   };
 }
 
@@ -276,7 +303,10 @@ function inGroup(
   else data.participantsByTask = participantsOf(tasks);
   if (failed === "checkoffs") data.checkoffsFailed = true;
   // The board needs all three reads, as in `loadDashboard`.
-  if (!failed) data.board = board(members, data.tasks, data.participantsByTask, viewer.id);
+  if (!failed) {
+    data.board = board(members, data.tasks, data.participantsByTask, viewer.id);
+    data.grids = grids(members, data.tasks, viewer.id);
+  }
   return { ...data, viewerId: viewer.id, nickname: viewer.nickname, inviteLink: `${origin}/join/${group.join_code}` };
 }
 

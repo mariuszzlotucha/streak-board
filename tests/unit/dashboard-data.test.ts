@@ -11,6 +11,7 @@ import type { GroupTask } from "@/lib/tasks";
 vi.mock("@/lib/groups", () => ({ getMyGroup: vi.fn(), listGroupMembers: vi.fn(), previewGroup: vi.fn() }));
 vi.mock("@/lib/tasks", () => ({ listGroupTasks: vi.fn(), listTaskParticipants: vi.fn() }));
 vi.mock("@/lib/checkoffs", () => ({ listCheckoffPeriods: vi.fn() }));
+vi.mock("@/lib/grid-rules", () => ({ buildGrids: vi.fn() }));
 vi.mock("@/lib/join-code", () => ({ peekJoinCode: vi.fn(), clearJoinCode: vi.fn() }));
 vi.mock("@/lib/leaderboard-rules", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/leaderboard-rules")>()),
@@ -24,6 +25,7 @@ const tasksLib = await import("@/lib/tasks");
 const checkoffs = await import("@/lib/checkoffs");
 const joinCode = await import("@/lib/join-code");
 const rules = await import("@/lib/leaderboard-rules");
+const gridRules = await import("@/lib/grid-rules");
 
 type Supabase = NonNullable<ReturnType<typeof createClient>>;
 
@@ -44,6 +46,7 @@ const members: GroupMember[] = [
 ];
 const task: GroupTask = { id: "t-1", title: "Run", recurrence: "daily", created_by: "u-owner" };
 const board = { totals: [], viewerTasks: new Map() } as unknown as ReturnType<typeof rules.buildBoard>;
+const grids = new Map() as ReturnType<typeof gridRules.buildGrids>;
 const log: ReportContext = { route: "/dashboard", userId: "u-owner", ray: "ray-1" };
 
 function input(overrides: Partial<DashboardInput> = {}): DashboardInput {
@@ -70,10 +73,14 @@ beforeEach(() => {
   vi.mocked(groups.listGroupMembers).mockResolvedValue(members);
   vi.mocked(groups.previewGroup).mockResolvedValue(null);
   vi.mocked(tasksLib.listGroupTasks).mockResolvedValue([task]);
-  vi.mocked(tasksLib.listTaskParticipants).mockResolvedValue([{ task_id: "t-1", user_id: "u-owner" }] as never);
+  vi.mocked(tasksLib.listTaskParticipants).mockResolvedValue([
+    { task_id: "t-1", user_id: "u-owner", joined_at: "2026-10-01T08:00:00Z" },
+  ]);
   vi.mocked(checkoffs.listCheckoffPeriods).mockResolvedValue([] as never);
   vi.mocked(joinCode.peekJoinCode).mockReturnValue(null);
   vi.mocked(rules.buildBoard).mockReturnValue(board);
+  vi.mocked(gridRules.buildGrids).mockReset();
+  vi.mocked(gridRules.buildGrids).mockReturnValue(grids);
   // A throwing implementation from the ranking test must not leak: clearAllMocks keeps a module mock's implementation.
   vi.mocked(rules.rankStandings).mockReset();
 });
@@ -97,8 +104,28 @@ describe("loadDashboard", () => {
       checkoffsFailed: false,
       board,
     });
+    expect(data.grids).toBe(grids);
     expect(data.participantsByTask.get("t-1")).toEqual(["u-owner"]);
     expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it("builds the grids from the board's instant and periods, with the participations and their join times", async () => {
+    const periods = new Map([["t-1", new Map([["u-owner", ["2026-10-02"]]])]]);
+    vi.mocked(rules.groupPeriodsByEnrolment).mockReturnValueOnce(periods);
+    await loadDashboard(input());
+    expect(rules.groupPeriodsByEnrolment).toHaveBeenCalledOnce();
+    const boardInput = vi.mocked(rules.buildBoard).mock.calls[0][0];
+    const gridInput = vi.mocked(gridRules.buildGrids).mock.calls[0][0];
+    expect(gridInput).toEqual({
+      members,
+      tasks: [task],
+      participations: new Map([["t-1", [{ userId: "u-owner", joinedAt: "2026-10-01T08:00:00Z" }]]]),
+      periodsByEnrolment: periods,
+      viewerId: "u-owner",
+      now: boardInput.now,
+    });
+    expect(gridInput.periodsByEnrolment).toBe(boardInput.periodsByEnrolment);
+    expect(gridInput.now).toBe(boardInput.now);
   });
 
   it("renders nothing failed when Supabase is not configured", async () => {
@@ -125,7 +152,13 @@ describe("loadDashboard", () => {
     const cause = Object.assign(new Error("down"), { code: "PGRST000", status: 503 });
     vi.mocked(groups.listGroupMembers).mockRejectedValue(cause);
     const data = await loadDashboard(input());
-    expect(data).toMatchObject({ loadFailed: true, error: groupErrorMessage("unknown"), members: [], board: null });
+    expect(data).toMatchObject({
+      loadFailed: true,
+      error: groupErrorMessage("unknown"),
+      members: [],
+      board: null,
+      grids: null,
+    });
     expect(errorSpy).toHaveBeenCalledOnce();
     expect(errorSpy.mock.calls[0][0]).toMatchObject({
       ...report("dashboard.load.failed", cause),
@@ -142,6 +175,7 @@ describe("loadDashboard", () => {
       loadFailed: false,
       error: groupErrorMessage("unknown"),
       board: null,
+      grids: null,
     });
     expect(data.members).toEqual(members);
     expect(errorSpy).toHaveBeenCalledOnce();
@@ -161,8 +195,15 @@ describe("loadDashboard", () => {
     const cause = new Error("down");
     vi.mocked(tasksLib.listTaskParticipants).mockRejectedValue(cause);
     const data = await loadDashboard(input());
-    expect(data).toMatchObject({ participantsFailed: true, checkoffsFailed: false, board: null, error: null });
+    expect(data).toMatchObject({
+      participantsFailed: true,
+      checkoffsFailed: false,
+      board: null,
+      grids: null,
+      error: null,
+    });
     expect(rules.buildBoard).not.toHaveBeenCalled();
+    expect(gridRules.buildGrids).not.toHaveBeenCalled();
     expect(errorSpy).toHaveBeenCalledOnce();
     expect(errorSpy.mock.calls[0][0]).toMatchObject(report("dashboard.participants.failed", cause));
   });
@@ -171,7 +212,7 @@ describe("loadDashboard", () => {
     const cause = new Error("down");
     vi.mocked(checkoffs.listCheckoffPeriods).mockRejectedValue(cause);
     const data = await loadDashboard(input());
-    expect(data).toMatchObject({ checkoffsFailed: true, board: null, loadFailed: false, error: null });
+    expect(data).toMatchObject({ checkoffsFailed: true, board: null, grids: null, loadFailed: false, error: null });
     expect(errorSpy).toHaveBeenCalledOnce();
     expect(errorSpy.mock.calls[0][0]).toMatchObject(report("dashboard.checkoffs.failed", cause));
   });
@@ -190,6 +231,7 @@ describe("loadDashboard", () => {
       checkoffsFailed: true,
       loadFailed: false,
       board: null,
+      grids: null,
     });
     expect(errorSpy).toHaveBeenCalledTimes(3);
     expect(errorSpy.mock.calls[0][0]).toMatchObject(report("dashboard.tasks.failed", tasksCause));
@@ -203,7 +245,14 @@ describe("loadDashboard", () => {
       throw cause;
     });
     const data = await loadDashboard(input());
-    expect(data).toMatchObject({ checkoffsFailed: true, board: null, loadFailed: false, members, tasks: [task] });
+    expect(data).toMatchObject({
+      checkoffsFailed: true,
+      board: null,
+      grids: null,
+      loadFailed: false,
+      members,
+      tasks: [task],
+    });
     expect(errorSpy).toHaveBeenCalledOnce();
     expect(errorSpy.mock.calls[0][0]).toMatchObject(report("dashboard.leaderboard.failed", cause));
   });
@@ -214,7 +263,18 @@ describe("loadDashboard", () => {
       throw cause;
     });
     const data = await loadDashboard(input());
-    expect(data).toMatchObject({ checkoffsFailed: true, board: null, loadFailed: false });
+    expect(data).toMatchObject({ checkoffsFailed: true, board: null, grids: null, loadFailed: false });
+    expect(errorSpy).toHaveBeenCalledOnce();
+    expect(errorSpy.mock.calls[0][0]).toMatchObject(report("dashboard.leaderboard.failed", cause));
+  });
+
+  it("degrades the scores and the grids when building the grids throws and reports dashboard.leaderboard.failed", async () => {
+    const cause = new Error("bad grid");
+    vi.mocked(gridRules.buildGrids).mockImplementation(() => {
+      throw cause;
+    });
+    const data = await loadDashboard(input());
+    expect(data).toMatchObject({ checkoffsFailed: true, board: null, grids: null, loadFailed: false, members });
     expect(errorSpy).toHaveBeenCalledOnce();
     expect(errorSpy.mock.calls[0][0]).toMatchObject(report("dashboard.leaderboard.failed", cause));
   });

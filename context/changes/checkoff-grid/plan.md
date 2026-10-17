@@ -289,9 +289,9 @@ None: no schema change; `joined_at` already exists and is granted.
 
 #### Automated
 
-- [x] 1.1 Unit tests pass: `npm run test:unit`
-- [x] 1.2 Lint and type check pass: `npm run lint` and `npx astro check`
-- [x] 1.3 Mutation run on the grid rules reviewed survivor by survivor: `npm run test:mutation -- --mutate src/lib/grid-rules.ts`
+- [x] 1.1 Unit tests pass: `npm run test:unit` — d46fbc9
+- [x] 1.2 Lint and type check pass: `npm run lint` and `npx astro check` — d46fbc9
+- [x] 1.3 Mutation run on the grid rules reviewed survivor by survivor: `npm run test:mutation -- --mutate src/lib/grid-rules.ts` — d46fbc9
 
 #### Manual
 
@@ -301,10 +301,10 @@ None: no schema change; `joined_at` already exists and is granted.
 
 #### Automated
 
-- [ ] 2.1 Unit tests pass: `npm run test:unit`
-- [ ] 2.2 Integration tests pass against the local stack: `npm test`
-- [ ] 2.3 Astro type check passes: `npx astro check`
-- [ ] 2.4 Lint passes: `npm run lint`
+- [x] 2.1 Unit tests pass: `npm run test:unit`
+- [x] 2.2 Integration tests pass against the local stack: `npm test`
+- [x] 2.3 Astro type check passes: `npx astro check`
+- [x] 2.4 Lint passes: `npm run lint`
 
 ### Phase 3: UI
 
