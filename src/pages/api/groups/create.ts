@@ -4,6 +4,7 @@ import { reportError, reportMapped, requestFields } from "@/lib/log";
 import { toGroupErrorCode } from "@/lib/group-errors";
 import { normalizeGroupName } from "@/lib/group-rules";
 import { clearJoinCode } from "@/lib/join-code";
+import { noticePath } from "@/lib/notices";
 
 export const prerender = false;
 
@@ -34,7 +35,7 @@ export const POST: APIRoute = async (context) => {
     }
 
     clearJoinCode(context.cookies);
-    return context.redirect("/dashboard");
+    return context.redirect(noticePath("/dashboard", "group_created"));
   } catch (error) {
     // Malformed body or a thrown Supabase/network error: end on the dashboard with a fixed message.
     reportError("groups.create.exception", error, requestFields(context));

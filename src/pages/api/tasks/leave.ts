@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { createClient } from "@/lib/supabase";
 import { reportError, reportMapped, requestFields } from "@/lib/log";
 import { normalizeUuid } from "@/lib/group-rules";
+import { noticePath } from "@/lib/notices";
 import { toTaskErrorCode } from "@/lib/task-errors";
 
 export const prerender = false;
@@ -24,7 +25,7 @@ export const POST: APIRoute = async (context) => {
       return context.redirect("/dashboard?error=not_configured");
     }
 
-    // Only the caller's own row can match (RLS), so "not joined" and "task gone" both come back empty: a quiet no-op.
+    // Only the caller's own row can match (RLS), so "not joined" and "task gone" both come back empty: no error, and the same confirmation as a real leave.
     const { error, status } = await supabase
       .from("task_participants")
       .delete()
@@ -37,7 +38,7 @@ export const POST: APIRoute = async (context) => {
       return context.redirect(`/dashboard?error=${errorCode}`);
     }
 
-    return context.redirect("/dashboard");
+    return context.redirect(noticePath("/dashboard", "task_left"));
   } catch (error) {
     reportError("tasks.leave.exception", error, requestFields(context));
     return context.redirect("/dashboard?error=unknown");

@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { createClient } from "@/lib/supabase";
 import { reportError, reportMapped, requestFields } from "@/lib/log";
 import { getMyGroup } from "@/lib/groups";
+import { noticePath } from "@/lib/notices";
 import { toTaskErrorCode } from "@/lib/task-errors";
 import { normalizeRecurrence, normalizeTaskTitle } from "@/lib/task-rules";
 
@@ -44,7 +45,7 @@ export const POST: APIRoute = async (context) => {
       return context.redirect(`/dashboard?error=${errorCode}`);
     }
 
-    return context.redirect("/dashboard");
+    return context.redirect(noticePath("/dashboard", "task_created"));
   } catch (error) {
     // Malformed body or a thrown Supabase/network error: end on the dashboard with a fixed message.
     reportError("tasks.create.exception", error, requestFields(context));

@@ -4,6 +4,7 @@ import { reportError, reportMapped, requestFields } from "@/lib/log";
 import { toGroupErrorCode } from "@/lib/group-errors";
 import { normalizeGroupName } from "@/lib/group-rules";
 import { getMyGroup } from "@/lib/groups";
+import { noticePath } from "@/lib/notices";
 
 export const prerender = false;
 
@@ -41,7 +42,7 @@ export const POST: APIRoute = async (context) => {
       return context.redirect("/dashboard?error=forbidden");
     }
 
-    return context.redirect("/dashboard");
+    return context.redirect(noticePath("/dashboard", "group_renamed"));
   } catch (error) {
     // Malformed body or a thrown Supabase/network error: end on the dashboard with a fixed message.
     reportError("groups.rename.exception", error, requestFields(context));

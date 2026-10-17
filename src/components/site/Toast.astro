@@ -1,0 +1,103 @@
+---
+import { CircleAlert, CircleCheck, X } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+interface Props {
+  /** The fixed message: a resolved `?notice=` (success) or `?error=` (error) code, never request text. */
+  message: string;
+  variant: "success" | "error";
+  /** Dev-only: keep a success toast on screen (no auto-hide), so the kitchen sink and its screenshots show it. */
+  visible?: boolean;
+}
+
+const { message, variant, visible = false } = Astro.props;
+// Fixed at the bottom like `UpdateNotice` (bottom-4), but higher, so a new-version message under it stays readable.
+const position = "fixed inset-x-4 bottom-28 z-50 mx-auto max-w-md";
+---
+
+{/* Rendered in the server HTML where the page puts it (inside <main>, before the page's <h1>) and positioned fixed.
+    A success is a `role="status"` that hides after about 5 s; an error keeps the `Alert` (`role="alert"`, smoke reads
+    its `data-slot="alert-description"`) and stays until it is closed. The bundled script below handles both, so it
+    needs no hand-kept CSP hash. */}
+{variant === "success" ? (
+  <div
+    data-toast="success"
+    data-toast-pinned={visible ? "" : undefined}
+    role="status"
+    class:list={cn(
+      position,
+      "flex items-center gap-3 rounded-lg border border-border bg-background p-4 text-sm text-foreground shadow-lg",
+    )}
+  >
+    <CircleCheck aria-hidden="true" className="size-4 shrink-0 text-success" />
+    <p class="flex-1">{message}</p>
+    <Button type="button" variant="ghost" size="icon-sm" aria-label="Close" data-toast-close>
+      <X aria-hidden="true" />
+    </Button>
+  </div>
+) : (
+  <div data-toast="error" class:list={position}>
+    <Alert variant="destructive" className="pr-12 shadow-lg">
+      <CircleAlert />
+      <AlertDescription>{message}</AlertDescription>
+    </Alert>
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon-sm"
+      aria-label="Close"
+      data-toast-close
+      className="absolute top-1.5 right-1.5"
+    >
+      <X aria-hidden="true" />
+    </Button>
+  </div>
+)}
+
+<script>
+  // The close button or Escape hides it; a success toast also hides on its own after about 5 s, paused while the pointer
+  // or keyboard focus is on it. An error toast never hides on its own.
+  const AUTO_HIDE_MS = 5000;
+  const hides: (() => void)[] = [];
+  for (const toast of document.querySelectorAll<HTMLElement>("[data-toast]")) {
+    let timer: number | undefined;
+    const hide = () => {
+      window.clearTimeout(timer);
+      // Hiding the focused close button would drop focus to <body>: hand it to <main> instead.
+      const hadFocus = toast.contains(document.activeElement);
+      toast.hidden = true;
+      const main = document.querySelector<HTMLElement>("main");
+      if (hadFocus && main) {
+        main.tabIndex = -1;
+        main.focus({ preventScroll: true });
+      }
+    };
+    toast.querySelector("[data-toast-close]")?.addEventListener("click", hide);
+    hides.push(hide);
+    if (toast.dataset.toast === "success" && toast.dataset.toastPinned === undefined) {
+      const start = () => {
+        window.clearTimeout(timer);
+        timer = window.setTimeout(hide, AUTO_HIDE_MS);
+      };
+      const pause = () => window.clearTimeout(timer);
+      toast.addEventListener("mouseenter", pause);
+      toast.addEventListener("focusin", pause);
+      toast.addEventListener("mouseleave", () => {
+        if (!toast.contains(document.activeElement)) start();
+      });
+      toast.addEventListener("focusout", (event) => {
+        if (!toast.contains(event.relatedTarget as Node | null) && !toast.matches(":hover")) start();
+      });
+      start();
+    }
+  }
+  // Escape anywhere closes the toasts, unless an open dialog owns the key (it closes on Escape itself).
+  if (hides.length > 0) {
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape" || document.querySelector('[role="dialog"], [role="alertdialog"]')) return;
+      for (const hide of hides) hide();
+    });
+  }
+</script>

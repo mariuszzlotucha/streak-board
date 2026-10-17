@@ -4,6 +4,7 @@ import { reportError, reportMapped, requestFields } from "@/lib/log";
 import { toGroupErrorCode } from "@/lib/group-errors";
 import { normalizeUuid } from "@/lib/group-rules";
 import { getMyGroup } from "@/lib/groups";
+import { noticePath } from "@/lib/notices";
 
 export const prerender = false;
 
@@ -32,7 +33,7 @@ export const POST: APIRoute = async (context) => {
     if (!group) {
       // No group left (deleted in another tab): a stale submit ends where the user wanted to be, not on a
       // "not allowed" alert.
-      return context.redirect("/dashboard");
+      return context.redirect(noticePath("/dashboard", "member_removed"));
     }
 
     // Only the owner may delete another member's row. RLS turns "not the owner", "not a member of this group" and
@@ -53,10 +54,12 @@ export const POST: APIRoute = async (context) => {
     if (data.length === 0) {
       // For the owner (whose own id was refused above) nothing to delete means the target already left or was
       // removed: a double click or a stale page. Anyone else was refused by RLS.
-      return context.redirect(group.owner_id === user.id ? "/dashboard" : "/dashboard?error=forbidden");
+      return context.redirect(
+        group.owner_id === user.id ? noticePath("/dashboard", "member_removed") : "/dashboard?error=forbidden",
+      );
     }
 
-    return context.redirect("/dashboard");
+    return context.redirect(noticePath("/dashboard", "member_removed"));
   } catch (error) {
     // Malformed body or a thrown Supabase/network error: end on the dashboard with a fixed message.
     reportError("groups.remove_member.exception", error, requestFields(context));

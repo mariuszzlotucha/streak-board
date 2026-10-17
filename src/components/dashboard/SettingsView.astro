@@ -3,6 +3,7 @@ import AccountCard from "@/components/dashboard/AccountCard.astro";
 import GroupSettingsCard from "@/components/dashboard/GroupSettingsCard.astro";
 import PageHeading from "@/components/dashboard/PageHeading.astro";
 import RemindersCard from "@/components/dashboard/RemindersCard.astro";
+import Toast from "@/components/site/Toast.astro";
 import { buttonVariants } from "@/components/ui/button";
 import type { GroupMember, MyGroup } from "@/lib/groups";
 import { UNKNOWN_MEMBER } from "@/lib/leaderboard-rules";
@@ -20,6 +21,8 @@ interface Props {
   loadFailed: boolean;
   /** The fixed message of a failed load. */
   error: string | null;
+  /** The fixed message of a `?notice=` code (a nickname change ends here), shown as a success toast. */
+  notice: string | null;
   /** The signed-in user's own address, shown only here, on the Account card. */
   email: string | undefined;
   nickname: string | null;
@@ -29,7 +32,7 @@ interface Props {
   remindersState?: PushState;
 }
 
-const { group, members, viewerId, loadFailed, error, email, nickname, reminders, remindersState } = Astro.props;
+const { group, members, viewerId, loadFailed, error, notice, email, nickname, reminders, remindersState } = Astro.props;
 const otherMembers = members.filter((member) => member.user_id !== viewerId);
 // Members are named by nickname, never by e-mail address.
 const nameOf = (member: GroupMember | undefined) => member?.nickname ?? UNKNOWN_MEMBER;
@@ -61,26 +64,31 @@ const deletion =
     </a>
   </div>
 ) : (
-  <div class="space-y-6">
-    <PageHeading title="Settings" />
-    <div class="max-w-xl space-y-6">
-      {group ? (
-        <GroupSettingsCard groupName={group.name} isOwner={group.owner_id === viewerId} otherMembers={otherMembers} />
-      ) : (
-        <p class="text-muted-foreground">
-          You are not in a group yet.{" "}
-          <a href="/dashboard" class="font-medium text-foreground underline underline-offset-4">
-            Create or join a group
-          </a>{" "}
-          on your dashboard.
-        </p>
-      )}
-      <RemindersCard
-        vapidPublicKey={reminders.vapidPublicKey}
-        hasSubscriptions={reminders.hasSubscriptions}
-        fixedState={remindersState}
-      />
-      <AccountCard email={email} nickname={nickname} deletion={deletion} />
+  <>
+    {/* The toast is fixed to the bottom of the screen; in the markup it comes first, before the page's <h1>, and
+        outside the `space-y` stack, whose margin would shift its fixed position. */}
+    {notice !== null && <Toast message={notice} variant="success" />}
+    <div class="space-y-6">
+      <PageHeading title="Settings" />
+      <div class="max-w-xl space-y-6">
+        {group ? (
+          <GroupSettingsCard groupName={group.name} isOwner={group.owner_id === viewerId} otherMembers={otherMembers} />
+        ) : (
+          <p class="text-muted-foreground">
+            You are not in a group yet.{" "}
+            <a href="/dashboard" class="font-medium text-foreground underline underline-offset-4">
+              Create or join a group
+            </a>{" "}
+            on your dashboard.
+          </p>
+        )}
+        <RemindersCard
+          vapidPublicKey={reminders.vapidPublicKey}
+          hasSubscriptions={reminders.hasSubscriptions}
+          fixedState={remindersState}
+        />
+        <AccountCard email={email} nickname={nickname} deletion={deletion} />
+      </div>
     </div>
-  </div>
+  </>
 )}

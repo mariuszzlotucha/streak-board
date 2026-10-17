@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase";
 import { reportError, reportMapped, requestFields } from "@/lib/log";
 import { toNicknameErrorCode } from "@/lib/nickname-errors";
 import { normalizeNickname } from "@/lib/nickname-rules";
+import { noticePath } from "@/lib/notices";
 
 export const prerender = false;
 
@@ -34,7 +35,9 @@ export const POST: APIRoute = async (context) => {
 
     // The middleware read the nickname before this request: none means the first choice, which ends on the dashboard
     // (where a pending invite is still waiting in its cookie); a change goes back to the settings page.
-    return context.redirect(context.locals.nickname === null ? "/dashboard" : "/settings");
+    return context.redirect(
+      noticePath(context.locals.nickname === null ? "/dashboard" : "/settings", "nickname_saved"),
+    );
   } catch (error) {
     // Malformed body or a thrown Supabase/network error: back on the nickname page with a fixed message.
     reportError("account.nickname.exception", error, requestFields(context));

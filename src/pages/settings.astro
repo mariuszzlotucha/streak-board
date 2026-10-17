@@ -1,7 +1,9 @@
 ---
 import AppLayout from "@/layouts/AppLayout.astro";
 import SettingsView from "@/components/dashboard/SettingsView.astro";
+import ClearErrorParam from "@/components/site/ClearErrorParam.astro";
 import { requestFields } from "@/lib/log";
+import { resolveNotice } from "@/lib/notices";
 import { loadSettings } from "@/lib/settings-data";
 import { createClient } from "@/lib/supabase";
 import { VAPID_PUBLIC_KEY } from "astro:env/server";
@@ -16,6 +18,8 @@ const { group, members, reminders, loadFailed, error } = await loadSettings({
 
 // As on the dashboard: a page that could not be loaded answers 503 with its error page.
 if (loadFailed) Astro.response.status = 503;
+// A nickname change ends here with `?notice=nickname_saved`; an unknown code renders nothing.
+const notice = resolveNotice(Astro.url.searchParams.get("notice"));
 ---
 
 <AppLayout title="Settings" nickname={Astro.locals.nickname} current="settings">
@@ -26,7 +30,9 @@ if (loadFailed) Astro.response.status = 503;
     viewerId={user?.id}
     loadFailed={loadFailed}
     error={error}
+    notice={notice}
     email={user?.email}
     nickname={Astro.locals.nickname}
   />
+  <ClearErrorParam />
 </AppLayout>

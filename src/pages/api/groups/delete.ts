@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase";
 import { reportError, reportMapped, requestFields } from "@/lib/log";
 import { toGroupErrorCode } from "@/lib/group-errors";
 import { getMyGroup } from "@/lib/groups";
+import { noticePath } from "@/lib/notices";
 
 export const prerender = false;
 
@@ -22,7 +23,7 @@ export const POST: APIRoute = async (context) => {
     if (!group) {
       // No group left to delete: a stale second submit after the delete already went through ends where the user
       // wanted to be, not on a "not allowed" alert.
-      return context.redirect("/dashboard");
+      return context.redirect(noticePath("/dashboard", "group_deleted"));
     }
 
     // Only the owner may delete the group. RLS turns "not the owner" into an empty result, not an error.
@@ -37,7 +38,7 @@ export const POST: APIRoute = async (context) => {
       return context.redirect("/dashboard?error=forbidden");
     }
 
-    return context.redirect("/dashboard");
+    return context.redirect(noticePath("/dashboard", "group_deleted"));
   } catch (error) {
     // A thrown Supabase/network error: end on the dashboard with a fixed message.
     reportError("groups.delete.exception", error, requestFields(context));

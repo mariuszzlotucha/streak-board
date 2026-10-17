@@ -36,7 +36,7 @@ export default defineConfig({
       ],
       scriptDirective: {
         // The `is:inline` script of src/components/site/ClearErrorParam.astro (tests/unit/csp-hash.test.ts).
-        hashes: ["sha256-y5xabdxjZ6LpYK23+LnE3VCwrcR2NDi/8ysKDc+rjdA="],
+        hashes: ["sha256-PaYt1NefajCcbzvWQNgfon3KXyBxogK9uFqUOGrTqvQ="],
       },
     },
   },

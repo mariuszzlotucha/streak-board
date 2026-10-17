@@ -4,8 +4,9 @@ import NoGroupCards from "@/components/dashboard/NoGroupCards.astro";
 import PageHeading from "@/components/dashboard/PageHeading.astro";
 import PendingInviteCard from "@/components/dashboard/PendingInviteCard.astro";
 import TasksCard from "@/components/dashboard/TasksCard.astro";
+import Toast from "@/components/site/Toast.astro";
 import Leaderboard from "@/components/tasks/Leaderboard";
-import { CircleAlert, Crown, TriangleAlert } from "lucide-react";
+import { Crown, TriangleAlert } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +17,10 @@ import type { DashboardData } from "@/lib/dashboard-data";
 interface Props extends DashboardData {
   viewerId: string | undefined;
   inviteLink: string | null;
+  /** The fixed message of a `?notice=` code (a completed action), shown as a success toast. */
+  notice: string | null;
+  /** Dev-only: the kitchen sink keeps the success toast on screen. */
+  pinToast?: boolean;
 }
 
 const {
@@ -34,6 +39,8 @@ const {
   grids,
   viewerId,
   inviteLink,
+  notice,
+  pinToast = false,
 } = Astro.props;
 
 const isOwner = group !== null && group.owner_id === viewerId;
@@ -50,93 +57,97 @@ const ownerNoticeGroupName = isOwner && group.owner_notice_pending ? group.name 
     </a>
   </div>
 ) : (
-  <div class="space-y-6">
-    {error && (
-      <Alert variant="destructive">
-        <CircleAlert />
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
+  <>
+    {/* One toast, fixed to the bottom of the screen; in the markup it comes first, before the page's <h1>, and outside
+        the `space-y` stack, whose margin would shift its fixed position. An error (a rejected action, an unusable
+        invite, a failed task load) stays until closed; routes never set it together with a notice, and if both were
+        present the error wins. */}
+    {error ? (
+      <Toast message={error} variant="error" />
+    ) : (
+      notice !== null && <Toast message={notice} variant="success" visible={pinToast} />
     )}
+    <div class="space-y-6">
+      {/* Not an error: a status the new owner reads once, under any toast and above the group's cards. */}
+      {ownerNoticeGroupName !== null && (
+        <Alert role="status">
+          <Crown />
+          <AlertDescription>
+            <p>
+              You are now the owner of {ownerNoticeGroupName}. You can rename it, remove members or hand it over in
+              Settings.
+            </p>
+            <form method="POST" action="/api/groups/dismiss-owner-notice">
+              <Button type="submit" variant="outline" size="sm">
+                Got it
+              </Button>
+            </form>
+          </AlertDescription>
+        </Alert>
+      )}
 
-    {/* Not an error: a status the new owner reads once, under any error alert and above the group's cards. */}
-    {ownerNoticeGroupName !== null && (
-      <Alert role="status">
-        <Crown />
-        <AlertDescription>
-          <p>
-            You are now the owner of {ownerNoticeGroupName}. You can rename it, remove members or hand it over in
-            Settings.
-          </p>
-          <form method="POST" action="/api/groups/dismiss-owner-notice">
-            <Button type="submit" variant="outline" size="sm">
-              Got it
-            </Button>
-          </form>
-        </AlertDescription>
-      </Alert>
-    )}
-
-    {group && inviteLink ? (
-      <>
-        <PageHeading eyebrow="Your group" title={group.name} />
-        {/* The HTML order is the phone order: the main loop (Tasks, then the Leaderboard) before Members; group settings
+      {group && inviteLink ? (
+        <>
+          <PageHeading eyebrow="Your group" title={group.name} />
+          {/* The HTML order is the phone order: the main loop (Tasks, then the Leaderboard) before Members; group settings
             are on `/settings`. From 1024 px Tasks takes three fifths and the right column two fifths. The columns space
             their cards with `gap`: an island's wrapper is `display: contents`, so `space-y` would drop the margin after
             the Leaderboard. */}
-        <div class="grid grid-cols-1 gap-6 lg:grid-cols-5">
-          <div class="flex min-w-0 flex-col gap-6 lg:col-span-3">
-            {/* A failed task load swaps only the Tasks card for this notice; the top alert keeps the generic message. */}
-            {tasksFailed ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle as="h2">Tasks</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Alert variant="warning" role="status">
-                    <TriangleAlert />
-                    <AlertDescription>Tasks are unavailable right now. Reload to try again.</AlertDescription>
-                  </Alert>
-                </CardContent>
-              </Card>
-            ) : (
-              <TasksCard
-                tasks={tasks}
+          <div class="grid grid-cols-1 gap-6 lg:grid-cols-5">
+            <div class="flex min-w-0 flex-col gap-6 lg:col-span-3">
+              {/* A failed task load swaps only the Tasks card for this notice; the error toast keeps the generic message. */}
+              {tasksFailed ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle as="h2">Tasks</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Alert variant="warning" role="status">
+                      <TriangleAlert />
+                      <AlertDescription>Tasks are unavailable right now. Reload to try again.</AlertDescription>
+                    </Alert>
+                  </CardContent>
+                </Card>
+              ) : (
+                <TasksCard
+                  tasks={tasks}
+                  members={members}
+                  participantsByTask={participantsByTask}
+                  participantsFailed={participantsFailed}
+                  checkoffsFailed={checkoffsFailed}
+                  board={board}
+                  grids={grids}
+                  viewerId={viewerId}
+                />
+              )}
+            </div>
+            <div class="flex min-w-0 flex-col gap-6 lg:col-span-2">
+              {board && viewerId && <Leaderboard client:load rows={board.totals} viewerId={viewerId} />}
+              <MembersCard
                 members={members}
-                participantsByTask={participantsByTask}
-                participantsFailed={participantsFailed}
-                checkoffsFailed={checkoffsFailed}
-                board={board}
-                grids={grids}
+                groupName={group.name}
                 viewerId={viewerId}
+                isOwner={isOwner}
+                inviteLink={inviteLink}
               />
-            )}
+            </div>
           </div>
-          <div class="flex min-w-0 flex-col gap-6 lg:col-span-2">
-            {board && viewerId && <Leaderboard client:load rows={board.totals} viewerId={viewerId} />}
-            <MembersCard
-              members={members}
-              groupName={group.name}
-              viewerId={viewerId}
-              isOwner={isOwner}
-              inviteLink={inviteLink}
-            />
-          </div>
-        </div>
-      </>
-    ) : pendingCode && pendingGroupName !== null ? (
-      <>
-        <PendingInviteCard code={pendingCode} groupName={pendingGroupName} />
-        <CardTitle as="h2">Or start your own group</CardTitle>
-        <NoGroupCards headingLevel={3} />
-      </>
-    ) : (
-      <>
-        <PageHeading
-          title="Start or join a group"
-          description="StreakBoard lets a group share tasks, mark them done every day or week, and compare streaks on a leaderboard."
-        />
-        <NoGroupCards headingLevel={2} />
-      </>
-    )}
-  </div>
+        </>
+      ) : pendingCode && pendingGroupName !== null ? (
+        <>
+          <PendingInviteCard code={pendingCode} groupName={pendingGroupName} />
+          <CardTitle as="h2">Or start your own group</CardTitle>
+          <NoGroupCards headingLevel={3} />
+        </>
+      ) : (
+        <>
+          <PageHeading
+            title="Start or join a group"
+            description="StreakBoard lets a group share tasks, mark them done every day or week, and compare streaks on a leaderboard."
+          />
+          <NoGroupCards headingLevel={2} />
+        </>
+      )}
+    </div>
+  </>
 )}

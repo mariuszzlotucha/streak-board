@@ -2,6 +2,7 @@ import type { APIRoute } from "astro";
 import { createClient } from "@/lib/supabase";
 import { reportError, reportMapped, requestFields } from "@/lib/log";
 import { normalizeUuid } from "@/lib/group-rules";
+import { noticePath } from "@/lib/notices";
 import { toTaskErrorCode } from "@/lib/task-errors";
 import { getTask } from "@/lib/tasks";
 
@@ -24,9 +25,9 @@ export const POST: APIRoute = async (context) => {
       return context.redirect("/dashboard?error=not_configured");
     }
 
-    // Not visible to the caller (already deleted, other group): a stale submit ends quietly on the dashboard.
+    // Not visible to the caller (already deleted, other group): a stale submit is no error and gets the same confirmation as a real one.
     if (!(await getTask(supabase, taskId))) {
-      return context.redirect("/dashboard");
+      return context.redirect(noticePath("/dashboard", "task_deleted"));
     }
 
     // RLS turns "not the creator" into an empty result, not an error.
@@ -40,7 +41,7 @@ export const POST: APIRoute = async (context) => {
       return context.redirect("/dashboard?error=forbidden");
     }
 
-    return context.redirect("/dashboard");
+    return context.redirect(noticePath("/dashboard", "task_deleted"));
   } catch (error) {
     reportError("tasks.delete.exception", error, requestFields(context));
     return context.redirect("/dashboard?error=unknown");

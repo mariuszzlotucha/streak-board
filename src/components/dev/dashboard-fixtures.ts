@@ -7,6 +7,7 @@ import type { DashboardData } from "@/lib/dashboard-data";
 import type { PushState } from "@/lib/pwa/push";
 import type { RemindersData } from "@/lib/settings-data";
 import { groupErrorMessage } from "@/lib/group-errors";
+import { noticeMessage } from "@/lib/notices";
 import { nicknameErrorMessage } from "@/lib/nickname-errors";
 import type { GroupMember, MyGroup } from "@/lib/groups";
 import { buildBoard, groupPeriodsByEnrolment, rankStandings, type EnrolmentPeriods } from "@/lib/leaderboard-rules";
@@ -19,6 +20,10 @@ export interface DashboardViewProps extends DashboardData {
   viewerId: string | undefined;
   inviteLink: string | null;
   nickname: string | null;
+  /** The resolved `?notice=` message of a completed action. */
+  notice: string | null;
+  /** Keeps the success toast on screen (no auto-hide), so the state page and its screenshot show it. */
+  pinToast?: boolean;
 }
 
 export const DASHBOARD_STATES = [
@@ -32,7 +37,16 @@ export const DASHBOARD_STATES = [
   { id: "sole-member", label: "Sole member", description: "Alone in a new group, no tasks yet" },
   { id: "no-group", label: "No group", description: "Signed in, not in a group" },
   { id: "pending-invite", label: "Pending invite", description: "Not in a group, arrived through an invite link" },
-  { id: "action-error", label: "Action error", description: "Owner after a rejected action (`?error=forbidden`)" },
+  {
+    id: "action-error",
+    label: "Action error",
+    description: "Owner after a rejected action (`?error=forbidden`): the error toast, which stays until closed",
+  },
+  {
+    id: "notice-success",
+    label: "Success notice",
+    description: "Owner after a completed action (`?notice=task_created`): the success toast, kept on screen",
+  },
   { id: "load-failed", label: "Load failed", description: "The first read failed" },
   { id: "tasks-failed", label: "Tasks failed", description: "Owner; the tasks could not be loaded" },
   {
@@ -120,6 +134,7 @@ export interface SettingsViewProps {
   viewerId: string | undefined;
   loadFailed: boolean;
   error: string | null;
+  notice: string | null;
   email: string | undefined;
   nickname: string | null;
   reminders: RemindersData;
@@ -337,11 +352,24 @@ function inGroup(
     data.board = board(members, data.tasks, data.participantsByTask, viewer.id);
     data.grids = grids(members, data.tasks, viewer.id);
   }
-  return { ...data, viewerId: viewer.id, nickname: viewer.nickname, inviteLink: `${origin}/join/${group.join_code}` };
+  return {
+    ...data,
+    viewerId: viewer.id,
+    nickname: viewer.nickname,
+    inviteLink: `${origin}/join/${group.join_code}`,
+    notice: null,
+  };
 }
 
 function withoutGroup(data: Partial<DashboardData> = {}): DashboardViewProps {
-  return { ...emptyData(), ...data, viewerId: OUTSIDER_ID, nickname: OUTSIDER_NICKNAME, inviteLink: null };
+  return {
+    ...emptyData(),
+    ...data,
+    viewerId: OUTSIDER_ID,
+    nickname: OUTSIDER_NICKNAME,
+    inviteLink: null,
+    notice: null,
+  };
 }
 
 /** The props `DashboardView` gets in one state. Builds fresh objects on every call; `origin` makes the invite link. */
@@ -363,6 +391,8 @@ export function dashboardFixture(id: DashboardStateId, origin: string): Dashboar
       return withoutGroup({ pendingCode: JOIN_CODE, pendingGroupName: MORNING_CREW.name });
     case "action-error":
       return { ...inGroup(origin, owner), error: groupErrorMessage("forbidden") };
+    case "notice-success":
+      return { ...inGroup(origin, owner), notice: noticeMessage("task_created"), pinToast: true };
     case "load-failed":
       return withoutGroup({ loadFailed: true, error: groupErrorMessage("unknown") });
     case "tasks-failed":
@@ -393,7 +423,7 @@ export function settingsFixture(id: SettingsStateId): SettingsViewProps {
     reminders: { vapidPublicKey: state === "unsupported" ? null : VAPID_PUBLIC_KEY, hasSubscriptions },
     remindersState: state,
   });
-  const healthy = { loadFailed: false, error: null, ...reminders("off", false) };
+  const healthy = { loadFailed: false, error: null, notice: null, ...reminders("off", false) };
   const owner = { viewerId: OWNER_ID, email: OWNER_EMAIL, nickname: OWNER_NICKNAME };
   switch (id) {
     case "settings-owner":
@@ -426,6 +456,7 @@ export function settingsFixture(id: SettingsStateId): SettingsViewProps {
         members: [],
         loadFailed: true,
         error: groupErrorMessage("unknown"),
+        notice: null,
       };
     case "settings-reminders-off":
       return { ...healthy, ...owner, group: { ...MORNING_CREW }, members: [...MEMBERS] };

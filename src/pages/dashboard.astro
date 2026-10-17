@@ -4,6 +4,7 @@ import DashboardView from "@/components/dashboard/DashboardView.astro";
 import ClearErrorParam from "@/components/site/ClearErrorParam.astro";
 import { loadDashboard } from "@/lib/dashboard-data";
 import { requestFields } from "@/lib/log";
+import { resolveNotice } from "@/lib/notices";
 import { createClient } from "@/lib/supabase";
 
 const { user } = Astro.locals;
@@ -34,6 +35,8 @@ const {
 if (loadFailed) Astro.response.status = 503;
 
 const inviteLink = group ? `${Astro.url.origin}/join/${group.join_code}` : null;
+// A completed action's `?notice=` code; an unknown one renders nothing.
+const notice = resolveNotice(Astro.url.searchParams.get("notice"));
 ---
 
 <AppLayout title="Dashboard" nickname={Astro.locals.nickname} current="dashboard">
@@ -53,6 +56,7 @@ const inviteLink = group ? `${Astro.url.origin}/join/${group.join_code}` : null;
     grids={grids}
     viewerId={user?.id}
     inviteLink={inviteLink}
+    notice={notice}
   />
   <ClearErrorParam />
 </AppLayout>

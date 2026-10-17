@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase";
 import { reportError, reportMapped, requestFields } from "@/lib/log";
 import { toGroupErrorCode } from "@/lib/group-errors";
 import { getMyGroup } from "@/lib/groups";
+import { noticePath } from "@/lib/notices";
 
 export const prerender = false;
 
@@ -30,10 +31,10 @@ export const POST: APIRoute = async (context) => {
       // Nothing was deleted: the caller is the owner (still in their group), or they had already left (a stale
       // second submit), which is the outcome they asked for.
       const group = await getMyGroup(supabase);
-      return context.redirect(group ? "/dashboard?error=forbidden" : "/dashboard");
+      return context.redirect(group ? "/dashboard?error=forbidden" : noticePath("/dashboard", "group_left"));
     }
 
-    return context.redirect("/dashboard");
+    return context.redirect(noticePath("/dashboard", "group_left"));
   } catch (error) {
     // A thrown Supabase/network error: end on the dashboard with a fixed message.
     reportError("groups.leave.exception", error, requestFields(context));

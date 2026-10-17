@@ -1,16 +1,18 @@
 ---
-// Shared by `/dashboard` and `/account/nickname`, the pages that show an `?error=` alert.
+// Shared by `/dashboard`, `/settings` and `/account/nickname`: the pages that show an `?error=` alert or a
+// `?notice=` toast.
 ---
 
 {/* Inline so the server HTML carries it. Astro does not hash `is:inline`, so the script's SHA-256 stands in
     astro.config.mjs (`security.csp.scriptDirective.hashes`; tests/unit/csp-hash.test.ts compares them): a change to
-    its text updates that hash. The `?error=` alert shows once: removing the code from the address keeps a reload or
-    a shared link from repeating it; other parameters and the hash stay. */}
+    its text updates that hash. The `?error=` alert and the `?notice=` toast show once: removing their codes from the
+    address keeps a reload or a shared link from repeating them; other parameters and the hash stay. */}
 <script is:inline>
   {
     const url = new URL(window.location.href);
-    if (url.searchParams.has("error")) {
+    if (url.searchParams.has("error") || url.searchParams.has("notice")) {
       url.searchParams.delete("error");
+      url.searchParams.delete("notice");
       window.history.replaceState(window.history.state, "", url);
     }
   }
