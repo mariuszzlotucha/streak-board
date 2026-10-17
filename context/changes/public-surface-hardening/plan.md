@@ -292,8 +292,8 @@ Wycofanie: revert commitów fazy. Kroki operatora wycofuje się w panelu Cloudfl
 
 #### Manual
 
-- [ ] 1.5 After release, `curl -sI https://streakboard.app/`, `/auth/signin` and `/favicon.svg` show the four headers once each (no duplicates from `_headers` on Worker responses)
-- [ ] 1.6 After release, `https://streakboard.app/.well-known/security.txt` returns the file with the production contact address
+- [x] 1.5 After release, `curl -sI https://streakboard.app/`, `/auth/signin` and `/favicon.svg` show the four headers once each (no duplicates from `_headers` on Worker responses)
+- [x] 1.6 After release, `https://streakboard.app/.well-known/security.txt` returns the file with the production contact address
 
 ### Phase 2: CSP Report-Only, dokumentacja i kroki operatora
 
@@ -307,11 +307,11 @@ Wycofanie: revert commitów fazy. Kroki operatora wycofuje się w panelu Cloudfl
 
 #### Manual
 
-- [ ] 2.6 After release, Google sign-in and e-mail sign-in work on production, and the browser console shows no `[Report Only]` messages on landing, sign-in, dashboard and settings
+- [x] 2.6 After release, Google sign-in and e-mail sign-in work on production, and the browser console shows no `[Report Only]` messages on landing, sign-in, dashboard and settings
 - [ ] 2.7 After release, reminders toggle and service worker registration still work on a phone
-- [ ] 2.8 Operator: HSTS enabled in Cloudflare (SSL/TLS → Edge Certificates, max-age 6 months, include subdomains, no preload); `curl -sI https://streakboard.app/` shows `strict-transport-security`
-- [ ] 2.9 Operator: DNS TXT `streakboard.app` = `v=spf1 -all`; `dig +short TXT streakboard.app` shows it next to the Google verification record
+- [x] 2.8 Operator: HSTS enabled in Cloudflare (SSL/TLS → Edge Certificates, max-age 6 months, include subdomains, no preload); `curl -sI https://streakboard.app/` shows `strict-transport-security`
+- [x] 2.9 Operator: DNS TXT `streakboard.app` = `v=spf1 -all`; `dig +short TXT streakboard.app` shows it next to the Google verification record
 - [ ] 2.10 Operator: confirm in a received confirmation e-mail ("Show original") `DKIM: PASS with domain mail.streakboard.app`
 - [ ] 2.11 Operator: DNS TXT `_dmarc.streakboard.app` = `v=DMARC1; p=none; rua=mailto:<operator address>`; after a week of reports with Resend passing, change to `p=reject`
-- [ ] 2.12 Operator: Cloudflare WAF custom rule blocks `starts_with(http.request.uri.path, "/wp-")` or `ends_with(http.request.uri.path, ".php")`; `curl -s -o /dev/null -w "%{http_code}" https://streakboard.app/wp-admin/install.php` returns 403
+- [x] 2.12 Operator: Cloudflare WAF custom rule blocks `starts_with(http.request.uri.path, "/wp-")` or `ends_with(http.request.uri.path, ".php")`; `curl -s -o /dev/null -w "%{http_code}" https://streakboard.app/wp-admin/install.php` returns 403
 - [ ] 2.13 After a week in production, Cloudflare logs show no unexpected `csp.violation` events; open the follow-up change that enforces CSP
