@@ -6,7 +6,15 @@ import { getOwnNickname } from "@/lib/nicknames";
 import { runWithSentry } from "@/lib/sentry";
 import { createClient } from "@/lib/supabase";
 
-const PROTECTED_ROUTES = ["/dashboard", "/settings", "/account", "/api/groups", "/api/tasks", "/api/account"];
+const PROTECTED_ROUTES = [
+  "/dashboard",
+  "/settings",
+  "/account",
+  "/api/groups",
+  "/api/tasks",
+  "/api/account",
+  "/api/reminders",
+];
 // Protected paths a signed-in user without a nickname may still reach: the page that sets it and its route.
 const NICKNAME_ROUTES = ["/account/nickname", "/api/account/nickname"];
 const AUTH_ROUTES = ["/auth/signin", "/auth/signup"];

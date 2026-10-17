@@ -432,6 +432,12 @@ function accountEntry(label, value) {
   return new RegExp(`<dt[^>]*>\\s*${escapeRegExp(label)}\\s*</dt>\\s*<dd[^>]*>\\s*${escapeRegExp(value)}\\s*</dd>`);
 }
 
+// The settings page's Reminders card (S-16): its exact heading and the server-rendered 20:00 rule. Astro may write the
+// apostrophe as an entity.
+const REMINDERS_HEADING = /<h2[^>]*>\s*Reminders\s*<\/h2>/;
+const REMINDERS_RULE =
+  /At 20:00 you get a reminder for daily tasks you haven(?:'|&#39;|&#x27;)t checked off today, and on Sunday also for weekly tasks\./;
+
 // The header's Sign out: a plain form posting to the sign-out route with its submit button. Two "Sign out" anywhere
 // on the page fail the second pattern, so the button exists exactly once.
 const SIGN_OUT_FORM =
@@ -1039,6 +1045,8 @@ const steps = [
       status: 200,
       bodyMatches: [
         ACCOUNT_HEADING,
+        REMINDERS_HEADING,
+        REMINDERS_RULE,
         accountEntry("Nickname", nickA),
         accountEntry("E-mail", email),
         linkTo("/account/nickname"),

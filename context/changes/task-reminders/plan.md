@@ -419,10 +419,10 @@ The table and functions are additive. The release step runs `supabase migration 
 
 #### Automated
 
-- [x] 3.1 Crypto unit tests pass with the RFC 8291 vector
-- [x] 3.2 Unit tests for the send loop pass with a stubbed fetch
-- [x] 3.3 Mutation testing on the send-outcome mapping
-- [x] 3.4 Lint and build pass
+- [x] 3.1 Crypto unit tests pass with the RFC 8291 vector — b70a6d0
+- [x] 3.2 Unit tests for the send loop pass with a stubbed fetch — b70a6d0
+- [x] 3.3 Mutation testing on the send-outcome mapping — b70a6d0
+- [x] 3.4 Lint and build pass — b70a6d0
 
 #### Manual
 
@@ -432,10 +432,10 @@ The table and functions are additive. The release step runs `supabase migration 
 
 #### Automated
 
-- [ ] 4.1 Unit tests for the push module states pass
-- [ ] 4.2 Integration tests for the three routes pass
-- [ ] 4.3 Lint and the token check pass
-- [ ] 4.4 Smoke passes with the new Settings assertions
+- [x] 4.1 Unit tests for the push module states pass
+- [x] 4.2 Integration tests for the three routes pass
+- [x] 4.3 Lint and the token check pass
+- [x] 4.4 Smoke passes with the new Settings assertions
 
 #### Manual
 
