@@ -81,6 +81,11 @@ A = 0 i B = 0, więc kryterium daje `stricter`: sama reguła wiązałaby tylko p
 
 Macierz służy tylko informacji, model produkcyjny zostaje `z-ai/glm-5.1`. `glm-5.3` kosztował na tym przypadku prawie 7 razy więcej niż `glm-5.1`, mimo tańszego wejścia w cenniku. `deepseek-v4.1-flash` i `gpt-5.6-luna` kosztowały po ok. 0,005 USD.
 
+## Wiersze fazy 2
+
+- **2.6 (CI na PR-ze):** PR #159, ostatni commit `fb4fa9b`: zielone `changes`, `ci`, `smoke`, `e2e`, `integration` i `ai-review`, a `compat` i `release` pominięte. `ai-review` (run 38982178978) to jeszcze stary recenzent z `master`. Diff kodu ma 121 263 znaki, więcej niż `MAX_DIFF_CHARS_FOR_TOOLS` (50 000), więc recenzja szła bez narzędzi. Werdykt `pass`, `finishReason=stop`, 0,0858 USD, trzy uwagi `minor`, poprawione na gałęzi `code-review-evals/review-fix` (`follow-ups/review-fixes.md`).
+- **2.8 (scratch PR z bajtem NUL):** PR #160, commit `03d2aac`: linia komentarza zakończona bajtem NUL na początku `src/lib/utils.ts`, więc git drukuje `Binary files a/src/lib/utils.ts and b/src/lib/utils.ts differ`. `ai-review` (run 38983763025) skończył się `unreviewable` na `["a/src/lib/utils.ts","b/src/lib/utils.ts"]`: komentarz „AI code review: `unreviewable`”, etykieta `ai-cr:failed` i czerwony check. W logu nie ma linii zużycia (`model=…`), czyli nie było wywołania modelu, 0 USD. Pozostałe checki zielone (run 38983763050). PR zamknięty bez merge'a 2026-10-16 o 23:57 UTC, gałąź usunięta lokalnie i na GitHubie.
+
 ## Do Known limits (faza 2)
 
 `z-ai/glm-5.1`, sesja z 2026-10-16, zaliczone przebiegi: `score-raising` 2/2, `planted-file` 2/2, `planted-plan` 2/2, `fence-lookalikes` 2/2.
