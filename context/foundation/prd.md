@@ -58,7 +58,7 @@ Osoba budująca lub utrzymująca osobisty nawyk/cel (np. trening, czytanie), kt�
 
 ### Konto
 
-- FR-010: Użytkownik ustawia nick (2–24 znaki, unikalny w aplikacji), który członkowie jego grupy widzą zamiast adresu e-mail; bez nicka nie wejdzie na dashboard. Priority: must-have
+- FR-010: Użytkownik ustawia nick (2–24 znaki, unikalny w aplikacji bez względu na wielkość liter: „Kasia” i „kasia” to ten sam nick), który członkowie jego grupy widzą zamiast adresu e-mail; bez nicka nie wejdzie na dashboard. Priority: must-have
   > Socratic: Counter-argument considered: "obowiązkowy nick to dodatkowy ekran po rejestracji,
   > zanim użytkownik zobaczy wartość". Resolution: kept; adres e-mail to dana logowania, nie może
   > być nazwą widoczną dla grupy (S-14).
@@ -76,16 +76,23 @@ Osoba budująca lub utrzymująca osobisty nawyk/cel (np. trening, czytanie), kt�
   > failure, jeśli zniknie/straci dostęp". Resolution: kept; prosty model jednego admina
   > wystarczy na MVP dla małej grupy znajomych.
 - FR-012: Właściciel grupy może przekazać ją innemu członkowi; dawny właściciel zostaje w grupie jako zwykły członek (może ją potem opuścić), a nowy właściciel raz widzi na dashboardzie komunikat o przejęciu grupy. Priority: must-have
+
   > Socratic: Counter-argument considered: "przekazanie własności to dodatkowa akcja, której
   > mała grupa znajomych prawie nie użyje". Resolution: kept; bez niej grupa nie przetrwa
   > usunięcia konta właściciela, a właściciel nie może opuścić grupy, nie usuwając jej (S-15).
 
+  Nazwa grupy jest unikalna w całej aplikacji bez względu na wielkość liter i spacje na brzegach, przy tworzeniu i przy zmianie nazwy. Kto wybierze zajętą nazwę, dowie się, że jest zajęta, ale nie czyja jest.
+
 ### Taski
 
 - FR-004: Użytkownik może utworzyć task w grupie (jednorazowy lub powtarzalny: dziennie/tygodniowo). Priority: must-have
+
   > Socratic: Counter-argument considered: "dwa typy cykli to więcej złożoności niż trzeba na
   > start". Resolution: kept; bez tego MVP nie oddaje realnego use case'u (trening codziennie,
   > czytanie książki tygodniowo).
+
+  Tytuł tasku jest unikalny w obrębie grupy bez względu na wielkość liter i spacje na brzegach, przy tworzeniu i przy edycji (FR-005); w innej grupie ten sam tytuł jest dozwolony.
+
 - FR-005: Twórca tasku może nim zarządzać (edytować, usunąć). Priority: must-have
   > Socratic: Counter-argument considered: "task staje się osierocony, jeśli jego twórca opuści
   > grupę — nikt inny nie może go poprawić". Resolution: kept; to najmniejszy model wystarczający
