@@ -400,6 +400,16 @@ Rollback:
   - 2.5 After sign-out, the installed app showed no data of the previous user.
 - [ ] Open, iOS: `context/changes/installable-pwa/ios-check.md` handed to a group member with an iPhone; result pending (plan row 2.6).
 
+## Phase 22 — Toast notifications (change `frontend-notifications`)
+
+**Status: released 2026-10-17.** Success toasts after every group, task and nickname action (`?notice=<code>`), and dashboard errors as a toast that stays until closed (`context/archive/2026-10-17-frontend-notifications/plan.md`). One release, no migrations.
+
+- [x] Code: PR #182, merged on 2026-10-17 as merge commit `7b81aec`. Master run 39068898243: `ci`, `smoke`, `e2e` and `integration` green; `compat` skipped on `master`.
+- [x] `release` for PR #182: job 117502928385, approved by the owner. `supabase db push` reported "Remote database is up to date." (no migrations); `wrangler deploy` printed `Current Version ID: 0e373c35-04d5-464c-a0f8-b1f264f3b786`; the tag moved `bd62687...7b81aec production -> production (forced update)`.
+- [x] Agent's live check (2026-10-17, anonymous `curl`): `/` 200, `/privacy` 200, `/dashboard` and `/dashboard?notice=task_created` 302 to `/auth/signin`.
+- [x] Owner's check on `streakboard.app` (2026-10-17), reported OK: a task create shows the toast, it hides after about 5 s and waits while hovered, Escape and the close button hide it, a reload does not repeat it, and a bad invite code shows an error toast that stays until closed. This covers plan rows 2.6 and, in substance, 1.6 (except the CSP report check on `npm run preview`).
+- [ ] Open, owner's checks (plan rows still `[ ]` in the archive): 1.6 (no CSP report on `npm run preview`), 1.7 (phone width: the toast covers neither the update notice nor page controls), 1.8 (`?notice=bogus` shows nothing), 2.7 (the `action-error` and `notice-success` kitchen-sink PNGs in light and dark mode).
+
 ## Verification checklist (end-to-end, once unblocked)
 
 - [x] Fresh browser session against the live `*.workers.dev` URL: sign up, confirm-email flow (or note if stubbed), sign in, hit `/dashboard`, sign out. — superseded by the Phase 10 production checks on `https://streakboard.app` (`workers.dev` is switched off by Phase 4 of that change).

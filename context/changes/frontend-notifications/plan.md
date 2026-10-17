@@ -223,6 +223,6 @@ No schema change. Code rolls back with `npx wrangler rollback`.
 
 #### Manual
 
-- [ ] 2.6 A rejected action (e.g. join with an invalid code) shows an error toast that stays until closed
+- [x] 2.6 A rejected action (e.g. join with an invalid code) shows an error toast that stays until closed — 7b81aec
 - [ ] 2.7 The captured `action-error` and `notice-success` PNGs look right in light and dark mode
-- [ ] 2.8 CI passes on the PR
+- [x] 2.8 CI passes on the PR — 7b81aec
