@@ -446,7 +446,7 @@ The table and functions are additive. The release step runs `supabase migration 
 
 #### Automated
 
-- [x] 5.1 Lint, format and the full suite pass
+- [x] 5.1 Lint, format and the full suite pass — 51c234e
 
 #### Manual
 
