@@ -377,6 +377,29 @@ Rollback:
 - [x] CI on the PR (plan row 4.5): every check of #156 passed, `ai-review` included (`ci`, `smoke`, `e2e`, `integration`, `compat`, `claude-review`, `ai-review`).
 - [ ] Open, owner's checks (plan rows still `[ ]` in the archive): 1.8 (`has_table_privilege('postgres','auth.flow_state','DELETE')` on production, recorded here if run); 2.5 and 3.5 (the kitchen-sink screenshots of `settings-*` and `dashboard-new-owner`); 2.6 (the successor window operable from the keyboard alone); 3.6 (each of the four window variants read in a browser); 4.4 (`/privacy` sections on deletion, retention and rights read and accepted); 5.2 (two test accounts, a task checked off by the second, ownership transfer and the new owner's banner on `streakboard.app`); 5.3 (a member deletes an account on production and lands on `/?account=deleted`, the task stays with the owner with the second account's checkoff, and an owner who is the sole member is handled).
 
+## Phase 21 — Installable app (change `installable-pwa`, S-17)
+
+**Status: released 2026-10-17; Android and desktop confirmed, iOS pending.** The change makes StreakBoard installable: a manifest, icons, a service worker that caches nothing, the "new version" notice, `POST /api/client-errors`, the 404 page, the installed-app invite hint and a privacy policy line (`context/changes/installable-pwa/plan.md`). It shipped as one release with no migrations.
+
+- [x] Code: PR #168, merged on 2026-10-17 as merge commit `d2b2323`. Master run 39033118236: `ci`, `smoke`, `e2e` and `integration` green; `compat` skipped on `master`.
+- [x] `release` for PR #168: job 117398261198, approved by the owner. `supabase db push` reported "Remote database is up to date" (no migrations); `wrangler deploy` printed `Current Version ID: c7060200-0c8d-4817-bc8d-8042eb0f65e9`; "Mark the deployed commit" moved the tag `bcbaec9...d2b2323 production -> production (forced update)`.
+- [x] Agent's live check (2026-10-17, anonymous `curl`):
+  - `/` 200;
+  - `/dashboard` 302 to `/auth/signin`;
+  - `/manifest.webmanifest` 200 `application/manifest+json`, `cache-control: no-cache`;
+  - `/sw.js` 200 `text/javascript`, `cache-control: no-cache`;
+  - `/icons/icon-192.png` 200 `image/png`;
+  - `/no-such-page` 404 `text/html`;
+  - `POST /api/client-errors` with a JSON body 415.
+
+  This covers plan row 2.2.
+
+- [x] Owner's device checks (2026-10-17):
+  - 2.3 Android Chrome: installed through the ⋮ menu ("Install app"); sign-in with e-mail and with Google, invite link pasted into "Join with code", and check-off all confirmed in the installed app. Chrome showed no automatic install prompt; that is expected, since the plan chose the browser's prompt only, with no prompt of our own.
+  - 2.4 Desktop: Chrome on Ubuntu, installed and opened in its own window, check-off confirmed. Edge skipped by the owner.
+  - 2.5 After sign-out, the installed app showed no data of the previous user.
+- [ ] Open, iOS: `context/changes/installable-pwa/ios-check.md` handed to a group member with an iPhone; result pending (plan row 2.6).
+
 ## Verification checklist (end-to-end, once unblocked)
 
 - [x] Fresh browser session against the live `*.workers.dev` URL: sign up, confirm-email flow (or note if stubbed), sign in, hit `/dashboard`, sign out. — superseded by the Phase 10 production checks on `https://streakboard.app` (`workers.dev` is switched off by Phase 4 of that change).
