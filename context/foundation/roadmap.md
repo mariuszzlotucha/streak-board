@@ -42,11 +42,11 @@ Grono znajomych korzystało wcześniej ze wspólnego arkusza Google, w którym r
 
 ## At a glance
 
-| ID   | Change ID       | Outcome (user can …)                                                                                             | Prerequisites | PRD refs                                     | Status      |
-| ---- | --------------- | ---------------------------------------------------------------------------------------------------------------- | ------------- | -------------------------------------------- | ----------- |
-| S-13 | checkoff-grid   | zobaczyć siatkę odznaczeń grupy: kto wykonał task w każdym z ostatnich okresów                                   | S-11, S-14    | PRD §Vision, FR-013; MS-01                   | in-progress |
-| S-16 | task-reminders  | dostać przypomnienie o tasku, do którego jest zapisany, a którego nie odznaczył w bieżącym okresie               | —             | — (PRD §Success Criteria → Secondary; MS-02) | planning    |
-| S-17 | installable-pwa | zainstalować aplikację na ekranie głównym telefonu albo na komputerze i uruchamiać ją jak osobną aplikację (PWA) | —             | — (opis właściciela; MS-03)                  | done        |
+| ID   | Change ID       | Outcome (user can …)                                                                                             | Prerequisites | PRD refs                                     | Status   |
+| ---- | --------------- | ---------------------------------------------------------------------------------------------------------------- | ------------- | -------------------------------------------- | -------- |
+| S-13 | checkoff-grid   | zobaczyć siatkę odznaczeń grupy: kto wykonał task w każdym z ostatnich okresów                                   | S-11, S-14    | PRD §Vision, FR-013; MS-01                   | done     |
+| S-16 | task-reminders  | dostać przypomnienie o tasku, do którego jest zapisany, a którego nie odznaczył w bieżącym okresie               | —             | — (PRD §Success Criteria → Secondary; MS-02) | planning |
+| S-17 | installable-pwa | zainstalować aplikację na ekranie głównym telefonu albo na komputerze i uruchamiać ją jak osobną aplikację (PWA) | —             | — (opis właściciela; MS-03)                  | done     |
 
 ## Baseline
 
@@ -83,7 +83,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Źródło zakresu:** PRD §Success Criteria → Secondary („Historia/statystyki długoterminowe”) w zakresie samej siatki (decyzja właściciela 2026-10-08, odparkowanie z `## Parked`); PRD §Vision opisuje siatkę zielono-czerwoną jako pierwotną wartość produktu. Do 2026-10-17 wycinek M-2 (kotwica MS-08), przeniesiony do M-3 decyzją właściciela. Poprawki dokumentów, które właściciel związał z S-13 (2026-10-16, `context/foundation/open-items.md` §3): PRD (opis streaka, poziomy i taski indywidualne, sekcja Open Questions), polityka prywatności (streak), słownik i opis okna dat jako znanej luki (Q-04).
 - **Stan wejściowy (2026-10-08):** po podziale `dashboard.astro` nowy odczyt wielu okresów trafia do `loadDashboard` (`src/lib/dashboard-data.ts`, z testami jednostkowymi), a siatka to nowy komponent obok `TaskRow`/`TasksCard` w `src/components/dashboard/`. Polityka prywatności też jest podzielona na sekcje (`src/components/privacy/`), więc zmiana „kto co widzi” to edycja `WhoCanSee.astro`.
 - **Risk:** Dane już są (`task_checkoffs` per okres), więc to głównie nowy odczyt i widok; idzie pierwszy w M-3 jako gwiazda przewodnia. Siatka uczestnicy × okresy to najszerszy widok w aplikacji, a PRD wymaga pełnej używalności na ekranie smartfona, więc układ na wąskim ekranie należy do zakresu. Zmienia, co członkowie grupy widzą o sobie nawzajem (historia zamiast bieżącego okresu), więc w tej samej zmianie trzeba zaktualizować politykę prywatności, słownik (`glossary.md` dziś zalicza historię do rzeczy, których aplikacja nie obiecuje) i PRD. Odczyt wielu okresów dokłada pracy do `/dashboard`, którego czas CPU nie był mierzony (otwarte ryzyko po S-04).
-- **Status:** in-progress
+- **Status:** done
 
 ### S-16: Przypomnienie o niewykonanym tasku
 
@@ -151,3 +151,4 @@ Brak otwartych pytań na poziomie roadmapy: PRD `## Open Questions` mówi „Non
 ## Done
 
 - **S-17: użytkownik instaluje StreakBoard na ekranie głównym telefonu (albo na komputerze) i uruchamia go jak osobną aplikację, z własną ikoną i bez paska przeglądarki.** — Archived 2026-10-17 → `context/archive/2026-10-17-installable-pwa/`. Lesson: —.
+- **S-13: członek grupy widzi dla każdego tasku siatkę: uczestnicy × ostatnie okresy, z zaznaczeniem, kto w danym okresie wykonał task, a kto nie.** — Archived 2026-10-17 → `context/archive/2026-10-17-checkoff-grid/`. Lesson: —.
