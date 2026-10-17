@@ -57,7 +57,10 @@ const description =
     <slot />
     <UpdateNotice visible={showUpdateNotice} />
     <script>
+      import { listenForInstallPrompt } from "@/lib/pwa/install";
       import { startServiceWorker } from "@/lib/pwa/register";
+      // In every build: the install offer needs Chromium's event, which can arrive before an island hydrates.
+      listenForInstallPrompt(window);
       startServiceWorker();
     </script>
   </body>

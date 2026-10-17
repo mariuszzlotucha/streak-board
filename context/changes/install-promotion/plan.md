@@ -282,9 +282,9 @@ Ship, then confirm on real devices what the code cannot know: whether Chromium f
 #### Manual Verification:
 
 - Android Chrome (owner): the dashboard shows either the "Install app" button or the menu instruction; the owner reports which (resolves research Open Question 1)
-- Desktop Chrome (owner): same check; installing opens the app window with no card
+- Desktop Chrome (owner): same check; installing opens the app window with no card. Then open `streakboard.app` in a normal tab: Chrome sends no `beforeinstallprompt` once installed, so the card still offers installing there until "Not now" (impl review F7); decide whether that needs a follow-up (`getInstalledRelatedApps`)
 - iPhone (group member): the card shows in Safari, installation from it works, the installed app shows no card, and reminders turn on there
-- A messenger's in-app browser on a phone shows the "Open this page in Safari or Chrome" text
+- A messenger's in-app browser on a phone shows the "Open this page in Safari" text on an iPhone, "Safari or Chrome" elsewhere (PR #191 ai-review)
 
 ---
 
@@ -330,8 +330,8 @@ None: no schema, no server state. A device that dismissed the card keeps the fla
 
 #### Automated
 
-- [ ] 1.1 Unit tests for the install module pass
-- [ ] 1.2 Lint and type checks pass
+- [x] 1.1 Unit tests for the install module pass — 69c4470
+- [x] 1.2 Lint and type checks pass — 69c4470
 
 #### Manual
 
@@ -341,12 +341,12 @@ None: no schema, no server state. A device that dismissed the card keeps the fla
 
 #### Automated
 
-- [ ] 2.1 Unit tests pass
-- [ ] 2.2 Full test suite passes
-- [ ] 2.3 Lint, types and Astro check pass
-- [ ] 2.4 Token contrast check passes
-- [ ] 2.5 Smoke passes against a production build
-- [ ] 2.6 The install-promotion e2e spec passes
+- [x] 2.1 Unit tests pass — 5c3da33
+- [x] 2.2 Full test suite passes — 5c3da33
+- [x] 2.3 Lint, types and Astro check pass — 5c3da33
+- [x] 2.4 Token contrast check passes — 5c3da33
+- [x] 2.5 Smoke passes against a production build — 5c3da33
+- [x] 2.6 The install-promotion e2e spec passes — 5c3da33
 
 #### Manual
 
@@ -364,4 +364,4 @@ None: no schema, no server state. A device that dismissed the card keeps the fla
 - [ ] 3.2 Android Chrome (owner): the dashboard shows either the "Install app" button or the menu instruction; the owner reports which
 - [ ] 3.3 Desktop Chrome (owner): same check; installing opens the app window with no card
 - [ ] 3.4 iPhone (group member): the card shows in Safari, installation from it works, the installed app shows no card, and reminders turn on there
-- [ ] 3.5 A messenger's in-app browser on a phone shows the "Open this page in Safari or Chrome" text
+- [ ] 3.5 A messenger's in-app browser on a phone shows the "Open this page in Safari" text on an iPhone, "Safari or Chrome" elsewhere (PR #191 ai-review)

@@ -7,6 +7,7 @@ import Toast from "@/components/site/Toast.astro";
 import { buttonVariants } from "@/components/ui/button";
 import type { GroupMember, MyGroup } from "@/lib/groups";
 import { UNKNOWN_MEMBER } from "@/lib/leaderboard-rules";
+import type { InstallOffer } from "@/lib/pwa/install";
 import type { PushState } from "@/lib/pwa/push";
 import type { RemindersData } from "@/lib/settings-data";
 
@@ -30,9 +31,23 @@ interface Props {
   reminders: RemindersData;
   /** Only the dev kitchen sink pins the device's reminders state. */
   remindersState?: PushState;
+  /** Only the dev kitchen sink pins the install offer shown in the Reminders card. */
+  installOffer?: InstallOffer;
 }
 
-const { group, members, viewerId, loadFailed, error, notice, email, nickname, reminders, remindersState } = Astro.props;
+const {
+  group,
+  members,
+  viewerId,
+  loadFailed,
+  error,
+  notice,
+  email,
+  nickname,
+  reminders,
+  remindersState,
+  installOffer,
+} = Astro.props;
 const otherMembers = members.filter((member) => member.user_id !== viewerId);
 // Members are named by nickname, never by e-mail address.
 const nameOf = (member: GroupMember | undefined) => member?.nickname ?? UNKNOWN_MEMBER;
@@ -86,6 +101,7 @@ const deletion =
           vapidPublicKey={reminders.vapidPublicKey}
           hasSubscriptions={reminders.hasSubscriptions}
           fixedState={remindersState}
+          installOffer={installOffer}
         />
         <AccountCard email={email} nickname={nickname} deletion={deletion} />
       </div>

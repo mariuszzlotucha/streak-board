@@ -12,7 +12,7 @@ interface RemindersToggleProps {
 }
 
 const STATUS: Record<PushState, string> = {
-  unsupported: "Install StreakBoard on your home screen to get reminders.",
+  unsupported: "Install StreakBoard to get reminders on this device.",
   denied:
     "Notifications are blocked for StreakBoard. Allow them in your browser or system settings, then reload this page.",
   off: "Reminders are off on this device.",

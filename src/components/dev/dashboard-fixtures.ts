@@ -4,6 +4,7 @@
 // absence in a production build). The e-mail addresses, shown only on the settings page's Account card, use the reserved
 // `.test` domain.
 import type { DashboardData } from "@/lib/dashboard-data";
+import type { InstallOffer } from "@/lib/pwa/install";
 import type { PushState } from "@/lib/pwa/push";
 import type { RemindersData } from "@/lib/settings-data";
 import { groupErrorMessage } from "@/lib/group-errors";
@@ -24,6 +25,11 @@ export interface DashboardViewProps extends DashboardData {
   notice: string | null;
   /** Keeps the success toast on screen (no auto-hide), so the state page and its screenshot show it. */
   pinToast?: boolean;
+  /**
+   * The install offer, pinned so the island does not read the browser: `installed` (nothing shown) everywhere except the
+   * `install-*` states.
+   */
+  installOffer: InstallOffer;
 }
 
 export const DASHBOARD_STATES = [
@@ -64,6 +70,27 @@ export const DASHBOARD_STATES = [
     id: "update-notice",
     label: "Update notice",
     description: "Owner after a release took over: the new-version message with Refresh",
+  },
+  {
+    id: "install-ios",
+    label: "Install, iPhone",
+    description: "Owner in Safari on an iPhone: the install card with Add to Home Screen and Not now",
+  },
+  {
+    id: "install-prompt",
+    label: "Install, button",
+    description:
+      "Owner in Chrome or Edge with the install event: Install app (with no event here, a click shows the menu steps)",
+  },
+  {
+    id: "install-menu",
+    label: "Install, menu",
+    description: "Owner in Chrome or Edge without the install event: the browser menu's Install app",
+  },
+  {
+    id: "install-in-app",
+    label: "Install, in-app browser",
+    description: "Owner in a messenger's browser: open this page in Safari or Chrome (in Safari on an iPhone)",
   },
 ] as const;
 
@@ -119,6 +146,16 @@ export const SETTINGS_STATES = [
     label: "Reminders denied",
     description: "Owner; notifications are blocked, with a subscription on another device",
   },
+  {
+    id: "settings-install-ios",
+    label: "Install, iPhone",
+    description: "Owner in Safari on an iPhone: no push here, and the Reminders card says how to install",
+  },
+  {
+    id: "settings-install-none",
+    label: "Install, no path",
+    description: "Owner in a browser that cannot install the app (Firefox on a computer): try another browser",
+  },
 ] as const;
 
 export type SettingsStateId = (typeof SETTINGS_STATES)[number]["id"];
@@ -140,6 +177,8 @@ export interface SettingsViewProps {
   reminders: RemindersData;
   /** The device's reminders state, pinned so the island does not read the browser. */
   remindersState: PushState;
+  /** The install offer, pinned the same way: `installed` (nothing shown) except in the `settings-install-*` states. */
+  installOffer: InstallOffer;
 }
 
 // The states of `/account/nickname` (`NicknameView`); ids start with `nickname-`, like the settings states.
@@ -358,6 +397,7 @@ function inGroup(
     nickname: viewer.nickname,
     inviteLink: `${origin}/join/${group.join_code}`,
     notice: null,
+    installOffer: "installed",
   };
 }
 
@@ -369,6 +409,7 @@ function withoutGroup(data: Partial<DashboardData> = {}): DashboardViewProps {
     nickname: OUTSIDER_NICKNAME,
     inviteLink: null,
     notice: null,
+    installOffer: "installed",
   };
 }
 
@@ -411,6 +452,14 @@ export function dashboardFixture(id: DashboardStateId, origin: string): Dashboar
           tasks: [{ ...TASKS[0], title: LONG_TASK_TITLE }, ...TASKS.slice(1)],
         },
       );
+    case "install-ios":
+      return { ...inGroup(origin, owner), installOffer: "ios-safari" };
+    case "install-prompt":
+      return { ...inGroup(origin, owner), installOffer: "prompt" };
+    case "install-menu":
+      return { ...inGroup(origin, owner), installOffer: "chromium-menu" };
+    case "install-in-app":
+      return { ...inGroup(origin, owner), installOffer: "in-app" };
   }
 }
 
@@ -423,7 +472,13 @@ export function settingsFixture(id: SettingsStateId): SettingsViewProps {
     reminders: { vapidPublicKey: state === "unsupported" ? null : VAPID_PUBLIC_KEY, hasSubscriptions },
     remindersState: state,
   });
-  const healthy = { loadFailed: false, error: null, notice: null, ...reminders("off", false) };
+  const healthy = {
+    loadFailed: false,
+    error: null,
+    notice: null,
+    ...reminders("off", false),
+    installOffer: "installed" as const,
+  };
   const owner = { viewerId: OWNER_ID, email: OWNER_EMAIL, nickname: OWNER_NICKNAME };
   switch (id) {
     case "settings-owner":
@@ -457,6 +512,7 @@ export function settingsFixture(id: SettingsStateId): SettingsViewProps {
         loadFailed: true,
         error: groupErrorMessage("unknown"),
         notice: null,
+        installOffer: "installed",
       };
     case "settings-reminders-off":
       return { ...healthy, ...owner, group: { ...MORNING_CREW }, members: [...MEMBERS] };
@@ -472,6 +528,18 @@ export function settingsFixture(id: SettingsStateId): SettingsViewProps {
       };
     case "settings-reminders-denied":
       return { ...healthy, ...owner, ...reminders("denied", true), group: { ...MORNING_CREW }, members: [...MEMBERS] };
+    case "settings-install-ios":
+      // Safari outside the home screen has no push, so the switch is unsupported too.
+      return {
+        ...healthy,
+        ...owner,
+        ...reminders("unsupported", false),
+        installOffer: "ios-safari",
+        group: { ...MORNING_CREW },
+        members: [...MEMBERS],
+      };
+    case "settings-install-none":
+      return { ...healthy, ...owner, installOffer: "none", group: { ...MORNING_CREW }, members: [...MEMBERS] };
   }
 }
 
