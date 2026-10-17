@@ -301,20 +301,20 @@ None: no schema change; `joined_at` already exists and is granted.
 
 #### Automated
 
-- [x] 2.1 Unit tests pass: `npm run test:unit`
-- [x] 2.2 Integration tests pass against the local stack: `npm test`
-- [x] 2.3 Astro type check passes: `npx astro check`
-- [x] 2.4 Lint passes: `npm run lint`
+- [x] 2.1 Unit tests pass: `npm run test:unit` — c708b7b
+- [x] 2.2 Integration tests pass against the local stack: `npm test` — c708b7b
+- [x] 2.3 Astro type check passes: `npx astro check` — c708b7b
+- [x] 2.4 Lint passes: `npm run lint` — c708b7b
 
 ### Phase 3: UI
 
 #### Automated
 
-- [ ] 3.1 Unit tests pass: `npm run test:unit`
-- [ ] 3.2 Lint (incl. no-literal colour rule) and token contrast pass: `npm run lint` and `node scripts/token-contrast.mjs`
-- [ ] 3.3 Build passes: `npm run build`
-- [ ] 3.4 Smoke passes against the local stack: `npm run smoke`
-- [ ] 3.5 E2E check-off round trip passes: `npx playwright test tests/e2e/checkoff-round-trip.spec.ts`
+- [x] 3.1 Unit tests pass: `npm run test:unit`
+- [x] 3.2 Lint (incl. no-literal colour rule) and token contrast pass: `npm run lint` and `node scripts/token-contrast.mjs`
+- [x] 3.3 Build passes: `npm run build`
+- [x] 3.4 Smoke passes against the local stack: `npm run smoke`
+- [x] 3.5 E2E check-off round trip passes: `npx playwright test tests/e2e/checkoff-round-trip.spec.ts`
 
 #### Manual
 

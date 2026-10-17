@@ -1,0 +1,65 @@
+---
+import GridCell from "@/components/tasks/GridCell";
+import ViewerGridCell from "@/components/tasks/ViewerGridCell";
+import { Badge } from "@/components/ui/badge";
+import { cellLabelPrefix, periodHeader } from "@/lib/grid-labels";
+import type { TaskGrid } from "@/lib/grid-rules";
+import type { TaskRecurrence } from "@/lib/task-rules";
+
+interface Props {
+  taskId: string;
+  title: string;
+  recurrence: TaskRecurrence;
+  grid: TaskGrid;
+}
+
+const { taskId, title, recurrence, grid } = Astro.props;
+const current = grid.periods.length - 1;
+---
+
+{/* A table, never a list: the smoke row regexes stop at the first </li>. Only the wrapper scrolls sideways. Only the
+    viewer's current cell is an island: it follows the row's tick at once. */}
+<div class="max-w-full overflow-x-auto">
+  <table aria-label={`Check-offs of ${title}`} class="border-separate border-spacing-1 text-xs">
+    <caption class="sr-only">{`Check-offs of ${title}`}</caption>
+    <thead>
+      <tr>
+        <th scope="col">
+          <span class="sr-only">Participant</span>
+        </th>
+        {grid.periods.map((period) => (
+          <th scope="col" class="px-1 font-normal whitespace-nowrap text-muted-foreground">
+            {periodHeader(recurrence, period)}
+          </th>
+        ))}
+      </tr>
+    </thead>
+    <tbody>
+      {grid.rows.map((row) => {
+        const name = row.nickname ?? "Unknown member";
+        return (
+          <tr>
+            <th scope="row" class="max-w-32 pr-2 text-left font-normal">
+              <span class="inline-flex min-w-0 items-center gap-1">
+                <span class="truncate text-foreground">{name}</span>
+                {row.isYou && <Badge variant="outline">You</Badge>}
+              </span>
+            </th>
+            {row.cells.map((state, index) => {
+              const labelPrefix = cellLabelPrefix(name, recurrence, grid.periods[index]);
+              return (
+                <td class="p-0">
+                  {row.isYou && index === current ? (
+                    <ViewerGridCell client:load taskId={taskId} initialState={state} labelPrefix={labelPrefix} />
+                  ) : (
+                    <GridCell state={state} labelPrefix={labelPrefix} />
+                  )}
+                </td>
+              );
+            })}
+          </tr>
+        );
+      })}
+    </tbody>
+  </table>
+</div>

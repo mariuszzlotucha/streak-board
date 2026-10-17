@@ -2,9 +2,11 @@
 import ConfirmAction from "@/components/groups/ConfirmAction";
 import CheckoffControl from "@/components/tasks/CheckoffControl";
 import EditTaskForm from "@/components/tasks/EditTaskForm";
+import CheckoffGrid from "./CheckoffGrid.astro";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { TaskParticipant } from "@/lib/dashboard-data";
+import type { TaskGrid } from "@/lib/grid-rules";
 import type { Board } from "@/lib/leaderboard-rules";
 import { RECURRENCE_LABELS } from "@/lib/task-rules";
 import type { GroupTask } from "@/lib/tasks";
@@ -19,17 +21,19 @@ interface Props {
   /** Present only for a task the viewer takes part in, and only when the board was computed. */
   viewerTask: ViewerTask | undefined;
   viewerId: string | undefined;
+  /** Absent when the grids were not computed (participants or check-offs failed to load). */
+  grid: TaskGrid | undefined;
 }
 
-const { task, participants, participantsFailed, viewerTask, viewerId } = Astro.props;
+const { task, participants, participantsFailed, viewerTask, viewerId, grid } = Astro.props;
 const recurrenceLabel = RECURRENCE_LABELS[task.recurrence];
 // The participant line gets list semantics from ARIA roles (`contents` keeps its flex layout), not a nested <li>:
 // the smoke row regexes stop at the first </li>.
 const joined = participants.some((participant) => participant.isYou);
 ---
 
-{/* Three lines, the daily action first after the title: title and how often (with the creator's quiet Edit and Delete),
-    then the viewer's check-off and streak, then the participants with Join or Leave. */}
+{/* Up to four lines, the daily action first after the title: title and how often (with the creator's quiet Edit and
+    Delete), then the viewer's check-off and streak, then the participants with Join or Leave, then the check-off grid. */}
 <li class="flex flex-col gap-2 py-3 first:pt-0 last:pb-0">
   <div class="flex flex-wrap items-center gap-x-1 gap-y-1">
     {task.created_by === viewerId ? (
@@ -103,5 +107,8 @@ const joined = participants.some((participant) => participant.isYou);
         </form>
       )}
     </div>
+  )}
+  {grid && grid.rows.length > 0 && (
+    <CheckoffGrid taskId={task.id} title={task.title} recurrence={task.recurrence} grid={grid} />
   )}
 </li>

@@ -199,8 +199,18 @@ function removeTargetInRow(body, memberName) {
 // followed by the "You" marker; a marker on another participant's entry would not match.
 function taskRowListing(title, participantName, { you = false } = {}) {
   const marker = you ? `</span>\\s*<span[^>]*>\\s*You\\s*</span>` : "";
+  // The check-off grid follows the participant line and repeats the nicknames and "You": the match stops at its <table.
   return new RegExp(
-    `<li[^>]*>(?:(?!</li>)[\\s\\S])*${escapeRegExp(title)}(?:(?!</li>)[\\s\\S])*${escapeRegExp(participantName)}${marker}`,
+    `<li[^>]*>(?:(?!</li>|<table)[\\s\\S])*${escapeRegExp(title)}(?:(?!</li>|<table)[\\s\\S])*${escapeRegExp(participantName)}${marker}`,
+  );
+}
+
+// A task row (<li>) whose check-off grid holds a cell of the participant in the given state ("done", "open"), read from
+// the cell's screen-reader label ("Kasia, Mon 13 Oct: done"). Only the last cell of the participant's grid row counts:
+// the current period, the viewer's live cell.
+function taskRowGridCell(title, participantName, state) {
+  return new RegExp(
+    `<li[^>]*>(?:(?!</li>)[\\s\\S])*<table[^>]*aria-label="Check-offs of ${escapeRegExp(title)}"(?:(?!</li>)[\\s\\S])*>${escapeRegExp(participantName)}, [^<:]*: ${state}</span>(?:(?!<td|</tr>)[\\s\\S])*</td>\\s*</tr>`,
   );
 }
 
@@ -330,7 +340,10 @@ function allSecure(setCookies, prefix) {
 
 // A task row (<li>) holding the title followed by the recurrence badge.
 function taskRowWithBadge(title, badge) {
-  return new RegExp(`<li[^>]*>(?:(?!</li>)[\\s\\S])*${escapeRegExp(title)}(?:(?!</li>)[\\s\\S])*>\\s*${badge}\\s*<`);
+  // The check-off grid closes the row and holds a "Done" column header for `once` tasks: the match stops at its <table.
+  return new RegExp(
+    `<li[^>]*>(?:(?!</li>|<table)[\\s\\S])*${escapeRegExp(title)}(?:(?!</li>|<table)[\\s\\S])*>\\s*${badge}\\s*<`,
+  );
 }
 
 // The edit control the island rendered for the task (its button carries the title in the aria-label).
@@ -512,6 +525,7 @@ const B_NOTHING_TICKED = {
   bodyMatches: [
     taskRowWithCheckoffForm(renamedTaskTitle, "/api/tasks/checkoff"),
     taskRowStreak(renamedTaskTitle, 0),
+    taskRowGridCell(renamedTaskTitle, nickB, "open"),
     leaderboardRow(nickA, 1, 0, { you: false }),
     leaderboardRow(nickB, 1, 0, { you: true }),
     leaderboardRow(nickC, 1, 0, { you: false }),
@@ -531,6 +545,7 @@ const B_TICKED = {
     taskRowWithStatus(renamedTaskTitle, "Done today"),
     taskRowWithCheckoffForm(renamedTaskTitle, "/api/tasks/uncheck"),
     taskRowStreak(renamedTaskTitle, 1),
+    taskRowGridCell(renamedTaskTitle, nickB, "done"),
     leaderboardRow(nickB, 1, 1, { you: true }),
     leaderboardRow(nickA, 2, 0, { you: false }),
     leaderboardRow(nickC, 2, 0, { you: false }),
