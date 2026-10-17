@@ -17,7 +17,7 @@ timeline_budget:
 
 Ty i grono przyjaciół macie trudność z utrzymaniem motywacji do indywidualnych nawyków (np. trening, czytanie książki). Wcześniej korzystaliście ze wspólnie prowadzonego arkusza Google, w którym każdego dnia kolorowaliście komórki na zielono (zrealizowano) lub czerwono (nie zrealizowano) dla każdej kategorii/celu; wielu użytkowników mogło być podpiętych pod ten sam cel. Wartość dawała widoczność dla innych, ale ręczne prowadzenie arkusza było męczące i narzędzie w końcu przestało być używane.
 
-Istniejące aplikacje do budowania nawyków są projektowane dla pojedynczego użytkownika i nie obsługują modelu, w którym kilka osób śledzi ten sam cel równolegle i widzi nawzajem swoją konsekwencję. Sam prosty widok siatki (zielony/czerwony) już wystarczał, by to działało — brakowało tylko automatyzacji tego widoku i mechanizmu grywalizacji (streaki/poziomy), który nagradza konsekwencję w czasie.
+Istniejące aplikacje do budowania nawyków są projektowane dla pojedynczego użytkownika i nie obsługują modelu, w którym kilka osób śledzi ten sam cel równolegle i widzi nawzajem swoją konsekwencję. Sam prosty widok siatki (zielony/czerwony) już wystarczał, by to działało — brakowało tylko automatyzacji tego widoku i mechanizmu grywalizacji (streaki), który nagradza konsekwencję w czasie. Aplikacja odtwarza ten widok jako siatkę odznaczeń przy każdym tasku (FR-013).
 
 ## User & Persona
 
@@ -27,12 +27,12 @@ Osoba budująca lub utrzymująca osobisty nawyk/cel (np. trening, czytanie), kt�
 
 ### Primary
 
-- Użytkownik otwiera aplikację (zalogowany), widzi zakładkę „Zadania" ze swoimi taskami (jednorazowymi lub powtarzalnymi — codziennie/co tydzień; indywidualnymi lub grupowymi), odznacza task jako wykonany, i przechodzi do zakładki „Tablica wyników", gdzie widzi ranking/postępy swoje i grupy. Dostarczalne w 3 tygodnie pracy po godzinach.
+- Użytkownik otwiera aplikację (zalogowany), widzi zakładkę „Zadania" ze swoimi taskami (jednorazowymi lub powtarzalnymi — codziennie/co tydzień; każdy task należy do grupy), odznacza task jako wykonany, i przechodzi do zakładki „Tablica wyników", gdzie widzi ranking/postępy swoje i grupy. Dostarczalne w 3 tygodnie pracy po godzinach.
 
 ### Secondary
 
 - Powiadomienia/przypomnienia o niewykonanym tasku.
-- Historia/statystyki długoterminowe (wykresy streaków w czasie).
+- Historia/statystyki długoterminowe (wykresy streaków w czasie). Siatka odznaczeń (FR-013) spełnia §Vision i nie zamyka tego punktu: wykresy i statystyki nadal są poza zakresem.
 
 ### Guardrails
 
@@ -95,9 +95,13 @@ Osoba budująca lub utrzymująca osobisty nawyk/cel (np. trening, czytanie), kt�
   > nieaktywnymi uczestnikami". Resolution: kept; to sedno pomysłu — bez tego nie ma wspólnej
   > motywacji ("wielu userów na jeden cel").
 - FR-007: Użytkownik może wypisać się z tasku, do którego jest zapisany. Priority: must-have
+
   > Socratic: Counter-argument considered: "wypisanie się może zaburzyć wspólny streak/licznik
   > grupy, jeśli inni na nim polegają". Resolution: kept; bez tego użytkownik utknie w taskach,
   > których nie chce już robić.
+
+  Wypisanie się z tasku (tak samo opuszczenie grupy i usunięcie członka przez właściciela) kasuje streak i całą historię odznaczeń tego uczestnika w tym tasku; okno potwierdzenia mówi to wprost. Ponowny zapis zaczyna od zera.
+
 - FR-008: Użytkownik może odznaczyć wystąpienie tasku jako wykonane. Priority: must-have
   > Socratic: Counter-argument considered: "system opiera się w pełni na uczciwości — nic nie
   > weryfikuje, że task faktycznie wykonano". Resolution: kept; to zamierzone — produkt jest dla
@@ -109,6 +113,10 @@ Osoba budująca lub utrzymująca osobisty nawyk/cel (np. trening, czytanie), kt�
   > Socratic: Counter-argument considered: "publiczna tablica wyników może zniechęcać osoby,
   > które zostają w tyle, zamiast motywować". Resolution: kept; to sedno wartości produktu —
   > widoczność wyników to główny mechanizm motywacyjny.
+- FR-013: Członek grupy widzi przy każdym tasku siatkę odznaczeń: wiersz na każdego uczestnika, który jest członkiem grupy, kolumna na każdy okres. Task dzienny pokazuje 7 ostatnich dni (w strefie Europe/Warsaw) łącznie z dzisiejszym, tygodniowy 4 ostatnie tygodnie łącznie z bieżącym, jednorazowy jedną kolumnę. Komórka ma jeden z czterech stanów: wykonane (jest odznaczenie), pominięte (zamknięty okres bez odznaczenia), otwarte (bieżący okres jeszcze nieodznaczony) i przed zapisem (okres sprzed okresu zapisu, bez odznaczenia; zapisane odznaczenie wygrywa). Komórka widza w bieżącym okresie zmienia się od razu po odznaczeniu. Priority: must-have
+  > Socratic: Counter-argument considered: "siatka to najszerszy widok w aplikacji i dubluje
+  > streak". Resolution: kept; zielono-czerwona siatka to pierwotna wartość z §Vision, a streak
+  > nie pokazuje, kto w którym okresie wykonał task (S-13).
 
 ## Non-Functional Requirements
 
@@ -116,7 +124,7 @@ Osoba budująca lub utrzymująca osobisty nawyk/cel (np. trening, czytanie), kt�
 
 ## Business Logic
 
-Za każdy dzień/okres, w którym użytkownik wykona przypisany task, jego streak dla tego tasku rośnie o jeden; za każdy pominięty dzień/okres streak spada o wartość mniejszą niż jego pełny stan (nie zeruje się całkowicie), a suma streaków użytkownika decyduje o jego pozycji w tablicy wyników grupy.
+Za każdy dzień/okres, w którym użytkownik wykona przypisany task, jego streak dla tego tasku rośnie o jeden; za każdy pominięty zamknięty dzień/okres streak jest dzielony na pół z zaokrągleniem w dół (więc streak 1 spada do 0), a suma streaków użytkownika decyduje o jego pozycji w tablicy wyników grupy.
 
 Reguła korzysta z pojedynczego wejścia widocznego dla użytkownika: czy dany task został odznaczony jako wykonany w swoim okresie (dzień/tydzień) czy nie. Wynikiem jest aktualna wartość streaka per task oraz suma streaków per użytkownik. Użytkownik spotyka się z tą regułą dwojako: natychmiast po odznaczeniu tasku widzi zaktualizowany streak, a przy wejściu w zakładkę „Tablica wyników” widzi swoją pozycję względem reszty grupy wynikającą z sumy streaków.
 
@@ -139,4 +147,5 @@ Członkowie grupy widzą nawzajem nicki, nie adresy e-mail; własny adres widzi 
 
 ## Open Questions
 
-None — wszystkie luki z generowania zostały rozwiązane.
+- Znana luka (Q-04, decyzja właściciela: akceptowana): baza przyjmuje odznaczenie z okresem w oknie dat `UTC−7 … UTC+1` względem bieżącej daty, więc uczestnik może zapisać odznaczenie z niedawnego okresu poza bieżącym. Zaufane grono znajomych; kod bez zmian.
+- Sposób sprawdzenia, czy siatka (FR-013) spełnia gwiazdę przewodnią, bez analityki — pytanie właściciela dla roadmapy M-3.

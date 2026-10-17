@@ -44,6 +44,8 @@ export async function listGroupTasks(supabase: Supabase, groupId: string): Promi
 export interface TaskParticipant {
   task_id: string;
   user_id: string;
+  /** When the user joined the task (ISO timestamp); the check-off grid marks the periods before it "not joined". */
+  joined_at: string;
 }
 
 /** PostgREST `max_rows` (supabase/config.toml): a response this long may have been truncated. */
@@ -57,7 +59,7 @@ export const POSTGREST_MAX_ROWS = 1000;
 export async function listTaskParticipants(supabase: Supabase): Promise<TaskParticipant[]> {
   const { data, error } = await supabase
     .from("task_participants")
-    .select("task_id, user_id")
+    .select("task_id, user_id, joined_at")
     .order("joined_at", { ascending: true })
     .order("user_id", { ascending: true });
   if (error) throw error;

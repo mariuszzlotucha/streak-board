@@ -35,3 +35,32 @@ export function subscribeDeltas(listener: Listener): () => void {
     listeners.delete(listener);
   };
 }
+
+/** The empty checked store: what the server (and the first client render) uses for the viewer's live grid cells. */
+export const NO_CHECKED: ReadonlyMap<string, boolean> = new Map();
+
+const checkedListeners = new Set<Listener>();
+let checked = NO_CHECKED;
+
+/** The viewer's optimistic tick per task id; replaced on every publish, like the deltas. */
+export function checkedSnapshot(): ReadonlyMap<string, boolean> {
+  return checked;
+}
+
+/** Record the viewer's current tick on the task (a rollback publishes the restored value). */
+export function publishChecked(taskId: string, value: boolean): void {
+  const next = new Map(checked);
+  next.set(taskId, value);
+  checked = next;
+  checkedListeners.forEach((listener) => {
+    listener();
+  });
+}
+
+/** Call `listener` after every checked publish; returns the function that stops it. */
+export function subscribeChecked(listener: Listener): () => void {
+  checkedListeners.add(listener);
+  return () => {
+    checkedListeners.delete(listener);
+  };
+}

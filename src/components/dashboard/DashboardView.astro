@@ -31,6 +31,7 @@ const {
   participantsFailed,
   checkoffsFailed,
   board,
+  grids,
   viewerId,
   inviteLink,
 } = Astro.props;
@@ -105,6 +106,7 @@ const ownerNoticeGroupName = isOwner && group.owner_notice_pending ? group.name 
                 participantsFailed={participantsFailed}
                 checkoffsFailed={checkoffsFailed}
                 board={board}
+                grids={grids}
                 viewerId={viewerId}
               />
             )}

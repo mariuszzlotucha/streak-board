@@ -6,6 +6,7 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { participantsResolver } from "@/lib/dashboard-data";
 import type { GroupMember } from "@/lib/groups";
+import type { TaskGrid } from "@/lib/grid-rules";
 import type { Board } from "@/lib/leaderboard-rules";
 import type { GroupTask } from "@/lib/tasks";
 import { cn } from "@/lib/utils";
@@ -18,10 +19,11 @@ interface Props {
   participantsFailed: boolean;
   checkoffsFailed: boolean;
   board: Board | null;
+  grids: Map<string, TaskGrid> | null;
   viewerId: string | undefined;
 }
 
-const { tasks, members, participantsByTask, participantsFailed, checkoffsFailed, board, viewerId } = Astro.props;
+const { tasks, members, participantsByTask, participantsFailed, checkoffsFailed, board, grids, viewerId } = Astro.props;
 const participantsOf = participantsResolver(participantsByTask, members, viewerId);
 // "Add a task" is a native disclosure, styled as an outline button. `inline-flex` drops the list-item marker in Chromium
 // and Firefox, `list-none` says so explicitly, and Safari's own marker is a pseudo-element of its own.
@@ -66,6 +68,7 @@ const summaryClass = cn(buttonVariants({ variant: "outline" }), "list-none [&::-
             participantsFailed={participantsFailed}
             viewerTask={board?.viewerTasks.get(task.id)}
             viewerId={viewerId}
+            grid={grids?.get(task.id)}
           />
         ))}
       </ul>
