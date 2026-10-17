@@ -9,11 +9,12 @@ import {
   createTestUser,
   joinGroupAs,
   type TestUser,
+  uniqueName,
 } from "../helpers/supabase";
 
 // Expectations come from the S-14 plan (context/changes/nickname/plan.md, Phase 1, migration A): a nickname lives in
 // public.nicknames, one row per account, written only through set_nickname (an upsert of the caller's own row), unique
-// exactly as typed; a signed-in user reads only their own row; anon has no access; list_group_members adds the
+// regardless of letter case (since the migration unique_names; S-14 compared them exactly as typed); a signed-in user reads only their own row; anon has no access; list_group_members adds the
 // nickname of every member through a left join, NULL for a member without a row; and the app's listGroupMembers never
 // passes on any other field. Since the second release (Phase 2, migration B) the RPC itself returns no e-mail column.
 
@@ -77,15 +78,25 @@ describe("nicknames", () => {
       expect(await adminNicknameOf(b)).toBe(before);
     });
 
-    it("accepts the same nickname in another case: uniqueness is exact", async () => {
+    it("refuses another account's nickname in another case with 23505", async () => {
       const lower = fresh("kasia");
-      const upper = `K${lower.slice(1)}`;
+      const upper = lower.toUpperCase();
       expect((await a.client.rpc("set_nickname", { p_nickname: lower })).error).toBeNull();
+      const before = await adminNicknameOf(b);
 
       const { error } = await b.client.rpc("set_nickname", { p_nickname: upper });
-      expect(error).toBeNull();
+      expect(error?.code).toBe(UNIQUE_VIOLATION);
       expect(await adminNicknameOf(a)).toBe(lower);
-      expect(await adminNicknameOf(b)).toBe(upper);
+      expect(await adminNicknameOf(b)).toBe(before);
+    });
+
+    it("lets a user change only the case of their own nickname", async () => {
+      const lower = fresh("ola");
+      const upper = lower.toUpperCase();
+      expect((await a.client.rpc("set_nickname", { p_nickname: lower })).error).toBeNull();
+
+      expect((await a.client.rpc("set_nickname", { p_nickname: upper })).error).toBeNull();
+      expect(await adminNicknameOf(a)).toBe(upper);
     });
 
     it("is not executable by anon (42501)", async () => {
@@ -126,7 +137,7 @@ describe("nicknames", () => {
     it("returns each member's nickname, and NULL once a member has no row (left join keeps the member)", async () => {
       const owner = await createTestUser();
       const member = await createTestUser();
-      const group = await createGroupAs(owner, "Nickname group");
+      const group = await createGroupAs(owner, uniqueName("Nickname group"));
       await joinGroupAs(member, group.joinCode);
 
       const { data: listed, error } = await owner.client.rpc("list_group_members", { p_group_id: group.id });
@@ -150,7 +161,7 @@ describe("nicknames", () => {
     it("the raw RPC returns exactly is_owner, joined_at, nickname and user_id, and no value holds an address", async () => {
       const owner = await createTestUser();
       const member = await createTestUser();
-      const group = await createGroupAs(owner, "Nickname group");
+      const group = await createGroupAs(owner, uniqueName("Nickname group"));
       await joinGroupAs(member, group.joinCode);
 
       const { data: listed, error } = await owner.client.rpc("list_group_members", { p_group_id: group.id });
@@ -164,7 +175,7 @@ describe("nicknames", () => {
 
     it("listGroupMembers passes on exactly user_id, nickname, joined_at and is_owner (never the e-mail)", async () => {
       const owner = await createTestUser();
-      const group = await createGroupAs(owner, "Nickname group");
+      const group = await createGroupAs(owner, uniqueName("Nickname group"));
 
       const members = await listGroupMembers(owner.client, group.id);
       expect(members).toHaveLength(1);

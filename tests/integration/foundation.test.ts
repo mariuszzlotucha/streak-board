@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { adminClient, cleanupUsers, createGroupAs, createTestUser } from "../helpers/supabase";
+import { adminClient, cleanupUsers, createGroupAs, createTestUser, uniqueName } from "../helpers/supabase";
 
 describe("integration foundation", () => {
   it("creates a user and group, sees the group, and leaves nothing behind after cleanup", async () => {
     const user = await createTestUser();
-    const group = await createGroupAs(user, "Foundation group");
+    const group = await createGroupAs(user, uniqueName("Foundation group"));
 
     const { data: visible, error } = await user.client.from("groups").select("id");
     expect(error).toBeNull();

@@ -9,6 +9,7 @@ import {
   joinGroupAs,
   type TestGroup,
   type TestUser,
+  uniqueName,
 } from "../helpers/supabase";
 
 // Expectations come from the PRD (Access Control, FR-005): every member sees a
@@ -36,7 +37,7 @@ describe("creator-only task permissions", () => {
   });
 
   beforeEach(async () => {
-    ga = await createGroupAs(a, "Group A");
+    ga = await createGroupAs(a, uniqueName("Group A"));
     await joinGroupAs(c, ga.joinCode);
     await joinGroupAs(m, ga.joinCode);
     taskId = await createTaskAs(c, ga.id, TITLE, "daily");

@@ -9,6 +9,7 @@ import {
   joinGroupAs,
   type TestGroup,
   type TestUser,
+  uniqueName,
 } from "../helpers/supabase";
 
 // Expectations come from the PRD (Access Control, FR-003): the group owner
@@ -19,7 +20,8 @@ import {
 // who may leave. The new owner's one-time notice is the owner_notice_pending
 // flag, which only the owner clears.
 
-const GA_NAME = "Group A";
+const GA_NAME = uniqueName("Group A");
+const RENAMED_NAME = uniqueName("Renamed by A");
 const PERMISSION_DENIED = "42501";
 const INVALID_SUCCESSOR = "P0003";
 
@@ -62,12 +64,12 @@ describe("creator-only group permissions", () => {
     it("A renames GA, removes M2, and deletes GA (memberships cascade)", async () => {
       const { data: renamed, error: renameError } = await a.client
         .from("groups")
-        .update({ name: "Renamed by A" })
+        .update({ name: RENAMED_NAME })
         .eq("id", ga.id)
         .select("id");
       expect(renameError).toBeNull();
       expect(renamed).toEqual([{ id: ga.id }]);
-      expect((await adminGroupA())?.[0]?.name).toBe("Renamed by A");
+      expect((await adminGroupA())?.[0]?.name).toBe(RENAMED_NAME);
 
       const { data: removed, error: removeError } = await a.client
         .from("group_members")
@@ -102,12 +104,12 @@ describe("creator-only group permissions", () => {
 
       const { data: allowed, error } = await a.client
         .from("groups")
-        .update({ name: "Renamed by A" })
+        .update({ name: RENAMED_NAME })
         .eq("id", ga.id)
         .select("id");
       expect(error).toBeNull();
       expect(allowed).toEqual([{ id: ga.id }]);
-      expect((await adminGroupA())?.[0]?.name).toBe("Renamed by A");
+      expect((await adminGroupA())?.[0]?.name).toBe(RENAMED_NAME);
     });
   });
 
@@ -195,7 +197,7 @@ describe("creator-only group permissions", () => {
 
       const { data: allowed, error } = await a.client
         .from("groups")
-        .update({ name: "Renamed by A" })
+        .update({ name: RENAMED_NAME })
         .eq("id", ga.id)
         .select("id");
       expect(error).toBeNull();

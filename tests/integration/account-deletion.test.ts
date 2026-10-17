@@ -15,6 +15,7 @@ import {
   joinTaskAs,
   type TestUser,
   utcDay,
+  uniqueName,
 } from "../helpers/supabase";
 
 // Expectations come from the S-15 plan (context/changes/account-deletion/plan.md, Phase 1): deleting an account takes
@@ -87,7 +88,7 @@ describe("account deletion", () => {
       const a = await createTestUser(); // owner
       const c = await createTestUser(); // other member, creator of a task
       const d = await createTestUser(); // the member who deletes their account
-      const ga = await createGroupAs(a, "Group A");
+      const ga = await createGroupAs(a, uniqueName("Group A"));
       await joinGroupAs(c, ga.joinCode);
       await joinGroupAs(d, ga.joinCode);
 
@@ -131,8 +132,8 @@ describe("account deletion", () => {
       const a = await createTestUser(); // owner of GA
       const b = await createTestUser(); // owner of GB
       const d = await createTestUser();
-      const ga = await createGroupAs(a, "Group A");
-      const gb = await createGroupAs(b, "Group B");
+      const ga = await createGroupAs(a, uniqueName("Group A"));
+      const gb = await createGroupAs(b, uniqueName("Group B"));
 
       await joinGroupAs(d, ga.joinCode);
       const leftBehind = await createTaskAs(d, ga.id, "Left behind", "once");
@@ -166,7 +167,7 @@ describe("account deletion", () => {
       const a = await createTestUser(); // owner who deletes the account
       const m = await createTestUser(); // successor
       const m2 = await createTestUser();
-      const ga = await createGroupAs(a, "Group A");
+      const ga = await createGroupAs(a, uniqueName("Group A"));
       await joinGroupAs(m, ga.joinCode);
       await joinGroupAs(m2, ga.joinCode);
 
@@ -196,7 +197,7 @@ describe("account deletion", () => {
       const a = await createTestUser();
       const m = await createTestUser();
       const outsider = await createTestUser();
-      const ga = await createGroupAs(a, "Group A");
+      const ga = await createGroupAs(a, uniqueName("Group A"));
       await joinGroupAs(m, ga.joinCode);
       const aTask = await createTaskAs(a, ga.id, "Owner's task", "daily");
       expect((await checkOffAs(a, aTask, today)).error).toBeNull();
@@ -222,7 +223,7 @@ describe("account deletion", () => {
     it("the group, its tasks and their check-offs go with the account", async () => {
       const today = utcDay(0);
       const s = await createTestUser();
-      const gs = await createGroupAs(s, "Solo group");
+      const gs = await createGroupAs(s, uniqueName("Solo group"));
       const task = await createTaskAs(s, gs.id, "Solo task", "daily");
       expect((await checkOffAs(s, task, today)).error).toBeNull();
 

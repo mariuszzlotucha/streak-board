@@ -18,6 +18,7 @@ import {
   type TestGroup,
   type TestUser,
   utcDay,
+  uniqueName,
 } from "../helpers/supabase";
 
 // Expectations come from the PRD (US-01, FR-008) and the settled terms of the S-04 plan, not from the code under
@@ -72,10 +73,10 @@ describe("task check-off flow", () => {
 
   beforeEach(async () => {
     await clearOfUtcMidnight();
-    ga = await createGroupAs(a, "Group A");
+    ga = await createGroupAs(a, uniqueName("Group A"));
     await joinGroupAs(c, ga.joinCode);
     await joinGroupAs(m, ga.joinCode);
-    await createGroupAs(b, "Group B");
+    await createGroupAs(b, uniqueName("Group B"));
     taskId = await createTaskAs(c, ga.id, "Water the plants", "daily");
     task = await taskAs(c, taskId);
   });

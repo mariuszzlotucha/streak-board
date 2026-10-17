@@ -8,6 +8,7 @@ import {
   joinGroupAs,
   type TestGroup,
   type TestUser,
+  uniqueName,
 } from "../helpers/supabase";
 
 // Expectations come from the PRD (Access Control, FR-004): tasks belong to a
@@ -33,9 +34,9 @@ describe("task isolation between groups", () => {
   });
 
   beforeEach(async () => {
-    ga = await createGroupAs(a, "Group A");
+    ga = await createGroupAs(a, uniqueName("Group A"));
     await joinGroupAs(m, ga.joinCode);
-    gb = await createGroupAs(b, "Group B");
+    gb = await createGroupAs(b, uniqueName("Group B"));
     taskId = await createTaskAs(a, ga.id, "Water the plants", "daily");
   });
 
