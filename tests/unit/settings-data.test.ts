@@ -11,7 +11,12 @@ const groups = await import("@/lib/groups");
 
 type Supabase = NonNullable<ReturnType<typeof createClient>>;
 
-const supabase = {} as Supabase;
+// The only direct read is the head count of the caller's push subscriptions (RLS: own rows).
+const countResult: { count: number | null; error: unknown } = { count: 0, error: null };
+const select = vi.fn(() => Promise.resolve(countResult));
+const from = vi.fn(() => ({ select }));
+const supabase = { from } as unknown as Supabase;
+const noReminders = { vapidPublicKey: null, hasSubscriptions: false };
 const group: MyGroup = {
   id: "g-1",
   name: "Runners",
@@ -32,6 +37,8 @@ function input(overrides: Partial<SettingsInput> = {}): SettingsInput {
 let errorSpy: MockInstance<typeof console.error>;
 
 beforeEach(() => {
+  countResult.count = 0;
+  countResult.error = null;
   errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
   vi.mocked(groups.getMyGroup).mockResolvedValue(group);
   vi.mocked(groups.listGroupMembers).mockResolvedValue(members);
@@ -45,7 +52,7 @@ afterEach(() => {
 describe("loadSettings", () => {
   it("returns the caller's group and its members", async () => {
     const data = await loadSettings(input());
-    expect(data).toEqual({ group, members, loadFailed: false, error: null });
+    expect(data).toEqual({ group, members, reminders: noReminders, loadFailed: false, error: null });
     expect(groups.getMyGroup).toHaveBeenCalledWith(supabase);
     expect(groups.listGroupMembers).toHaveBeenCalledExactlyOnceWith(supabase, group.id);
     expect(errorSpy).not.toHaveBeenCalled();
@@ -54,14 +61,14 @@ describe("loadSettings", () => {
   it("returns no group and no members, and reads no members, for a caller outside any group", async () => {
     vi.mocked(groups.getMyGroup).mockResolvedValue(null);
     const data = await loadSettings(input());
-    expect(data).toEqual({ group: null, members: [], loadFailed: false, error: null });
+    expect(data).toEqual({ group: null, members: [], reminders: noReminders, loadFailed: false, error: null });
     expect(groups.listGroupMembers).not.toHaveBeenCalled();
     expect(errorSpy).not.toHaveBeenCalled();
   });
 
   it("returns no group and reads nothing when Supabase is not configured", async () => {
     const data = await loadSettings(input({ createSupabase: () => null }));
-    expect(data).toEqual({ group: null, members: [], loadFailed: false, error: null });
+    expect(data).toEqual({ group: null, members: [], reminders: noReminders, loadFailed: false, error: null });
     expect(groups.getMyGroup).not.toHaveBeenCalled();
     expect(groups.listGroupMembers).not.toHaveBeenCalled();
   });
@@ -71,7 +78,13 @@ describe("loadSettings", () => {
       Object.assign(new Error("connection refused"), { code: "PGRST000", status: 503 }),
     );
     const data = await loadSettings(input());
-    expect(data).toEqual({ group: null, members: [], loadFailed: true, error: groupErrorMessage("unknown") });
+    expect(data).toEqual({
+      group: null,
+      members: [],
+      reminders: noReminders,
+      loadFailed: true,
+      error: groupErrorMessage("unknown"),
+    });
     expect(errorSpy).toHaveBeenCalledOnce();
     expect(errorSpy.mock.calls[0][0]).toMatchObject({
       level: "error",
@@ -88,7 +101,13 @@ describe("loadSettings", () => {
       Object.assign(new Error("upstream timeout"), { code: "PGRST003", status: 504 }),
     );
     const data = await loadSettings(input());
-    expect(data).toEqual({ group: null, members: [], loadFailed: true, error: groupErrorMessage("unknown") });
+    expect(data).toEqual({
+      group: null,
+      members: [],
+      reminders: noReminders,
+      loadFailed: true,
+      error: groupErrorMessage("unknown"),
+    });
     expect(errorSpy).toHaveBeenCalledOnce();
     expect(errorSpy.mock.calls[0][0]).toMatchObject({
       level: "error",
@@ -107,7 +126,13 @@ describe("loadSettings", () => {
         },
       }),
     );
-    expect(data).toEqual({ group: null, members: [], loadFailed: true, error: groupErrorMessage("unknown") });
+    expect(data).toEqual({
+      group: null,
+      members: [],
+      reminders: noReminders,
+      loadFailed: true,
+      error: groupErrorMessage("unknown"),
+    });
     expect(groups.getMyGroup).not.toHaveBeenCalled();
     expect(errorSpy).toHaveBeenCalledOnce();
     expect(errorSpy.mock.calls[0][0]).toMatchObject({
@@ -115,5 +140,27 @@ describe("loadSettings", () => {
       event: "settings.load.failed",
       route: "/settings",
     });
+  });
+
+  it("passes the trimmed VAPID key and reports whether the caller has any push subscription", async () => {
+    countResult.count = 2;
+    const data = await loadSettings(input({ vapidPublicKey: "  BKey  " }));
+    expect(data.reminders).toEqual({ vapidPublicKey: "BKey", hasSubscriptions: true });
+    expect(from).toHaveBeenCalledWith("push_subscriptions");
+    expect(select).toHaveBeenCalledWith("id", { count: "exact", head: true });
+  });
+
+  it("treats a blank VAPID key as none", async () => {
+    const data = await loadSettings(input({ vapidPublicKey: " " }));
+    expect(data.reminders).toEqual(noReminders);
+  });
+
+  it("ends as loadFailed with one settings.load.failed report when the subscriptions cannot be read", async () => {
+    countResult.error = { code: "PGRST000", message: "down", status: 503 };
+    const data = await loadSettings(input({ vapidPublicKey: "BKey" }));
+    expect(data.loadFailed).toBe(true);
+    expect(data.reminders).toEqual(noReminders);
+    expect(errorSpy).toHaveBeenCalledOnce();
+    expect(errorSpy.mock.calls[0][0]).toMatchObject({ event: "settings.load.failed", error: { code: "PGRST000" } });
   });
 });

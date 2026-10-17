@@ -1375,9 +1375,11 @@ for (const route of ROUTE_IDS) {
 describe("coverage guard", () => {
   it("has rows, including a recorded call chain, for every route file under src/pages/api except auth", () => {
     const apiDir = fileURLToPath(new URL("../../src/pages/api", import.meta.url));
-    // Every route family except auth (no data routes), so a new family turns this red by name.
+    // Every route family except auth (no data routes) and reminders (JSON routes answering a bare status, characterized
+    // against the local database in tests/integration/reminders-routes.test.ts), so a new family turns this red by name.
+    expect(readdirSync(`${apiDir}/reminders`).sort()).toEqual(["subscribe.ts", "unsubscribe-all.ts", "unsubscribe.ts"]);
     const dirs = readdirSync(apiDir, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory() && entry.name !== "auth")
+      .filter((entry) => entry.isDirectory() && entry.name !== "auth" && entry.name !== "reminders")
       .map((entry) => entry.name)
       .sort();
     expect(dirs).toEqual(["account", "groups", "tasks"]);

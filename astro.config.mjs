@@ -23,6 +23,11 @@ export default defineConfig({
       SUPABASE_KEY: envField.string({ context: "server", access: "secret", optional: true }),
       // Not a secret (the privacy policy publishes it), but read at runtime so the address stays out of the repo.
       CONTACT_EMAIL: envField.string({ context: "server", access: "secret", optional: true }),
+      // Web Push (S-16): the VAPID key pair (base64url) and the secret that guards the reminder functions. The cron
+      // reads them from the scheduled handler's env argument, not through astro:env.
+      VAPID_PUBLIC_KEY: envField.string({ context: "server", access: "secret", optional: true }),
+      VAPID_PRIVATE_KEY: envField.string({ context: "server", access: "secret", optional: true }),
+      REMINDER_SECRET: envField.string({ context: "server", access: "secret", optional: true }),
     },
   },
 });

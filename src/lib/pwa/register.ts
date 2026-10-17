@@ -4,7 +4,16 @@
 // the way of HMR.
 
 /** The codes `POST /api/client-errors` accepts; the server reports them as `client.sw.<code>`. */
-export const CLIENT_ERROR_CODES = ["sw_register_failed", "sw_update_failed"] as const;
+export const CLIENT_ERROR_CODES = [
+  "sw_register_failed",
+  "sw_update_failed",
+  // Reminders on this device (src/lib/pwa/push.ts).
+  "push_permission_failed",
+  "push_subscribe_failed",
+  "push_save_failed",
+  "push_unsubscribe_failed",
+  "push_unsubscribe_all_failed",
+] as const;
 export type ClientErrorCode = (typeof CLIENT_ERROR_CODES)[number];
 
 export const CLIENT_ERRORS_PATH = "/api/client-errors";

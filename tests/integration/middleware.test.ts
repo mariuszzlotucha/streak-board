@@ -265,6 +265,21 @@ describe("middleware nickname gate", () => {
     expect(errorSpy.mock.calls[0][0]).toMatchObject({ event: "nickname.lookup.failed", userId: "u1" });
   });
 
+  it.each(["/api/reminders/subscribe", "/api/reminders/unsubscribe", "/api/reminders/unsubscribe-all"])(
+    "redirects a visitor without a session away from %s",
+    async (path) => {
+      const { onRequest } = await loadOnRequest();
+      getUser.mockResolvedValue({ data: { user: null }, error: new AuthSessionMissingError() });
+      const pass = vi.fn(next);
+
+      const response = await onRequest(buildContext(path), pass);
+
+      expect(response.status).toBe(302);
+      expect(response.headers.get("Location")).toBe("/auth/signin");
+      expect(pass).not.toHaveBeenCalled();
+    },
+  );
+
   it("sends an anonymous visitor to sign-in without reading a nickname", async () => {
     const { onRequest } = await loadOnRequest();
     getUser.mockResolvedValue({ data: { user: null }, error: new AuthSessionMissingError() });

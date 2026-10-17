@@ -2,9 +2,12 @@
 import AccountCard from "@/components/dashboard/AccountCard.astro";
 import GroupSettingsCard from "@/components/dashboard/GroupSettingsCard.astro";
 import PageHeading from "@/components/dashboard/PageHeading.astro";
+import RemindersCard from "@/components/dashboard/RemindersCard.astro";
 import { buttonVariants } from "@/components/ui/button";
 import type { GroupMember, MyGroup } from "@/lib/groups";
 import { UNKNOWN_MEMBER } from "@/lib/leaderboard-rules";
+import type { PushState } from "@/lib/pwa/push";
+import type { RemindersData } from "@/lib/settings-data";
 
 // The settings page's body, rendered inside `AppLayout` by `/settings` from `loadSettings` and by the dev kitchen sink
 // from fixtures. Rename, transfer, delete and leave still redirect to `/dashboard`, where their `?error=` alert shows, and
@@ -20,9 +23,13 @@ interface Props {
   /** The signed-in user's own address, shown only here, on the Account card. */
   email: string | undefined;
   nickname: string | null;
+  /** The VAPID key and whether the account has any push subscription, for the Reminders card. */
+  reminders: RemindersData;
+  /** Only the dev kitchen sink pins the device's reminders state. */
+  remindersState?: PushState;
 }
 
-const { group, members, viewerId, loadFailed, error, email, nickname } = Astro.props;
+const { group, members, viewerId, loadFailed, error, email, nickname, reminders, remindersState } = Astro.props;
 const otherMembers = members.filter((member) => member.user_id !== viewerId);
 // Members are named by nickname, never by e-mail address.
 const nameOf = (member: GroupMember | undefined) => member?.nickname ?? UNKNOWN_MEMBER;
@@ -68,6 +75,11 @@ const deletion =
           on your dashboard.
         </p>
       )}
+      <RemindersCard
+        vapidPublicKey={reminders.vapidPublicKey}
+        hasSubscriptions={reminders.hasSubscriptions}
+        fixedState={remindersState}
+      />
       <AccountCard email={email} nickname={nickname} deletion={deletion} />
     </div>
   </div>

@@ -120,6 +120,20 @@ SUPABASE_URL=http://127.0.0.1:54321
 SUPABASE_KEY=<anon key from CLI output>
 ```
 
+To try the evening reminders locally with `npx wrangler dev --test-scheduled`, add three more lines to `.dev.vars` (generated as in [Reminder secrets](#reminder-secrets); `CONTACT_EMAIL` must be set too) and store the secret's hash in the local database with the SQL statement given there (Studio → SQL Editor):
+
+```
+VAPID_PUBLIC_KEY=<base64url public key>
+VAPID_PRIVATE_KEY=<base64url private key>
+REMINDER_SECRET=<random secret, at least 32 characters>
+```
+
+Then trigger one run by hand while `wrangler dev` is up (crons `0 18 * * *` and `0 19 * * *` in `wrangler.jsonc`; the run sends only in the hour that is 20:00 in Warsaw, so pick the one that matches the current offset):
+
+```bash
+curl "http://localhost:8787/__scheduled?cron=0+19+*+*+*"
+```
+
 5. To stop the stack when done:
 
 ```bash
@@ -285,6 +299,35 @@ npx wrangler secret put CONTACT_EMAIL
 - **A new migration sorts after every merged one.** Otherwise `supabase db push` is expected to refuse the older timestamp; rename the file (it is new in the PR, so the rename is free). The guard sees the base at the time `integration` runs and the ruleset does not require branches to be up to date, so update the branch (which re-runs `integration`) before merging a migration PR when another migration merged in the meantime. A merged out-of-order file can be neither renamed nor deleted past the guard; the owner applies it by hand with `supabase db push --include-all` (credentialed, never through the chat).
 
 The same job checks that `src/types.ts` equals a fresh generation (`npm run types:check`); after a migration regenerate it with `npx supabase gen types typescript --local > src/types.ts && npx prettier --write src/types.ts`.
+
+### Reminder secrets
+
+The evening reminder cron (`src/worker.ts` → `src/lib/reminders/run.ts`) sends Web Push with a VAPID key pair and calls the reminder database functions with a shared secret. It reads all three from the Worker's runtime secrets; while any of them (or `SUPABASE_URL`, `SUPABASE_KEY`, `CONTACT_EMAIL`) is missing, each run logs `reminders.config.missing` and sends nothing. Set them once:
+
+1. Generate the VAPID key pair; the first line printed is `VAPID_PUBLIC_KEY` (the 65-byte uncompressed point), the second `VAPID_PRIVATE_KEY` (the 32-byte scalar), both base64url:
+
+```bash
+node -e "const k=require('crypto').generateKeyPairSync('ec',{namedCurve:'P-256'}).privateKey.export({format:'jwk'});const b=(s)=>Buffer.from(s,'base64url');console.log(Buffer.concat([Buffer.from([4]),b(k.x),b(k.y)]).toString('base64url'));console.log(k.d)"
+```
+
+2. Generate the shared secret: `openssl rand -base64 32`.
+3. Store the three on the Worker:
+
+```bash
+npx wrangler secret put VAPID_PUBLIC_KEY
+npx wrangler secret put VAPID_PRIVATE_KEY
+npx wrangler secret put REMINDER_SECRET
+```
+
+4. Store the secret's hash in the production database (Supabase dashboard → SQL Editor), after the migration that creates `reminder_secret` has been applied; until then every run logs `reminders.due.failed` and sends nothing:
+
+```sql
+insert into public.reminder_secret (hash) values (sha256(convert_to('<secret>', 'UTF8'))) on conflict (id) do update set hash = excluded.hash;
+```
+
+Changing `VAPID_PUBLIC_KEY` invalidates every existing subscription; rotating `REMINDER_SECRET` needs steps 3 and 4 together.
+
+**CPU ceiling (measure before relying on it).** Each push costs CPU for its own encryption (one ECDH key pair, HKDF and AES-GCM), and the Workers Free plan allows 10 ms of CPU per invocation, so one evening run can only serve a limited number of subscriptions. Before the first release, trigger one run with a real subscription, read its CPU time with `npx wrangler tail` (or Workers Logs), and record the per-push cost and the resulting subscription ceiling here; plan batching or the paid plan before the subscription count nears it.
 
 ### Manual deploy (fallback)
 

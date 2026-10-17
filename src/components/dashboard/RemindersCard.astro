@@ -1,0 +1,33 @@
+---
+import RemindersToggle from "@/components/account/RemindersToggle";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import type { PushState } from "@/lib/pwa/push";
+
+interface Props {
+  vapidPublicKey: string | null;
+  hasSubscriptions: boolean;
+  /** Only the dev kitchen sink pins the state; the page lets the island read it from the browser. */
+  fixedState?: PushState;
+}
+
+const { vapidPublicKey, hasSubscriptions, fixedState } = Astro.props;
+---
+
+{/* Reminders per device (S-16). The rule is server-rendered, so it shows without JavaScript; the island renders the
+    device's state and buttons. */}
+<Card>
+  <CardHeader>
+    <CardTitle as="h2">Reminders</CardTitle>
+    <CardDescription>
+      At 20:00 you get a reminder for daily tasks you haven't checked off today, and on Sunday also for weekly tasks.
+    </CardDescription>
+  </CardHeader>
+  <CardContent>
+    <RemindersToggle
+      client:load
+      vapidPublicKey={vapidPublicKey}
+      hasSubscriptions={hasSubscriptions}
+      fixedState={fixedState}
+    />
+  </CardContent>
+</Card>

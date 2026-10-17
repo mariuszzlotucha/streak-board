@@ -4,6 +4,8 @@
 // absence in a production build). The e-mail addresses, shown only on the settings page's Account card, use the reserved
 // `.test` domain.
 import type { DashboardData } from "@/lib/dashboard-data";
+import type { PushState } from "@/lib/pwa/push";
+import type { RemindersData } from "@/lib/settings-data";
 import { groupErrorMessage } from "@/lib/group-errors";
 import { nicknameErrorMessage } from "@/lib/nickname-errors";
 import type { GroupMember, MyGroup } from "@/lib/groups";
@@ -83,6 +85,26 @@ export const SETTINGS_STATES = [
     description: "Not in a group: a link to the dashboard; deleting the account has no group to mention",
   },
   { id: "settings-load-failed", label: "Load failed", description: "The group could not be read" },
+  {
+    id: "settings-reminders-off",
+    label: "Reminders off",
+    description: "Owner; push works here, reminders are off on this device and on every other",
+  },
+  {
+    id: "settings-reminders-on",
+    label: "Reminders on",
+    description: "Owner; reminders are on for this device: Turn off, and Turn off on all devices",
+  },
+  {
+    id: "settings-reminders-unsupported",
+    label: "Reminders unsupported",
+    description: "Owner; no push in this browser (iOS outside the home screen): install the app first",
+  },
+  {
+    id: "settings-reminders-denied",
+    label: "Reminders denied",
+    description: "Owner; notifications are blocked, with a subscription on another device",
+  },
 ] as const;
 
 export type SettingsStateId = (typeof SETTINGS_STATES)[number]["id"];
@@ -100,6 +122,9 @@ export interface SettingsViewProps {
   error: string | null;
   email: string | undefined;
   nickname: string | null;
+  reminders: RemindersData;
+  /** The device's reminders state, pinned so the island does not read the browser. */
+  remindersState: PushState;
 }
 
 // The states of `/account/nickname` (`NicknameView`); ids start with `nickname-`, like the settings states.
@@ -360,8 +385,15 @@ export function dashboardFixture(id: DashboardStateId, origin: string): Dashboar
 }
 
 /** The props `SettingsView` gets in one state. Builds fresh objects on every call. */
+// A well-formed VAPID public key shape (65 bytes, base64url); the kitchen sink never subscribes with it.
+const VAPID_PUBLIC_KEY = `B${"A".repeat(86)}`;
+
 export function settingsFixture(id: SettingsStateId): SettingsViewProps {
-  const healthy = { loadFailed: false, error: null };
+  const reminders = (state: PushState, hasSubscriptions: boolean) => ({
+    reminders: { vapidPublicKey: state === "unsupported" ? null : VAPID_PUBLIC_KEY, hasSubscriptions },
+    remindersState: state,
+  });
+  const healthy = { loadFailed: false, error: null, ...reminders("off", false) };
   const owner = { viewerId: OWNER_ID, email: OWNER_EMAIL, nickname: OWNER_NICKNAME };
   switch (id) {
     case "settings-owner":
@@ -387,7 +419,28 @@ export function settingsFixture(id: SettingsStateId): SettingsViewProps {
         nickname: OUTSIDER_NICKNAME,
       };
     case "settings-load-failed":
-      return { ...owner, group: null, members: [], loadFailed: true, error: groupErrorMessage("unknown") };
+      return {
+        ...owner,
+        ...reminders("off", false),
+        group: null,
+        members: [],
+        loadFailed: true,
+        error: groupErrorMessage("unknown"),
+      };
+    case "settings-reminders-off":
+      return { ...healthy, ...owner, group: { ...MORNING_CREW }, members: [...MEMBERS] };
+    case "settings-reminders-on":
+      return { ...healthy, ...owner, ...reminders("on", true), group: { ...MORNING_CREW }, members: [...MEMBERS] };
+    case "settings-reminders-unsupported":
+      return {
+        ...healthy,
+        ...owner,
+        ...reminders("unsupported", false),
+        group: { ...MORNING_CREW },
+        members: [...MEMBERS],
+      };
+    case "settings-reminders-denied":
+      return { ...healthy, ...owner, ...reminders("denied", true), group: { ...MORNING_CREW }, members: [...MEMBERS] };
   }
 }
 

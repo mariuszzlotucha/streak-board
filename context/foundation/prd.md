@@ -31,7 +31,7 @@ Osoba budująca lub utrzymująca osobisty nawyk/cel (np. trening, czytanie), kt�
 
 ### Secondary
 
-- Powiadomienia/przypomnienia o niewykonanym tasku.
+- Powiadomienia/przypomnienia o niewykonanym tasku. Dostarczone w S-16 (task-reminders): przypomnienia Web Push, włączane osobno na każdym urządzeniu w ustawieniach (reguła w §Business Logic).
 - Historia/statystyki długoterminowe (wykresy streaków w czasie). Siatka odznaczeń (FR-013) spełnia §Vision i nie zamyka tego punktu: wykresy i statystyki nadal są poza zakresem.
 
 ### Guardrails
@@ -127,6 +127,8 @@ Osoba budująca lub utrzymująca osobisty nawyk/cel (np. trening, czytanie), kt�
 Za każdy dzień/okres, w którym użytkownik wykona przypisany task, jego streak dla tego tasku rośnie o jeden; za każdy pominięty zamknięty dzień/okres streak jest dzielony na pół z zaokrągleniem w dół (więc streak 1 spada do 0), a suma streaków użytkownika decyduje o jego pozycji w tablicy wyników grupy.
 
 Reguła korzysta z pojedynczego wejścia widocznego dla użytkownika: czy dany task został odznaczony jako wykonany w swoim okresie (dzień/tydzień) czy nie. Wynikiem jest aktualna wartość streaka per task oraz suma streaków per użytkownik. Użytkownik spotyka się z tą regułą dwojako: natychmiast po odznaczeniu tasku widzi zaktualizowany streak, a przy wejściu w zakładkę „Tablica wyników” widzi swoją pozycję względem reszty grupy wynikającą z sumy streaków.
+
+Przypomnienia (S-16): o 20:00 czasu warszawskiego użytkownik, który włączył przypomnienia na urządzeniu, dostaje na nie jedno powiadomienie z listą tasków, do których jest zapisany i których nie odznaczył w bieżącym okresie — taski `daily` codziennie, `weekly` tylko w niedzielę (ostatni dzień tygodnia), `once` nigdy. Bez niczego do zrobienia nie ma powiadomienia. Kanał to wyłącznie Web Push; zgoda jest per urządzenie i wycofywana przez wyłączenie przypomnień.
 
 ## Access Control
 
