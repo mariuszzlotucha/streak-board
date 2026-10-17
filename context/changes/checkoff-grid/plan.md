@@ -78,6 +78,7 @@ Export a period-enumeration helper and add a pure grid builder with exhaustive u
 **Intent**: Turn tasks, member participations with `joined_at`, and periods per enrolment into the cells the view renders.
 
 **Contract**:
+
 - `export const GRID_HORIZON = { daily: 7, weekly: 4 } as const`
 - `export type CellState = "done" | "missed" | "open" | "notJoined"`
 - `export interface GridRow { userId: string; nickname: string | null; isYou: boolean; cells: CellState[] }`

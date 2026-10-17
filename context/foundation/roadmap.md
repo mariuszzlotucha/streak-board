@@ -42,11 +42,11 @@ Grono znajomych korzystało wcześniej ze wspólnego arkusza Google, w którym r
 
 ## At a glance
 
-| ID   | Change ID       | Outcome (user can …)                                                                                             | Prerequisites | PRD refs                                     | Status   |
-| ---- | --------------- | ---------------------------------------------------------------------------------------------------------------- | ------------- | -------------------------------------------- | -------- |
-| S-13 | checkoff-grid   | zobaczyć siatkę odznaczeń grupy: kto wykonał task w każdym z ostatnich okresów                                   | S-11, S-14    | — (PRD §Success Criteria → Secondary; MS-01) | planning |
-| S-16 | task-reminders  | dostać przypomnienie o tasku, do którego jest zapisany, a którego nie odznaczył w bieżącym okresie               | —             | — (PRD §Success Criteria → Secondary; MS-02) | ready    |
-| S-17 | installable-pwa | zainstalować aplikację na ekranie głównym telefonu albo na komputerze i uruchamiać ją jak osobną aplikację (PWA) | —             | — (opis właściciela; MS-03)                  | planning |
+| ID   | Change ID       | Outcome (user can …)                                                                                             | Prerequisites | PRD refs                                     | Status      |
+| ---- | --------------- | ---------------------------------------------------------------------------------------------------------------- | ------------- | -------------------------------------------- | ----------- |
+| S-13 | checkoff-grid   | zobaczyć siatkę odznaczeń grupy: kto wykonał task w każdym z ostatnich okresów                                   | S-11, S-14    | — (PRD §Success Criteria → Secondary; MS-01) | planning    |
+| S-16 | task-reminders  | dostać przypomnienie o tasku, do którego jest zapisany, a którego nie odznaczył w bieżącym okresie               | —             | — (PRD §Success Criteria → Secondary; MS-02) | ready       |
+| S-17 | installable-pwa | zainstalować aplikację na ekranie głównym telefonu albo na komputerze i uruchamiać ją jak osobną aplikację (PWA) | —             | — (opis właściciela; MS-03)                  | in-progress |
 
 ## Baseline
 
@@ -116,7 +116,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
   - Na jakich systemach sprawdzamy instalację (Android, iOS, komputer) i co aplikacja pokazuje, gdy nie ma sieci? — Owner: user. Block: no — rozstrzyga `/10x-frame`.
 - **Źródło zakresu:** opis właściciela z 2026-10-17: „Żeby aplikacja była PWA”. PRD §User & Persona: użytkownik sięga po produkt codziennie, żeby odznaczyć task, a PRD §Non-Functional Requirements wymaga pełnej używalności na ekranie smartfona.
 - **Risk:** Service worker zostaje w przeglądarce między sesjami i wydaniami: zbyt szeroka pamięć podręczna mogłaby po wylogowaniu pokazać cudzy dashboard na wspólnym urządzeniu (guardrail PRD: widoczność tylko dla własnej grupy) albo trzymać stary kod po wycofaniu wydania, więc strony i dane po zalogowaniu nie trafiają do cache, a aktualizacja service workera należy do zakresu. Odznaczenie ma zostać natychmiastowe (guardrail PRD). Idzie po S-16, chyba że S-16 wybierze kanał push: wtedy S-17 idzie pierwszy.
-- **Status:** planning
+- **Status:** in-progress
 
 ## Backlog Handoff
 

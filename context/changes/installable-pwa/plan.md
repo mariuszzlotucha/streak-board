@@ -63,6 +63,9 @@ Everything lives in two places: static files in `public/` (manifest, icons, `sw.
 ## Critical Implementation Details
 
 - **Ordering — check before relying on it.** First build and run preview, then `curl -I` on `/favicon.svg`, `/sw.js` and `/manifest.webmanifest`: does middleware run (e.g. a missing `Set-Cookie` or log line), what are `Content-Type` and `Cache-Control`, and does `public/_headers` take effect on the Cloudflare assets path in preview. If `_headers` does not work in preview, write that down and check it on production in phase 2. Record the result in the Phase 1 section of the plan as a note.
+
+  **Check result (2026-10-17):** `npm run build` + `npm run preview -- --port 4399` (workerd), `curl -sI`. Middleware does **not** run for static files: `/favicon.svg` answers `200`, `image/svg+xml`, `cf-cache-status: HIT`, no `Set-Cookie`. Before `public/_headers`: `/favicon.svg` had `cache-control: public, max-age=0, must-revalidate`; `/sw.js` and `/manifest.webmanifest` did not exist yet (`404`, `text/html`, from the Worker). After adding `public/_headers` (the adapter puts its `/_astro/*` rule in the same `dist/client/_headers`), `_headers` **takes effect in preview**: `/sw.js` → `200`, `text/javascript; charset=utf-8`, `cache-control: no-cache`; `/manifest.webmanifest` → `200`, `application/manifest+json`, `cache-control: no-cache`; `/favicon.svg` → `200` with no `cache-control` line any more (the default `max-age=0, must-revalidate` is not sent once `_headers` exists). Production headers are still checked in phase 2.
+
 - **Installability without a fetch handler.** Current Chromium does not require a `fetch` handler to install; verify this with the Lighthouse/DevTools "Installability" panel in a manual check. If Chrome refuses, a no-op `fetch` handler that calls no `respondWith` is acceptable — still with no cache.
 - **Update and reload.** The "Refresh" button reloads the page only after the user clicks it; never automatically, so a form being filled in is not lost. The message appears only when there **was** a controlling service worker before (`navigator.serviceWorker.controller` set before `controllerchange`); a first install is not an update.
 
@@ -324,13 +327,13 @@ No database migrations. Rolling back the code (`npx wrangler rollback`) leaves t
 
 #### Automated
 
-- [ ] 1.1 Lint and formatting pass: `npm run lint`
-- [ ] 1.2 Token contrast passes: `node scripts/token-contrast.mjs`
-- [ ] 1.3 Types and build pass: `npx astro check && npm run build`
-- [ ] 1.4 Unit tests pass (incl. `client-errors` and `pwa-register`): `npm run test:unit`
-- [ ] 1.5 Smoke passes with the new PWA steps: `npm run smoke`
-- [ ] 1.6 E2E passes (incl. `pwa.spec.ts`): `npx playwright test`
-- [ ] 1.7 Integration tests pass: `npm test`
+- [x] 1.1 Lint and formatting pass: `npm run lint` — 3f29bf6
+- [x] 1.2 Token contrast passes: `node scripts/token-contrast.mjs` — 3f29bf6
+- [x] 1.3 Types and build pass: `npx astro check && npm run build` — 3f29bf6
+- [x] 1.4 Unit tests pass (incl. `client-errors` and `pwa-register`): `npm run test:unit` — 3f29bf6
+- [x] 1.5 Smoke passes with the new PWA steps: `npm run smoke` — 3f29bf6
+- [x] 1.6 E2E passes (incl. `pwa.spec.ts`): `npx playwright test` — 3f29bf6
+- [x] 1.7 Integration tests pass: `npm test` — 3f29bf6
 
 #### Manual
 
