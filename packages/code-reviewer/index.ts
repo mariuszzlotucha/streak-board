@@ -8,6 +8,7 @@ export {
   ReviewRunError,
   DiffTooLargeError,
   UnreviewableDiffError,
+  hiddenBinaryPaths,
   verdictFromScores,
   type ReviewerOptions,
   type ReviewRun,

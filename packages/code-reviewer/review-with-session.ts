@@ -8,7 +8,7 @@ import {
   type ModelMessage,
 } from "ai";
 import { openrouter } from "@openrouter/ai-sdk-provider";
-import { createReviewer } from "./agent";
+import { createReviewer, hiddenBinaryPaths } from "./agent";
 import { DEFAULT_MAX_DIFF_CHARS, DEFAULT_MAX_OUTPUT_TOKENS, resolveReviewerModel } from "./config";
 import { buildReviewPrompt } from "./prompts/reviewer";
 import { formatUsageLine, loadEnv, readDiff } from "./utils";
@@ -53,14 +53,25 @@ function usageLine(step: Step | undefined): string {
   });
 }
 
-/** Runs the two calls and returns the exit code: 1 without a diff or output, 3 for a diff over the CLI's limit. */
+/**
+ * Runs the two calls and returns the exit code: 1 without a diff or output, 3 for a diff over the CLI's limit, 4 for
+ * a diff that shows a source file as binary.
+ */
 async function main(): Promise<number> {
   const read = await readDiff();
   if ("error" in read) return read.error === "too-large" ? 3 : 1;
-  // The CLI's limit, checked before any model call (`reviewDiff` does the same for the CLI).
+  // The CLI's two checks, before any model call (`reviewDiff` makes them for the CLI).
   if (read.diff.length > DEFAULT_MAX_DIFF_CHARS) {
     console.error(`error: the diff is ${read.diff.length} characters, over the ${DEFAULT_MAX_DIFF_CHARS} limit`);
     return 3;
+  }
+  const hidden = hiddenBinaryPaths(read.diff);
+  if (hidden.length > 0) {
+    console.error(
+      "error: the diff shows files without a binary extension (BINARY_EXTENSIONS) as binary, " +
+        `so it cannot be reviewed: ${JSON.stringify(hidden)}`,
+    );
+    return 4;
   }
   const messages: ModelMessage[] = [{ role: "user", content: buildReviewPrompt(read.diff) }];
 

@@ -150,6 +150,18 @@ describe("buildCaseInput", () => {
       await expect(buildCaseInput({ base, head }, REPO_ROOT), `${base} ${head}`).rejects.toThrow(/full 40-character/);
     }
   });
+
+  it("rejects files together with base or head, so neither input wins silently", async () => {
+    const sha = "0".repeat(40);
+    const files = { base: {}, head: { "src/a.ts": "a\n" } };
+    for (const vars of [
+      { files, base: sha, head: sha },
+      { files, base: sha },
+      { files, head: sha },
+    ]) {
+      await expect(buildCaseInput(vars, REPO_ROOT), Object.keys(vars).join(" ")).rejects.toThrow(/not both/);
+    }
+  });
 });
 
 describe("CI_DIFF_PATHSPECS", () => {

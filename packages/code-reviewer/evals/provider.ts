@@ -185,15 +185,19 @@ async function applyFiles(dir: string, files: Map<string, string | null>): Promi
  * Prepares one case for review. `base` and `head` are the full SHAs of two
  * commits of the repository at `repoRoot`; `files: { base, head }` builds a
  * temporary repository with one commit per side instead (a `null` content in
- * `head` deletes the file), removed by `cleanup`. The diff is the CI one:
- * `git diff <base>...<head> -- . <CI_DIFF_PATHSPECS>`, run, like every git
- * call here, without the user's or the system's git config.
+ * `head` deletes the file), removed by `cleanup`. A case with `files` and
+ * `base` or `head` is refused, so neither input wins silently. The diff is
+ * the CI one: `git diff <base>...<head> -- . <CI_DIFF_PATHSPECS>`, run, like
+ * every git call here, without the user's or the system's git config.
  */
 export async function buildCaseInput(vars: Record<string, unknown>, repoRoot: string): Promise<CaseInput> {
   let cwd = repoRoot;
   let baseRef: string;
   let headRef: string;
   let cleanup = (): Promise<void> => Promise.resolve();
+  if (vars.files !== undefined && (vars.base !== undefined || vars.head !== undefined)) {
+    throw new Error("a case gives vars.files or vars.base and vars.head, not both");
+  }
   if (vars.files !== undefined) {
     if (typeof vars.files !== "object" || vars.files === null) throw new Error("files must be { base, head }");
     const { base, head } = vars.files as { base?: unknown; head?: unknown };

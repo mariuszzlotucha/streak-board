@@ -84,7 +84,7 @@ Every review sends the case's diff, its title and body, and whatever the repo to
 
 ## Cases
 
-Each file is a one-item YAML list: `description` (unique; `--filter-pattern` matches it), `metadata: { kind: regression | bug | injection, expect: pass | fail }`, `vars` and `assert`. `vars` takes one of two inputs, plus the optional `title` and `body` of the PR:
+Each file is a one-item YAML list: `description` (unique; `--filter-pattern` matches it), `metadata: { kind: regression | bug | injection, expect: pass | fail }`, `vars` and `assert`. `vars` takes exactly one of two inputs (the provider refuses a case with both), plus the optional `title` and `body` of the PR:
 
 - `base` and `head`: two commits of this repository (full SHAs). The historical cases use the parents of a merge commit, with the title and body copied once from `gh pr view <n> --json title,body`;
 - `files: { base: { <path>: <content> }, head: { <path>: <content> | null } }`: a temporary repository with one commit per side, removed after the review; `null` deletes the file in `head`.
