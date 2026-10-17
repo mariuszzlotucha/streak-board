@@ -50,7 +50,15 @@
  *   once             0 without a check-off; 1 with one or several; it never decays
  */
 import { describe, expect, it } from "vitest";
-import { decayStreak, periodKeyFor, periodsBetween, snapshotOf, streakValue } from "@/lib/streak-rules";
+import {
+  decayStreak,
+  normalisePeriod,
+  periodKeyFor,
+  periodsBetween,
+  recentPeriods,
+  snapshotOf,
+  streakValue,
+} from "@/lib/streak-rules";
 import type { TaskRecurrence } from "@/lib/task-rules";
 
 describe("periodKeyFor", () => {
@@ -371,5 +379,37 @@ describe("optimistic preview", () => {
       expect(tick, `tick: ${context}`).toBe(simulate(recurrence, [...withoutCurrent, current], current));
       expect(tick - untick, `delta: ${context}`).toBe(1); // what the island publishes for the Leaderboard
     }
+  });
+});
+
+describe("recentPeriods and normalisePeriod (S-13 grid horizon)", () => {
+  it("lists daily periods ascending, ending with the current day, across month and DST boundaries", () => {
+    expect(recentPeriods("daily", "2026-10-27", 7)).toEqual([
+      "2026-10-21",
+      "2026-10-22",
+      "2026-10-23",
+      "2026-10-24",
+      "2026-10-25",
+      "2026-10-26",
+      "2026-10-27",
+    ]);
+    expect(recentPeriods("daily", "2026-03-02", 3)).toEqual(["2026-02-28", "2026-03-01", "2026-03-02"]);
+  });
+
+  it("lists weekly periods as Mondays 7 days apart, across a year boundary", () => {
+    expect(recentPeriods("weekly", "2027-01-04", 4)).toEqual(["2026-12-14", "2026-12-21", "2026-12-28", "2027-01-04"]);
+  });
+
+  it("gives one period for count 1 and none for count 0", () => {
+    expect(recentPeriods("daily", "2026-10-14", 1)).toEqual(["2026-10-14"]);
+    expect(recentPeriods("weekly", "2026-10-12", 0)).toEqual([]);
+  });
+
+  it("snaps a weekly key to its Monday and keeps a daily key", () => {
+    expect(normalisePeriod("weekly", "2026-10-07")).toBe("2026-10-05");
+    expect(normalisePeriod("weekly", "2026-10-04")).toBe("2026-09-28");
+    expect(normalisePeriod("weekly", "2026-10-05")).toBe("2026-10-05");
+    expect(normalisePeriod("weekly", "2027-01-03")).toBe("2026-12-28");
+    expect(normalisePeriod("daily", "2026-10-07")).toBe("2026-10-07");
   });
 });

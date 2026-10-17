@@ -2,6 +2,7 @@ import type { AstroCookies } from "astro";
 import type { User } from "@supabase/supabase-js";
 import { listCheckoffPeriods } from "@/lib/checkoffs";
 import type { createClient } from "@/lib/supabase";
+import { buildGrids, type GridParticipation, type TaskGrid } from "@/lib/grid-rules";
 import { groupErrorMessage, resolveGroupError } from "@/lib/group-errors";
 import { getMyGroup, listGroupMembers, previewGroup, type GroupMember, type MyGroup } from "@/lib/groups";
 import { clearJoinCode, peekJoinCode } from "@/lib/join-code";
@@ -14,7 +15,7 @@ import {
   type Board,
 } from "@/lib/leaderboard-rules";
 import { resolveTaskError } from "@/lib/task-errors";
-import { groupParticipantsByTask } from "@/lib/task-rules";
+import { groupParticipantsByTask, groupParticipationsByTask } from "@/lib/task-rules";
 import { listGroupTasks, listTaskParticipants, type GroupTask } from "@/lib/tasks";
 
 type Supabase = NonNullable<ReturnType<typeof createClient>>;
@@ -44,6 +45,8 @@ export interface DashboardData {
   checkoffsFailed: boolean;
   /** Set only when tasks, participants and check-offs all loaded and the board could be computed. */
   board: Board | null;
+  /** The check-off grid of each task, by task id; set together with `board` and null whenever it is null. */
+  grids: Map<string, TaskGrid> | null;
 }
 
 export async function loadDashboard({
@@ -53,6 +56,7 @@ export async function loadDashboard({
   errorParam,
   log,
 }: DashboardInput): Promise<DashboardData> {
+  let participations = new Map<string, GridParticipation[]>();
   const data: DashboardData = {
     error: resolveGroupError(errorParam) ?? resolveTaskError(errorParam),
     group: null,
@@ -66,6 +70,7 @@ export async function loadDashboard({
     participantsFailed: false,
     checkoffsFailed: false,
     board: null,
+    grids: null,
   };
 
   try {
@@ -94,6 +99,7 @@ export async function loadDashboard({
         // management. When the tasks failed the Tasks card is hidden and these results go unused.
         if (participantsResult.status === "fulfilled") {
           data.participantsByTask = groupParticipantsByTask(participantsResult.value);
+          participations = groupParticipationsByTask(participantsResult.value);
         } else {
           reportError("dashboard.participants.failed", participantsResult.reason, log);
           data.participantsFailed = true;
@@ -105,17 +111,30 @@ export async function loadDashboard({
           // The slice's riskiest code gets its own try/catch: a throw degrades the scores like a failed read and must not
           // reach the outer catch, which would hide Members and group management.
           try {
+            // One instant and one grouping for the board and the grids, so a streak and the grid beside it agree. A throw
+            // from either builder drops both, and `dashboard.leaderboard.failed` below reports it for both.
+            const now = new Date();
+            const periodsByEnrolment = groupPeriodsByEnrolment(checkoffsResult.value);
             const computed = buildBoard({
               members: data.members,
               tasks: data.tasks,
               participantsByTask: data.participantsByTask,
-              periodsByEnrolment: groupPeriodsByEnrolment(checkoffsResult.value),
+              periodsByEnrolment,
               viewerId: user.id,
-              now: new Date(),
+              now,
             });
             // The Leaderboard ranks again on render; ranking here first keeps a throw inside this try.
             rankStandings(computed.totals, user.id);
+            const grids = buildGrids({
+              members: data.members,
+              tasks: data.tasks,
+              participations,
+              periodsByEnrolment,
+              viewerId: user.id,
+              now,
+            });
             data.board = computed;
+            data.grids = grids;
           } catch (boardError) {
             reportError("dashboard.leaderboard.failed", boardError, log);
             data.checkoffsFailed = true;

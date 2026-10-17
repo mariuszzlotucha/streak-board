@@ -21,6 +21,7 @@ const {
   participantsFailed,
   checkoffsFailed,
   board,
+  grids,
 } = await loadDashboard({
   createSupabase: () => createClient(Astro.request.headers, Astro.cookies),
   cookies: Astro.cookies,
@@ -49,6 +50,7 @@ const inviteLink = group ? `${Astro.url.origin}/join/${group.join_code}` : null;
     participantsFailed={participantsFailed}
     checkoffsFailed={checkoffsFailed}
     board={board}
+    grids={grids}
     viewerId={user?.id}
     inviteLink={inviteLink}
   />

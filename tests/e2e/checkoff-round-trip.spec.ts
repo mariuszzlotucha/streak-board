@@ -27,6 +27,16 @@ function taskRow(page: Page, title: string) {
 }
 
 /**
+ * The viewer's cell for today in the row's check-off grid, found by its screen-reader label ("Nick, Fri 17 Oct: done").
+ * A fresh participant joined today, so every earlier cell reads "not joined" and only today's cell can be open or done.
+ */
+function viewerCell(page: Page, title: string, nickname: string, state: "open" | "done") {
+  return taskRow(page, title)
+    .getByRole("table", { name: `Check-offs of ${title}` })
+    .getByText(new RegExp(`^${escapeRegExp(nickname)}, [^:]+: ${state}$`));
+}
+
+/**
  * The viewer's Leaderboard line: position, nickname, the "You" badge and the total, each in its own element. Members
  * are listed by nickname, never by e-mail address.
  */
@@ -68,12 +78,14 @@ test.describe("risk #4: check-off round trip", () => {
     await expect(row.getByRole("button", { name: `Mark done ${title}` })).toBeVisible();
     await expect(row.getByText("0", { exact: true })).toBeVisible();
     await expectViewerTotal(page, owner.nickname, 0);
+    await expect(viewerCell(page, title, owner.nickname, "open")).toBeAttached();
 
-    // Tick: the row and the board move without a reload.
+    // Tick: the row, the grid cell and the board move without a reload.
     await row.getByRole("button", { name: `Mark done ${title}` }).click();
     await expect(row.getByText("Done today", { exact: true })).toBeVisible();
     await expect(row.getByText("1", { exact: true })).toBeVisible();
     await expectViewerTotal(page, owner.nickname, 1);
+    await expect(viewerCell(page, title, owner.nickname, "done")).toBeAttached();
 
     // The reload must not race the save: the control keeps the button `aria-disabled` until the server has answered.
     await expect(row.getByRole("button", { name: `Undo ${title}` })).not.toHaveAttribute("aria-disabled", "true");
@@ -82,6 +94,7 @@ test.describe("risk #4: check-off round trip", () => {
     await expect(row.getByText("Done today", { exact: true })).toBeVisible();
     await expect(row.getByText("1", { exact: true })).toBeVisible();
     await expectViewerTotal(page, owner.nickname, 1);
+    await expect(viewerCell(page, title, owner.nickname, "done")).toBeAttached();
 
     // Undo: back to 0, without a reload and then across one.
     await waitForHydration(page);
@@ -89,11 +102,47 @@ test.describe("risk #4: check-off round trip", () => {
     await expect(row.getByRole("button", { name: `Mark done ${title}` })).toBeVisible();
     await expect(row.getByText("0", { exact: true })).toBeVisible();
     await expectViewerTotal(page, owner.nickname, 0);
+    await expect(viewerCell(page, title, owner.nickname, "open")).toBeAttached();
 
     await expect(row.getByRole("button", { name: `Mark done ${title}` })).not.toHaveAttribute("aria-disabled", "true");
     await page.reload();
     await expect(row.getByRole("button", { name: `Mark done ${title}` })).toBeVisible();
     await expect(row.getByText("0", { exact: true })).toBeVisible();
+    await expectViewerTotal(page, owner.nickname, 0);
+  });
+
+  test("a failed save rolls the row, the grid cell and the board back", async ({ page }) => {
+    const token = uniqueToken("tickfail");
+    test.info().annotations.push({ type: "test-data", description: token });
+
+    const owner = await createPersona(token);
+    personas.push(owner);
+    const groupId = await createGroupAs(owner, `Group ${token}`);
+    const title = `Task ${token}`;
+    await createTaskAs(owner, groupId, title);
+
+    await signInThroughForm(page, owner.email, owner.password);
+    await waitForHydration(page);
+    const row = taskRow(page, title);
+    await expect(viewerCell(page, title, owner.nickname, "open")).toBeAttached();
+
+    // The server fails the save; the response is held until the optimistic state has been asserted.
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => (release = resolve));
+    await page.route("**/api/tasks/checkoff", async (route) => {
+      await held;
+      await route.fulfill({ status: 500, body: "" });
+    });
+
+    await row.getByRole("button", { name: `Mark done ${title}` }).click();
+    await expect(viewerCell(page, title, owner.nickname, "done")).toBeAttached();
+    release();
+
+    // Rollback: the button, the streak, the cell and the board return to their unticked state.
+    await expect(row.getByRole("button", { name: `Mark done ${title}` })).toBeVisible();
+    await expect(row.getByRole("button", { name: `Mark done ${title}` })).not.toHaveAttribute("aria-disabled", "true");
+    await expect(row.getByText("0", { exact: true })).toBeVisible();
+    await expect(viewerCell(page, title, owner.nickname, "open")).toBeAttached();
     await expectViewerTotal(page, owner.nickname, 0);
   });
 });

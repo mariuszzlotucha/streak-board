@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { CircleCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { sendCheckoff } from "@/lib/checkoff-client";
-import { publishDelta } from "@/lib/checkoff-sync";
+import { publishChecked, publishDelta } from "@/lib/checkoff-sync";
 import { streakValue, type PeriodKey, type StreakSnapshot } from "@/lib/streak-rules";
 import type { TaskRecurrence } from "@/lib/task-rules";
 
@@ -69,6 +69,7 @@ export default function CheckoffControl({
     const delta = streakValue(recurrence, snapshot, currentPeriod, next) - streak;
     focusAfterRender.current = true;
     setChecked(next);
+    publishChecked(taskId, next);
     setPending(true);
     setMessage(undefined);
     publishDelta(viewerId, delta);
@@ -92,6 +93,7 @@ export default function CheckoffControl({
     // A rollback can come long after the tap: give focus back only if the user has not moved on in the meantime.
     focusAfterRender.current = document.activeElement === buttonRef.current || document.activeElement === document.body;
     setChecked(!next);
+    publishChecked(taskId, !next);
     publishDelta(viewerId, -delta);
     if (result.kind === "expired") {
       // The session is gone, so a retry cannot succeed: reload, and the middleware sends the user to the sign-in page.

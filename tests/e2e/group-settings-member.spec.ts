@@ -57,7 +57,7 @@ test.describe("risk #3: group settings for a member", () => {
     await page.getByRole("button", { name: "Leave group" }).click();
     const dialog = page.getByRole("alertdialog", { name: "Leave this group?" });
     await expect(dialog).toBeVisible();
-    await expect(dialog).toContainText("your streaks in its tasks will be lost");
+    await expect(dialog).toContainText("your streaks and check-off history in its tasks will be lost");
     await dialog.getByRole("button", { name: "Cancel" }).click();
     await expect(dialog).toBeHidden();
     await page.goto("/dashboard");

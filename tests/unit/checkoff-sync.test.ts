@@ -70,4 +70,44 @@ describe("checkoff-sync", () => {
     expect(before.get("u1")).toBeUndefined();
     expect(after.get("u1")).toBe(1);
   });
+
+  describe("checked per task (the viewer's live grid cell)", () => {
+    it("starts empty, the same object the server renders with", () => {
+      expect(store.checkedSnapshot()).toBe(store.NO_CHECKED);
+      expect(store.checkedSnapshot().size).toBe(0);
+    });
+
+    it("keeps the last published state per task and notifies subscribers", () => {
+      const listener = vi.fn();
+      store.subscribeChecked(listener);
+
+      store.publishChecked("t1", true);
+
+      expect(store.checkedSnapshot().get("t1")).toBe(true);
+      expect(store.checkedSnapshot().get("t2")).toBeUndefined();
+      expect(listener).toHaveBeenCalledTimes(1);
+    });
+
+    it("returns the cell to unchecked when a rollback publishes the opposite", () => {
+      store.publishChecked("t1", true);
+      const ticked = store.checkedSnapshot();
+      store.publishChecked("t1", false);
+
+      expect(store.checkedSnapshot().get("t1")).toBe(false);
+      expect(ticked.get("t1")).toBe(true);
+      expect(store.checkedSnapshot()).not.toBe(ticked);
+      expect(store.NO_CHECKED.size).toBe(0);
+    });
+
+    it("stops notifying after unsubscribe and does not touch the deltas", () => {
+      const listener = vi.fn();
+      const unsubscribe = store.subscribeChecked(listener);
+      unsubscribe();
+
+      store.publishChecked("t1", true);
+
+      expect(listener).not.toHaveBeenCalled();
+      expect(store.deltasSnapshot().size).toBe(0);
+    });
+  });
 });

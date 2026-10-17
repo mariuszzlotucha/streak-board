@@ -239,7 +239,7 @@ Make the documents say what the grid shows and what leaving erases (list from `f
 
 #### Automated Verification:
 
-- Lint, format and build pass: `npm run lint`, `npx prettier --check "context/**/*.md"`, `npm run build`
+- Lint, format and build pass: `npm run lint`, `npx prettier --check context/changes/checkoff-grid context/foundation/prd.md context/foundation/roadmap.md context/domain/glossary.md context/domain/01-domain-distillation.md` (the files this change touches; the rest of `context/**` fails on master, owner decision 2026-10-17), `npm run build`
 - Smoke passes: `npm run smoke`
 
 #### Manual Verification:
@@ -289,9 +289,9 @@ None: no schema change; `joined_at` already exists and is granted.
 
 #### Automated
 
-- [ ] 1.1 Unit tests pass: `npm run test:unit`
-- [ ] 1.2 Lint and type check pass: `npm run lint` and `npx astro check`
-- [ ] 1.3 Mutation run on the grid rules reviewed survivor by survivor: `npm run test:mutation -- --mutate src/lib/grid-rules.ts`
+- [x] 1.1 Unit tests pass: `npm run test:unit` — d46fbc9
+- [x] 1.2 Lint and type check pass: `npm run lint` and `npx astro check` — d46fbc9
+- [x] 1.3 Mutation run on the grid rules reviewed survivor by survivor: `npm run test:mutation -- --mutate src/lib/grid-rules.ts` — d46fbc9
 
 #### Manual
 
@@ -301,20 +301,20 @@ None: no schema change; `joined_at` already exists and is granted.
 
 #### Automated
 
-- [ ] 2.1 Unit tests pass: `npm run test:unit`
-- [ ] 2.2 Integration tests pass against the local stack: `npm test`
-- [ ] 2.3 Astro type check passes: `npx astro check`
-- [ ] 2.4 Lint passes: `npm run lint`
+- [x] 2.1 Unit tests pass: `npm run test:unit` — c708b7b
+- [x] 2.2 Integration tests pass against the local stack: `npm test` — c708b7b
+- [x] 2.3 Astro type check passes: `npx astro check` — c708b7b
+- [x] 2.4 Lint passes: `npm run lint` — c708b7b
 
 ### Phase 3: UI
 
 #### Automated
 
-- [ ] 3.1 Unit tests pass: `npm run test:unit`
-- [ ] 3.2 Lint (incl. no-literal colour rule) and token contrast pass: `npm run lint` and `node scripts/token-contrast.mjs`
-- [ ] 3.3 Build passes: `npm run build`
-- [ ] 3.4 Smoke passes against the local stack: `npm run smoke`
-- [ ] 3.5 E2E check-off round trip passes: `npx playwright test tests/e2e/checkoff-round-trip.spec.ts`
+- [x] 3.1 Unit tests pass: `npm run test:unit` — 0a10058
+- [x] 3.2 Lint (incl. no-literal colour rule) and token contrast pass: `npm run lint` and `node scripts/token-contrast.mjs` — 0a10058
+- [x] 3.3 Build passes: `npm run build` — 0a10058
+- [x] 3.4 Smoke passes against the local stack: `npm run smoke` — 0a10058
+- [x] 3.5 E2E check-off round trip passes: `npx playwright test tests/e2e/checkoff-round-trip.spec.ts` — 0a10058
 
 #### Manual
 
@@ -326,8 +326,8 @@ None: no schema change; `joined_at` already exists and is granted.
 
 #### Automated
 
-- [ ] 4.1 Lint, format and build pass: `npm run lint`, `npx prettier --check "context/**/*.md"`, `npm run build`
-- [ ] 4.2 Smoke passes: `npm run smoke`
+- [x] 4.1 Lint, format and build pass: `npm run lint`, `npx prettier --check context/changes/checkoff-grid context/foundation/prd.md context/foundation/roadmap.md context/domain/glossary.md context/domain/01-domain-distillation.md` (the files this change touches; the rest of `context/**` fails on master, owner decision 2026-10-17), `npm run build` — 06921d6
+- [x] 4.2 Smoke passes: `npm run smoke` — 06921d6
 
 #### Manual
 
