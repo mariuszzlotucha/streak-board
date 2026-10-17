@@ -40,13 +40,20 @@ export type RunSummary =
 
 type AnonClient = ReturnType<typeof createAnonClient>;
 
-/** Seams for the unit tests; production uses the global fetch and the real anon client. */
+export type SendOutcome = "sent" | "expired" | "failed";
+
+/** Sends one reminder somewhere else; `at` is the run's ISO time. The Worker passes its own `ReminderSender` entrypoint. */
+export type ReminderSend = (sub: PushSubscriptionKeys, payload: string, at: string) => Promise<SendOutcome>;
+
+/**
+ * Seams for the unit tests; production uses the global fetch and the real anon client. With `send`, each push leaves
+ * the run (one invocation per push, so its encryption does not add to the run's CPU) and the run imports no keys.
+ */
 export interface RunDeps {
   fetch?: (request: Request) => Promise<Response>;
   createClient?: (url: string, key: string) => AnonClient;
+  send?: ReminderSend;
 }
-
-type SendOutcome = "sent" | "expired" | "failed";
 
 /** Titles named in one notification; the rest are counted, so the payload stays far below the ~4 KB push limit. */
 export const MAX_LISTED_TASKS = 5;
@@ -98,6 +105,35 @@ async function sendOne(
   return outcome;
 }
 
+/** One push in its own invocation: imports the keys from `env`, then sends; a bad key pair counts as a failure. */
+export async function sendReminder(
+  env: ReminderEnv,
+  sub: PushSubscriptionKeys,
+  payload: string,
+  now: Date,
+  fetcher: (request: Request) => Promise<Response> = (request) => fetch(request),
+): Promise<SendOutcome> {
+  let vapid: VapidKeys;
+  try {
+    vapid = await importVapidKeys(env.VAPID_PUBLIC_KEY ?? "", env.VAPID_PRIVATE_KEY ?? "", env.CONTACT_EMAIL ?? "");
+  } catch (importError) {
+    reportError("reminders.config.invalid", importError);
+    return "failed";
+  }
+  return sendOne(sub, payload, vapid, now, fetcher);
+}
+
+/** Calls the outside sender; a thrown call (the invocation died, e.g. over its CPU limit) counts as a failure. */
+async function sendElsewhere(send: ReminderSend, sub: PushSubscriptionKeys, payload: string, now: Date) {
+  try {
+    return await send({ endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth }, payload, now.toISOString());
+  } catch (error) {
+    const name = error instanceof Error ? error.name : "unknown";
+    reportError("reminders.send.failed", new Error(`reminder sender threw ${name}`), { status: null });
+    return "failed";
+  }
+}
+
 /** Runs `task` over `items` with at most `limit` in flight. */
 async function eachLimited<T>(items: readonly T[], limit: number, task: (item: T) => Promise<void>): Promise<void> {
   let next = 0;
@@ -144,7 +180,17 @@ export async function runReminders(env: ReminderEnv, now: Date, deps: RunDeps = 
   const rows = data;
   const counts: RunCounts = { subscriptions: rows.length, sent: 0, pruned: 0, failed: 0 };
   const expired: string[] = [];
-  if (rows.length > 0) {
+  const tally = (row: (typeof rows)[number], outcome: SendOutcome) => {
+    if (outcome === "sent") counts.sent++;
+    else if (outcome === "expired") expired.push(row.endpoint);
+    else counts.failed++;
+  };
+  const { send } = deps;
+  if (rows.length > 0 && send) {
+    await eachLimited(rows, SEND_CONCURRENCY, async (row) => {
+      tally(row, await sendElsewhere(send, row, reminderPayload(row.task_names), now));
+    });
+  } else if (rows.length > 0) {
     let vapid: VapidKeys;
     try {
       vapid = await importVapidKeys(config.VAPID_PUBLIC_KEY, config.VAPID_PRIVATE_KEY, config.CONTACT_EMAIL);
@@ -155,10 +201,7 @@ export async function runReminders(env: ReminderEnv, now: Date, deps: RunDeps = 
       return { due: true, today, week, outcome: "done", ...counts };
     }
     await eachLimited(rows, SEND_CONCURRENCY, async (row) => {
-      const outcome = await sendOne(row, reminderPayload(row.task_names), vapid, now, fetcher);
-      if (outcome === "sent") counts.sent++;
-      else if (outcome === "expired") expired.push(row.endpoint);
-      else counts.failed++;
+      tally(row, await sendOne(row, reminderPayload(row.task_names), vapid, now, fetcher));
     });
   }
 
