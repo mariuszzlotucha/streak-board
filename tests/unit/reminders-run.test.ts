@@ -10,6 +10,8 @@ import {
   runReminders,
   SEND_CONCURRENCY,
   sendOutcome,
+  sendReminder,
+  senderFrom,
   type ReminderEnv,
 } from "@/lib/reminders/run";
 import { base64UrlEncode } from "@/lib/reminders/web-push";
@@ -294,5 +296,74 @@ describe("runReminders", () => {
     expect(summary).toMatchObject({ subscriptions: 20, sent: 20 });
     expect(fetch).toHaveBeenCalledTimes(20);
     expect(peak).toBe(SEND_CONCURRENCY);
+  });
+});
+
+describe("runReminders with an outside sender", () => {
+  it("hands each push to the sender with its keys, payload and run time, and tallies the outcomes", async () => {
+    const { rpc, factory } = client({ data: [0, 1, 2, 3].map((i) => row(i, [`Task ${i}`])), error: null });
+    const outcomes = ["sent", "expired", "failed", "throw"] as const;
+    const send = vi.fn((sub: { endpoint: string }) => {
+      const outcome = outcomes[Number(/sub-(\d+)$/.exec(sub.endpoint)?.[1])];
+      return outcome === "throw" ? Promise.reject(new Error(`died at ${sub.endpoint}`)) : Promise.resolve(outcome);
+    });
+    const fetch = pushService([]);
+
+    const summary = await runReminders(env, sunday, { fetch, createClient: factory, send });
+
+    expect(summary).toMatchObject({ outcome: "done", subscriptions: 4, sent: 1, pruned: 1, failed: 2 });
+    expect(send).toHaveBeenCalledWith(
+      { endpoint: "https://push.example.com/sub-0", p256dh, auth },
+      reminderPayload(["Task 0"]),
+      sunday.toISOString(),
+    );
+    expect(fetch).not.toHaveBeenCalled();
+    expect(rpc).toHaveBeenCalledWith("prune_push_subscriptions", {
+      p_secret: SECRET,
+      p_endpoints: ["https://push.example.com/sub-1"],
+    });
+    expect(errorSpy).toHaveBeenCalledWith(expect.objectContaining({ event: "reminders.send.failed", status: null }));
+    expect(allLogText()).not.toContain("push.example.com");
+  });
+});
+
+describe("sendReminder", () => {
+  it("imports the keys and sends one encrypted push", async () => {
+    const fetch = pushService([201]);
+
+    const outcome = await sendReminder(env, row(0), reminderPayload(["Run"]), sunday, fetch);
+
+    expect(outcome).toBe("sent");
+    expect(fetch.mock.calls[0][0].headers.get("Content-Encoding")).toBe("aes128gcm");
+  });
+
+  it("counts a bad key pair as a failure without sending", async () => {
+    const fetch = pushService([201]);
+
+    const outcome = await sendReminder({ ...env, VAPID_PRIVATE_KEY: "bad" }, row(0), "{}", sunday, fetch);
+
+    expect(outcome).toBe("failed");
+    expect(fetch).not.toHaveBeenCalled();
+    expect(events(errorSpy)).toEqual(["reminders.config.invalid"]);
+  });
+});
+
+describe("senderFrom", () => {
+  it("has no sender without the binding, so the run sends in process", () => {
+    expect(senderFrom(undefined)).toBeUndefined();
+  });
+
+  it("calls the stub's send directly, never a property of it", async () => {
+    // Like an RPC stub: every property is remote, so `send.bind` or `send.call` would reach the far side.
+    const remote = vi.fn(() => Promise.resolve("sent" as const));
+    const method = new Proxy(remote, {
+      get: (_target, prop) => {
+        throw new Error(`remote property ${String(prop)}`);
+      },
+    });
+    const send = senderFrom({ send: method });
+
+    await expect(send?.(row(0), "{}", sunday.toISOString())).resolves.toBe("sent");
+    expect(remote).toHaveBeenCalledWith(row(0), "{}", sunday.toISOString());
   });
 });

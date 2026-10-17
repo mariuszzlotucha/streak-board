@@ -14,6 +14,9 @@
   "triggers": {
     "crons": ["0 18 * * *", "0 19 * * *"],
   },
+  // Binds the Worker to its own `ReminderSender` entrypoint: each push of the cron run is a separate invocation with its
+  // own CPU limit (README "CPU ceiling"). The service name must equal "name" above.
+  "services": [{ "binding": "REMINDER_SENDER", "service": "10x-astro-starter", "entrypoint": "ReminderSender" }],
   "observability": {
     "enabled": true,
   },
