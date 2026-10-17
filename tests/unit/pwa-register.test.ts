@@ -1,5 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import { CLIENT_ERRORS_PATH, isUpdate, registerServiceWorker, type PwaEnvironment } from "@/lib/pwa/register";
+import {
+  CLIENT_ERRORS_PATH,
+  UPDATE_CHECK_INTERVAL_MS,
+  isUpdate,
+  registerServiceWorker,
+  type PwaEnvironment,
+} from "@/lib/pwa/register";
 
 /** A stubbed `navigator.serviceWorker` whose `controllerchange` the test fires by hand. */
 function stub({
@@ -72,11 +78,34 @@ describe("registerServiceWorker", () => {
     expect(env.sendBeacon).toHaveBeenCalledWith(CLIENT_ERRORS_PATH, "sw_register_failed");
   });
 
+  it("checks for an update at most once an hour when the page becomes visible", async () => {
+    const update = vi.fn(() => Promise.resolve());
+    const { env } = stub({ register: vi.fn(() => Promise.resolve({ update })) });
+    let time = 0;
+    let visible: () => void = () => undefined;
+    await registerServiceWorker({ ...env, now: () => time, onVisible: (listener) => (visible = listener) });
+
+    time = UPDATE_CHECK_INTERVAL_MS - 1;
+    visible();
+    expect(update).not.toHaveBeenCalled();
+
+    time = UPDATE_CHECK_INTERVAL_MS;
+    visible();
+    visible();
+    expect(update).toHaveBeenCalledOnce();
+
+    time = 2 * UPDATE_CHECK_INTERVAL_MS;
+    visible();
+    expect(update).toHaveBeenCalledTimes(2);
+  });
+
   it("sends sw_update_failed when an update check rejects", async () => {
     const update = vi.fn(() => Promise.reject(new Error("offline")));
     const { env } = stub({ register: vi.fn(() => Promise.resolve({ update })) });
+    let time = 0;
     let visible: () => void = () => undefined;
-    await registerServiceWorker({ ...env, onVisible: (listener) => (visible = listener) });
+    await registerServiceWorker({ ...env, now: () => time, onVisible: (listener) => (visible = listener) });
+    time = UPDATE_CHECK_INTERVAL_MS;
     visible();
     await vi.waitFor(() => {
       expect(env.sendBeacon).toHaveBeenCalledWith(CLIENT_ERRORS_PATH, "sw_update_failed");

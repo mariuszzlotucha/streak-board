@@ -24,7 +24,12 @@ export interface PwaEnvironment {
   showNotice: () => void;
   /** Calls `listener` when the page becomes visible again (a check for a new version). */
   onVisible?: (listener: () => void) => void;
+  /** The clock for throttling update checks; `Date.now` by default. */
+  now?: () => number;
 }
+
+/** The shortest gap between two update checks; registration itself counts as the first one. */
+export const UPDATE_CHECK_INTERVAL_MS = 60 * 60 * 1000;
 
 /** Registers `/sw.js` and wires the message and the reports. Resolves once registration has settled. */
 export async function registerServiceWorker(env: PwaEnvironment): Promise<void> {
@@ -44,7 +49,11 @@ export async function registerServiceWorker(env: PwaEnvironment): Promise<void> 
     report("sw_register_failed");
     return;
   }
+  const now = env.now ?? Date.now;
+  let lastCheck = now();
   env.onVisible?.(() => {
+    if (now() - lastCheck < UPDATE_CHECK_INTERVAL_MS) return;
+    lastCheck = now();
     registration.update().catch(() => {
       report("sw_update_failed");
     });
