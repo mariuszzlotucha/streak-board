@@ -215,11 +215,11 @@ No schema change. Code rolls back with `npx wrangler rollback`.
 
 #### Automated
 
-- [x] 2.1 Unit tests pass: `npm run test:unit`
-- [x] 2.2 Lint passes: `npm run lint`
-- [x] 2.3 Integration tests pass: `npm test`
-- [x] 2.4 Smoke passes, including an error step that asserts the toast text: `npm run smoke`
-- [x] 2.5 E2E specs pass: `npx playwright test`
+- [x] 2.1 Unit tests pass: `npm run test:unit` — 5994172
+- [x] 2.2 Lint passes: `npm run lint` — 5994172
+- [x] 2.3 Integration tests pass: `npm test` — 5994172
+- [x] 2.4 Smoke passes, including an error step that asserts the toast text: `npm run smoke` — 5994172
+- [x] 2.5 E2E specs pass: `npx playwright test` — 5994172
 
 #### Manual
 
