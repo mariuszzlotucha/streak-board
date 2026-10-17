@@ -186,7 +186,8 @@ export async function buildPushRequest(
       "Content-Encoding": "aes128gcm",
       "Content-Type": "application/octet-stream",
       TTL: String(PUSH_TTL),
-      Urgency: "normal",
+      // A reminder only helps before midnight, so it may wake a sleeping phone; "normal" waited until it was unlocked.
+      Urgency: "high",
     },
     body,
     // A push service answers directly; a redirect is never followed, so the cron only ever reaches the stored host.
