@@ -350,6 +350,7 @@ The policy and docs state the new facts. Then the release and a real-device chec
 - An iPhone with the home-screen app receives a reminder
 - Workers Logs show one `reminders.run.done` per day with CPU under the plan limit
 - Before release, one triggered run's CPU time is measured with `wrangler tail` and the per-push cost and subscription ceiling are recorded in the README (impl review F3)
+- Note 2026-10-17 (first production run): 1 push sent, `reminders.run.done` logged, 11 ms CPU against the Free plan's 10 ms, so 5.5 is not ticked; the owner stays on Free and accepts a ceiling of about one subscription (README "CPU ceiling"). The push arrived only after the phone was unlocked, so `Urgency` moved from normal to high; 5.3 waits for a check with the new urgency and the "none once ticked" half.
 
 ## Testing Strategy
 
@@ -451,8 +452,8 @@ The table and functions are additive. The release step runs `supabase migration 
 
 #### Manual
 
-- [ ] 5.2 The owner has set the three secrets and inserted the secret hash on production
+- [x] 5.2 The owner has set the three secrets and inserted the secret hash on production
 - [ ] 5.3 An Android PWA receives the 20:00 reminder for an unticked daily task, and none once it is ticked
 - [ ] 5.4 An iPhone with the home-screen app receives a reminder
 - [ ] 5.5 Workers Logs show one `reminders.run.done` per day with CPU under the plan limit
-- [ ] 5.6 One triggered run's CPU per push is measured and the subscription ceiling is recorded in the README
+- [x] 5.6 One triggered run's CPU per push is measured and the subscription ceiling is recorded in the README

@@ -327,7 +327,7 @@ insert into public.reminder_secret (hash) values (sha256(convert_to('<secret>', 
 
 Changing `VAPID_PUBLIC_KEY` invalidates every existing subscription; rotating `REMINDER_SECRET` needs steps 3 and 4 together.
 
-**CPU ceiling (measure before relying on it).** Each push costs CPU for its own encryption (one ECDH key pair, HKDF and AES-GCM), and the Workers Free plan allows 10 ms of CPU per invocation, so one evening run can only serve a limited number of subscriptions. Before the first release, trigger one run with a real subscription, read its CPU time with `npx wrangler tail` (or Workers Logs), and record the per-push cost and the resulting subscription ceiling here; plan batching or the paid plan before the subscription count nears it.
+**CPU ceiling.** Each push costs CPU for its own encryption (one ECDH key pair, HKDF and AES-GCM) on top of a fixed cost per run (Worker start, Sentry, the Supabase client, the `due_reminders` call, the VAPID key import). Measured on the first production run (2026-10-17, one subscription, one push): 11 ms CPU, against the Workers Free plan's 10 ms per invocation. So on the Free plan an evening run has room for about one subscription; the owner accepted this (stay on Free, 2026-10-17). Before a second person turns reminders on, plan batching across invocations or move to the Workers Paid plan, otherwise runs may be cut off mid-send without a log line.
 
 ### Manual deploy (fallback)
 
