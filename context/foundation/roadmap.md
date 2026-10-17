@@ -3,13 +3,13 @@ project: "StreakBoard"
 version: 1
 status: draft
 created: 2026-09-24
-updated: 2026-10-16
+updated: 2026-10-17
 prd_version: 1
 main_goal: market-feedback
 top_blocker: time
 milestone_id: ready-for-real-users
 milestone_seq: 2
-milestone_status: open
+milestone_status: closed
 ---
 
 # Roadmap: StreakBoard
@@ -20,11 +20,11 @@ milestone_status: open
 
 ## Milestone
 
-**M-2: Gotowość na realnych użytkowników: adres, logowanie, strona startowa, widok, testy i widoczne awarie** — Status: open
+**M-2: Gotowość na realnych użytkowników: adres, logowanie, strona startowa, widok, testy i widoczne awarie** — Status: closed (2026-10-17)
 
 - **Intent:** Po zamknięciu pierwszego pełnego cyklu (M-1) doprowadzić wdrożone MVP do stanu, w którym można je pokazać realnym użytkownikom i zbierać od nich informację zwrotną: własny adres, łatwe logowanie kontem Google, strona startowa tłumacząca produkt, czytelniejszy widok grupy, testy chroniące zmiany oraz awarie, które nie giną po cichu.
 - **Source materials:** `context/foundation/roadmap-input-next-slices.md` (MS-01 do MS-05, zakres uzgodniony z użytkownikiem po zamknięciu wszystkich pozycji M-1), późniejszy opis użytkownika (MS-06) oraz FR-001 z PRD v1 („email/OAuth/passwordless"), na którym opiera się MS-06. Poza FR-001 ten kamień milowy nie realizuje nowych FR-ów.
-- **Done when:** każdy S-06 do S-15 poniżej ma status `done` (S-14 i S-15 dołączone decyzjami właściciela 2026-10-16).
+- **Done when:** każdy S-06 do S-15 poniżej ma status `done` (S-14 i S-15 dołączone decyzjami właściciela 2026-10-16). Decyzja właściciela 2026-10-17: S-13 (MS-08) przeniesiony do M-3, a M-2 zamknięty bez niego; pozostałe wycinki są `done`.
 - **Scope anchors:** źródło nie ma własnych identyfikatorów, więc zakres jest zapisany jako kotwice `MS-NN`, po jednej na wycinek: MS-01 do MS-05 z wyników opisanych w pliku wejściowym, MS-06 z późniejszego opisu użytkownika:
   - MS-01: użytkownik wchodzi na aplikację pod własną domeną właściciela, a rejestracja, logowanie i link potwierdzający działają na tej domenie.
   - MS-02: (jakościowy) zmiany w aplikacji są chronione testami wybranymi według ryzyka, a jakość testów jednostkowych jest mierzona mutacjami.
@@ -33,9 +33,17 @@ milestone_status: open
   - MS-05: (jakościowy) awaria w krytycznym przepływie aplikacji nie jest połykana ani zamieniana na sukces: trafia do odpowiedzi API i do monitoringu.
   - MS-06: użytkownik może zalogować się kontem Google (logowanie bez hasła); to ta część FR-001 z PRD (OAuth/passwordless), która nie weszła do M-1.
   - MS-07: (jakościowy) wybrane okazje refaktoryzacji z analizy data-access są wdrożone bez zmiany zachowania widocznego dla użytkownika (decyzja użytkownika 2026-10-08: istniejąca zmiana `refactor-opportunities` staje się wycinkiem).
-  - MS-08: członek grupy widzi siatkę odznaczeń: uczestnicy × ostatnie okresy tasku, wykonane i niewykonane (decyzja użytkownika 2026-10-08: odparkowanie historii w zakresie prostej siatki, bez wykresów i statystyk).
   - MS-09: członkowie grupy widzą nawzajem nick zamiast adresu e-mail, a własny adres widzi tylko właściciel konta w ustawieniach (decyzja użytkownika 2026-10-16: S-14 dołączony do M-2, przed S-13).
   - MS-10: zalogowany użytkownik może usunąć swoje konto w ustawieniach; przed usunięciem widzi okno z ostrzeżeniem (decyzja użytkownika 2026-10-16: S-15 dołączony do M-2, równolegle z S-13).
+
+## Milestone 3
+
+**M-3: Siatka odznaczeń grupy** — Status: open (cel i „Done when” do uzupełnienia przez właściciela)
+
+- **Intent:** do uzupełnienia przez właściciela. Zakres kamienia nie został jeszcze opisany poza tym, co niżej.
+- **Done when:** do uzupełnienia przez właściciela. Na razie: S-13 `done`.
+- **Scope anchors:**
+  - MS-08: członek grupy widzi siatkę odznaczeń: uczestnicy × ostatnie okresy tasku, wykonane i niewykonane (decyzja użytkownika 2026-10-08: odparkowanie historii w zakresie prostej siatki, bez wykresów i statystyk; przeniesiona z M-2 decyzją właściciela 2026-10-17).
 
 ## Vision recap
 
@@ -203,6 +211,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Outcome:** członek grupy widzi dla każdego tasku siatkę: uczestnicy × ostatnie okresy, z zaznaczeniem, kto w danym okresie wykonał task, a kto nie.
 - **Change ID:** checkoff-grid
 - **PRD refs:** — (UI; MS-08)
+- **Milestone:** M-3 (decyzja właściciela 2026-10-17; M-2 zamknięty bez tego wycinka)
 - **Prerequisites:** S-11, S-14 (decyzja właściciela 2026-10-16: nick przed siatką, bo oba wycinki edytują politykę prywatności, PRD, słownik, `dashboard-data.ts`, smoke i fixture'y, a siatka ma od razu pokazywać nicki)
 - **Parallel with:** S-10, S-12, S-15
 - **Blockers:** —
@@ -255,24 +264,24 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ## Backlog Handoff
 
-| Roadmap ID | Change ID                      | Suggested issue title                                                                       | Ready for `/10x-plan` | Notes                                                                                                                               |
-| ---------- | ------------------------------ | ------------------------------------------------------------------------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| S-06       | custom-domain                  | Własna domena produktu: wiązanie, Supabase Site URL i Redirect URLs, dokumentacja           | done                  | Zarchiwizowane 2026-10-02; `context/archive/2026-10-02-custom-domain/`.                                                             |
-| S-07       | google-login                   | Logowanie kontem Google: konfiguracja dostawcy, trasa startowa, przycisk, callback          | done                  | Zarchiwizowane 2026-10-06; `context/archive/2026-10-05-google-login/`. Publikacja aplikacji Google: patrz „Open Roadmap Questions”. |
-| S-08       | observability-swallowed-errors | Awarie krytycznego przepływu trafiają do odpowiedzi API i do monitoringu                    | done                  | Zarchiwizowane 2026-10-02; `context/archive/2026-10-02-observability-swallowed-errors/`.                                            |
-| S-09       | landing-page                   | Strona startowa dla niezalogowanych użytkowników                                            | done                  | Zarchiwizowane 2026-10-08; `context/archive/2026-10-08-landing-page/`. Flaga Safe Browsing zdjęta 2026-10-09.                       |
-| S-10       | test-coverage                  | Testy dobrane według ryzyka: jednostkowe, mutacyjne i e2e kluczowych przepływów             | done                  | Zarchiwizowane 2026-10-16; `context/archive/2026-10-15-test-coverage/`.                                                             |
-| S-11       | dashboard-ui                   | Czytelniejszy widok grupy, tasków i tablicy wyników                                         | done                  | Zarchiwizowane 2026-10-12; `context/archive/2026-10-09-dashboard-ui/`.                                                              |
-| S-12       | refactor-opportunities         | Okazje refaktoryzacji: raportowanie dashboardu, strażnicy CI, testy tras, jawne uprawnienia | done                  | Zarchiwizowane 2026-10-15; `context/archive/2026-10-06-refactor-opportunities/`.                                                    |
-| S-13       | checkoff-grid                  | Siatka odznaczeń grupy: uczestnicy × ostatnie okresy                                        | no                    | Po S-14 (decyzja 2026-10-16). Zwykły łańcuch od `/10x-frame`; aktualizacja PRD, słownika i polityki prywatności w zakresie.         |
-| S-14       | nickname                       | Nick zamiast e-maila w widoku i w danych członków grupy                                     | done                  | Zarchiwizowane 2026-10-16; `context/archive/2026-10-16-nickname/`. Dwa wydania 2026-10-16 (`deployment-plan.md`, Phase 18).         |
-| S-15       | account-deletion               | Usunięcie konta w ustawieniach, z oknem ostrzeżenia przed potwierdzeniem                    | yes                   | Najpierw `/10x-frame` (siła potwierdzenia, ponowne logowanie, karencja). Równolegle z S-13. Polityka, PRD i smoke w zakresie.       |
+| Roadmap ID | Change ID                      | Suggested issue title                                                                       | Ready for `/10x-plan` | Notes                                                                                                                                                 |
+| ---------- | ------------------------------ | ------------------------------------------------------------------------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| S-06       | custom-domain                  | Własna domena produktu: wiązanie, Supabase Site URL i Redirect URLs, dokumentacja           | done                  | Zarchiwizowane 2026-10-02; `context/archive/2026-10-02-custom-domain/`.                                                                               |
+| S-07       | google-login                   | Logowanie kontem Google: konfiguracja dostawcy, trasa startowa, przycisk, callback          | done                  | Zarchiwizowane 2026-10-06; `context/archive/2026-10-05-google-login/`. Publikacja aplikacji Google: patrz „Open Roadmap Questions”.                   |
+| S-08       | observability-swallowed-errors | Awarie krytycznego przepływu trafiają do odpowiedzi API i do monitoringu                    | done                  | Zarchiwizowane 2026-10-02; `context/archive/2026-10-02-observability-swallowed-errors/`.                                                              |
+| S-09       | landing-page                   | Strona startowa dla niezalogowanych użytkowników                                            | done                  | Zarchiwizowane 2026-10-08; `context/archive/2026-10-08-landing-page/`. Flaga Safe Browsing zdjęta 2026-10-09.                                         |
+| S-10       | test-coverage                  | Testy dobrane według ryzyka: jednostkowe, mutacyjne i e2e kluczowych przepływów             | done                  | Zarchiwizowane 2026-10-16; `context/archive/2026-10-15-test-coverage/`.                                                                               |
+| S-11       | dashboard-ui                   | Czytelniejszy widok grupy, tasków i tablicy wyników                                         | done                  | Zarchiwizowane 2026-10-12; `context/archive/2026-10-09-dashboard-ui/`.                                                                                |
+| S-12       | refactor-opportunities         | Okazje refaktoryzacji: raportowanie dashboardu, strażnicy CI, testy tras, jawne uprawnienia | done                  | Zarchiwizowane 2026-10-15; `context/archive/2026-10-06-refactor-opportunities/`.                                                                      |
+| S-13       | checkoff-grid                  | Siatka odznaczeń grupy: uczestnicy × ostatnie okresy                                        | no                    | Po S-14 (decyzja 2026-10-16). M-3 (decyzja 2026-10-17). Zwykły łańcuch od `/10x-frame`; aktualizacja PRD, słownika i polityki prywatności w zakresie. |
+| S-14       | nickname                       | Nick zamiast e-maila w widoku i w danych członków grupy                                     | done                  | Zarchiwizowane 2026-10-16; `context/archive/2026-10-16-nickname/`. Dwa wydania 2026-10-16 (`deployment-plan.md`, Phase 18).                           |
+| S-15       | account-deletion               | Usunięcie konta w ustawieniach, z oknem ostrzeżenia przed potwierdzeniem                    | yes                   | Najpierw `/10x-frame` (siła potwierdzenia, ponowne logowanie, karencja). Równolegle z S-13. Polityka, PRD i smoke w zakresie.                         |
 
 ## Open Roadmap Questions
 
 - **Zamknięte (właściciel, 2026-10-15): publikacja aplikacji Google.** Do 2026-10-15 logowanie kontem Google było w trybie Testing, więc mogło się zalogować tylko konto dodane jako użytkownik testowy (limit 100). Kroki (wykonane): (1) w Google Auth Platform → Branding sprawdź, czy strona główna i link do polityki prywatności wskazują na `https://streakboard.app/` i `https://streakboard.app/privacy`; (2) w Google Auth Platform → Audience kliknij „Publish app” i potwierdź status „In production”; (3) w oknie prywatnym zaloguj się przez Google, np. drugim kontem, i sprawdź, czy ekran zgody nie pokazuje ostrzeżenia o niezweryfikowanej aplikacji (jeśli tak, weryfikacja Google to osobna procedura); (4) wzmianki o Testing zaktualizowane w Baseline („Auth”) i w S-07 (2026-10-15). Status publikacji ustawia się w Google Auth Platform, nie w Search Console.
 
-Brak innych otwartych pytań. (Flaga Safe Browsing zdjęta: Google zaakceptował prośbę o przegląd, zgłoszone przez właściciela 2026-10-09; wynik w `context/changes/deployment/deployment-plan.md`, Phase 13.)
+Otwarte (właściciel, 2026-10-17): cel (intent) i „Done when” M-3, który istnieje od 2026-10-17 tylko jako kotwica MS-08 dla S-13. Brak innych otwartych pytań. (Flaga Safe Browsing zdjęta: Google zaakceptował prośbę o przegląd, zgłoszone przez właściciela 2026-10-09; wynik w `context/changes/deployment/deployment-plan.md`, Phase 13.)
 
 ## Parked
 
@@ -290,6 +299,7 @@ Brak innych otwartych pytań. (Flaga Safe Browsing zdjęta: Google zaakceptował
 ## Milestone History
 
 - **M-1: Pierwszy pełny cykl: grupa → task → odznaczenie → tablica wyników** (`first-group-checkin-loop`) — closed 2026-10-02. F-01 oraz S-01 do S-05 `done`: pełny przepływ z głównego kryterium sukcesu PRD (FR-001 do FR-009) działa na produkcji, a migracje i wydania są zautomatyzowane; zmiany zarchiwizowane w `context/archive/` (2026-09-25 do 2026-10-01).
+- **M-2: Gotowość na realnych użytkowników** (`ready-for-real-users`) — closed 2026-10-17. S-06 do S-12, S-14 i S-15 `done`. S-13 (MS-08) przeniesiony do M-3 decyzją właściciela 2026-10-17.
 
 ## Done
 
