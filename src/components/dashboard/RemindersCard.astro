@@ -1,6 +1,8 @@
 ---
+import InstallPrompt from "@/components/account/InstallPrompt";
 import RemindersToggle from "@/components/account/RemindersToggle";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import type { InstallOffer } from "@/lib/pwa/install";
 import type { PushState } from "@/lib/pwa/push";
 
 interface Props {
@@ -8,13 +10,17 @@ interface Props {
   hasSubscriptions: boolean;
   /** Only the dev kitchen sink pins the state; the page lets the island read it from the browser. */
   fixedState?: PushState;
+  /** Only the dev kitchen sink pins the install offer, like the state. */
+  installOffer?: InstallOffer;
 }
 
-const { vapidPublicKey, hasSubscriptions, fixedState } = Astro.props;
+const { vapidPublicKey, hasSubscriptions, fixedState, installOffer } = Astro.props;
 ---
 
 {/* Reminders per device (S-16). The rule is server-rendered, so it shows without JavaScript; the island renders the
-    device's state and buttons. */}
+    device's state and buttons, and below it how to install StreakBoard in this browser (nothing in the installed app).
+    The two islands share a `gap` stack: their wrappers are `display: contents`, so an empty install block adds no
+    space. */}
 <Card>
   <CardHeader>
     <CardTitle as="h2">Reminders</CardTitle>
@@ -22,12 +28,13 @@ const { vapidPublicKey, hasSubscriptions, fixedState } = Astro.props;
       At 20:00 you get a reminder for daily tasks you haven't checked off today, and on Sunday also for weekly tasks.
     </CardDescription>
   </CardHeader>
-  <CardContent>
+  <CardContent className="flex flex-col gap-4">
     <RemindersToggle
       client:load
       vapidPublicKey={vapidPublicKey}
       hasSubscriptions={hasSubscriptions}
       fixedState={fixedState}
     />
+    <InstallPrompt client:load variant="inline" fixedOffer={installOffer} />
   </CardContent>
 </Card>

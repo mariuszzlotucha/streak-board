@@ -330,8 +330,8 @@ None: no schema, no server state. A device that dismissed the card keeps the fla
 
 #### Automated
 
-- [x] 1.1 Unit tests for the install module pass
-- [x] 1.2 Lint and type checks pass
+- [x] 1.1 Unit tests for the install module pass — 69c4470
+- [x] 1.2 Lint and type checks pass — 69c4470
 
 #### Manual
 
@@ -341,12 +341,12 @@ None: no schema, no server state. A device that dismissed the card keeps the fla
 
 #### Automated
 
-- [ ] 2.1 Unit tests pass
-- [ ] 2.2 Full test suite passes
-- [ ] 2.3 Lint, types and Astro check pass
-- [ ] 2.4 Token contrast check passes
-- [ ] 2.5 Smoke passes against a production build
-- [ ] 2.6 The install-promotion e2e spec passes
+- [x] 2.1 Unit tests pass
+- [x] 2.2 Full test suite passes
+- [x] 2.3 Lint, types and Astro check pass
+- [x] 2.4 Token contrast check passes
+- [x] 2.5 Smoke passes against a production build
+- [x] 2.6 The install-promotion e2e spec passes
 
 #### Manual
 
