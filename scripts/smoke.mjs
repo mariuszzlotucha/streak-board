@@ -515,15 +515,6 @@ function eyebrowAndGroupHeading(name) {
   return new RegExp(`>\\s*Your group\\s*</p>\\s*<h1[^>]*>\\s*${escapeRegExp(name)}\\s*</h1>`);
 }
 
-// The pending invite's form: it posts to the join route with the invite's code in a hidden field and holds the page's
-// "Join group" button.
-function pendingInviteForm(code) {
-  return new RegExp(
-    `<form[^>]*action="/api/groups/join"[^>]*>(?:(?!</form>)[\\s\\S])*<input[^>]*name="code"[^>]*value="${escapeRegExp(code)}"(?:(?!</form>)[\\s\\S])*<button[^>]*>\\s*Join group\\s*</button>`,
-  );
-}
-const TWO_JOIN_GROUPS = /Join group[\s\S]*Join group/;
-
 // The action error comes first in the page content: inside <main>, before any <h1>, then the group's <h1> after it.
 function alertBeforeHeading(text, name) {
   return new RegExp(
@@ -1296,12 +1287,17 @@ const steps = [
     { status: 302, location: "/auth/confirm-email" },
   ],
   [
-    "user B signs in",
-    () => request("/api/auth/signin", { method: "POST", form: { email: emailB, password }, jar: jarB }),
+    // Another browser: the confirmation link works only where the account signed up, so user B signs in somewhere the
+    // invite cookie never was. The sign-up stored the invite with the account (user_metadata.join_code).
+    "user B signs in from a browser without the invite cookie",
+    () => {
+      jarB.delete("join_code");
+      return request("/api/auth/signin", { method: "POST", form: { email: emailB, password }, jar: jarB });
+    },
     { status: 302, locationExact: "/dashboard" },
   ],
   [
-    // The gate neither reads nor clears the pending invite: the nickname step must not lose it.
+    // The gate runs before the dashboard, so nothing joins (or touches the invite) until B has a nickname.
     "dashboard sends user B to the nickname page and keeps the pending invite",
     () => request("/dashboard", { jar: jarB }),
     { status: 302, locationExact: "/account/nickname", setCookieExcludes: "join_code" },
@@ -1328,36 +1324,24 @@ const steps = [
     { status: 302, locationExact: "/account/nickname", setCookieExcludes: "join_code" },
   ],
   [
-    // The preview step below proves the invite survived: the dashboard offers it to B.
+    // The join step below proves the invite survived: the dashboard joins B to the group.
     "user B chooses a nickname and lands on the dashboard with the invite still pending",
     () => request("/api/account/nickname", { method: "POST", form: { nickname: nickB }, jar: jarB }),
     { status: 302, locationExact: "/dashboard?notice=nickname_saved", setCookieExcludes: "join_code" },
   ],
   [
-    // An empty form joins nothing even if the Origin check were off (it would answer 302 invalid_code), but it would
-    // clear B's pending invite cookie: no Set-Cookie for `join_code` proves the handler never ran. The preview step
-    // below reads the state: B is still outside the group and the invite is still pending.
+    // An empty form joins nothing even if the Origin check were off (it would answer 302 invalid_code): no Set-Cookie
+    // for `join_code` proves the handler never ran. The join step below reads the state: the invite is still pending.
     "join from a foreign origin is rejected",
     () => request("/api/groups/join", { method: "POST", form: {}, jar: jarB, origin: FOREIGN_ORIGIN }),
     { status: 403, setCookieExcludes: "join_code" },
   ],
   [
-    "dashboard previews the pending invite for user B",
+    // invite-auto-join: the invite stored at sign-up joins B on the first dashboard visit, with no "Join group" click,
+    // and is spent (the cookie is cleared; the stored copy is removed through the Auth API).
+    "dashboard joins user B to the group through the invite stored at sign-up",
     () => request("/dashboard", { jar: jarB }),
-    // The invite is the page's one decision: its <h1>, and the only "Join group" in a form carrying the invite's code
-    // (the name alone would also appear next to an error). Create and join-by-code sit below under their own heading;
-    // a non-member must not see the invite link. A function, so the code read by an earlier step is used.
-    () => ({
-      status: 200,
-      bodyMatches: [
-        pageHeading(`Join ${groupName}?`),
-        pendingInviteForm(joinCode),
-        /<h2[^>]*>\s*Or start your own group\s*<\/h2>/,
-      ],
-      bodyNotMatches: [TWO_JOIN_GROUPS],
-      bodyIncludes: "Join with code",
-      bodyExcludes: ["/join/", NO_ERROR_ALERT],
-    }),
+    { status: 302, locationExact: "/dashboard?notice=group_joined", setCookie: "join_code=deleted" },
   ],
   [
     "join rejects a malformed code",
@@ -1368,11 +1352,6 @@ const steps = [
     "join rejects an unknown code",
     () => request("/api/groups/join", { method: "POST", form: { code: "deadbeef0000" }, jar: jarB }),
     { status: 302, location: "/dashboard?error=invalid_code" },
-  ],
-  [
-    "join with the invite code succeeds",
-    () => request("/api/groups/join", { method: "POST", form: { code: joinCode }, jar: jarB }),
-    { status: 302, locationExact: "/dashboard?notice=group_joined", setCookie: "join_code=deleted" },
   ],
   [
     "dashboard shows the group to user B after joining",

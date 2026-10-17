@@ -8,7 +8,9 @@ import { ul } from "./styles";
     <li>
       <strong class="text-foreground">Your account:</strong> your e-mail address, your nickname (2 to 24 characters,
       chosen by you and shown to the members of your group), a hash of your password kept by our sign-in provider,
-      Supabase Auth (the app itself never stores your password), and when you signed up and last signed in.
+      Supabase Auth (the app itself never stores your password), and when you signed up and last signed in. If you sign
+      up from an invite link, the invite's code is kept with your account until your first visit to the dashboard, which
+      joins you to the group, so the invite works even if you confirm your e-mail address in another browser.
     </li>
     <li>
       <strong class="text-foreground">With "Continue with Google":</strong> the name, e-mail address and profile picture

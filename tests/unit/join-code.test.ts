@@ -14,7 +14,7 @@ function cookieStub(stored?: string) {
 }
 
 describe("rememberJoinCode", () => {
-  it("stores a normalised code with path /, httpOnly, lax and a one-hour age", () => {
+  it("stores a normalised code with path /, httpOnly, lax and a one-week age", () => {
     const { stub, cookies } = cookieStub();
 
     rememberJoinCode(cookies, `https://streak.example/join/${CODE.toUpperCase()}?x=1`);
@@ -27,7 +27,7 @@ describe("rememberJoinCode", () => {
       httpOnly: true,
       sameSite: "lax",
       secure: false,
-      maxAge: 3600,
+      maxAge: 604800,
     });
   });
 
