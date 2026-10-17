@@ -9,7 +9,7 @@ main_goal: market-feedback
 top_blocker: time
 milestone_id: history-and-reminders
 milestone_seq: 3
-milestone_status: open
+milestone_status: done
 ---
 
 # Roadmap: StreakBoard
@@ -20,7 +20,7 @@ milestone_status: open
 
 ## Milestone
 
-**M-3: Historia, przypomnienia i instalacja: siatka odznaczeń grupy, przypomnienie o niewykonanym tasku i aplikacja PWA** — Status: open
+**M-3: Historia, przypomnienia i instalacja: siatka odznaczeń grupy, przypomnienie o niewykonanym tasku i aplikacja PWA** — Status: done
 
 - **Intent:** Domknąć kryteria drugorzędne PRD v1 i dać aplikacji miejsce na telefonie: członek grupy widzi historię wykonania tasków w prostej siatce, którą grono prowadziło wcześniej ręcznie we wspólnym arkuszu, użytkownik dostaje przypomnienie o tasku, którego jeszcze nie odznaczył, a aplikację można zainstalować na ekranie głównym jak zwykłą aplikację (PWA). Wszystkie trzy mają podtrzymać codzienny powrót do odznaczania, a ich wartość sprawdzamy u realnych użytkowników.
 - **Source materials:** `context/foundation/prd.md` (v1), §Success Criteria → Secondary; punkty tej sekcji nie mają identyfikatorów FR ani US, więc zakres jest zapisany jako kotwice `MS-NN` poniżej. Decyzje właściciela: 2026-10-08 (z historii tylko prosta siatka, bez wykresów i statystyk) i 2026-10-17 (S-13 przeniesiony z M-2, M-3 oparty na kryteriach drugorzędnych PRD, przypomnienia odparkowane). Opis właściciela z 2026-10-17: „Żeby aplikacja była PWA” (kotwica MS-03). Prośba właściciela z 2026-10-17 o utwardzenie publicznej powierzchni po skanach botów w logach Cloudflare (kotwica MS-04). Konieczne FR z PRD (FR-001 do FR-012) pokryły M-1 i M-2 (`## Milestone History`).
@@ -166,6 +166,7 @@ Brak otwartych pytań na poziomie roadmapy: PRD `## Open Questions` mówi „Non
 
 - **M-1: Pierwszy pełny cykl: grupa → task → odznaczenie → tablica wyników** (`first-group-checkin-loop`) — closed 2026-10-02. F-01 oraz S-01 do S-05 `done`: pełny przepływ z głównego kryterium sukcesu PRD (FR-001 do FR-009) działa na produkcji, a migracje i wydania są zautomatyzowane; zmiany zarchiwizowane w `context/archive/` (2026-09-25 do 2026-10-01).
 - **M-2: Gotowość na realnych użytkowników: adres, logowanie, strona startowa, widok, testy i widoczne awarie** (`ready-for-real-users`) — closed 2026-10-17. S-06, S-07, S-08, S-09, S-10, S-11, S-12, S-14 i S-15 `done`: aplikacja działa pod `streakboard.app` z logowaniem Google, stroną startową z polityką prywatności, nowym widokiem grupy, nickami zamiast e-maili i usuwaniem konta, awarie trafiają do odpowiedzi API i do monitoringu, a testy dobrane według ryzyka (z e2e i testami mutacyjnymi) pilnują zmian; zmiany zarchiwizowane w `context/archive/` (2026-10-02 do 2026-10-16). S-13 (siatka odznaczeń, kotwica MS-08) przeniesiony do M-3 decyzją właściciela 2026-10-17.
+- **M-3: Historia, przypomnienia i instalacja: siatka odznaczeń grupy, przypomnienie o niewykonanym tasku i aplikacja PWA** (`history-and-reminders`) — closed 2026-10-17. S-13, S-16, S-17 i S-18 `done`: członek grupy widzi siatkę odznaczeń przy każdym tasku, przypomnienia Web Push przychodzą o 20:00 czasu warszawskiego, aplikację da się zainstalować jako PWA, a publiczna powierzchnia ma nagłówki bezpieczeństwa, CSP w trybie Report-Only i `security.txt`, a domeny nie da się podrobić w poczcie; zmiany zarchiwizowane w `context/archive/` (2026-10-17). Właściciel nie otwiera kolejnego kamienia milowego (decyzja 2026-10-17).
 
 ## Done
 
