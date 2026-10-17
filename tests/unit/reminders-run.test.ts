@@ -4,7 +4,14 @@
  * run is due with today 2026-10-04 and the week of Monday 2026-09-28; 2026-10-03 18:00Z is Saturday, no week.
  */
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
-import { reminderPayload, runReminders, SEND_CONCURRENCY, sendOutcome, type ReminderEnv } from "@/lib/reminders/run";
+import {
+  MAX_LISTED_TASKS,
+  reminderPayload,
+  runReminders,
+  SEND_CONCURRENCY,
+  sendOutcome,
+  type ReminderEnv,
+} from "@/lib/reminders/run";
 import { base64UrlEncode } from "@/lib/reminders/web-push";
 import type { createAnonClient } from "@/lib/supabase-anon";
 
@@ -103,6 +110,22 @@ describe("reminderPayload", () => {
     expect((JSON.parse(reminderPayload(["Run", "Weekly review"])) as { body: string }).body).toBe(
       "Still to do today: Run, Weekly review",
     );
+  });
+
+  it("names five titles and counts the rest", () => {
+    const titles = ["A", "B", "C", "D", "E", "F", "G"];
+    expect(MAX_LISTED_TASKS).toBe(5);
+    expect((JSON.parse(reminderPayload(titles.slice(0, 5))) as { body: string }).body).toBe(
+      "Still to do today: A, B, C, D, E",
+    );
+    expect((JSON.parse(reminderPayload(titles)) as { body: string }).body).toBe(
+      "Still to do today: A, B, C, D, E and 2 more",
+    );
+  });
+
+  it("stays under the push payload limit with the longest titles", () => {
+    const longest = Array.from({ length: 50 }, () => "Ż".repeat(80));
+    expect(new TextEncoder().encode(reminderPayload(longest)).length).toBeLessThan(1500);
   });
 });
 

@@ -48,12 +48,17 @@ export interface RunDeps {
 
 type SendOutcome = "sent" | "expired" | "failed";
 
+/** Titles named in one notification; the rest are counted, so the payload stays far below the ~4 KB push limit. */
+export const MAX_LISTED_TASKS = 5;
+
 /** The notification the service worker shows: one line listing the tasks still open in their current period. */
 export function reminderPayload(taskNames: readonly string[]): string {
   // On Sunday weekly titles arrive in the same list as daily ones; both close tonight, so "today" holds for both.
+  const listed = taskNames.slice(0, MAX_LISTED_TASKS).join(", ");
+  const more = taskNames.length - MAX_LISTED_TASKS;
   return JSON.stringify({
     title: "StreakBoard",
-    body: `Still to do today: ${taskNames.join(", ")}`,
+    body: more > 0 ? `Still to do today: ${listed} and ${more} more` : `Still to do today: ${listed}`,
     url: "/dashboard",
   });
 }

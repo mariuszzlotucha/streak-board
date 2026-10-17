@@ -4,7 +4,9 @@
 --   - public.push_subscriptions: one row per browser/device that opted in (endpoint and its two keys), owned by the
 --     user. The caller reads only their own rows; every write goes through the definer functions below.
 --   - subscribe_push / unsubscribe_push / unsubscribe_all_push: client functions on auth.uid() for authenticated. A
---     re-subscribe of an endpoint another account registered on the same device moves the row to the caller.
+--     re-subscribe of an endpoint another account registered on the same device moves the row to the caller. Accepted
+--     trade-off (impl review F4): a user who knew another user's endpoint URL could take the row and silence that
+--     device; the URL is never shown to anyone, so a shared device following its latest account wins.
 --   - public.reminder_secret: a one-row config table holding sha256 of the cron's shared secret (the owner generates it
 --     with `openssl rand -base64 32` and inserts the digest in the SQL Editor). No API role holds any privilege on it.
 --   - due_reminders(p_secret, p_today, p_week) and prune_push_subscriptions(p_secret, p_endpoints): definer functions

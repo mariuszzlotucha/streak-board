@@ -349,6 +349,7 @@ The policy and docs state the new facts. Then the release and a real-device chec
 - After release, a group member with an installed Android PWA receives the 20:00 reminder for an unticked daily task, and none once it is ticked
 - An iPhone with the home-screen app receives a reminder
 - Workers Logs show one `reminders.run.done` per day with CPU under the plan limit
+- Before release, one triggered run's CPU time is measured with `wrangler tail` and the per-push cost and subscription ceiling are recorded in the README (impl review F3)
 
 ## Testing Strategy
 
@@ -454,3 +455,4 @@ The table and functions are additive. The release step runs `supabase migration 
 - [ ] 5.3 An Android PWA receives the 20:00 reminder for an unticked daily task, and none once it is ticked
 - [ ] 5.4 An iPhone with the home-screen app receives a reminder
 - [ ] 5.5 Workers Logs show one `reminders.run.done` per day with CPU under the plan limit
+- [ ] 5.6 One triggered run's CPU per push is measured and the subscription ceiling is recorded in the README

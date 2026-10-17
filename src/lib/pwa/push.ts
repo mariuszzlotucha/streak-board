@@ -31,7 +31,7 @@ export interface PushEnvironment {
     /** The current registration's push manager without waiting, or undefined when no worker is registered yet. */
     current: () => Promise<PushManagerLike | undefined>;
   };
-  fetch: (url: string, init: RequestInit) => Promise<Pick<Response, "ok">>;
+  fetch: (url: string, init: RequestInit) => Promise<Pick<Response, "ok" | "redirected">>;
   sendBeacon: (url: string, data: string) => boolean;
 }
 
@@ -68,7 +68,8 @@ async function post(env: PushEnvironment, url: string, body?: unknown): Promise<
         : { Accept: "application/json", "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
-  return response.ok;
+  // The middleware answers a signed-out or nickname-less caller with a redirect, which fetch follows to a 200 page.
+  return response.ok && !response.redirected;
 }
 
 /** The state of this device. Without a key, or without push in this browser, reminders are unsupported. */

@@ -28,6 +28,7 @@ function setup({
   existing = null as ReturnType<typeof subscription> | null,
   registered = true,
   ok = true,
+  redirected = false,
   subscribeFails = false,
 } = {}) {
   const created = subscription();
@@ -35,7 +36,7 @@ function setup({
     getSubscription: vi.fn(() => Promise.resolve(existing)),
     subscribe: vi.fn(() => (subscribeFails ? Promise.reject(new Error("no")) : Promise.resolve(created))),
   } satisfies PushManagerLike;
-  const fetch = vi.fn((_url: string, _init: RequestInit) => Promise.resolve({ ok }));
+  const fetch = vi.fn((_url: string, _init: RequestInit) => Promise.resolve({ ok, redirected }));
   const sendBeacon = vi.fn((_url: string, _data: string) => true);
   const env: PushEnvironment = {
     push: {
@@ -126,6 +127,13 @@ describe("enablePush", () => {
 
   it("reports push_save_failed and drops the local subscription when the server refuses it", async () => {
     const { env, created, sendBeacon } = setup({ ok: false });
+    expect(await enablePush(env, KEY)).toEqual({ state: "off", error: "push_save_failed" });
+    expect(created.unsubscribe).toHaveBeenCalledOnce();
+    expect(sendBeacon).toHaveBeenCalledExactlyOnceWith(CLIENT_ERRORS_PATH, "push_save_failed");
+  });
+
+  it("reports push_save_failed when the save is redirected to another page", async () => {
+    const { env, created, sendBeacon } = setup({ redirected: true });
     expect(await enablePush(env, KEY)).toEqual({ state: "off", error: "push_save_failed" });
     expect(created.unsubscribe).toHaveBeenCalledOnce();
     expect(sendBeacon).toHaveBeenCalledExactlyOnceWith(CLIENT_ERRORS_PATH, "push_save_failed");

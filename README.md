@@ -327,6 +327,8 @@ insert into public.reminder_secret (hash) values (sha256(convert_to('<secret>', 
 
 Changing `VAPID_PUBLIC_KEY` invalidates every existing subscription; rotating `REMINDER_SECRET` needs steps 3 and 4 together.
 
+**CPU ceiling (measure before relying on it).** Each push costs CPU for its own encryption (one ECDH key pair, HKDF and AES-GCM), and the Workers Free plan allows 10 ms of CPU per invocation, so one evening run can only serve a limited number of subscriptions. Before the first release, trigger one run with a real subscription, read its CPU time with `npx wrangler tail` (or Workers Logs), and record the per-push cost and the resulting subscription ceiling here; plan batching or the paid plan before the subscription count nears it.
+
 ### Manual deploy (fallback)
 
 Only needed if Actions is unavailable. Run migrations first if any are pending (`npx supabase db push`), then:
