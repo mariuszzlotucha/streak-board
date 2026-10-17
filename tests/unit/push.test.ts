@@ -22,15 +22,25 @@ function subscription() {
   };
 }
 
+interface SetupOptions {
+  permission?: NotificationPermission;
+  requested?: NotificationPermission;
+  existing?: ReturnType<typeof subscription> | null;
+  registered?: boolean;
+  ok?: boolean;
+  redirected?: boolean;
+  subscribeFails?: boolean;
+}
+
 function setup({
   permission = "default",
   requested = "granted",
-  existing = null as ReturnType<typeof subscription> | null,
+  existing = null,
   registered = true,
   ok = true,
   redirected = false,
   subscribeFails = false,
-} = {}) {
+}: SetupOptions = {}) {
   const created = subscription();
   const manager = {
     getSubscription: vi.fn(() => Promise.resolve(existing)),

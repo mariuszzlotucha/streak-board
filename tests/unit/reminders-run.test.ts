@@ -154,7 +154,10 @@ describe("runReminders", () => {
     });
     expect(rpc).toHaveBeenCalledTimes(2);
     // Sends run concurrently, so expired endpoints arrive in completion order; only the set matters to the prune.
-    const [pruneName, pruneArgs] = rpc.mock.calls[1] as [string, { p_secret: string; p_endpoints: string[] }];
+    const [pruneName, pruneArgs] = rpc.mock.calls[1] as unknown as [
+      string,
+      { p_secret: string; p_endpoints: string[] },
+    ];
     expect(pruneName).toBe("prune_push_subscriptions");
     expect(pruneArgs.p_secret).toBe(SECRET);
     expect([...pruneArgs.p_endpoints].sort()).toEqual([
