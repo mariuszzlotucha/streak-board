@@ -65,9 +65,9 @@ self.addEventListener("notificationclick", (event) => {
   event.waitUntil(
     (async () => {
       const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
-      const open = windows.find((client) => client.url === url) ?? windows[0];
+      // Only a window already on that page is reused; any other open page keeps its content and a new window opens.
+      const open = windows.find((client) => client.url === url);
       if (open) {
-        if (open.url !== url && "navigate" in open) await open.navigate(url);
         await open.focus();
         return;
       }

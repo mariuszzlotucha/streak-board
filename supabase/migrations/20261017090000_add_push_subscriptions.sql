@@ -67,7 +67,8 @@ alter table public.reminder_secret enable row level security;
 -- ---------------------------------------------------------------------------
 
 -- Only the browsers' push services are accepted (the cron POSTs to every stored endpoint, so an arbitrary https host
--- would turn it into an outbound relay), and an account holds at most 10 devices. Errors: 22023 for another host,
+-- would turn it into an outbound relay), keys must have the RFC 8291 sizes, and an account holds at most 10 devices.
+-- Errors: 22023 for another host or malformed keys,
 -- 54000 at the cap. The same host list is in src/lib/reminders/subscription-route.ts (PUSH_SERVICE_HOST).
 create function public.subscribe_push(p_endpoint text, p_p256dh text, p_auth text)
 returns void
@@ -76,8 +77,13 @@ security definer
 set search_path = ''
 as $$
 begin
-  if p_endpoint is null or p_endpoint !~ '^https://(fcm\.googleapis\.com|[a-z0-9-]+(\.[a-z0-9-]+)*\.push\.services\.mozilla\.com|web\.push\.apple\.com|[a-z0-9-]+(\.[a-z0-9-]+)*\.notify\.windows\.com)/' then
+  if p_endpoint is null or p_endpoint !~* '^https://(fcm\.googleapis\.com|[a-z0-9-]+(\.[a-z0-9-]+)*\.push\.services\.mozilla\.com|web\.push\.apple\.com|[a-z0-9-]+(\.[a-z0-9-]+)*\.notify\.windows\.com)/' then
     raise exception 'push endpoint is not a known push service' using errcode = '22023';
+  end if;
+  -- RFC 8291 sizes in unpadded base64url: a 65-byte uncompressed P-256 point (first byte 0x04, so "B") and a 16-byte
+  -- auth secret. A key the cron cannot encrypt to would fail every evening and never be pruned.
+  if coalesce(p_p256dh !~ '^B[A-Za-z0-9_-]{86}$', true) or coalesce(p_auth !~ '^[A-Za-z0-9_-]{22}$', true) then
+    raise exception 'push keys are malformed' using errcode = '22023';
   end if;
   if (
     select count(*) from public.push_subscriptions s

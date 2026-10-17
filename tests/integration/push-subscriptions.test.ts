@@ -24,12 +24,15 @@ const WEEK = "2029-12-31"; // its Monday
 
 const endpoint = (): string => `https://fcm.googleapis.com/fcm/send/${randomUUID()}`;
 
+/** Well-formed keys unique to the user: "B" plus 86 base64url characters (65 bytes) and 22 characters (16 bytes). */
+function keysFor(user: TestUser): { p256dh: string; auth: string } {
+  const digest = createHash("sha512").update(user.id).digest("base64url");
+  return { p256dh: `B${digest.slice(0, 86)}`, auth: digest.slice(0, 22) };
+}
+
 async function subscribe(user: TestUser, url: string) {
-  return user.client.rpc("subscribe_push", {
-    p_endpoint: url,
-    p_p256dh: `p256dh-${user.id}`,
-    p_auth: `auth-${user.id}`,
-  });
+  const keys = keysFor(user);
+  return user.client.rpc("subscribe_push", { p_endpoint: url, p_p256dh: keys.p256dh, p_auth: keys.auth });
 }
 
 async function adminOwnerOf(url: string): Promise<string | null> {
@@ -86,6 +89,22 @@ describe("push subscriptions", () => {
         expect((await subscribe(a, url)).error).toBeNull();
         expect(await adminOwnerOf(url)).toBe(a.id);
       }
+    });
+
+    it("refuses malformed keys and accepts a mixed-case push host", async () => {
+      const keys = keysFor(a);
+      for (const [p256dh, auth] of [
+        ["k", keys.auth],
+        [`A${keys.p256dh.slice(1)}`, keys.auth],
+        [keys.p256dh, keys.auth.slice(1)],
+      ]) {
+        const url = endpoint();
+        const { error } = await a.client.rpc("subscribe_push", { p_endpoint: url, p_p256dh: p256dh, p_auth: auth });
+        expect(error?.code).toBe("22023");
+        expect(await adminOwnerOf(url)).toBeNull();
+      }
+      const mixed = `https://FCM.googleapis.com/fcm/send/${randomUUID()}`;
+      expect((await subscribe(a, mixed)).error).toBeNull();
     });
 
     it("caps an account at 10 devices, while a re-subscribe of an existing one still works", async () => {
@@ -191,11 +210,11 @@ describe("push subscriptions", () => {
       const sunday = await due(TODAY, WEEK);
       expect(sunday.error).toBeNull();
       expect(rowFor(sunday.data, ownerUrl)?.task_names).toEqual(["Brush teeth", "Clean the kitchen", "Walk the dog"]);
-      expect(rowFor(sunday.data, ownerUrl)).toMatchObject({ p256dh: `p256dh-${owner.id}`, auth: `auth-${owner.id}` });
+      expect(rowFor(sunday.data, ownerUrl)).toMatchObject(keysFor(owner));
       // once and the left task never remind.
       expect(rowFor(sunday.data, memberUrl)?.task_names).toEqual(["Walk the dog"]);
       // A participant without a subscription gets no row.
-      expect(sunday.data?.some((row) => row.p256dh === `p256dh-${silent.id}`)).toBe(false);
+      expect(sunday.data?.some((row) => row.p256dh === keysFor(silent).p256dh)).toBe(false);
 
       const weekday = await due(TODAY, null);
       expect(weekday.error).toBeNull();

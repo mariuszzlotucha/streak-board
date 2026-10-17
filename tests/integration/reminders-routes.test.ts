@@ -97,6 +97,15 @@ describe("POST /api/reminders/*", () => {
     ["not a URL", { endpoint: "push", keys: KEYS }],
     ["oversized endpoint", { endpoint: `https://fcm.googleapis.com/fcm/send/${"a".repeat(2100)}`, keys: KEYS }],
     ["non-base64url key", { endpoint: "https://fcm.googleapis.com/fcm/send/x", keys: { ...KEYS, auth: "a b" } }],
+    ["short p256dh", { endpoint: "https://fcm.googleapis.com/fcm/send/x", keys: { ...KEYS, p256dh: "k" } }],
+    [
+      "p256dh not an uncompressed point",
+      { endpoint: "https://fcm.googleapis.com/fcm/send/x", keys: { ...KEYS, p256dh: `A${KEYS.p256dh.slice(1)}` } },
+    ],
+    [
+      "auth of 15 bytes",
+      { endpoint: "https://fcm.googleapis.com/fcm/send/x", keys: { ...KEYS, auth: "tBHItJI5svbpez7KI4CC" } },
+    ],
     ["malformed JSON", "{"],
   ])("subscribe answers 400 for %s", async (_name, body) => {
     expect((await call(subscribe, "/api/reminders/subscribe", body)).status).toBe(400);
@@ -105,6 +114,13 @@ describe("POST /api/reminders/*", () => {
 
   it("unsubscribe answers 400 without an endpoint", async () => {
     expect((await call(unsubscribe, "/api/reminders/unsubscribe", {})).status).toBe(400);
+  });
+
+  it("measures the body limit in bytes, not characters (413)", async () => {
+    // 2100 two-byte characters: under the limit as a character count, over it in bytes.
+    const body = JSON.stringify({ endpoint: endpoint(), keys: KEYS, pad: "Ż".repeat(2100) });
+    expect((await call(subscribe, "/api/reminders/subscribe", body)).status).toBe(413);
+    expect(await endpointsOf(user.id)).toEqual([]);
   });
 
   it("refuses a non-JSON body (415) and a foreign origin (403)", async () => {
@@ -148,6 +164,7 @@ describe("parseEndpoint", () => {
     "https://updates.push.services.mozilla.com/wpush/v2/abc",
     "https://web.push.apple.com/abc",
     "https://wns2-db5p.notify.windows.com/w/?token=abc",
+    "https://FCM.googleapis.com/fcm/send/abc",
   ])("accepts the push service endpoint %s", (url) => {
     expect(parseEndpoint(url)).toBe(url);
   });

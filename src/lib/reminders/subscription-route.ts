@@ -1,5 +1,6 @@
 import type { APIContext } from "astro";
 import { reportError, requestFields } from "@/lib/log";
+import { base64UrlDecode } from "@/lib/reminders/web-push";
 import { createClient } from "@/lib/supabase";
 
 // The shared body of `POST /api/reminders/{subscribe,unsubscribe,unsubscribe-all}`: the browser's push subscription for
@@ -36,8 +37,9 @@ export function parseEndpoint(value: unknown): string | null {
   if (typeof value !== "string" || value.length === 0 || value.length > MAX_ENDPOINT_LENGTH) return null;
   try {
     const url = new URL(value);
+    // `url.hostname` is lowercased, so the prefix is compared case-insensitively (a browser may send a mixed-case host).
     return url.protocol === "https:" &&
-      value.startsWith(`https://${url.hostname}/`) &&
+      value.toLowerCase().startsWith(`https://${url.hostname}/`) &&
       url.port === "" &&
       PUSH_SERVICE_HOST.test(url.hostname)
       ? value
@@ -47,16 +49,29 @@ export function parseEndpoint(value: unknown): string | null {
   }
 }
 
-function parseKey(value: unknown): string | null {
-  return typeof value === "string" && value.length <= MAX_KEY_LENGTH && BASE64URL.test(value) ? value : null;
+/** Decoded sizes RFC 8291 fixes: the browser's P-256 public key (uncompressed point) and its auth secret. */
+export const P256DH_BYTES = 65;
+export const AUTH_BYTES = 16;
+
+function parseKey(value: unknown, bytes: number): string | null {
+  if (typeof value !== "string" || value.length > MAX_KEY_LENGTH || !BASE64URL.test(value)) return null;
+  let decoded: Uint8Array;
+  try {
+    decoded = base64UrlDecode(value.replace(/=+$/, ""));
+  } catch {
+    return null;
+  }
+  // A key the cron cannot encrypt to would fail every evening and never be pruned, so it is refused here.
+  if (decoded.length !== bytes || (bytes === P256DH_BYTES && decoded[0] !== 4)) return null;
+  return value;
 }
 
 /** `{ endpoint, keys: { p256dh, auth } }`, or null when any part is missing or malformed. */
 export function parseSubscription(value: unknown): SubscriptionBody | null {
   if (!isRecord(value) || !isRecord(value.keys)) return null;
   const endpoint = parseEndpoint(value.endpoint);
-  const p256dh = parseKey(value.keys.p256dh);
-  const auth = parseKey(value.keys.auth);
+  const p256dh = parseKey(value.keys.p256dh, P256DH_BYTES);
+  const auth = parseKey(value.keys.auth, AUTH_BYTES);
   return endpoint && p256dh && auth ? { endpoint, p256dh, auth } : null;
 }
 
@@ -97,7 +112,8 @@ export async function handleReminderRoute(
       if (mediaType !== "application/json") return status(415);
       if (Number(context.request.headers.get("content-length") ?? 0) > MAX_BODY_BYTES) return status(413);
       const text = await context.request.text();
-      if (text.length > MAX_BODY_BYTES) return status(413);
+      // Measured in bytes: without a Content-Length header, multibyte text could pass a character count.
+      if (new TextEncoder().encode(text).length > MAX_BODY_BYTES) return status(413);
       try {
         body = JSON.parse(text);
       } catch {

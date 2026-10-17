@@ -1510,10 +1510,11 @@ begin
 
   -- A subscribes; B sees nothing of it; the endpoint must be https.
   perform rls_check.as_user(a);
-  perform public.subscribe_push('https://fcm.googleapis.com/fcm/send/a', 'key-a', 'auth-a');
+  perform public.subscribe_push('https://fcm.googleapis.com/fcm/send/a', 'BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', 'AAAAAAAAAAAAAAAAAAAAAA');
   perform rls_check.expect_value('select count(*) from public.push_subscriptions', '1', 'S-16 A reads its own subscription');
-  perform rls_check.expect_error('22023', 'select public.subscribe_push(''http://fcm.googleapis.com/fcm/send/x'', ''k'', ''a'')', 'S-16 a non-https endpoint is refused (22023)');
-  perform rls_check.expect_error('22023', 'select public.subscribe_push(''https://push.example/x'', ''k'', ''a'')', 'S-16 an endpoint off the push services is refused (22023)');
+  perform rls_check.expect_error('22023', 'select public.subscribe_push(''http://fcm.googleapis.com/fcm/send/x'', ''BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'', ''AAAAAAAAAAAAAAAAAAAAAA'')', 'S-16 a non-https endpoint is refused (22023)');
+  perform rls_check.expect_error('22023', 'select public.subscribe_push(''https://push.example/x'', ''BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA'', ''AAAAAAAAAAAAAAAAAAAAAA'')', 'S-16 an endpoint off the push services is refused (22023)');
+  perform rls_check.expect_error('22023', 'select public.subscribe_push(''https://fcm.googleapis.com/fcm/send/k'', ''key-a'', ''auth-a'')', 'S-16 malformed push keys are refused (22023)');
   perform rls_check.expect_error('42501', 'insert into public.push_subscriptions (user_id, endpoint, p256dh, auth) values (auth.uid(), ''https://x'', ''k'', ''a'')', 'S-16 a direct insert is refused (42501)');
   perform rls_check.as_user(b);
   perform rls_check.expect_value('select count(*) from public.push_subscriptions', '0', 'S-16 B does not see A''s subscription');
