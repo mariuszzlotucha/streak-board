@@ -1,13 +1,18 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "10x-astro-starter",
-  "main": "@astrojs/cloudflare/entrypoints/server",
+  // The custom entry adds the reminder cron next to Astro's request handler (S-16).
+  "main": "./src/worker.ts",
   "compatibility_date": "2026-05-08",
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
     "binding": "ASSETS",
     "directory": "./dist",
     "not_found_handling": "404-page",
+  },
+  // 20:00 Warsaw is 18:00 UTC in summer (CEST) and 19:00 UTC in winter (CET); the handler acts only at Warsaw hour 20.
+  "triggers": {
+    "crons": ["0 18 * * *", "0 19 * * *"],
   },
   "observability": {
     "enabled": true,

@@ -43,6 +43,7 @@ Verify: unit, integration and RLS suites green; smoke covers the Reminders card;
 ## Implementation Approach
 
 The work is built bottom-up, so each phase is green on its own:
+
 1. Runtime and rules first, so the build question is settled early.
 2. Then the database.
 3. Then sending.
@@ -82,6 +83,7 @@ The Worker gets a `scheduled` entry that runs at 20:00 Warsaw, is reported throu
 **Intent**: A pure, unit-tested decision of whether this run should act, and which recurrences and periods it covers.
 
 **Contract**: `reminderRun(now: Date): { due: false } | { due: true; today: PeriodKey; week: PeriodKey | null }`.
+
 - `due` is true only when the Warsaw hour is 20.
 - `week` is set only when the Warsaw weekday is Sunday.
 - `once` is never covered.
@@ -126,6 +128,7 @@ Store per-device subscriptions and expose exactly what the cron needs, behind a 
 **Intent**: Per-device subscriptions owned by the user and deleted with the account. Two secret-guarded functions for the cron.
 
 **Contract**:
+
 - `push_subscriptions(id uuid pk, user_id uuid not null references auth.users(id) on delete cascade, endpoint text unique not null, p256dh text not null, auth text not null, created_at timestamptz default now())`.
   - RLS on, select-own policy.
   - Revoke everything from anon and authenticated, grant `select` to authenticated (the nicknames pattern).
@@ -145,6 +148,7 @@ Store per-device subscriptions and expose exactly what the cron needs, behind a 
 **File**: `src/types.ts`, `supabase/checks/rls-scenarios.sql`, `tests/integration/push-subscriptions.test.ts`
 
 **Intent**: Regenerated types. RLS rows pin the grants in both directions:
+
 - `has_function_privilege` rows, following `rls-scenarios.sql:1398`: anon may execute `due_reminders` and `prune_push_subscriptions` and no other new function; authenticated may execute only `subscribe_push`, `unsubscribe_push` and `unsubscribe_all_push`.
 - No API role holds any privilege on `reminder_secret`.
 - `push_subscriptions` is added to the S-12 table-grants block (`:1442-1475`).
@@ -185,6 +189,7 @@ The cron fetches due rows and sends one encrypted push per subscription. Expired
 **Intent**: VAPID JWT (ES256, `aud` = the endpoint origin, `exp` ≤ 12 h, `sub` = `mailto:` from `CONTACT_EMAIL`) and RFC 8291 aes128gcm payload encryption, both with WebCrypto, so it runs natively on Workers.
 
 **Contract**:
+
 - `buildPushRequest(sub, payload: string, vapid: VapidKeys, now): Promise<Request>`.
 - `Content-Encoding: aes128gcm`, `TTL: 14400` (expires around midnight), `Urgency: normal`.
 - Unit tests use the RFC 8291 §5 test vector.
@@ -196,6 +201,7 @@ The cron fetches due rows and sends one encrypted push per subscription. Expired
 **Intent**: Build a cookieless client with a new `createAnonClient(url, key)` in `src/lib/supabase.ts` (plain supabase-js, `persistSession: false`, `autoRefreshToken: false`) from the scheduled `env` values `SUPABASE_URL` and `SUPABASE_KEY`. Call `due_reminders` with the secret and the rule periods, send with bounded concurrency, and collect expired endpoints. Delete them in one call. Report a per-run summary.
 
 **Contract**:
+
 - Payload JSON: `{ "title": "StreakBoard", "body": "Still to do today: <names>", "url": "/dashboard" }`. On Sunday weekly names are included; the body text for weekly is decided by the implementer and covered by a unit test.
 - 404/410 → prune, logged with `reportInfo` (`reminders.subscription.expired`, no endpoint in the log).
 - Any other non-2xx, or a thrown fetch → `reportError` (`reminders.send.failed`, status only).
@@ -207,6 +213,7 @@ The cron fetches due rows and sends one encrypted push per subscription. Expired
 **File**: `README.md` (Deployment and the `.dev.vars` section)
 
 **Intent**: The owner creates the VAPID key pair and the shared secret, and stores them with `wrangler secret put`: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `REMINDER_SECRET`. The README documents three things:
+
 - The exact commands.
 - The production SQL Editor statement: `insert into public.reminder_secret (hash) values (sha256('<secret>'::bytea)) on conflict (id) do update set hash = excluded.hash;`.
 - The three `.dev.vars` lines for local `wrangler dev --test-scheduled`. There is no `.dev.vars.example`.
@@ -269,11 +276,13 @@ The user turns reminders on or off per device from Settings. The service worker 
 **File**: `src/components/dashboard/RemindersCard.astro` plus a React island for the toggle, `SettingsView.astro`, `src/lib/settings-data.ts`, kitchen-sink fixtures, `scripts/smoke.mjs`
 
 **Intent**: A "Reminders" card between the group card and Account.
+
 - It explains the 20:00 rule (daily; weekly on Sunday).
 - It shows the state for this device and a "Turn off on all devices" button when the user has any subscription.
 - An unsupported browser gets "Install StreakBoard on your home screen to get reminders" (the iOS case).
 
 **Contract**:
+
 - An exact `<h2>Reminders</h2>`.
 - No `role="alert"` except for errors.
 - Buttons hold only their text.
@@ -311,6 +320,7 @@ The policy and docs state the new facts. Then the release and a real-device chec
 **File**: `src/components/privacy/{Cookies,WhatWeCollect,Providers,Retention,AccountDeletion,LegalBasis}.astro`
 
 **Intent**: State these facts:
+
 - The service worker now receives notifications but still caches nothing.
 - The push subscription (endpoint and keys) is stored per device on opt-in.
 - The browser's push service (Google, Mozilla, Apple) delivers the message and sees the task names in encrypted form only.
@@ -384,9 +394,9 @@ The table and functions are additive. The release step runs `supabase migration 
 
 #### Automated
 
-- [ ] 1.1 Unit tests for `reminderRun` pass: 18:00 and 19:00 UTC on winter and summer dates, Saturday versus Sunday, and the DST switch days
-- [ ] 1.2 Build and lint pass
-- [ ] 1.3 Smoke passes against the built preview (pages still served through the custom entry)
+- [x] 1.1 Unit tests for `reminderRun` pass: 18:00 and 19:00 UTC on winter and summer dates, Saturday versus Sunday, and the DST switch days
+- [x] 1.2 Build and lint pass
+- [x] 1.3 Smoke passes against the built preview (pages still served through the custom entry)
 
 #### Manual
 

@@ -1,7 +1,7 @@
 ---
 change_id: task-reminders
 title: Task reminders
-status: plan_reviewed
+status: implementing
 created: 2026-10-17
 updated: 2026-10-17
 archived_at: null
