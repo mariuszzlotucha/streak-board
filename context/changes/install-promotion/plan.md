@@ -330,8 +330,8 @@ None: no schema, no server state. A device that dismissed the card keeps the fla
 
 #### Automated
 
-- [ ] 1.1 Unit tests for the install module pass
-- [ ] 1.2 Lint and type checks pass
+- [x] 1.1 Unit tests for the install module pass
+- [x] 1.2 Lint and type checks pass
 
 #### Manual
 

@@ -1,7 +1,7 @@
 ---
 change_id: install-promotion
 title: Install promotion
-status: plan_reviewed
+status: implementing
 created: 2026-10-18
 updated: 2026-10-18
 archived_at: null
