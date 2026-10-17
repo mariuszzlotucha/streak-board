@@ -3,11 +3,24 @@ import AppLayout from "@/layouts/AppLayout.astro";
 import DashboardView from "@/components/dashboard/DashboardView.astro";
 import ClearErrorParam from "@/components/site/ClearErrorParam.astro";
 import { loadDashboard } from "@/lib/dashboard-data";
-import { requestFields } from "@/lib/log";
+import { reportError, requestFields } from "@/lib/log";
 import { resolveNotice } from "@/lib/notices";
+import { joinPendingInvite } from "@/lib/pending-invite";
 import { createClient } from "@/lib/supabase";
 
 const { user } = Astro.locals;
+
+// A pending invite (opened link, or the code stored at sign-up) joins at once: no "Join group" click.
+const inviteSupabase = user ? createClient(Astro.request.headers, Astro.cookies) : null;
+if (user && inviteSupabase) {
+  try {
+    const target = await joinPendingInvite(inviteSupabase, Astro.cookies, user, requestFields(Astro));
+    if (target) return Astro.redirect(target);
+  } catch (error) {
+    // The dashboard still renders; its "Join <group>?" card offers the invite again.
+    reportError("groups.invite.exception", error, requestFields(Astro));
+  }
+}
 
 const {
   error,

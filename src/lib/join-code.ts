@@ -16,7 +16,8 @@ export function rememberJoinCode(cookies: AstroCookies, code: unknown): void {
     httpOnly: true,
     sameSite: "lax",
     secure: import.meta.env.PROD,
-    maxAge: 3600,
+    // A week: long enough for a sign-up whose confirmation e-mail is opened later.
+    maxAge: 7 * 24 * 3600,
   });
 }
 

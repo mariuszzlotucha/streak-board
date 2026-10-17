@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase";
 import { reportError, reportMapped, requestFields } from "@/lib/log";
 import { toSignUpErrorCode } from "@/lib/auth-errors";
 import { rememberEmail } from "@/lib/auth-email";
+import { inviteForSignUp } from "@/lib/pending-invite";
 
 export const POST: APIRoute = async (context) => {
   try {
@@ -17,7 +18,9 @@ export const POST: APIRoute = async (context) => {
     }
     // The confirmation link returns to this app (must be in the project's Redirect URLs allow-list).
     const emailRedirectTo = `${new URL(context.request.url).origin}/auth/callback`;
-    const { error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo } });
+    // A pending invite goes with the account: the confirmation link may open in another browser, without the cookie.
+    const data = inviteForSignUp(context.cookies) ?? undefined;
+    const { error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo, data } });
 
     if (error) {
       rememberEmail(context.cookies, email);

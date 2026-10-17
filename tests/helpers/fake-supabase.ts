@@ -1,5 +1,5 @@
 // A chainable, thenable stand-in for the supabase-js client, scripted by results and written against the call chain
-// (`from(table).select(...).eq(...).maybeSingle()`, `rpc(name, params)`, `auth.signOut()`), not against any route's
+// (`from(table).select(...).eq(...).maybeSingle()`, `rpc(name, params)`, `auth.signOut()`, `auth.updateUser()`), not against any route's
 // internals. This file
 // must not import tests/helpers/supabase.ts: that module registers database cleanup hooks on import.
 import type { createClient } from "@/lib/supabase";
@@ -72,8 +72,8 @@ type Chain = Record<string, (...args: unknown[]) => unknown> & PromiseLike<Query
 
 /**
  * Builds a client whose queries answer with `script`, one result per awaited query, in order. A `maybeSingle()`, a
- * `single()`, a chain awaited directly, an `rpc()` and an `auth.signOut()` each consume one result (sign-out answers
- * with its `error` only, as supabase-js does); every other method returns the chain.
+ * `single()`, a chain awaited directly, an `rpc()`, an `auth.signOut()` and an `auth.updateUser()` each consume one result
+ * (sign-out answers with its `error` only, as supabase-js does); every other method returns the chain.
  * An await beyond the script throws (and `remaining()` goes negative), so a test can assert exact consumption.
  */
 export function createFakeSupabase(script: readonly ScriptedResult[]): FakeSupabase {
@@ -136,6 +136,13 @@ export function createFakeSupabase(script: readonly ScriptedResult[]): FakeSupab
         calls.push(call);
         return new Promise<{ error: QueryResult["error"] }>((resolve) => {
           resolve({ error: consume(call).error });
+        });
+      },
+      updateUser(...args: unknown[]) {
+        const call: RecordedCall = { kind: "auth", name: "updateUser", chain: [{ method: "updateUser", args }] };
+        calls.push(call);
+        return new Promise<QueryResult>((resolve) => {
+          resolve(consume(call));
         });
       },
     },
