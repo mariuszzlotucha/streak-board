@@ -10,3 +10,6 @@ declare namespace App {
 declare module "cloudflare:workers" {
   export const env: import("./lib/sentry-options").SentryEnv;
 }
+
+/** The build's ISO date, from `vite.define` in astro.config.mjs; undefined under Vitest. */
+declare const __BUILD_DATE__: string;

@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import { SUPABASE_URL } from "astro:env/server";
 import Banner from "@/components/Banner.astro";
 import UpdateNotice from "@/components/site/UpdateNotice.astro";
 import { missingConfigs } from "@/lib/config-status";
@@ -12,6 +13,12 @@ interface Props {
 }
 
 const { title = "StreakBoard — shared habit streaks for your group", showUpdateNotice = false } = Astro.props;
+// The sign-in and sign-up forms post to Supabase Auth: its origin joins form-action of the policy in astro.config.mjs.
+// Astro.csp exists only while CSP is on (not in `astro dev`).
+if (SUPABASE_URL && Astro.csp) {
+  Astro.csp.insertDirective(`form-action ${new URL(SUPABASE_URL).origin}`);
+}
+
 const pageTitle = title.startsWith("StreakBoard") ? title : `${title} · StreakBoard`;
 const description =
   "StreakBoard lets a group track the same tasks together, check them off every day or week, and compare streaks on a shared leaderboard.";

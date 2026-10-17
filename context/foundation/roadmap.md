@@ -23,12 +23,13 @@ milestone_status: open
 **M-3: Historia, przypomnienia i instalacja: siatka odznaczeń grupy, przypomnienie o niewykonanym tasku i aplikacja PWA** — Status: open
 
 - **Intent:** Domknąć kryteria drugorzędne PRD v1 i dać aplikacji miejsce na telefonie: członek grupy widzi historię wykonania tasków w prostej siatce, którą grono prowadziło wcześniej ręcznie we wspólnym arkuszu, użytkownik dostaje przypomnienie o tasku, którego jeszcze nie odznaczył, a aplikację można zainstalować na ekranie głównym jak zwykłą aplikację (PWA). Wszystkie trzy mają podtrzymać codzienny powrót do odznaczania, a ich wartość sprawdzamy u realnych użytkowników.
-- **Source materials:** `context/foundation/prd.md` (v1), §Success Criteria → Secondary; punkty tej sekcji nie mają identyfikatorów FR ani US, więc zakres jest zapisany jako kotwice `MS-NN` poniżej. Decyzje właściciela: 2026-10-08 (z historii tylko prosta siatka, bez wykresów i statystyk) i 2026-10-17 (S-13 przeniesiony z M-2, M-3 oparty na kryteriach drugorzędnych PRD, przypomnienia odparkowane). Opis właściciela z 2026-10-17: „Żeby aplikacja była PWA” (kotwica MS-03). Konieczne FR z PRD (FR-001 do FR-012) pokryły M-1 i M-2 (`## Milestone History`).
-- **Done when:** każdy S-NN poniżej (S-13, S-16, S-17) ma status `done`.
+- **Source materials:** `context/foundation/prd.md` (v1), §Success Criteria → Secondary; punkty tej sekcji nie mają identyfikatorów FR ani US, więc zakres jest zapisany jako kotwice `MS-NN` poniżej. Decyzje właściciela: 2026-10-08 (z historii tylko prosta siatka, bez wykresów i statystyk) i 2026-10-17 (S-13 przeniesiony z M-2, M-3 oparty na kryteriach drugorzędnych PRD, przypomnienia odparkowane). Opis właściciela z 2026-10-17: „Żeby aplikacja była PWA” (kotwica MS-03). Prośba właściciela z 2026-10-17 o utwardzenie publicznej powierzchni po skanach botów w logach Cloudflare (kotwica MS-04). Konieczne FR z PRD (FR-001 do FR-012) pokryły M-1 i M-2 (`## Milestone History`).
+- **Done when:** każdy S-NN poniżej (S-13, S-16, S-17, S-18) ma status `done`.
 - **Scope anchors:** po jednej na wycinek: MS-01 i MS-02 przepisane z PRD §Success Criteria → Secondary, MS-03 z opisu właściciela:
   - MS-01: członek grupy widzi historię wykonania tasku jako prostą siatkę: uczestnicy × ostatnie okresy, wykonane i niewykonane (PRD §Vision: zielono-czerwona siatka jako pierwotna wartość, FR-013; §Success Criteria → Secondary „Historia/statystyki długoterminowe” bez zmian; decyzja właściciela 2026-10-08: w zakresie samej siatki, wykresy i statystyki zostają w `## Parked`; do 2026-10-17 kotwica MS-08 kamienia M-2).
   - MS-02: użytkownik dostaje przypomnienie o tasku, do którego jest zapisany, a którego nie odznaczył w bieżącym okresie (PRD: „Powiadomienia/przypomnienia o niewykonanym tasku”; odparkowane decyzją właściciela 2026-10-17).
   - MS-03: aplikacja jest PWA: użytkownik instaluje ją na ekranie głównym telefonu (albo na komputerze) i uruchamia jak osobną aplikację (opis właściciela 2026-10-17: „Żeby aplikacja była PWA”; działanie offline zostaje wyłączone przez PRD §Non-Goals, chyba że właściciel zdecyduje inaczej).
+  - MS-04: publiczna powierzchnia aplikacji jest utwardzona: odpowiedzi niosą nagłówki bezpieczeństwa (nosniff, Referrer-Policy, ochrona przed osadzaniem w ramkach, Permissions-Policy, najpierw CSP w trybie Report-Only), jest `/.well-known/security.txt`, a operator ustawia w Cloudflare HSTS, rekordy SPF i DMARC (domena nie wysyła poczty) i regułę WAF na skany `/wp-*` i `*.php` (prośba właściciela 2026-10-17: produkcja nie wysyła żadnego nagłówka bezpieczeństwa, domena nie ma SPF ani DMARC, boty pytają o `/wp-admin/install.php`).
 
 ## Vision recap
 
@@ -42,11 +43,12 @@ Grono znajomych korzystało wcześniej ze wspólnego arkusza Google, w którym r
 
 ## At a glance
 
-| ID   | Change ID       | Outcome (user can …)                                                                                             | Prerequisites | PRD refs                                     | Status      |
-| ---- | --------------- | ---------------------------------------------------------------------------------------------------------------- | ------------- | -------------------------------------------- | ----------- |
-| S-13 | checkoff-grid   | zobaczyć siatkę odznaczeń grupy: kto wykonał task w każdym z ostatnich okresów                                   | S-11, S-14    | PRD §Vision, FR-013; MS-01                   | done        |
-| S-16 | task-reminders  | dostać przypomnienie o tasku, do którego jest zapisany, a którego nie odznaczył w bieżącym okresie               | —             | — (PRD §Success Criteria → Secondary; MS-02) | in-progress |
-| S-17 | installable-pwa | zainstalować aplikację na ekranie głównym telefonu albo na komputerze i uruchamiać ją jak osobną aplikację (PWA) | —             | — (opis właściciela; MS-03)                  | done        |
+| ID   | Change ID                | Outcome (user can …)                                                                                                                         | Prerequisites | PRD refs                                     | Status      |
+| ---- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | -------------------------------------------- | ----------- |
+| S-13 | checkoff-grid            | zobaczyć siatkę odznaczeń grupy: kto wykonał task w każdym z ostatnich okresów                                                               | S-11, S-14    | PRD §Vision, FR-013; MS-01                   | done        |
+| S-16 | task-reminders           | dostać przypomnienie o tasku, do którego jest zapisany, a którego nie odznaczył w bieżącym okresie                                           | —             | — (PRD §Success Criteria → Secondary; MS-02) | in-progress |
+| S-17 | installable-pwa          | zainstalować aplikację na ekranie głównym telefonu albo na komputerze i uruchamiać ją jak osobną aplikację (PWA)                             | —             | — (opis właściciela; MS-03)                  | done        |
+| S-18 | public-surface-hardening | odwiedzać aplikację, która wysyła nagłówki bezpieczeństwa, publikuje kontakt do zgłaszania luk i której domeny nie da się podrobić w poczcie | —             | — (prośba właściciela; MS-04)                | in-progress |
 
 ## Baseline
 
@@ -118,13 +120,30 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Risk:** Service worker zostaje w przeglądarce między sesjami i wydaniami: zbyt szeroka pamięć podręczna mogłaby po wylogowaniu pokazać cudzy dashboard na wspólnym urządzeniu (guardrail PRD: widoczność tylko dla własnej grupy) albo trzymać stary kod po wycofaniu wydania, więc strony i dane po zalogowaniu nie trafiają do cache, a aktualizacja service workera należy do zakresu. Odznaczenie ma zostać natychmiastowe (guardrail PRD). Idzie po S-16, chyba że S-16 wybierze kanał push: wtedy S-17 idzie pierwszy.
 - **Status:** done
 
+### S-18: Utwardzenie publicznej powierzchni
+
+- **Outcome:** odwiedzający dostaje strony z nagłówkami bezpieczeństwa (nosniff, Referrer-Policy, zakaz osadzania w ramkach, Permissions-Policy, CSP najpierw w trybie Report-Only), badacz znajduje kontakt w `/.well-known/security.txt`, a nikt nie wyśle poczty podszywającej się pod domenę aplikacji.
+- **Change ID:** public-surface-hardening
+- **PRD refs:** — (prośba właściciela; MS-04)
+- **Prerequisites:** —
+- **Parallel with:** S-16 (wspólne mogą być middleware i polityka prywatności, więc uzgodnić kolejność merge'y)
+- **Blockers:** —
+- **Unknowns:**
+  - Jaką CSP wymusić po okresie Report-Only (Supabase, Google OAuth, Sentry, service worker, push) i gdzie zbierać raporty? — Owner: team. Block: no — rozstrzyga `/10x-research`.
+  - Czy domena wysyła albo będzie wysyłać pocztę (np. potwierdzenia Supabase przez własny SMTP)? Od tego zależy, czy SPF i DMARC mogą być `-all` i `p=reject`. — Owner: user. Block: no — rozstrzyga `/10x-frame`.
+  - Czy zastąpić zarządzany przez Cloudflare `robots.txt` własnym w repo? — Owner: user. Block: no.
+- **Źródło zakresu:** prośba właściciela z 2026-10-17 po przeglądzie logów Cloudflare (skany `/wp-admin/install.php`) i sprawdzeniu produkcji: brak nagłówków bezpieczeństwa, brak SPF i DMARC, `security.txt` daje 404.
+- **Risk:** Zbyt ciasna CSP albo `X-Frame-Options` mogą zepsuć logowanie Google, push albo service worker, więc CSP idzie najpierw jako Report-Only; HSTS, DNS i WAF to kroki operatora w panelu Cloudflare (ręczne wiersze planu), nie kod.
+- **Status:** in-progress
+
 ## Backlog Handoff
 
-| Roadmap ID | Change ID       | Suggested issue title                                                                | Ready for `/10x-plan` | Notes                                                                                                                                                                         |
-| ---------- | --------------- | ------------------------------------------------------------------------------------ | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| S-13       | checkoff-grid   | Siatka odznaczeń grupy: uczestnicy × ostatnie okresy                                 | yes                   | Gwiazda przewodnia M-3. Najpierw `/10x-frame` (liczba okresów, doprecyzowanie PRD); w zakresie PRD, polityka prywatności, słownik i poprawki dokumentów z `open-items.md` §3. |
-| S-16       | task-reminders  | Przypomnienie o niewykonanym tasku: kanał, harmonogram, zgoda                        | yes                   | Najpierw `/10x-frame` (kanał, pora, zgoda), potem `/10x-research` (wysyłka i harmonogram na Workerze). Polityka prywatności, PRD i słownik w zakresie.                        |
-| S-17       | installable-pwa | Aplikacja PWA: instalacja na ekranie głównym, ikony, service worker bez cache danych | yes                   | Najpierw `/10x-frame` (offline czy nie, ikony, systemy), potem `/10x-research`. Przy kanale push w S-16 idzie przed S-16.                                                     |
+| Roadmap ID | Change ID                | Suggested issue title                                                                           | Ready for `/10x-plan` | Notes                                                                                                                                                                         |
+| ---------- | ------------------------ | ----------------------------------------------------------------------------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| S-13       | checkoff-grid            | Siatka odznaczeń grupy: uczestnicy × ostatnie okresy                                            | yes                   | Gwiazda przewodnia M-3. Najpierw `/10x-frame` (liczba okresów, doprecyzowanie PRD); w zakresie PRD, polityka prywatności, słownik i poprawki dokumentów z `open-items.md` §3. |
+| S-16       | task-reminders           | Przypomnienie o niewykonanym tasku: kanał, harmonogram, zgoda                                   | yes                   | Najpierw `/10x-frame` (kanał, pora, zgoda), potem `/10x-research` (wysyłka i harmonogram na Workerze). Polityka prywatności, PRD i słownik w zakresie.                        |
+| S-17       | installable-pwa          | Aplikacja PWA: instalacja na ekranie głównym, ikony, service worker bez cache danych            | yes                   | Najpierw `/10x-frame` (offline czy nie, ikony, systemy), potem `/10x-research`. Przy kanale push w S-16 idzie przed S-16.                                                     |
+| S-18       | public-surface-hardening | Utwardzenie publicznej powierzchni: nagłówki bezpieczeństwa, security.txt, SPF/DMARC, HSTS, WAF | yes                   | Kod: nagłówki w middleware, CSP Report-Only, `security.txt`. Ręcznie w Cloudflare: HSTS, SPF/DMARC, reguła WAF.                                                               |
 
 ## Open Roadmap Questions
 

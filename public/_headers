@@ -1,4 +1,12 @@
 # Cloudflare static-asset headers. The adapter appends its own /_astro/* rule to this file at build time.
+# Fixed security headers for static files, which never reach the middleware. The values must match SECURITY_HEADERS
+# in src/lib/security-headers.ts. No Cache-Control here, or the adapter would skip its /_astro/* rule.
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+
 # The service worker must never sit in an HTTP cache, so a release takes over on the next check.
 /sw.js
   Cache-Control: no-cache

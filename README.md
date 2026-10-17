@@ -373,6 +373,23 @@ Users delete their own account on `/settings` ("Delete account"). The privacy po
 
 Do not delete the user under Authentication → Users (or with `auth.admin.deleteUser`): for a task creator or a group owner it fails with "Database error deleting user", because `tasks.created_by` and `groups.owner_id` are `on delete restrict`, and for anyone else it leaves their security log entries behind.
 
+### Security headers and CSP
+
+Every response the Worker answers carries `X-Content-Type-Options`, `Referrer-Policy`, `X-Frame-Options` and `Permissions-Policy`, set by `withSecurityHeaders` (`SECURITY_HEADERS` in `src/lib/security-headers.ts`) in `src/middleware.ts`. Static files never reach the middleware, so `public/_headers` repeats the same values; change both together (`tests/unit/security-headers.test.ts` compares them).
+
+Rendered pages also get a Content-Security-Policy computed by Astro from `security.csp` in `astro.config.mjs` (Astro hashes its own scripts and styles; the `is:inline` script of `src/components/site/ClearErrorParam.astro` is hashed by hand, and `tests/unit/csp-hash.test.ts` fails when the two drift). `src/layouts/Layout.astro` adds the Supabase origin to `form-action`. The policy is sent as `Content-Security-Policy-Report-Only`: `toReportOnly` in the middleware renames the header while `CSP_MODE` is `"report-only"`. To enforce it, set `CSP_MODE = "enforce"` after a week without unexpected violations. API routes and redirects carry no CSP. CSP is off in `astro dev`; check it on `npm run build && npm run preview` (`tests/e2e/csp-report-only.spec.ts` does).
+
+Browsers send violations to `POST /api/csp-report` (public, `application/csp-report` or `application/reports+json`, at most 8 KiB). It logs one `csp.violation` info line per violation in Workers Logs, with only the directive, the blocked origin (or `inline`, `eval`, `data`) and the document path; full URLs, script samples and request headers are not logged, and nothing goes to Sentry.
+
+`/.well-known/security.txt` is served by `src/pages/.well-known/security.txt.ts`: its `Contact` is `mailto:` the `CONTACT_EMAIL` secret, and its `Expires` is derived from the build date, so every release renews it; without `CONTACT_EMAIL` it answers 404.
+
+Operator settings outside the repo (Cloudflare dashboard and DNS), checked by hand:
+
+- **HSTS**: SSL/TLS → Edge Certificates → HTTP Strict Transport Security, max-age 6 months, include subdomains, no preload. Check: `curl -sI https://streakboard.app/` shows `strict-transport-security`.
+- **SPF** for the apex, which sends no mail: DNS TXT `streakboard.app` = `v=spf1 -all` (next to the Google verification record; `dig +short TXT streakboard.app`). Resend's own records for `mail.streakboard.app` stay as they are; a received confirmation e-mail ("Show original") shows `DKIM: PASS with domain mail.streakboard.app`.
+- **DMARC**, staged: DNS TXT `_dmarc.streakboard.app` = `v=DMARC1; p=none; rua=mailto:<operator address>`; after a week of reports with Resend passing, change it to `p=reject`.
+- **WAF**: a custom rule blocking `starts_with(http.request.uri.path, "/wp-") or ends_with(http.request.uri.path, ".php")`. Check: `curl -s -o /dev/null -w "%{http_code}" https://streakboard.app/wp-admin/install.php` returns 403.
+
 ### Custom domain
 
 The apex `streakboard.app` is attached to the Worker in the Cloudflare dashboard (Worker → Settings → Domains & Routes) and deliberately not declared in `wrangler.jsonc`. With Wrangler 4.131.x a deploy touches custom domains only when the config declares a `custom_domain` route, so a dashboard-attached domain survives every release. Declaring any such route makes Wrangler send the declared set (with `override_scope`, and in CI forcing the DNS and origin overrides), so a domain attached only in the dashboard may be replaced, and `streakboard.app` would then have to be listed in the file too. Do not add `routes` to `wrangler.jsonc` or `--strict` to the release step to silence a "local configuration differs from the remote configuration" warning.
