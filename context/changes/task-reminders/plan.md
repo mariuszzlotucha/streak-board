@@ -432,10 +432,10 @@ The table and functions are additive. The release step runs `supabase migration 
 
 #### Automated
 
-- [x] 4.1 Unit tests for the push module states pass
-- [x] 4.2 Integration tests for the three routes pass
-- [x] 4.3 Lint and the token check pass
-- [x] 4.4 Smoke passes with the new Settings assertions
+- [x] 4.1 Unit tests for the push module states pass — 0f0d2d9
+- [x] 4.2 Integration tests for the three routes pass — 0f0d2d9
+- [x] 4.3 Lint and the token check pass — 0f0d2d9
+- [x] 4.4 Smoke passes with the new Settings assertions — 0f0d2d9
 
 #### Manual
 
@@ -446,7 +446,7 @@ The table and functions are additive. The release step runs `supabase migration 
 
 #### Automated
 
-- [ ] 5.1 Lint, format and the full suite pass
+- [x] 5.1 Lint, format and the full suite pass
 
 #### Manual
 

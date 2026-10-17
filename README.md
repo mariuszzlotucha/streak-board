@@ -128,6 +128,12 @@ VAPID_PRIVATE_KEY=<base64url private key>
 REMINDER_SECRET=<random secret, at least 32 characters>
 ```
 
+Then trigger one run by hand while `wrangler dev` is up (crons `0 18 * * *` and `0 19 * * *` in `wrangler.jsonc`; the run sends only in the hour that is 20:00 in Warsaw, so pick the one that matches the current offset):
+
+```bash
+curl "http://localhost:8787/__scheduled?cron=0+19+*+*+*"
+```
+
 5. To stop the stack when done:
 
 ```bash

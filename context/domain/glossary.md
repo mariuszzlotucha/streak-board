@@ -51,10 +51,16 @@ Używaj terminów z kolumny „Nazwa w kodzie". Nazw z kolumny „Nie nazywaj" u
 | Usunięcie konta | Użytkownik usuwa swoje konto w ustawieniach po potwierdzeniu; grupa przechodzi na wybranego następcę (albo znika z jedynym członkiem), taski przechodzą na właściciela grupy, dane osoby znikają                       | `delete_own_account`, `delete_account`, `/api/account/delete`, `successor_id`   | account removal, deactivation, „wyjście z aplikacji" |
 | Nick            | Nazwa członka widoczna dla jego grupy: 2–24 znaki po przycięciu, bez znaków sterujących i formatujących, z co najmniej jednym widocznym, unikalna dosłownie w całej aplikacji, obowiązkowa przed wejściem na dashboard | `nicknames`, `nickname`, `normalizeNickname`, `set_nickname`, `locals.nickname` | username, display name, handle, profile              |
 
+## Przypomnienia
+
+| Termin           | Co znaczy                                                                                                                                            | Nazwa w kodzie                                                                                         | Nie nazywaj                                                 |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
+| Przypomnienie    | Jedno powiadomienie Web Push o 20:00 (Warszawa) z taskami bez odznaczenia w bieżącym okresie: `daily` codziennie, `weekly` w niedzielę, `once` nigdy | `reminderRun`, `REMINDER_HOUR`, `due_reminders`, `src/lib/reminders/run.ts`                            | alert, notification job, digest                             |
+| Subskrypcja push | Zgoda jednego urządzenia na przypomnienia: adres push i dwa klucze szyfrowania, powiązane z kontem; znika po wyłączeniu, wygaśnięciu albo z kontem   | `push_subscriptions`, `subscribe_push`, `unsubscribe_push`, `unsubscribe_all_push`, `/api/reminders/*` | subscription bez „push" (to nie uczestnictwo), device token |
+
 ## Pojęcia, których kod nie zna — nie wprowadzaj bez decyzji
 
 - Poziomy, odznaki, osiągnięcia (PRD ich nie obiecuje; kodu brak).
-- Powiadomienia i przypomnienia.
 - Statystyki, wykresy streaków, rekord streaka (historia jest tylko jako siatka odznaczeń).
 - Task indywidualny jako osobny rodzaj tasku (każdy task należy do grupy; PRD go nie obiecuje).
 - Rotacja kodu zaproszenia, wiele grup na użytkownika.

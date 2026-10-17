@@ -129,11 +129,15 @@ describe("runReminders", () => {
       p_today: "2026-10-04",
       p_week: "2026-09-28",
     });
-    expect(rpc).toHaveBeenCalledWith("prune_push_subscriptions", {
-      p_secret: SECRET,
-      p_endpoints: ["https://push.example.com/sub-2", "https://push.example.com/sub-3"],
-    });
     expect(rpc).toHaveBeenCalledTimes(2);
+    // Sends run concurrently, so expired endpoints arrive in completion order; only the set matters to the prune.
+    const [pruneName, pruneArgs] = rpc.mock.calls[1] as [string, { p_secret: string; p_endpoints: string[] }];
+    expect(pruneName).toBe("prune_push_subscriptions");
+    expect(pruneArgs.p_secret).toBe(SECRET);
+    expect([...pruneArgs.p_endpoints].sort()).toEqual([
+      "https://push.example.com/sub-2",
+      "https://push.example.com/sub-3",
+    ]);
     expect(fetch).toHaveBeenCalledTimes(6);
 
     expect(events(errorSpy)).toEqual(["reminders.send.failed", "reminders.send.failed"]);
