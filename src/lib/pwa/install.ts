@@ -7,7 +7,7 @@
  * What the page can offer:
  * - `installed`: the app already runs installed (or was just installed from this page), so nothing;
  * - `in-app`: a messenger's or another app's browser (a listed token, or an iOS WebView without `Safari/`), which
- *   cannot install, so "open this page in Safari or Chrome";
+ *   cannot install, so "open this page in Safari or Chrome" (on iOS, in Safari);
  * - `ios-safari`, `ios-other`: Share → Add to Home Screen, from Safari or from another iOS browser;
  * - `prompt`: Chromium handed over its install dialog (`beforeinstallprompt`), so an "Install app" button;
  * - `chromium-menu`: Chrome or Edge without that event, or a browser that sent one earlier on this page, so the

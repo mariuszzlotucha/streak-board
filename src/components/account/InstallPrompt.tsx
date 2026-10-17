@@ -16,6 +16,9 @@ const TITLE = "Install StreakBoard";
 const IOS_REASON = "Reminders on iPhone and iPad work only from the installed app.";
 const APP_REASON = "Open it from your home screen or dock like an app.";
 
+// From an iPhone's in-app browser, only Safari leads to reminders: Chrome would add an icon that reopens in Chrome.
+const IN_APP_IOS_STEP = "Open this page in Safari to install StreakBoard.";
+
 const IOS_STEPS =
   "Tap Share, then Add to Home Screen. Open StreakBoard from the icon, sign in again, and turn on reminders in Settings.";
 
@@ -53,7 +56,7 @@ export default function InstallPrompt({ variant, fixedOffer }: InstallPromptProp
   const steps =
     offer === "prompt" ? null : (
       <div className="space-y-1">
-        {STEPS[offer].map((step) => (
+        {(offer === "in-app" && ios ? [IN_APP_IOS_STEP] : STEPS[offer]).map((step) => (
           <p key={step}>{step}</p>
         ))}
       </div>

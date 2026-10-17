@@ -78,3 +78,35 @@ test.describe("risk S-19: install promotion on an iPhone", () => {
     await expect(reminders.getByRole("button", { name: "Not now" })).toHaveCount(0);
   });
 });
+
+// Instagram's browser on an iPhone: the in-app token wins over the iOS tokens, and on iOS only Safari leads to an app
+// that can send reminders, so the step names Safari alone.
+const IPHONE_INSTAGRAM =
+  "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 330.0.0.0.0";
+
+test.describe("risk S-19: install promotion in an iPhone app's browser", () => {
+  test.use({ userAgent: IPHONE_INSTAGRAM });
+  const personas: Persona[] = [];
+
+  test.afterEach(async () => {
+    await deletePersonas(personas.splice(0));
+  });
+
+  test("Settings sends the user to Safari, not to Chrome", async ({ page }) => {
+    const token = uniqueToken("inapp");
+    test.info().annotations.push({ type: "test-data", description: token });
+    const persona = await createPersona(token);
+    personas.push(persona);
+
+    await signInThroughForm(page, persona.email, persona.password);
+    await page.goto("/settings");
+    await waitForHydration(page);
+    const reminders = page.locator("[data-slot='card']").filter({
+      has: page.getByRole("heading", { name: "Reminders", level: 2 }),
+    });
+    await expect(reminders.getByRole("heading", { name: "Install StreakBoard", level: 3 })).toBeVisible();
+    await expect(reminders).toContainText("Reminders on iPhone and iPad work only from the installed app.");
+    await expect(reminders).toContainText("Open this page in Safari to install StreakBoard.");
+    await expect(reminders).not.toContainText("Chrome");
+  });
+});

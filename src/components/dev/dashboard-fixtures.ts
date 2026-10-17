@@ -90,7 +90,7 @@ export const DASHBOARD_STATES = [
   {
     id: "install-in-app",
     label: "Install, in-app browser",
-    description: "Owner in a messenger's browser: open this page in Safari or Chrome",
+    description: "Owner in a messenger's browser: open this page in Safari or Chrome (in Safari on an iPhone)",
   },
 ] as const;
 
