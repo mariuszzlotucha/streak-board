@@ -54,7 +54,13 @@ export function periodKeyFor(recurrence: TaskRecurrence, at: Date): PeriodKey {
 
 /** A key snapped to its period: the Monday key for `weekly`, the key itself for `daily` (and `once`). */
 export function normalisePeriod(recurrence: TaskRecurrence, key: PeriodKey): PeriodKey {
-  return recurrence === "weekly" ? keyOfDayNumber(mondayOf(dayNumberOf(key))) : key;
+  return recurrence === "weekly" ? keyOfDayNumber(periodDayOf(true, key)) : key;
+}
+
+/** The day number of the period a key belongs to (its Monday for weekly): the one snap `snapshotOf` and the grid share. */
+function periodDayOf(weekly: boolean, key: PeriodKey): number {
+  const day = dayNumberOf(key);
+  return weekly ? mondayOf(day) : day;
 }
 
 /**
@@ -122,8 +128,7 @@ export function snapshotOf(
   let previous = -Infinity;
   let ascending = true;
   for (const key of periods) {
-    const parsed = dayNumberOf(key);
-    const day = weekly ? mondayOf(parsed) : parsed;
+    const day = periodDayOf(weekly, key);
     if (day < previous) ascending = false;
     previous = day;
     days.push(day);

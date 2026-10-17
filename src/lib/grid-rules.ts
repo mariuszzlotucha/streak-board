@@ -52,7 +52,8 @@ function cellsOf(
   joinPeriod: PeriodKey,
 ): CellState[] {
   const current = periods[periods.length - 1];
-  // Keys after the current period wait for their period; they never fall inside the horizon anyway.
+  // A key after the current period is never shown: a later day of the current week counts for the current week (as in
+  // the streak), and any other future key normalises to a period after the horizon.
   const done = new Set(keys.map((key) => normalisePeriod(recurrence, key)));
   return periods.map((period) => {
     if (done.has(period)) return "done";

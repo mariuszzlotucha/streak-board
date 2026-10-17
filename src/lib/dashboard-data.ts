@@ -111,7 +111,8 @@ export async function loadDashboard({
           // The slice's riskiest code gets its own try/catch: a throw degrades the scores like a failed read and must not
           // reach the outer catch, which would hide Members and group management.
           try {
-            // One instant and one grouping for the board and the grids, so a streak and the grid beside it agree.
+            // One instant and one grouping for the board and the grids, so a streak and the grid beside it agree. A throw
+            // from either builder drops both, and `dashboard.leaderboard.failed` below reports it for both.
             const now = new Date();
             const periodsByEnrolment = groupPeriodsByEnrolment(checkoffsResult.value);
             const computed = buildBoard({
