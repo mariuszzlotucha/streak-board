@@ -295,7 +295,7 @@ None: no schema change; `joined_at` already exists and is granted.
 
 #### Manual
 
-- [ ] 1.4 Survived mutants reviewed; assertions added only for user-visible ones
+- [x] 1.4 Survived mutants reviewed; assertions added only for user-visible ones (accepted by owner 2026-10-17)
 
 ### Phase 2: Data
 
@@ -318,9 +318,9 @@ None: no schema change; `joined_at` already exists and is granted.
 
 #### Manual
 
-- [ ] 3.6 Kitchen sink screenshots (`scripts/ui-screenshots.mjs`) show all four cell states in light and dark, readable at 375 px width without page scroll
-- [ ] 3.7 Tapping Mark done / Undo flips the viewer's current cell at once; a forced failure rolls it back with the button
-- [ ] 3.8 Screen reader reads each cell as name, period and state
+- [x] 3.6 Kitchen sink screenshots (`scripts/ui-screenshots.mjs`) show all four cell states in light and dark, readable at 375 px width without page scroll (accepted by owner 2026-10-17)
+- [x] 3.7 Tapping Mark done / Undo flips the viewer's current cell at once; a forced failure rolls it back with the button (accepted by owner 2026-10-17)
+- [x] 3.8 Screen reader reads each cell as name, period and state (accepted by owner 2026-10-17)
 
 ### Phase 4: Documents
 
@@ -331,4 +331,4 @@ None: no schema change; `joined_at` already exists and is granted.
 
 #### Manual
 
-- [ ] 4.3 Owner reads the PRD, landing and dialog wording and accepts it
+- [x] 4.3 Owner reads the PRD, landing and dialog wording and accepts it (accepted by owner 2026-10-17)
