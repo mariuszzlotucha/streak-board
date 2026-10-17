@@ -13,7 +13,7 @@ interface InstallPromptProps {
 const TITLE = "Install StreakBoard";
 
 // Push needs the installed app only on iPhone and iPad; on Android and desktop Chromium it works in the browser.
-const IOS_REASON = "Reminders on iPhone work only from the installed app.";
+const IOS_REASON = "Reminders on iPhone and iPad work only from the installed app.";
 const APP_REASON = "Open it from your home screen or dock like an app.";
 
 const IOS_STEPS =
@@ -24,10 +24,15 @@ const STEPS: Record<Exclude<InstallOffer, "installed" | "prompt">, string[]> = {
   "ios-safari": [IOS_STEPS],
   // Chrome, Edge and Firefox on iOS can add the icon too, but it reopens in that browser.
   "ios-other": [IOS_STEPS, "For reminders, add it from Safari."],
-  "chromium-menu": ["Open the browser menu ⋮ and choose Install app."],
-  "macos-safari": ["In Safari, choose File → Add to Dock."],
+  // Chrome, Edge and other Chromium browsers name and place the item differently (Install app, Install page as app…).
+  "chromium-menu": ["Open the browser menu and choose Install StreakBoard or Install app."],
+  // Add to Dock arrived with macOS Sonoma; the user agent cannot tell the macOS version.
+  "macos-safari": ["In Safari, choose File → Add to Dock (macOS Sonoma or later)."],
   "in-app": ["Open this page in Safari or Chrome to install StreakBoard."],
-  none: ["Your browser can't install StreakBoard; try Chrome, Edge or Safari."],
+  // Some of these browsers can install from their own menu; we only have no steps for them.
+  none: [
+    "We have no install steps for this browser; look for Install or Add to Home screen in its menu, or use Chrome, Edge or Safari.",
+  ],
 };
 
 // How to install StreakBoard in this browser, and why. Renders nothing on the server (the offer is read in the browser)
@@ -38,8 +43,13 @@ export default function InstallPrompt({ variant, fixedOffer }: InstallPromptProp
   if (offer === null || offer === "installed") return null;
   if (variant === "card" && (offer === "none" || dismissed)) return null;
 
+  // No reason where there are no steps: it would promise what the line under it cannot.
   const reason =
-    offer === "ios-safari" || offer === "ios-other" || (offer === "in-app" && ios) ? IOS_REASON : APP_REASON;
+    offer === "none"
+      ? null
+      : offer === "ios-safari" || offer === "ios-other" || (offer === "in-app" && ios)
+        ? IOS_REASON
+        : APP_REASON;
   const steps =
     offer === "prompt" ? null : (
       <div className="space-y-1">
@@ -59,7 +69,7 @@ export default function InstallPrompt({ variant, fixedOffer }: InstallPromptProp
     return (
       <div className="flex flex-col items-start gap-2 border-t pt-4 text-sm" data-install-offer={offer}>
         <h3 className="font-medium">{TITLE}</h3>
-        <p className="text-muted-foreground">{reason}</p>
+        {reason !== null && <p className="text-muted-foreground">{reason}</p>}
         {steps}
         {installButton}
       </div>

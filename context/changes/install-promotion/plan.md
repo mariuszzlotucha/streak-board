@@ -282,7 +282,7 @@ Ship, then confirm on real devices what the code cannot know: whether Chromium f
 #### Manual Verification:
 
 - Android Chrome (owner): the dashboard shows either the "Install app" button or the menu instruction; the owner reports which (resolves research Open Question 1)
-- Desktop Chrome (owner): same check; installing opens the app window with no card
+- Desktop Chrome (owner): same check; installing opens the app window with no card. Then open `streakboard.app` in a normal tab: Chrome sends no `beforeinstallprompt` once installed, so the card still offers installing there until "Not now" (impl review F7); decide whether that needs a follow-up (`getInstalledRelatedApps`)
 - iPhone (group member): the card shows in Safari, installation from it works, the installed app shows no card, and reminders turn on there
 - A messenger's in-app browser on a phone shows the "Open this page in Safari or Chrome" text
 
@@ -341,12 +341,12 @@ None: no schema, no server state. A device that dismissed the card keeps the fla
 
 #### Automated
 
-- [x] 2.1 Unit tests pass
-- [x] 2.2 Full test suite passes
-- [x] 2.3 Lint, types and Astro check pass
-- [x] 2.4 Token contrast check passes
-- [x] 2.5 Smoke passes against a production build
-- [x] 2.6 The install-promotion e2e spec passes
+- [x] 2.1 Unit tests pass — 5c3da33
+- [x] 2.2 Full test suite passes — 5c3da33
+- [x] 2.3 Lint, types and Astro check pass — 5c3da33
+- [x] 2.4 Token contrast check passes — 5c3da33
+- [x] 2.5 Smoke passes against a production build — 5c3da33
+- [x] 2.6 The install-promotion e2e spec passes — 5c3da33
 
 #### Manual
 

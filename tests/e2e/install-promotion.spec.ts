@@ -3,9 +3,16 @@
 // if "Not now" is not kept on the device, the card comes back on every visit; if the Settings block honoured the
 // dismissal, the one place that always explains installing would go blank. The classification of every other browser
 // is covered by tests/unit/install.test.ts and shown on the kitchen sink's `install-*` states.
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import { signInThroughForm, waitForHydration } from "./helpers";
 import { createGroupAs, createPersona, deletePersonas, uniqueToken, type Persona } from "./local-supabase";
+
+// The local-storage key of "Not now" (src/lib/pwa/install.ts, named in the privacy policy).
+const DISMISSED_KEY = "streakboard.install-dismissed";
+
+function dismissedFlag(page: Page): Promise<string | null> {
+  return page.evaluate((key) => window.localStorage.getItem(key), DISMISSED_KEY);
+}
 
 // Safari on an iPhone (iOS 17.5). Only the user agent matters to the classification: headless Chromium reports no
 // installed display mode and no touch points, so the offer is `ios-safari`.
@@ -44,16 +51,21 @@ test.describe("risk S-19: install promotion on an iPhone", () => {
       has: page.getByRole("heading", { name: "Install StreakBoard", level: 2 }),
     });
     await expect(card).toBeVisible();
-    await expect(card).toContainText("Reminders on iPhone work only from the installed app.");
+    await expect(card).toContainText("Reminders on iPhone and iPad work only from the installed app.");
+    expect(await dismissedFlag(page)).toBeNull();
     await expect(card).toContainText("Add to Home Screen");
 
     // "Not now" hides the card at once and for good on this device.
     await card.getByRole("button", { name: "Not now" }).click();
     await expect(page.getByRole("heading", { name: "Install StreakBoard" })).toHaveCount(0);
+    // The island renders nothing on the server, so the heading check after the reload could run before it renders;
+    // the stored flag is what keeps the card away, so assert it on both sides of the reload.
+    expect(await dismissedFlag(page)).not.toBeNull();
     await page.reload();
     await waitForHydration(page);
     await expect(page.getByRole("heading", { name: groupName, level: 1 })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Install StreakBoard" })).toHaveCount(0);
+    expect(await dismissedFlag(page)).not.toBeNull();
 
     // Settings keeps the instruction in the Reminders card, without a dismiss.
     await page.goto("/settings");

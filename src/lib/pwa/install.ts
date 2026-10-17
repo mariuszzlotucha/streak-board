@@ -6,10 +6,12 @@
 /**
  * What the page can offer:
  * - `installed`: the app already runs installed (or was just installed from this page), so nothing;
- * - `in-app`: a messenger's or another app's browser, which cannot install, so "open this page in Safari or Chrome";
+ * - `in-app`: a messenger's or another app's browser (a listed token, or an iOS WebView without `Safari/`), which
+ *   cannot install, so "open this page in Safari or Chrome";
  * - `ios-safari`, `ios-other`: Share → Add to Home Screen, from Safari or from another iOS browser;
  * - `prompt`: Chromium handed over its install dialog (`beforeinstallprompt`), so an "Install app" button;
- * - `chromium-menu`: Chrome or Edge without that event, so the browser menu's Install app;
+ * - `chromium-menu`: Chrome or Edge without that event, or a browser that sent one earlier on this page, so the
+ *   browser menu's Install;
  * - `macos-safari`: File → Add to Dock (Safari 17 or later);
  * - `none`: no known install path in this browser.
  */
@@ -25,6 +27,8 @@ export interface InstallEnvironment {
   standalone: boolean;
   /** A `beforeinstallprompt` event has been captured and not used yet. */
   hasPrompt: boolean;
+  /** The browser sent such an event earlier on this page, so it can install from its menu once the event is used. */
+  promptSeen: boolean;
 }
 
 /**
@@ -64,13 +68,13 @@ const IOS_OTHER_BROWSERS = /CriOS\/|EdgiOS\/|FxiOS\//;
 /** Chrome (desktop, Android, ChromeOS) and Edge (desktop `Edg/`, Android `EdgA/`). */
 const CHROME_OR_EDGE = /Chrome\/|Edg\/|EdgA\//;
 
-/** Chromium-based browsers whose menus differ from Chrome's and Edge's; they still get `prompt` when it fires. */
+/** Chromium-based browsers whose menus differ from Chrome's and Edge's; they get `prompt` when it fires, then the menu. */
 const OTHER_CHROMIUM = /SamsungBrowser\/|OPR\/|YaBrowser\/|UCBrowser\//;
 
 /** Safari's own version token; Chrome, Edge and Firefox on a Mac do not send `Version/`. */
 const SAFARI_VERSION = /Version\/(\d+)[\d.]* .*Safari\//;
 
-/** Add to Dock arrived with Safari 17 (macOS Sonoma). */
+/** Add to Dock arrived with Safari 17 on macOS Sonoma; Safari 17 on older macOS reports the same user agent. */
 const MIN_SAFARI_ADD_TO_DOCK = 17;
 
 /** iPhone, iPod, or an iPad, which reports "Macintosh" (iPadOS 13 and later) but has touch points, unlike a Mac. */
@@ -97,10 +101,13 @@ export function classifyInstall(env: InstallEnvironment): InstallOffer {
   if (env.standalone) return "installed";
   if (isInAppBrowser(userAgent)) return "in-app";
   if (isIosUserAgent(userAgent, maxTouchPoints)) {
+    // Safari, Chrome, Edge and Firefox on iOS all send `Safari/`; an app's WebView without a listed token does not, and
+    // it has no Add to Home Screen either.
+    if (!userAgent.includes("Safari/")) return "in-app";
     return IOS_OTHER_BROWSERS.test(userAgent) ? "ios-other" : "ios-safari";
   }
   if (env.hasPrompt) return "prompt";
-  if (CHROME_OR_EDGE.test(userAgent) && !OTHER_CHROMIUM.test(userAgent)) return "chromium-menu";
+  if (env.promptSeen || (CHROME_OR_EDGE.test(userAgent) && !OTHER_CHROMIUM.test(userAgent))) return "chromium-menu";
   if (maxTouchPoints <= 1 && isMacSafari(userAgent)) return "macos-safari";
   return "none";
 }
@@ -120,6 +127,7 @@ export type InstallPromptTarget = Pick<EventTarget, "addEventListener" | "remove
 // One captured event per page; the layout script and the island import this same module (one shared chunk in the
 // build, one module URL in `astro dev`), so both see it.
 let captured: BeforeInstallPromptEvent | null = null;
+let promptSeen = false;
 let installedHere = false;
 /** The dialog in progress, so a second click while it is open gets the same answer. */
 let pending: { event: BeforeInstallPromptEvent; choice: Promise<InstallChoice> } | null = null;
@@ -139,6 +147,7 @@ export function listenForInstallPrompt(target: InstallPromptTarget): () => void 
   const onPrompt = (event: Event) => {
     event.preventDefault();
     captured = event as BeforeInstallPromptEvent;
+    promptSeen = true;
     notify();
   };
   const onInstalled = () => {
@@ -152,6 +161,7 @@ export function listenForInstallPrompt(target: InstallPromptTarget): () => void 
     target.removeEventListener("beforeinstallprompt", onPrompt);
     target.removeEventListener("appinstalled", onInstalled);
     captured = null;
+    promptSeen = false;
     installedHere = false;
     pending = null;
   };
@@ -216,6 +226,7 @@ export function readInstallEnvironment(win: InstallWindow): InstallEnvironment {
     maxTouchPoints: win.navigator.maxTouchPoints,
     standalone,
     hasPrompt: captured !== null,
+    promptSeen,
   };
 }
 

@@ -31,6 +31,9 @@ const UA = {
     "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) EdgiOS/126.0.2592.56 Version/17.0 Mobile/15E148 Safari/604.1",
   iphoneFirefox:
     "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) FxiOS/127.0 Mobile/15E148 Safari/605.1.15",
+  // An app's WKWebView without a known token: no `Safari/`.
+  iphoneWebView:
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
   iphoneMessenger:
     "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 [FBAN/MessengerForiOS;FBAV/466.0.0.47.109;FBBV/608052540;FBDV/iPhone14,5;FBMD/iPhone;FBSN/iOS;FBSV/17.5;FBSS/3;FBCR/;FBID/phone;FBLC/pl_PL;FBOP/5;FBRV/0]",
   androidInstagram:
@@ -52,7 +55,7 @@ const UA = {
 };
 
 function env(userAgent: string, overrides: Partial<InstallEnvironment> = {}): InstallEnvironment {
-  return { userAgent, maxTouchPoints: 0, standalone: false, hasPrompt: false, ...overrides };
+  return { userAgent, maxTouchPoints: 0, standalone: false, hasPrompt: false, promptSeen: false, ...overrides };
 }
 
 describe("classifyInstall", () => {
@@ -71,6 +74,10 @@ describe("classifyInstall", () => {
     expect(classifyInstall(env(UA.iphoneMessenger, { maxTouchPoints: 5 }))).toBe("in-app");
     expect(classifyInstall(env(UA.androidInstagram, { maxTouchPoints: 5, hasPrompt: true }))).toBe("in-app");
     expect(classifyInstall(env(UA.androidWebView, { maxTouchPoints: 5 }))).toBe("in-app");
+  });
+
+  it("sends an iOS WebView without a known token out, since it has no Add to Home Screen", () => {
+    expect(classifyInstall(env(UA.iphoneWebView, { maxTouchPoints: 5 }))).toBe("in-app");
   });
 
   it("matches every in-app token on its own", () => {
@@ -100,6 +107,12 @@ describe("classifyInstall", () => {
     // Other Chromium browsers have their own menus; their own event still gives the button.
     expect(classifyInstall(env(UA.androidSamsung, { maxTouchPoints: 5 }))).toBe("none");
     expect(classifyInstall(env(UA.androidSamsung, { maxTouchPoints: 5, hasPrompt: true }))).toBe("prompt");
+  });
+
+  it("keeps the menu offer once a browser's event has been used on this page", () => {
+    expect(classifyInstall(env(UA.androidSamsung, { maxTouchPoints: 5, promptSeen: true }))).toBe("chromium-menu");
+    expect(classifyInstall(env(UA.androidChrome, { maxTouchPoints: 5, promptSeen: true }))).toBe("chromium-menu");
+    expect(classifyInstall(env(UA.desktopFirefox, { promptSeen: false }))).toBe("none");
   });
 
   it("is installed in standalone mode whatever the user agent", () => {
@@ -187,6 +200,17 @@ describe("install prompt", () => {
     expect(getInstallPrompt()).toBeNull();
   });
 
+  it("remembers that the browser sent an event after it is used, so the menu offer stays", async () => {
+    const target = listen();
+    const page = fakeWindow(UA.androidSamsung);
+    expect(readInstallEnvironment(page).promptSeen).toBe(false);
+    target.dispatchEvent(installEvent({ outcome: "dismissed" }));
+    expect(await promptInstall()).toBe("dismissed");
+
+    expect(readInstallEnvironment(page)).toMatchObject({ hasPrompt: false, promptSeen: true });
+    expect(classifyInstall(readInstallEnvironment(page))).toBe("chromium-menu");
+  });
+
   it("forgets the event and reports the app installed after appinstalled", () => {
     const target = listen();
     const page = fakeWindow(UA.androidChrome);
@@ -229,6 +253,7 @@ describe("readInstallEnvironment", () => {
       maxTouchPoints: 5,
       standalone: false,
       hasPrompt: false,
+      promptSeen: false,
     });
   });
 
