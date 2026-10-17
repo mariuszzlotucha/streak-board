@@ -52,6 +52,23 @@ export function periodKeyFor(recurrence: TaskRecurrence, at: Date): PeriodKey {
   return recurrence === "weekly" ? keyOfDayNumber(mondayOf(dayNumberOf(key))) : key;
 }
 
+/** A key snapped to its period: the Monday key for `weekly`, the key itself for `daily` (and `once`). */
+export function normalisePeriod(recurrence: TaskRecurrence, key: PeriodKey): PeriodKey {
+  return recurrence === "weekly" ? keyOfDayNumber(mondayOf(dayNumberOf(key))) : key;
+}
+
+/**
+ * The last `count` periods ending at `currentPeriod`, ascending: calendar days for `daily`, Mondays 7 days apart for
+ * `weekly` (`currentPeriod` must then be a Monday key). The last element is `currentPeriod`; `count <= 0` gives none.
+ */
+export function recentPeriods(recurrence: "daily" | "weekly", currentPeriod: PeriodKey, count: number): PeriodKey[] {
+  const step = recurrence === "weekly" ? 7 : 1;
+  const current = dayNumberOf(currentPeriod);
+  const periods: PeriodKey[] = [];
+  for (let index = count - 1; index >= 0; index--) periods.push(keyOfDayNumber(current - index * step));
+  return periods;
+}
+
 /**
  * Whole periods from `from` to `to` (`to >= from`), both period keys of the same recurrence: calendar days for `daily`
  * (and `once`), weeks for `weekly`.

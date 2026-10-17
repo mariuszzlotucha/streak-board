@@ -78,6 +78,7 @@ Export a period-enumeration helper and add a pure grid builder with exhaustive u
 **Intent**: Turn tasks, member participations with `joined_at`, and periods per enrolment into the cells the view renders.
 
 **Contract**:
+
 - `export const GRID_HORIZON = { daily: 7, weekly: 4 } as const`
 - `export type CellState = "done" | "missed" | "open" | "notJoined"`
 - `export interface GridRow { userId: string; nickname: string | null; isYou: boolean; cells: CellState[] }`
@@ -288,9 +289,9 @@ None: no schema change; `joined_at` already exists and is granted.
 
 #### Automated
 
-- [ ] 1.1 Unit tests pass: `npm run test:unit`
-- [ ] 1.2 Lint and type check pass: `npm run lint` and `npx astro check`
-- [ ] 1.3 Mutation run on the grid rules reviewed survivor by survivor: `npm run test:mutation -- --mutate src/lib/grid-rules.ts`
+- [x] 1.1 Unit tests pass: `npm run test:unit`
+- [x] 1.2 Lint and type check pass: `npm run lint` and `npx astro check`
+- [x] 1.3 Mutation run on the grid rules reviewed survivor by survivor: `npm run test:mutation -- --mutate src/lib/grid-rules.ts`
 
 #### Manual
 
