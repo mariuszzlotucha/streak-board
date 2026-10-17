@@ -1,4 +1,4 @@
--- RLS scenario checks for groups / group_members / tasks / task_participants / task_checkoffs / nicknames and the functions set_nickname, transfer_group_ownership and delete_account (F-01 + group-rls-hardening + S-01 helper functions + S-02 tasks + S-03 participation + S-04 check-offs + S-12 table-level privileges + S-14 nicknames, and since S-14 release 2 a list_group_members without an email column + S-15 ownership transfer and account deletion).
+-- RLS scenario checks for groups / group_members / tasks / task_participants / task_checkoffs / nicknames and the functions set_nickname, transfer_group_ownership and delete_account (F-01 + group-rls-hardening + S-01 helper functions + S-02 tasks + S-03 participation + S-04 check-offs + S-12 table-level privileges + S-14 nicknames, and since S-14 release 2 a list_group_members without an email column + S-15 ownership transfer and account deletion + S-16 push subscriptions).
 --
 -- Run against the LOCAL Supabase database only:
 --   docker exec -i supabase_db_10x-astro-starter psql -U postgres -d postgres -X -v ON_ERROR_STOP=1 < supabase/checks/rls-scenarios.sql
@@ -1466,9 +1466,67 @@ begin
     $q$select string_agg(privilege_type, ',' order by privilege_type) from information_schema.role_table_grants
        where table_schema = 'public' and table_name = 'nicknames' and grantee = 'authenticated'$q$,
     'SELECT', 'S-14 authenticated holds exactly SELECT on nicknames');
+  -- S-16: push_subscriptions is read-only for authenticated (writes go through subscribe_push and friends); no API role
+  -- holds anything on reminder_secret.
+  perform rls_check.expect_value(
+    $q$select string_agg(privilege_type, ',' order by privilege_type) from information_schema.role_table_grants
+       where table_schema = 'public' and table_name = 'push_subscriptions' and grantee = 'authenticated'$q$,
+    'SELECT', 'S-16 authenticated holds exactly SELECT on push_subscriptions');
+  perform rls_check.expect_value(
+    $q$select count(*) from information_schema.role_table_grants
+       where table_schema = 'public' and table_name = 'reminder_secret' and grantee in ('anon', 'authenticated', 'PUBLIC')$q$,
+    '0', 'S-16 no API role holds a privilege on reminder_secret');
   perform rls_check.expect_value(
     $q$select count(*) from information_schema.role_table_grants where table_schema = 'public' and grantee = 'anon'$q$,
     '0', 'S-12 anon holds no table-level privilege in the public schema');
+
+  perform rls_check.as_postgres();
+end;
+$$;
+
+-- ---------------------------------------------------------------------------
+-- S-16: push subscriptions and the cron functions (20261017090000_add_push_subscriptions.sql)
+-- ---------------------------------------------------------------------------
+
+do $$
+declare
+  a uuid := rls_check.mk_user();
+  b uuid := rls_check.mk_user();
+  v_fn text;
+begin
+  perform rls_check.as_postgres();
+
+  -- Execute grants in both directions: anon only the cron functions, authenticated only the client functions.
+  foreach v_fn in array array['public.due_reminders(text, date, date)', 'public.prune_push_subscriptions(text, text[])'] loop
+    perform rls_check.expect_value(format('select has_function_privilege(%L, %L, %L)', 'anon', v_fn, 'EXECUTE'), 'true', format('S-16 anon may execute %s', v_fn));
+    perform rls_check.expect_value(format('select has_function_privilege(%L, %L, %L)', 'authenticated', v_fn, 'EXECUTE'), 'false', format('S-16 authenticated cannot execute %s', v_fn));
+  end loop;
+  foreach v_fn in array array['public.subscribe_push(text, text, text)', 'public.unsubscribe_push(text)', 'public.unsubscribe_all_push()'] loop
+    perform rls_check.expect_value(format('select has_function_privilege(%L, %L, %L)', 'authenticated', v_fn, 'EXECUTE'), 'true', format('S-16 authenticated may execute %s', v_fn));
+    perform rls_check.expect_value(format('select has_function_privilege(%L, %L, %L)', 'anon', v_fn, 'EXECUTE'), 'false', format('S-16 anon cannot execute %s', v_fn));
+  end loop;
+  perform rls_check.expect_value('select has_function_privilege(''anon'', ''public.check_reminder_secret(text)'', ''EXECUTE'')', 'false', 'S-16 anon cannot execute check_reminder_secret');
+  perform rls_check.expect_value('select has_function_privilege(''authenticated'', ''public.check_reminder_secret(text)'', ''EXECUTE'')', 'false', 'S-16 authenticated cannot execute check_reminder_secret');
+
+  -- A subscribes; B sees nothing of it; the endpoint must be https.
+  perform rls_check.as_user(a);
+  perform public.subscribe_push('https://push.example/a', 'key-a', 'auth-a');
+  perform rls_check.expect_value('select count(*) from public.push_subscriptions', '1', 'S-16 A reads its own subscription');
+  perform rls_check.expect_error('23514', 'select public.subscribe_push(''http://push.example/x'', ''k'', ''a'')', 'S-16 a non-https endpoint is refused (23514)');
+  perform rls_check.expect_error('42501', 'insert into public.push_subscriptions (user_id, endpoint, p256dh, auth) values (auth.uid(), ''https://x'', ''k'', ''a'')', 'S-16 a direct insert is refused (42501)');
+  perform rls_check.as_user(b);
+  perform rls_check.expect_value('select count(*) from public.push_subscriptions', '0', 'S-16 B does not see A''s subscription');
+  perform rls_check.expect_error('42501', 'delete from public.push_subscriptions', 'S-16 a direct delete is refused (42501)');
+
+  -- anon: no table access, and the cron function refuses without the secret.
+  perform rls_check.as_anon();
+  perform rls_check.expect_error('42501', 'select count(*) from public.push_subscriptions', 'S-16 anon cannot read push_subscriptions (42501)');
+  perform rls_check.expect_error('42501', 'select count(*) from public.reminder_secret', 'S-16 anon cannot read reminder_secret (42501)');
+  perform rls_check.expect_error('42501', 'select * from public.due_reminders(''wrong-secret-wrong-secret-wrong-secret'', current_date, null)', 'S-16 due_reminders with a wrong secret -> 42501');
+  perform rls_check.expect_error('42501', 'select public.prune_push_subscriptions(''short'', array[''https://push.example/a''])', 'S-16 prune with a short secret -> 42501');
+
+  perform rls_check.as_user(a);
+  perform rls_check.expect_error('42501', 'select count(*) from public.reminder_secret', 'S-16 authenticated cannot read reminder_secret (42501)');
 
   perform rls_check.as_postgres();
 end;

@@ -102,6 +102,48 @@ export type Database = {
         };
         Relationships: [];
       };
+      push_subscriptions: {
+        Row: {
+          auth: string;
+          created_at: string;
+          endpoint: string;
+          id: string;
+          p256dh: string;
+          user_id: string;
+        };
+        Insert: {
+          auth: string;
+          created_at?: string;
+          endpoint: string;
+          id?: string;
+          p256dh: string;
+          user_id: string;
+        };
+        Update: {
+          auth?: string;
+          created_at?: string;
+          endpoint?: string;
+          id?: string;
+          p256dh?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      reminder_secret: {
+        Row: {
+          hash: string;
+          id: boolean;
+        };
+        Insert: {
+          hash: string;
+          id?: boolean;
+        };
+        Update: {
+          hash?: string;
+          id?: boolean;
+        };
+        Relationships: [];
+      };
       task_checkoffs: {
         Row: {
           checked_at: string;
@@ -212,11 +254,21 @@ export type Database = {
       };
     };
     Functions: {
+      check_reminder_secret: { Args: { p_secret: string }; Returns: undefined };
       delete_account: {
         Args: { p_successor?: string; p_user_id: string };
         Returns: undefined;
       };
       delete_own_account: { Args: { p_successor?: string }; Returns: undefined };
+      due_reminders: {
+        Args: { p_secret: string; p_today: string; p_week: string };
+        Returns: {
+          auth: string;
+          endpoint: string;
+          p256dh: string;
+          task_names: string[];
+        }[];
+      };
       is_group_member: { Args: { p_group_id: string }; Returns: boolean };
       join_group: { Args: { p_join_code: string }; Returns: string };
       list_group_members: {
@@ -229,7 +281,15 @@ export type Database = {
         }[];
       };
       preview_group: { Args: { p_join_code: string }; Returns: string };
+      prune_push_subscriptions: {
+        Args: { p_endpoints: string[]; p_secret: string };
+        Returns: undefined;
+      };
       set_nickname: { Args: { p_nickname: string }; Returns: undefined };
+      subscribe_push: {
+        Args: { p_auth: string; p_endpoint: string; p_p256dh: string };
+        Returns: undefined;
+      };
       transfer_group_ownership: {
         Args: { p_new_owner: string };
         Returns: undefined;
@@ -238,6 +298,8 @@ export type Database = {
         Args: { p_new_owner: string; p_owner: string };
         Returns: undefined;
       };
+      unsubscribe_all_push: { Args: never; Returns: undefined };
+      unsubscribe_push: { Args: { p_endpoint: string }; Returns: undefined };
     };
     Enums: {
       [_ in never]: never;

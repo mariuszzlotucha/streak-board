@@ -394,9 +394,9 @@ The table and functions are additive. The release step runs `supabase migration 
 
 #### Automated
 
-- [x] 1.1 Unit tests for `reminderRun` pass: 18:00 and 19:00 UTC on winter and summer dates, Saturday versus Sunday, and the DST switch days
-- [x] 1.2 Build and lint pass
-- [x] 1.3 Smoke passes against the built preview (pages still served through the custom entry)
+- [x] 1.1 Unit tests for `reminderRun` pass: 18:00 and 19:00 UTC on winter and summer dates, Saturday versus Sunday, and the DST switch days — 5b7e146
+- [x] 1.2 Build and lint pass — 5b7e146
+- [x] 1.3 Smoke passes against the built preview (pages still served through the custom entry) — 5b7e146
 
 #### Manual
 
@@ -407,9 +407,9 @@ The table and functions are additive. The release step runs `supabase migration 
 #### Automated
 
 - [ ] 2.1 Migration guard passes
-- [ ] 2.2 Types are current
-- [ ] 2.3 RLS scenarios pass
-- [ ] 2.4 Integration tests pass
+- [x] 2.2 Types are current
+- [x] 2.3 RLS scenarios pass
+- [x] 2.4 Integration tests pass
 
 #### Manual
 
