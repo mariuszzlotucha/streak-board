@@ -43,12 +43,12 @@ Grono znajomych korzystało wcześniej ze wspólnego arkusza Google, w którym r
 
 ## At a glance
 
-| ID   | Change ID                | Outcome (user can …)                                                                                                                         | Prerequisites | PRD refs                                     | Status      |
-| ---- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | -------------------------------------------- | ----------- |
-| S-13 | checkoff-grid            | zobaczyć siatkę odznaczeń grupy: kto wykonał task w każdym z ostatnich okresów                                                               | S-11, S-14    | PRD §Vision, FR-013; MS-01                   | done        |
-| S-16 | task-reminders           | dostać przypomnienie o tasku, do którego jest zapisany, a którego nie odznaczył w bieżącym okresie                                           | —             | — (PRD §Success Criteria → Secondary; MS-02) | done        |
-| S-17 | installable-pwa          | zainstalować aplikację na ekranie głównym telefonu albo na komputerze i uruchamiać ją jak osobną aplikację (PWA)                             | —             | — (opis właściciela; MS-03)                  | done        |
-| S-18 | public-surface-hardening | odwiedzać aplikację, która wysyła nagłówki bezpieczeństwa, publikuje kontakt do zgłaszania luk i której domeny nie da się podrobić w poczcie | —             | — (prośba właściciela; MS-04)                | in-progress |
+| ID   | Change ID                | Outcome (user can …)                                                                                                                         | Prerequisites | PRD refs                                     | Status |
+| ---- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | -------------------------------------------- | ------ |
+| S-13 | checkoff-grid            | zobaczyć siatkę odznaczeń grupy: kto wykonał task w każdym z ostatnich okresów                                                               | S-11, S-14    | PRD §Vision, FR-013; MS-01                   | done   |
+| S-16 | task-reminders           | dostać przypomnienie o tasku, do którego jest zapisany, a którego nie odznaczył w bieżącym okresie                                           | —             | — (PRD §Success Criteria → Secondary; MS-02) | done   |
+| S-17 | installable-pwa          | zainstalować aplikację na ekranie głównym telefonu albo na komputerze i uruchamiać ją jak osobną aplikację (PWA)                             | —             | — (opis właściciela; MS-03)                  | done   |
+| S-18 | public-surface-hardening | odwiedzać aplikację, która wysyła nagłówki bezpieczeństwa, publikuje kontakt do zgłaszania luk i której domeny nie da się podrobić w poczcie | —             | — (prośba właściciela; MS-04)                | done   |
 
 ## Baseline
 
@@ -134,7 +134,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
   - Czy zastąpić zarządzany przez Cloudflare `robots.txt` własnym w repo? — Owner: user. Block: no.
 - **Źródło zakresu:** prośba właściciela z 2026-10-17 po przeglądzie logów Cloudflare (skany `/wp-admin/install.php`) i sprawdzeniu produkcji: brak nagłówków bezpieczeństwa, brak SPF i DMARC, `security.txt` daje 404.
 - **Risk:** Zbyt ciasna CSP albo `X-Frame-Options` mogą zepsuć logowanie Google, push albo service worker, więc CSP idzie najpierw jako Report-Only; HSTS, DNS i WAF to kroki operatora w panelu Cloudflare (ręczne wiersze planu), nie kod.
-- **Status:** in-progress
+- **Status:** done
 
 ## Backlog Handoff
 
@@ -172,3 +172,4 @@ Brak otwartych pytań na poziomie roadmapy: PRD `## Open Questions` mówi „Non
 - **S-16: użytkownik dostaje przypomnienie o tasku, do którego jest zapisany, a którego nie odznaczył w bieżącym okresie (dzień albo tydzień).** — Archived 2026-10-17 → `context/archive/2026-10-17-task-reminders/`. Lesson: —.
 - **S-17: użytkownik instaluje StreakBoard na ekranie głównym telefonu (albo na komputerze) i uruchamia go jak osobną aplikację, z własną ikoną i bez paska przeglądarki.** — Archived 2026-10-17 → `context/archive/2026-10-17-installable-pwa/`. Lesson: —.
 - **S-13: członek grupy widzi dla każdego tasku siatkę: uczestnicy × ostatnie okresy, z zaznaczeniem, kto w danym okresie wykonał task, a kto nie.** — Archived 2026-10-17 → `context/archive/2026-10-17-checkoff-grid/`. Lesson: —.
+- **S-18: odwiedzający dostaje strony z nagłówkami bezpieczeństwa (nosniff, Referrer-Policy, zakaz osadzania w ramkach, Permissions-Policy, CSP najpierw w trybie Report-Only), badacz znajduje kontakt w `/.well-known/security.txt`, a nikt nie wyśle poczty podszywającej się pod domenę aplikacji.** — Archived 2026-10-17 → `context/archive/2026-10-17-public-surface-hardening/`. Lesson: —.
