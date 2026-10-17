@@ -1,4 +1,5 @@
 <!-- PLAN-REVIEW-REPORT -->
+
 # Plan Review: Task reminders (S-16)
 
 - **Plan**: context/changes/task-reminders/plan.md
@@ -9,15 +10,16 @@
 
 ## Verdicts
 
-| Dimension | Verdict |
-|-----------|---------|
-| End-State Alignment | PASS |
-| Lean Execution | PASS |
+| Dimension             | Verdict |
+| --------------------- | ------- |
+| End-State Alignment   | PASS    |
+| Lean Execution        | PASS    |
 | Architectural Fitness | WARNING |
-| Blind Spots | WARNING |
-| Plan Completeness | WARNING |
+| Blind Spots           | WARNING |
+| Plan Completeness     | WARNING |
 
 ## Grounding
+
 7/8 paths found (`.dev.vars.example` is absent; the plan said "if present"), 3/3 symbols, brief↔plan ✓, Progress↔Phase 25/25 ✓
 
 ## Findings

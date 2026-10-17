@@ -1,6 +1,6 @@
 # Frame Brief: Task reminders (S-16, MS-02)
 
-> The framing step before /10x-plan. It records what the problem *actually* is,
+> The framing step before /10x-plan. It records what the problem _actually_ is,
 > kept separate from what was assumed at the start.
 
 ## Reported observation
@@ -20,21 +20,21 @@ not just the tick.
 1. **Timing of the prompt**: nothing reaches the user before the period closes (the Warsaw day, or the Warsaw week) ← initial framing
 2. **Deadline rigidity**: the habit was done, but a forgotten tick cannot be added later, so the loss comes from having no slack
 3. **Channel reach**: a prompt that exists only inside the app never reaches someone who doesn't open it
-4. **Habit vs. tick**: a reminder prompts *doing the habit*, not just recording it
+4. **Habit vs. tick**: a reminder prompts _doing the habit_, not just recording it
 
 ## Hypothesis testing
 
-| Hypothesis | Evidence | Verdict |
-| --- | --- | --- |
-| 1. No prompt before the period closes | Nothing sends anything today (roadmap Baseline: no `scheduled` handler, no push); owner: users realise "next day, too late" | STRONG |
-| 2. Deadline rigidity (backfill would fix it) | `src/lib/checkoffs.ts:63` ticks only the period `now` falls in; RLS already allows period ≥ UTC today − 7 (`20261002090000_create_task_checkoffs.sql:63`). Owner: users "forgot the habit too", so a backfill would only record habits that never happened (PRD Non-Goals: trust-based) | NONE |
-| 3. Channel: in-app vs. outside the app | Owner: active users, installed PWA. In-app alone fails the "never opened it that evening" case. `public/sw.js:2` already reserves `push` for S-16; S-17 is done, so iOS home-screen push is possible | STRONG (push fits) |
-| 4. Habit vs. tick | Owner: "forgot the habit too", so the reminder is a habit nudge sent while there is still time to do it | STRONG |
+| Hypothesis                                   | Evidence                                                                                                                                                                                                                                                                                | Verdict            |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| 1. No prompt before the period closes        | Nothing sends anything today (roadmap Baseline: no `scheduled` handler, no push); owner: users realise "next day, too late"                                                                                                                                                             | STRONG             |
+| 2. Deadline rigidity (backfill would fix it) | `src/lib/checkoffs.ts:63` ticks only the period `now` falls in; RLS already allows period ≥ UTC today − 7 (`20261002090000_create_task_checkoffs.sql:63`). Owner: users "forgot the habit too", so a backfill would only record habits that never happened (PRD Non-Goals: trust-based) | NONE               |
+| 3. Channel: in-app vs. outside the app       | Owner: active users, installed PWA. In-app alone fails the "never opened it that evening" case. `public/sw.js:2` already reserves `push` for S-16; S-17 is done, so iOS home-screen push is possible                                                                                    | STRONG (push fits) |
+| 4. Habit vs. tick                            | Owner: "forgot the habit too", so the reminder is a habit nudge sent while there is still time to do it                                                                                                                                                                                 | STRONG             |
 
 ## Narrowing signals
 
 - "Next day, too late": the prompt must land **inside** the current period, early enough to act on.
-- "Forgot the habit too": this rules out late check-off or a grace window as the fix; the reminder has to come *before* the deadline.
+- "Forgot the habit too": this rules out late check-off or a grace window as the fix; the reminder has to come _before_ the deadline.
 - "Installed PWA on the phone": the channel that reaches these users is the one on their phone outside the app; e-mail is a secondary candidate, in-app only is not enough.
 
 ## Cross-system convention
