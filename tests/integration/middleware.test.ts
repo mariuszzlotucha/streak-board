@@ -1,6 +1,7 @@
 import type { APIContext } from "astro";
 import { AuthApiError, AuthRetryableFetchError, AuthSessionMissingError } from "@supabase/supabase-js";
 import { beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
+import { SECURITY_HEADERS } from "@/lib/security-headers";
 import { createClient } from "@/lib/supabase";
 
 // The middleware imports Astro's virtual module and the Supabase client reads `astro:env`; neither exists in Vitest.
@@ -163,6 +164,58 @@ describe("middleware", () => {
     expect(response.status).toBe(200);
     expect(context.locals.user).toEqual({ id: "u1" });
     expect(errorSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe("middleware security headers", () => {
+  function expectSecurityHeaders(response: Response) {
+    for (const [name, value] of SECURITY_HEADERS) expect(response.headers.get(name)).toBe(value);
+  }
+
+  it("sets them on a redirect", async () => {
+    const { onRequest } = await loadOnRequest();
+    getUser.mockResolvedValue({ data: { user: null }, error: new AuthSessionMissingError() });
+
+    const response = await onRequest(buildContext("/dashboard"), next);
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get("Location")).toBe("/auth/signin");
+    expectSecurityHeaders(response);
+  });
+
+  it("sets them on a redirect whose headers are immutable", async () => {
+    const { onRequest } = await loadOnRequest();
+    getUser.mockResolvedValue({ data: { user: null }, error: new AuthSessionMissingError() });
+    const context = buildContext("/dashboard");
+    (context as unknown as { redirect: (to: string) => Response }).redirect = (to) =>
+      Response.redirect(new URL(to, context.url), 302);
+
+    const response = await onRequest(context, next);
+
+    expect(response.status).toBe(302);
+    expectSecurityHeaders(response);
+  });
+
+  it("sets them on a 503 and keeps its own headers", async () => {
+    const { onRequest } = await loadOnRequest();
+    getUser.mockResolvedValue({ data: { user: null }, error: new AuthRetryableFetchError("fetch failed", 0) });
+
+    const response = await onRequest(buildContext("/dashboard"), next);
+
+    expect(response.status).toBe(503);
+    expect(response.headers.get("Retry-After")).toBe("30");
+    expectSecurityHeaders(response);
+  });
+
+  it("sets them on the page from next()", async () => {
+    const { onRequest } = await loadOnRequest();
+    getUser.mockResolvedValue({ data: { user: null }, error: new AuthSessionMissingError() });
+
+    const response = await onRequest(buildContext("/privacy"), next);
+
+    expect(response.status).toBe(200);
+    expect(await response.text()).toBe("page");
+    expectSecurityHeaders(response);
   });
 });
 

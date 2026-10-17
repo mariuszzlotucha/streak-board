@@ -12,6 +12,8 @@ export default defineConfig({
   integrations: [react(), sitemap()],
   vite: {
     plugins: [tailwindcss()],
+    // The build date: src/pages/.well-known/security.txt.ts derives its `Expires` from it.
+    define: { __BUILD_DATE__: JSON.stringify(new Date().toISOString()) },
   },
   adapter: cloudflare(),
   // Supabase cookies (src/lib/supabase.ts) are the single session source of truth —
