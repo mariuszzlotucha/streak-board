@@ -59,6 +59,9 @@ const soleMember = members.length === 1;
         <p class="text-sm text-muted-foreground">Share this invite link to add people to your group.</p>
       )}
       <CopyInviteLink client:load url={inviteLink} emphasis={soleMember} />
+      <p class="text-sm text-muted-foreground">
+        Friends with the installed app can paste this link under Join with code.
+      </p>
     </div>
   </CardContent>
 </Card>

@@ -42,7 +42,12 @@ const STATE_GROUPS = [
 
 {isDev &&
   (dashboard ? (
-    <AppLayout title={`Dashboard kitchen sink: ${dashboardState}`} nickname={dashboard.nickname} current="dashboard">
+    <AppLayout
+      title={`Dashboard kitchen sink: ${dashboardState}`}
+      nickname={dashboard.nickname}
+      current="dashboard"
+      showUpdateNotice={dashboardState === "update-notice"}
+    >
       <DashboardView {...dashboard} />
       <script is:inline>
         window.addEventListener("submit", (event) => event.preventDefault(), true);

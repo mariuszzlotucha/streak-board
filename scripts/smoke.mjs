@@ -81,8 +81,9 @@ function storeCookies(response, jar) {
 
 // `jar` selects the session (default: user A). `cookie` replaces the jar's cookies for this request and
 // keeps the response's Set-Cookie out of the jar. `origin` overrides the Origin header (CSRF check).
-// `headers` adds request headers (the check-off routes answer JSON to `Accept: application/json`).
-async function request(path, { method = "GET", form, cookie, jar = jarA, origin = BASE_URL, headers = {} } = {}) {
+// `headers` adds request headers (the check-off routes answer JSON to `Accept: application/json`). `body` sends a raw
+// body instead of a form (its Content-Type goes in `headers`).
+async function request(path, { method = "GET", form, body, cookie, jar = jarA, origin = BASE_URL, headers = {} } = {}) {
   const response = await fetch(BASE_URL + path, {
     method,
     redirect: "manual",
@@ -92,7 +93,7 @@ async function request(path, { method = "GET", form, cookie, jar = jarA, origin 
       ...(form ? { "Content-Type": "application/x-www-form-urlencoded" } : {}),
       ...headers,
     },
-    body: form ? new URLSearchParams(form).toString() : undefined,
+    body: form ? new URLSearchParams(form).toString() : body,
   });
   if (cookie === undefined) storeCookies(response, jar);
   return {
@@ -388,6 +389,23 @@ function sessionUserId(jar) {
 }
 
 const NO_ERROR_ALERT = 'role="alert"';
+
+// S-17: the icons public/manifest.webmanifest must list, in its order.
+const PWA_ICONS = ["/icons/icon-192.png", "/icons/icon-512.png", "/icons/icon-maskable-512.png"];
+// The head links of the installable app, on every page of Layout.astro.
+const MANIFEST_LINK = /<link[^>]*rel="manifest"[^>]*href="\/manifest\.webmanifest"/;
+const THEME_COLOR_META = /<meta[^>]*name="theme-color"[^>]*content="#007a55"/;
+const APPLE_TOUCH_ICON = /<link[^>]*rel="apple-touch-icon"[^>]*href="\/icons\/apple-touch-icon\.png"/;
+// A beacon body to the client error endpoint (a string, as `navigator.sendBeacon` sends it).
+function clientError(code, { contentType = "text/plain;charset=UTF-8", origin } = {}) {
+  return request("/api/client-errors", {
+    method: "POST",
+    body: code,
+    cookie: "",
+    headers: { "Content-Type": contentType },
+    ...(origin ? { origin } : {}),
+  });
+}
 // Only the rendered read-only input carries this label; the invite URL also sits in the island's serialised props.
 const INVITE_INPUT = 'aria-label="Invite link"';
 
@@ -747,6 +765,71 @@ const steps = [
       : { status: 200, bodyIncludes: "Olivia" },
   ],
   ["brand favicon is served", () => request("/favicon.svg", { cookie: "" }), { status: 200, bodyIncludes: "<svg" }],
+  [
+    // The installability fields are read from the parsed JSON; a manifest without them stops the run here.
+    "manifest is served with the app's start URL, display and icons",
+    async () => {
+      const result = await request("/manifest.webmanifest", { cookie: "" });
+      let manifest;
+      try {
+        manifest = JSON.parse(result.body);
+      } catch {
+        manifest = null;
+      }
+      const icons = manifest?.icons?.map((icon) => icon.src) ?? [];
+      if (
+        manifest?.start_url !== "/dashboard" ||
+        manifest.display !== "standalone" ||
+        JSON.stringify(icons) !== JSON.stringify(PWA_ICONS)
+      ) {
+        console.log(`FAIL  manifest fields: start_url, display or icons wrong (icons ${JSON.stringify(icons)})`);
+        process.exit(1);
+      }
+      return result;
+    },
+    { status: 200, header: { name: "Content-Type", includes: "application/manifest+json" } },
+  ],
+  ...[...PWA_ICONS, "/icons/apple-touch-icon.png"].map((icon) => [
+    `icon ${icon} is a PNG`,
+    () => request(icon, { cookie: "" }),
+    { status: 200, header: { name: "Content-Type", includes: "image/png" }, bodyIncludes: "PNG" },
+  ]),
+  [
+    // No page cache (PRD Non-Goals): the worker never answers a request and never stores one, and no HTTP cache keeps it.
+    "service worker is served uncached and caches nothing",
+    () => request("/sw.js", { cookie: "" }),
+    {
+      status: 200,
+      header: [
+        { name: "Content-Type", includes: "javascript" },
+        { name: "Cache-Control", includes: "no-cache" },
+      ],
+      bodyIncludes: ["skipWaiting", "clients.claim"],
+      bodyExcludes: ["respondWith", "caches.put", "caches.open"],
+    },
+  ],
+  [
+    "an unknown address shows the StreakBoard 404 page",
+    () => request("/no-such-page", { cookie: "" }),
+    { status: 404, bodyMatches: [pageHeading("Page not found"), BRAND_LINK] },
+  ],
+  [
+    "client error endpoint accepts a known code",
+    () => clientError("sw_register_failed"),
+    { status: 204, header: { name: "Cache-Control", includes: "no-store" } },
+  ],
+  ["client error endpoint rejects an unknown code", () => clientError("sw_exploded"), { status: 400 }],
+  [
+    "client error endpoint from a foreign origin is rejected",
+    () => clientError("sw_register_failed", { origin: FOREIGN_ORIGIN }),
+    { status: 403 },
+  ],
+  [
+    // Astro's origin check does not guard JSON, so the endpoint refuses every type but text/plain.
+    "client error endpoint rejects a JSON body",
+    () => clientError(JSON.stringify({ code: "sw_register_failed" }), { contentType: "application/json" }),
+    { status: 415 },
+  ],
   [
     "signin page shows the cancelled message",
     () => request("/auth/signin?error=oauth_cancelled", { cookie: "" }),
@@ -1129,6 +1212,15 @@ const steps = [
       // is on /settings, not here.
       bodyMatches: [groupHeading(groupName), SOLE_MEMBER_INVITE, INVITE_IN_MEMBERS],
       bodyExcludes: [...SETTINGS_ON_DASHBOARD, NO_ERROR_ALERT],
+    },
+  ],
+  [
+    // S-17: the signed-in app links the manifest, its colour and the iOS icon, and keeps the new-version message hidden.
+    "dashboard head makes the app installable",
+    () => request("/dashboard"),
+    {
+      status: 200,
+      bodyMatches: [MANIFEST_LINK, THEME_COLOR_META, APPLE_TOUCH_ICON, /<div[^>]*data-update-notice[^>]*hidden/],
     },
   ],
   [
@@ -2920,10 +3012,11 @@ for (const [name, run, expectation] of steps) {
     [expected.setCookieExcludes ?? []].flat().every((text) => !actual.setCookies.some((c) => c.includes(text))) &&
     (expected.secureCookies === undefined || allSecure(actual.setCookies, expected.secureCookies)) &&
     (expected.clearedCookies === undefined || cookiesCleared(actual, expected.clearedCookies)) &&
-    (expected.header === undefined ||
-      (actual.headers.get(expected.header.name) ?? "")
-        .toLowerCase()
-        .includes(expected.header.includes.toLowerCase())) &&
+    [expected.header ?? []]
+      .flat()
+      .every((header) =>
+        (actual.headers.get(header.name) ?? "").toLowerCase().includes(header.includes.toLowerCase()),
+      ) &&
     [expected.bodyIncludes ?? []].flat().every((text) => actual.body.includes(text)) &&
     [expected.bodyMatches ?? []].flat().every((pattern) => pattern.test(actual.body)) &&
     [expected.bodyNotMatches ?? []].flat().every((pattern) => !pattern.test(actual.body)) &&
@@ -2945,9 +3038,12 @@ for (const [name, run, expectation] of steps) {
         (expected.secureCookies
           ? ` at least one ${expected.secureCookies}* Set-Cookie, every one with Secure (got ${JSON.stringify(cookiesNamed(actual.setCookies, expected.secureCookies).map(({ name, secure }) => `${name}${secure ? " Secure" : " without Secure"}`))})`
           : "") +
-        (expected.header
-          ? ` header ${expected.header.name} including "${expected.header.includes}" (got "${actual.headers.get(expected.header.name) ?? ""}")`
-          : "") +
+        [expected.header ?? []]
+          .flat()
+          .map(
+            ({ name, includes }) => ` header ${name} including "${includes}" (got "${actual.headers.get(name) ?? ""}")`,
+          )
+          .join("") +
         (expected.bodyIncludes ? ` body includes ${JSON.stringify(expected.bodyIncludes)}` : "") +
         (expected.bodyMatches ? ` body matches ${[expected.bodyMatches].flat().join(" and ")}` : "") +
         (expected.bodyNotMatches ? ` body does not match ${[expected.bodyNotMatches].flat().join(" or ")}` : "") +

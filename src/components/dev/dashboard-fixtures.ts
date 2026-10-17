@@ -44,6 +44,11 @@ export const DASHBOARD_STATES = [
     label: "Long text",
     description: "80-character group name and task title, a 24-character nickname",
   },
+  {
+    id: "update-notice",
+    label: "Update notice",
+    description: "Owner after a release took over: the new-version message with Refresh",
+  },
 ] as const;
 
 export type DashboardStateId = (typeof DASHBOARD_STATES)[number]["id"];
@@ -319,6 +324,7 @@ export function dashboardFixture(id: DashboardStateId, origin: string): Dashboar
   const owner = { id: OWNER_ID, nickname: OWNER_NICKNAME };
   switch (id) {
     case "owner":
+    case "update-notice":
       return inGroup(origin, owner);
     case "member":
       return inGroup(origin, { id: MEMBER_ID, nickname: MEMBER_NICKNAME });
