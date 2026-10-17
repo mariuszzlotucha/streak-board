@@ -199,11 +199,11 @@ No schema change. Code rolls back with `npx wrangler rollback`.
 
 #### Automated
 
-- [x] 1.1 Unit tests pass: `npm run test:unit`
-- [x] 1.2 Lint and token contrast pass: `npm run lint && node scripts/token-contrast.mjs`
-- [x] 1.3 Build passes: `npm run build`
-- [x] 1.4 Integration tests pass: `npm test`
-- [x] 1.5 Smoke passes with a step asserting the success toast after creating a task: `npm run smoke`
+- [x] 1.1 Unit tests pass: `npm run test:unit` — baff283
+- [x] 1.2 Lint and token contrast pass: `npm run lint && node scripts/token-contrast.mjs` — baff283
+- [x] 1.3 Build passes: `npm run build` — baff283
+- [x] 1.4 Integration tests pass: `npm test` — baff283
+- [x] 1.5 Smoke passes with a step asserting the success toast after creating a task: `npm run smoke` — baff283
 
 #### Manual
 
@@ -215,11 +215,11 @@ No schema change. Code rolls back with `npx wrangler rollback`.
 
 #### Automated
 
-- [ ] 2.1 Unit tests pass: `npm run test:unit`
-- [ ] 2.2 Lint passes: `npm run lint`
-- [ ] 2.3 Integration tests pass: `npm test`
-- [ ] 2.4 Smoke passes, including an error step that asserts the toast text: `npm run smoke`
-- [ ] 2.5 E2E specs pass: `npx playwright test`
+- [x] 2.1 Unit tests pass: `npm run test:unit`
+- [x] 2.2 Lint passes: `npm run lint`
+- [x] 2.3 Integration tests pass: `npm test`
+- [x] 2.4 Smoke passes, including an error step that asserts the toast text: `npm run smoke`
+- [x] 2.5 E2E specs pass: `npx playwright test`
 
 #### Manual
 

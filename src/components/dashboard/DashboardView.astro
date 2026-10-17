@@ -6,7 +6,7 @@ import PendingInviteCard from "@/components/dashboard/PendingInviteCard.astro";
 import TasksCard from "@/components/dashboard/TasksCard.astro";
 import Toast from "@/components/site/Toast.astro";
 import Leaderboard from "@/components/tasks/Leaderboard";
-import { CircleAlert, Crown, TriangleAlert } from "lucide-react";
+import { Crown, TriangleAlert } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,17 +58,16 @@ const ownerNoticeGroupName = isOwner && group.owner_notice_pending ? group.name 
   </div>
 ) : (
   <div class="space-y-6">
-    {/* The toast is fixed to the bottom of the screen; in the markup it comes first, before the page's <h1>. */}
-    {notice !== null && <Toast message={notice} variant="success" visible={pinToast} />}
-
-    {error && (
-      <Alert variant="destructive">
-        <CircleAlert />
-        <AlertDescription>{error}</AlertDescription>
-      </Alert>
+    {/* One toast, fixed to the bottom of the screen; in the markup it comes first, before the page's <h1>. An error
+        (a rejected action, an unusable invite, a failed task load) stays until closed; routes never set it together
+        with a notice, and if both were present the error wins. */}
+    {error ? (
+      <Toast message={error} variant="error" />
+    ) : (
+      notice !== null && <Toast message={notice} variant="success" visible={pinToast} />
     )}
 
-    {/* Not an error: a status the new owner reads once, under any error alert and above the group's cards. */}
+    {/* Not an error: a status the new owner reads once, under any toast and above the group's cards. */}
     {ownerNoticeGroupName !== null && (
       <Alert role="status">
         <Crown />
@@ -95,7 +94,7 @@ const ownerNoticeGroupName = isOwner && group.owner_notice_pending ? group.name 
             the Leaderboard. */}
         <div class="grid grid-cols-1 gap-6 lg:grid-cols-5">
           <div class="flex min-w-0 flex-col gap-6 lg:col-span-3">
-            {/* A failed task load swaps only the Tasks card for this notice; the top alert keeps the generic message. */}
+            {/* A failed task load swaps only the Tasks card for this notice; the error toast keeps the generic message. */}
             {tasksFailed ? (
               <Card>
                 <CardHeader>

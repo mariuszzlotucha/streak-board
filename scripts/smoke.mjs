@@ -175,6 +175,14 @@ function successToast(text) {
     `<main[^>]*>(?:(?!<h1|</main>)[\\s\\S])*<div(?=[^>]*data-toast="success")(?=[^>]*role="status")[^>]*>(?:(?!</div>)[\\s\\S])*<p[^>]*>\\s*${escapeRegExp(text)}\\s*</p>`,
   );
 }
+// The error toast of a rejected action, holding exactly `text`: the toast wrapper inside <main> before the page's <h1>,
+// then its `role="alert"` and the alert description, with no element closed in between. The island props never carry
+// this markup, so the match proves the server rendered the message inside the toast (not an inline alert).
+function errorToast(text) {
+  return new RegExp(
+    `<main[^>]*>(?:(?!<h1|</main>)[\\s\\S])*<div(?=[^>]*data-toast="error")[^>]*>(?:(?!</div>)[\\s\\S])*role="alert"(?:(?!</div>)[\\s\\S])*<div[^>]*data-slot="alert-description"[^>]*>\\s*${escapeRegExp(text)}\\s*</div>`,
+  );
+}
 // Any trace of a rendered toast.
 const TOAST_TRACE = "data-toast=";
 
@@ -1639,12 +1647,14 @@ const steps = [
   [
     // A rejected action lands here: its message is the first thing in the page content, and the page carries the
     // script that drops the code from the address so a reload does not repeat it.
-    "member dashboard with ?error=forbidden shows the alert first and drops the code from the address",
+    "member dashboard with ?error=forbidden shows the error toast first and drops the code from the address",
     () => request("/dashboard?error=forbidden", { jar: jarB }),
     {
       status: 200,
       bodyMatches: [
         alertBeforeHeading("You are not allowed to do that.", renamedGroupName),
+        // The message sits in the error toast, not in an inline alert.
+        errorToast("You are not allowed to do that."),
         ERROR_PARAM_SCRIPT,
         // The member view itself rendered under the alert.
         memberRow(nickB, "You"),

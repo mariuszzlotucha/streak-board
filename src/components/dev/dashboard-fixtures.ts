@@ -37,7 +37,11 @@ export const DASHBOARD_STATES = [
   { id: "sole-member", label: "Sole member", description: "Alone in a new group, no tasks yet" },
   { id: "no-group", label: "No group", description: "Signed in, not in a group" },
   { id: "pending-invite", label: "Pending invite", description: "Not in a group, arrived through an invite link" },
-  { id: "action-error", label: "Action error", description: "Owner after a rejected action (`?error=forbidden`)" },
+  {
+    id: "action-error",
+    label: "Action error",
+    description: "Owner after a rejected action (`?error=forbidden`): the error toast, which stays until closed",
+  },
   {
     id: "notice-success",
     label: "Success notice",
