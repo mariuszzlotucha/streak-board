@@ -144,6 +144,7 @@ const BINARY_MARKER_SEPARATOR = " and ";
 
 /** Whether a side of a binary marker (a path as git prints it, maybe quoted) ends with a `BINARY_EXTENSIONS` entry. */
 function hasBinaryExtension(side: string): boolean {
+  // Only the closing quote is dropped: the opening one comes before the last dot, so it never reaches the extension.
   const path = side.endsWith('"') ? side.slice(0, -1) : side;
   const name = path.slice(path.lastIndexOf("/") + 1);
   const dot = name.lastIndexOf(".");
@@ -164,9 +165,12 @@ function hidesContent(side: string): boolean {
  * listed are those of the split at the last " and " or, when that split
  * passes, of the first split that does not; a line without " and " is listed
  * whole. Plain string search instead of a regular expression, so every
- * character of a raw path, U+2028 included, belongs to a side.
+ * character of a raw path, U+2028 included, belongs to a side. `reviewDiff`
+ * throws `UnreviewableDiffError` with them; a caller of `createReviewer`
+ * checks the diff with this itself before the first call (see
+ * `review-with-session.ts`).
  */
-function hiddenBinaryPaths(diff: string): string[] {
+export function hiddenBinaryPaths(diff: string): string[] {
   const paths: string[] = [];
   for (const line of diff.split("\n")) {
     if (!line.startsWith(BINARY_MARKER_START) || !line.endsWith(BINARY_MARKER_END)) continue;

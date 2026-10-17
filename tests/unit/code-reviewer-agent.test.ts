@@ -230,19 +230,22 @@ describe("reviewDiff on a diff that shows a file as binary", () => {
   });
 });
 
-describe("the CLI on a diff that shows a source file as binary", () => {
-  it("exits 4 with empty stdout and the paths on stderr, without an API key", () => {
-    const root = join(import.meta.dirname, "../..");
-    // Unset, not empty: the OpenRouter provider sends a request with an empty key.
-    const { OPENROUTER_API_KEY: _key, REVIEW_BASE_REF: _base, REVIEW_HEAD_REF: _head, ...env } = process.env;
-    const result = spawnSync(
-      join(root, "node_modules/.bin/tsx"),
-      [join(root, "packages/code-reviewer/review.ts")],
-      // A directory without a .env, which the CLI would load.
-      { cwd: dir, env, input: "diff --git a/x.ts b/x.ts\nBinary files a/x.ts and b/x.ts differ\n", encoding: "utf8" },
-    );
-    expect(result.status).toBe(4);
-    expect(result.stdout).toBe("");
-    expect(result.stderr).toMatch(/^error: .*\["a\/x\.ts","b\/x\.ts"\]$/m);
-  });
+describe("the CLI and the session demo on a diff that shows a source file as binary", () => {
+  it.each(["review.ts", "review-with-session.ts"])(
+    "%s exits 4 with empty stdout and the paths on stderr, without an API key",
+    (script) => {
+      const root = join(import.meta.dirname, "../..");
+      // Unset, not empty: the OpenRouter provider sends a request with an empty key.
+      const { OPENROUTER_API_KEY: _key, REVIEW_BASE_REF: _base, REVIEW_HEAD_REF: _head, ...env } = process.env;
+      const result = spawnSync(
+        join(root, "node_modules/.bin/tsx"),
+        [join(root, "packages/code-reviewer", script)],
+        // A directory without a .env, which both scripts would load.
+        { cwd: dir, env, input: "diff --git a/x.ts b/x.ts\nBinary files a/x.ts and b/x.ts differ\n", encoding: "utf8" },
+      );
+      expect(result.status).toBe(4);
+      expect(result.stdout).toBe("");
+      expect(result.stderr).toMatch(/^error: .*\["a\/x\.ts","b\/x\.ts"\]$/m);
+    },
+  );
 });
