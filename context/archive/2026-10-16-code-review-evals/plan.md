@@ -661,5 +661,5 @@ Kryterium na danych z fazy 1 rozstrzyga wiązanie werdyktu. Wyniki trafiają do 
 
 - [x] 2.5 Owner reads eval-results.md: A, B, the binding and the matching code
 - [x] 2.6 CI on the PR green, including ai-review
-- [ ] 2.7 After the merge, the first code PR runs the new reviewer
+- [x] 2.7 After the merge, the first code PR runs the new reviewer
 - [x] 2.8 Scratch PR with a NUL byte in a .ts file ends unreviewable, then is closed

@@ -1,9 +1,10 @@
 ---
 change_id: code-review-evals
 title: Code review evals and gate hardening
-status: impl_reviewed
+status: archived
 created: 2026-10-16
 updated: 2026-10-17
+archived_at: 2026-10-17T00:27:10Z
 ---
 
 ## Notes
