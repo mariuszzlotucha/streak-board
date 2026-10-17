@@ -29,7 +29,7 @@ export default function RemindersToggle({ vapidPublicKey, hasSubscriptions, fixe
 
   return (
     <div className="flex flex-col items-start gap-3">
-      <p className="text-sm" data-reminders-state={state}>
+      <p role="status" className="text-sm" data-reminders-state={state}>
         {STATUS[state]}
       </p>
       {reminders.failed ? (
@@ -38,20 +38,25 @@ export default function RemindersToggle({ vapidPublicKey, hasSubscriptions, fixe
         </p>
       ) : null}
       <div className="flex flex-wrap gap-3">
-        {state === "off" ? (
-          <Button type="button" size="sm" disabled={pending !== null} onClick={() => void reminders.run("enable")}>
-            {pending === "enable" ? "Turning on..." : "Turn on"}
-          </Button>
-        ) : null}
-        {state === "on" ? (
+        {state === "off" || state === "on" ? (
+          // One button for both states, so keyboard focus stays on it when it flips; aria-disabled (not disabled)
+          // keeps it focusable while the request runs.
           <Button
             type="button"
             size="sm"
-            variant="outline"
-            disabled={pending !== null}
-            onClick={() => void reminders.run("disable")}
+            variant={state === "on" ? "outline" : "default"}
+            aria-disabled={pending !== null}
+            onClick={() => {
+              if (pending === null) void reminders.run(state === "on" ? "disable" : "enable");
+            }}
           >
-            {pending === "disable" ? "Turning off..." : "Turn off"}
+            {pending === "enable"
+              ? "Turning on..."
+              : pending === "disable"
+                ? "Turning off..."
+                : state === "on"
+                  ? "Turn off"
+                  : "Turn on"}
           </Button>
         ) : null}
         {reminders.hasSubscriptions ? (

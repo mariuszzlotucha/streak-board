@@ -106,6 +106,7 @@ describe("POST /api/reminders/*", () => {
       "auth of 15 bytes",
       { endpoint: "https://fcm.googleapis.com/fcm/send/x", keys: { ...KEYS, auth: "tBHItJI5svbpez7KI4CC" } },
     ],
+    ["padded auth", { endpoint: "https://fcm.googleapis.com/fcm/send/x", keys: { ...KEYS, auth: `${KEYS.auth}==` } }],
     ["malformed JSON", "{"],
   ])("subscribe answers 400 for %s", async (_name, body) => {
     expect((await call(subscribe, "/api/reminders/subscribe", body)).status).toBe(400);

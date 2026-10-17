@@ -13,7 +13,8 @@ export const MAX_ENDPOINT_LENGTH = 2048;
 /** `p256dh` is 87 base64url characters and `auth` 22; the cap leaves room without accepting arbitrary text. */
 export const MAX_KEY_LENGTH = 256;
 
-const BASE64URL = /^[A-Za-z0-9_-]+={0,2}$/;
+/** Unpadded base64url, as browsers send push keys (`subscribe_push` refuses padding too). */
+const BASE64URL = /^[A-Za-z0-9_-]+$/;
 
 export interface SubscriptionBody {
   endpoint: string;
@@ -57,7 +58,7 @@ function parseKey(value: unknown, bytes: number): string | null {
   if (typeof value !== "string" || value.length > MAX_KEY_LENGTH || !BASE64URL.test(value)) return null;
   let decoded: Uint8Array;
   try {
-    decoded = base64UrlDecode(value.replace(/=+$/, ""));
+    decoded = base64UrlDecode(value);
   } catch {
     return null;
   }
