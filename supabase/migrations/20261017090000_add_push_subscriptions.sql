@@ -66,16 +66,30 @@ alter table public.reminder_secret enable row level security;
 -- client functions (authenticated, on auth.uid())
 -- ---------------------------------------------------------------------------
 
+-- Only the browsers' push services are accepted (the cron POSTs to every stored endpoint, so an arbitrary https host
+-- would turn it into an outbound relay), and an account holds at most 10 devices. Errors: 22023 for another host,
+-- 54000 at the cap. The same host list is in src/lib/reminders/subscription-route.ts (PUSH_SERVICE_HOST).
 create function public.subscribe_push(p_endpoint text, p_p256dh text, p_auth text)
 returns void
-language sql
+language plpgsql
 security definer
 set search_path = ''
 as $$
+begin
+  if p_endpoint is null or p_endpoint !~ '^https://(fcm\.googleapis\.com|[a-z0-9-]+(\.[a-z0-9-]+)*\.push\.services\.mozilla\.com|web\.push\.apple\.com|[a-z0-9-]+(\.[a-z0-9-]+)*\.notify\.windows\.com)/' then
+    raise exception 'push endpoint is not a known push service' using errcode = '22023';
+  end if;
+  if (
+    select count(*) from public.push_subscriptions s
+    where s.user_id = (select auth.uid()) and s.endpoint <> p_endpoint
+  ) >= 10 then
+    raise exception 'too many push subscriptions' using errcode = '54000';
+  end if;
   insert into public.push_subscriptions (user_id, endpoint, p256dh, auth)
   values ((select auth.uid()), p_endpoint, p_p256dh, p_auth)
   on conflict (endpoint) do update
     set user_id = excluded.user_id, p256dh = excluded.p256dh, auth = excluded.auth;
+end;
 $$;
 
 revoke execute on function public.subscribe_push (text, text, text) from public, anon;

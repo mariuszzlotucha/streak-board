@@ -84,6 +84,7 @@ describe("buildPushRequest", () => {
     expect(request.headers.get("TTL")).toBe(String(PUSH_TTL));
     expect(PUSH_TTL).toBe(14400);
     expect(request.headers.get("Urgency")).toBe("normal");
+    expect(request.redirect).toBe("manual");
     expect(base64UrlEncode(new Uint8Array(await request.arrayBuffer()))).toBe(RFC.body);
   });
 

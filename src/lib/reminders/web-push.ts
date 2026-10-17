@@ -189,5 +189,7 @@ export async function buildPushRequest(
       Urgency: "normal",
     },
     body,
+    // A push service answers directly; a redirect is never followed, so the cron only ever reaches the stored host.
+    redirect: "manual",
   });
 }

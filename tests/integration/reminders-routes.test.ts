@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { APIContext, APIRoute } from "astro";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
+import { parseEndpoint } from "@/lib/reminders/subscription-route";
 import { createClient } from "@/lib/supabase";
 import { POST as subscribe } from "@/pages/api/reminders/subscribe";
 import { POST as unsubscribe } from "@/pages/api/reminders/unsubscribe";
@@ -46,7 +47,7 @@ async function endpointsOf(userId: string): Promise<string[]> {
   return data.map((row) => row.endpoint).sort();
 }
 
-const endpoint = () => `https://push.example/${randomUUID()}`;
+const endpoint = () => `https://fcm.googleapis.com/fcm/send/${randomUUID()}`;
 
 beforeAll(async () => {
   user = await createTestUser();
@@ -90,11 +91,12 @@ describe("POST /api/reminders/*", () => {
   });
 
   it.each([
-    ["no keys", { endpoint: "https://push.example/x" }],
+    ["no keys", { endpoint: "https://fcm.googleapis.com/fcm/send/x" }],
+    ["not a push service", { endpoint: "https://push.example/x", keys: KEYS }],
     ["http endpoint", { endpoint: "http://push.example/x", keys: KEYS }],
     ["not a URL", { endpoint: "push", keys: KEYS }],
-    ["oversized endpoint", { endpoint: `https://push.example/${"a".repeat(2100)}`, keys: KEYS }],
-    ["non-base64url key", { endpoint: "https://push.example/x", keys: { ...KEYS, auth: "a b" } }],
+    ["oversized endpoint", { endpoint: `https://fcm.googleapis.com/fcm/send/${"a".repeat(2100)}`, keys: KEYS }],
+    ["non-base64url key", { endpoint: "https://fcm.googleapis.com/fcm/send/x", keys: { ...KEYS, auth: "a b" } }],
     ["malformed JSON", "{"],
   ])("subscribe answers 400 for %s", async (_name, body) => {
     expect((await call(subscribe, "/api/reminders/subscribe", body)).status).toBe(400);
@@ -137,5 +139,27 @@ describe("POST /api/reminders/*", () => {
   it("answers 503 when Supabase is not configured", async () => {
     vi.mocked(createClient).mockReturnValue(null);
     expect((await call(unsubscribe, "/api/reminders/unsubscribe", { endpoint: endpoint() })).status).toBe(503);
+  });
+});
+
+describe("parseEndpoint", () => {
+  it.each([
+    "https://fcm.googleapis.com/fcm/send/abc",
+    "https://updates.push.services.mozilla.com/wpush/v2/abc",
+    "https://web.push.apple.com/abc",
+    "https://wns2-db5p.notify.windows.com/w/?token=abc",
+  ])("accepts the push service endpoint %s", (url) => {
+    expect(parseEndpoint(url)).toBe(url);
+  });
+
+  it.each([
+    "https://push.example/abc",
+    "https://fcm.googleapis.com.evil.example/abc",
+    "https://evil.example/fcm.googleapis.com/abc",
+    "https://fcm.googleapis.com:8443/abc",
+    "https://user@fcm.googleapis.com/abc",
+    "http://fcm.googleapis.com/abc",
+  ])("refuses %s", (url) => {
+    expect(parseEndpoint(url)).toBeNull();
   });
 });

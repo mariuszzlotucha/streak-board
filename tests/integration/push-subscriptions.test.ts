@@ -22,7 +22,7 @@ const SECRET = randomBytes(32).toString("base64");
 const TODAY = "2030-01-06"; // a Sunday
 const WEEK = "2029-12-31"; // its Monday
 
-const endpoint = (): string => `https://push.example/${randomUUID()}`;
+const endpoint = (): string => `https://fcm.googleapis.com/fcm/send/${randomUUID()}`;
 
 async function subscribe(user: TestUser, url: string) {
   return user.client.rpc("subscribe_push", {
@@ -66,6 +66,34 @@ describe("push subscriptions", () => {
     beforeAll(async () => {
       a = await createTestUser();
       b = await createTestUser();
+    });
+
+    it("refuses an endpoint off the browsers' push services", async () => {
+      for (const url of [
+        "https://push.example/x",
+        "https://fcm.googleapis.com.evil.example/x",
+        "http://fcm.googleapis.com/x",
+      ]) {
+        const { error } = await subscribe(a, url);
+        expect(error?.code).toBe("22023");
+        expect(await adminOwnerOf(url)).toBeNull();
+      }
+      for (const url of [
+        `https://updates.push.services.mozilla.com/wpush/v2/${randomUUID()}`,
+        `https://web.push.apple.com/${randomUUID()}`,
+        `https://wns2-db5p.notify.windows.com/w/?token=${randomUUID()}`,
+      ]) {
+        expect((await subscribe(a, url)).error).toBeNull();
+        expect(await adminOwnerOf(url)).toBe(a.id);
+      }
+    });
+
+    it("caps an account at 10 devices, while a re-subscribe of an existing one still works", async () => {
+      const c = await createTestUser();
+      const urls = Array.from({ length: 10 }, endpoint);
+      for (const url of urls) expect((await subscribe(c, url)).error).toBeNull();
+      expect((await subscribe(c, endpoint())).error?.code).toBe("54000");
+      expect((await subscribe(c, urls[0])).error).toBeNull();
     });
 
     it("subscribe stores the caller's row, which only the caller reads", async () => {

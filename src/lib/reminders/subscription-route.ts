@@ -24,11 +24,24 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-/** An `https:` URL of at most `MAX_ENDPOINT_LENGTH` characters (the table's check also requires `https://`). */
+/**
+ * The browsers' push services (Chrome/Android, Firefox, Safari/iOS, Edge). The cron POSTs to every stored endpoint, so
+ * any other host would make it an outbound relay; `subscribe_push` enforces the same list in SQL.
+ */
+export const PUSH_SERVICE_HOST =
+  /^(fcm\.googleapis\.com|[a-z0-9-]+(\.[a-z0-9-]+)*\.push\.services\.mozilla\.com|web\.push\.apple\.com|[a-z0-9-]+(\.[a-z0-9-]+)*\.notify\.windows\.com)$/;
+
+/** An `https:` URL on a known push service, of at most `MAX_ENDPOINT_LENGTH` characters. */
 export function parseEndpoint(value: unknown): string | null {
   if (typeof value !== "string" || value.length === 0 || value.length > MAX_ENDPOINT_LENGTH) return null;
   try {
-    return new URL(value).protocol === "https:" && value.startsWith("https://") ? value : null;
+    const url = new URL(value);
+    return url.protocol === "https:" &&
+      value.startsWith(`https://${url.hostname}/`) &&
+      url.port === "" &&
+      PUSH_SERVICE_HOST.test(url.hostname)
+      ? value
+      : null;
   } catch {
     return null;
   }

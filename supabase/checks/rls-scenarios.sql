@@ -1510,9 +1510,10 @@ begin
 
   -- A subscribes; B sees nothing of it; the endpoint must be https.
   perform rls_check.as_user(a);
-  perform public.subscribe_push('https://push.example/a', 'key-a', 'auth-a');
+  perform public.subscribe_push('https://fcm.googleapis.com/fcm/send/a', 'key-a', 'auth-a');
   perform rls_check.expect_value('select count(*) from public.push_subscriptions', '1', 'S-16 A reads its own subscription');
-  perform rls_check.expect_error('23514', 'select public.subscribe_push(''http://push.example/x'', ''k'', ''a'')', 'S-16 a non-https endpoint is refused (23514)');
+  perform rls_check.expect_error('22023', 'select public.subscribe_push(''http://fcm.googleapis.com/fcm/send/x'', ''k'', ''a'')', 'S-16 a non-https endpoint is refused (22023)');
+  perform rls_check.expect_error('22023', 'select public.subscribe_push(''https://push.example/x'', ''k'', ''a'')', 'S-16 an endpoint off the push services is refused (22023)');
   perform rls_check.expect_error('42501', 'insert into public.push_subscriptions (user_id, endpoint, p256dh, auth) values (auth.uid(), ''https://x'', ''k'', ''a'')', 'S-16 a direct insert is refused (42501)');
   perform rls_check.as_user(b);
   perform rls_check.expect_value('select count(*) from public.push_subscriptions', '0', 'S-16 B does not see A''s subscription');
@@ -1523,7 +1524,7 @@ begin
   perform rls_check.expect_error('42501', 'select count(*) from public.push_subscriptions', 'S-16 anon cannot read push_subscriptions (42501)');
   perform rls_check.expect_error('42501', 'select count(*) from public.reminder_secret', 'S-16 anon cannot read reminder_secret (42501)');
   perform rls_check.expect_error('42501', 'select * from public.due_reminders(''wrong-secret-wrong-secret-wrong-secret'', current_date, null)', 'S-16 due_reminders with a wrong secret -> 42501');
-  perform rls_check.expect_error('42501', 'select public.prune_push_subscriptions(''short'', array[''https://push.example/a''])', 'S-16 prune with a short secret -> 42501');
+  perform rls_check.expect_error('42501', 'select public.prune_push_subscriptions(''short'', array[''https://fcm.googleapis.com/fcm/send/a''])', 'S-16 prune with a short secret -> 42501');
 
   perform rls_check.as_user(a);
   perform rls_check.expect_error('42501', 'select count(*) from public.reminder_secret', 'S-16 authenticated cannot read reminder_secret (42501)');
