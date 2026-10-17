@@ -299,11 +299,11 @@ Wycofanie: revert commitów fazy. Kroki operatora wycofuje się w panelu Cloudfl
 
 #### Automated
 
-- [x] 2.1 Unit tests pass: `npm run test:unit`
-- [x] 2.2 Integration tests pass (local Supabase stack): `npm test`
-- [x] 2.3 E2E passes on the preview build: `npx playwright test`
-- [x] 2.4 Lint, format and type check pass: `npm run lint` and `npx astro check`
-- [x] 2.5 Smoke passes: `npm run smoke`
+- [x] 2.1 Unit tests pass: `npm run test:unit` — dca1b1b
+- [x] 2.2 Integration tests pass (local Supabase stack): `npm test` — dca1b1b
+- [x] 2.3 E2E passes on the preview build: `npx playwright test` — dca1b1b
+- [x] 2.4 Lint, format and type check pass: `npm run lint` and `npx astro check` — dca1b1b
+- [x] 2.5 Smoke passes: `npm run smoke` — dca1b1b
 
 #### Manual
 
