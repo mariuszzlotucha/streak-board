@@ -34,6 +34,7 @@ headroom. The send time and consent remain owner decisions from `frame.md`.
 ## Detailed Findings
 
 ### 1. Scheduling on the Worker
+
 - `wrangler.jsonc:4` sets `main` to `@astrojs/cloudflare/entrypoints/server`. The inspected file has no `triggers.crons`.
 - `astro.config.mjs:16` calls `cloudflare()` with no options.
 - In the installed adapter (14.3.1; read from the main checkout because this worktree has no `node_modules`), the server entrypoint exports only `{ fetch: handle }`.
@@ -43,6 +44,7 @@ headroom. The send time and consent remain owner decisions from `frame.md`.
 - Cron expressions run in UTC. The app's periods are Warsaw time (`src/lib/streak-rules.ts:7`), so a fixed UTC cron shifts by one hour across the DST changes.
 
 ### 2. Reading unticked participants without a session
+
 - `src/lib/supabase.ts:6-24` builds every client from user cookies with `SUPABASE_KEY`.
 - The env schema declares three keys: `SUPABASE_URL`, `SUPABASE_KEY` and `CONTACT_EMAIL` (`astro.config.mjs:22-25`).
 - A grep of `src`, the config and the README found no service-role key or admin client.
@@ -55,6 +57,7 @@ headroom. The send time and consent remain owner decisions from `frame.md`.
   - Whether `once` tasks get reminders is open.
 
 ### 3. Web Push delivery
+
 - `public/sw.js` has `install` and `activate` handlers only (lines 7-21). Line 2 reserves `push` for S-16.
 - `src/lib/pwa/register.ts`:
   - It registers `/sw.js` in production builds only (lines 56-82, 90).
@@ -68,6 +71,7 @@ headroom. The send time and consent remain owner decisions from `frame.md`.
 - Each send is a `fetch` to the browser's push service. Waiting does not count toward CPU, but signing and encryption do (`context/archive/2026-10-02-observability-swallowed-errors/research.md:177`).
 
 ### 4. Storage, consent and deletion
+
 - The pattern for user-owned tables is in `supabase/migrations/20261016162551_add_nicknames.sql`:
   - `user_id ... references auth.users(id) on delete cascade` (line 27)
   - `revoke all` from anon and authenticated, then `grant select` to authenticated (lines 49-50)
@@ -77,6 +81,7 @@ headroom. The send time and consent remain owner decisions from `frame.md`.
 - `delete_account` removes `auth.users` (account-deletion migration, line 187) and relies on cascades (header lines 18, 137). A table that follows the nickname pattern would therefore be cleaned up. The header comments and the privacy policy's AccountDeletion section should name it.
 
 ### 5. Error reporting
+
 - `src/lib/log.ts:88,97,109` (`reportError`, `reportInfo`, `reportMapped`) log structured lines and call Sentry `captureException`.
 - `src/lib/sentry.ts:16-30` wraps only requests (`wrapRequestHandler`).
 - Outside a request, Sentry probably has no client, so only the console line reaches Workers Logs. A scheduled wrapper, or a manual client with `ctx.waitUntil(flush())`, is needed. Whether `@sentry/cloudflare` ^11.2.0 offers one is **unverified**.
@@ -84,6 +89,7 @@ headroom. The send time and consent remain owner decisions from `frame.md`.
 - Expired subscriptions (HTTP 404/410 from the push service) are expected, not errors. That distinction is not yet designed.
 
 ### 6. Privacy policy, settings and smoke
+
 - Privacy sections in `src/components/privacy/` that the change touches:
   - `Cookies.astro:26-30` says the service worker stores no data.
   - `WhatWeCollect.astro:9-15` covers the data collected.
@@ -99,6 +105,7 @@ headroom. The send time and consent remain owner decisions from `frame.md`.
 - New states also go into the kitchen-sink fixtures.
 
 ## Code References
+
 - `wrangler.jsonc:4-6`: entrypoint and compatibility settings; no crons
 - `astro.config.mjs:16,22-25`: adapter call; env schema
 - `src/lib/supabase.ts:6-24`: cookie-session client only
@@ -111,22 +118,26 @@ headroom. The send time and consent remain owner decisions from `frame.md`.
 - `supabase/migrations/20261016180000_account_deletion_and_ownership_transfer.sql:104,141-196`: closed definer functions; deletion
 
 ## Architecture Insights
+
 - Writes go through `security definer` functions bound to `auth.uid()`, while operator-only layers are revoked from every API role. A cron reader is a new kind of caller, with neither a user nor an operator behind it.
 - The period rules exist only in TypeScript (`streak-rules.ts`), plus a loose UTC window in RLS. A SQL-side "unticked now" query would duplicate them.
 - Secrets are added by the owner with `wrangler secret put` (`context/changes/deployment/deployment-plan.md:59-64`). New secrets (VAPID keys, and possibly a server credential) are owner steps.
 
 ## Historical Context (from prior changes)
+
 - `context/archive/2026-10-17-installable-pwa/plan.md:51,124`: the service worker is the base for S-16 push. The group's devices are mixed: iOS, Android and desktop (`frame.md:15-16`). iOS standalone sign-in is still unverified (`plan.md:34,54`).
 - `context/foundation/infrastructure.md:92`: the Free-plan CPU limit is 10 ms per invocation. Worker CPU time has not been recorded in the deployment log: `/dashboard` was not measured (`deployment-plan.md:176`), and the readings at `deployment-plan.md:202,211` were accepted without values.
 - `context/foundation/roadmap.md:102`: S-16 risks are CPU, the S-08 error contract, and the privacy, PRD, glossary and S-15 deletion updates.
 - `deployment-plan.md:95`: `astro:env/server` can resolve to `undefined` in production (Astro issue #16790). This is relevant for secrets read outside a request.
 
 ## Related Research
+
 - `context/changes/task-reminders/frame.md`
 - `context/archive/2026-10-17-installable-pwa/research.md`
 - `context/archive/2026-10-02-observability-swallowed-errors/research.md`
 
 ## Open Questions
+
 1. A credential for the cron: a service-role secret, or a dedicated secret checked by a narrow definer RPC (team decision).
 2. Push library: npm `web-push` on Workers versus WebCrypto VAPID/aes128gcm, or payload-less pushes (needs a spike).
 3. A custom Worker `main` with `scheduled`, together with Astro's build output and `astro:env` outside a request (needs a spike).
