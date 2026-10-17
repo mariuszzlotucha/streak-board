@@ -11,6 +11,7 @@ import {
   SEND_CONCURRENCY,
   sendOutcome,
   sendReminder,
+  senderFrom,
   type ReminderEnv,
 } from "@/lib/reminders/run";
 import { base64UrlEncode } from "@/lib/reminders/web-push";
@@ -344,5 +345,25 @@ describe("sendReminder", () => {
     expect(outcome).toBe("failed");
     expect(fetch).not.toHaveBeenCalled();
     expect(events(errorSpy)).toEqual(["reminders.config.invalid"]);
+  });
+});
+
+describe("senderFrom", () => {
+  it("has no sender without the binding, so the run sends in process", () => {
+    expect(senderFrom(undefined)).toBeUndefined();
+  });
+
+  it("calls the stub's send directly, never a property of it", async () => {
+    // Like an RPC stub: every property is remote, so `send.bind` or `send.call` would reach the far side.
+    const remote = vi.fn(() => Promise.resolve("sent" as const));
+    const method = new Proxy(remote, {
+      get: (_target, prop) => {
+        throw new Error(`remote property ${String(prop)}`);
+      },
+    });
+    const send = senderFrom({ send: method });
+
+    await expect(send?.(row(0), "{}", sunday.toISOString())).resolves.toBe("sent");
+    expect(remote).toHaveBeenCalledWith(row(0), "{}", sunday.toISOString());
   });
 });

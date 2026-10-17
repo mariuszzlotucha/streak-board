@@ -3,7 +3,7 @@
 import { WorkerEntrypoint } from "cloudflare:workers";
 import astro from "@astrojs/cloudflare/entrypoints/server";
 import { runScheduledWithSentry, type ScheduledControllerLike, type WaitUntilContext } from "@/lib/sentry";
-import { runReminders, sendReminder, type ReminderEnv, type ReminderSend } from "@/lib/reminders/run";
+import { runReminders, sendReminder, senderFrom, type ReminderEnv, type ReminderSend } from "@/lib/reminders/run";
 import type { PushSubscriptionKeys } from "@/lib/reminders/web-push";
 import type { SentryEnv } from "@/lib/sentry-options";
 
@@ -23,10 +23,7 @@ type WorkerEnv = ReminderEnv & SentryEnv & { REMINDER_SENDER?: { send: ReminderS
 export default {
   fetch: astro.fetch,
   scheduled(controller: ScheduledControllerLike, env: WorkerEnv, ctx: WaitUntilContext): void {
-    // Without the binding (a local run without it) the run sends in process, as before the fan-out. A closure, not
-    // `.bind`: every property of an RPC stub is itself remote, so `send.bind` would not be Function.prototype.bind.
-    const sender = env.REMINDER_SENDER;
-    const send: ReminderSend | undefined = sender ? (sub, payload, at) => sender.send(sub, payload, at) : undefined;
+    const send = senderFrom(env.REMINDER_SENDER);
     ctx.waitUntil(
       runScheduledWithSentry(controller, env, ctx, () =>
         runReminders(env, new Date(controller.scheduledTime), { send }),

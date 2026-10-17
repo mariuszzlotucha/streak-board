@@ -46,6 +46,14 @@ export type SendOutcome = "sent" | "expired" | "failed";
 export type ReminderSend = (sub: PushSubscriptionKeys, payload: string, at: string) => Promise<SendOutcome>;
 
 /**
+ * The run's `send` from the Worker's `REMINDER_SENDER` binding, or none without it (the run then sends in process). A
+ * closure, not `.bind`: every property of an RPC stub is itself remote, so `send.bind` is not Function.prototype.bind.
+ */
+export function senderFrom(binding: { send: ReminderSend } | undefined): ReminderSend | undefined {
+  return binding ? (sub, payload, at) => binding.send(sub, payload, at) : undefined;
+}
+
+/**
  * Seams for the unit tests; production uses the global fetch and the real anon client. With `send`, each push leaves
  * the run (one invocation per push, so its encryption does not add to the run's CPU) and the run imports no keys.
  */
