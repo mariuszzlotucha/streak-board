@@ -1,5 +1,7 @@
 import type { APIRoute } from "astro";
 import { reportInfo } from "@/lib/log";
+import { readAtMost } from "@/lib/read-body";
+import { scrubSecrets } from "@/lib/redact";
 
 export const prerender = false;
 
@@ -7,31 +9,18 @@ export const prerender = false;
 const MAX_BODY_BYTES = 8192;
 // The longest value a logged field keeps.
 const MAX_FIELD_LENGTH = 200;
+// A batch logs at most this many violations, so one request cannot flood the log.
+const MAX_LOGGED_VIOLATIONS = 5;
 const MEDIA_TYPES = ["application/csp-report", "application/reports+json"];
-
-async function readAtMost(request: Request, limit: number): Promise<Uint8Array> {
-  if (!request.body) return new Uint8Array();
-  const reader = request.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-  while (total < limit) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    chunks.push(value);
-    total += value.byteLength;
-  }
-  await reader.cancel();
-  const bytes = new Uint8Array(total);
-  let offset = 0;
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  return bytes;
-}
 
 function text(value: unknown): string {
   return typeof value === "string" ? value.slice(0, MAX_FIELD_LENGTH) : "";
+}
+
+// A directive name (`script-src-elem`), or nothing: the field is free text in a forged report.
+export function normalizeDirective(value: unknown): string {
+  const name = text(value);
+  return /^[a-z-]+$/.test(name) ? name : "";
 }
 
 // The blocked resource as an origin or a keyword: a full URL can carry a query with personal data.
@@ -47,10 +36,10 @@ export function normalizeBlocked(value: unknown): string {
   }
 }
 
-// The document's path only, without the query and the hash.
+// The document's path only, without the query and the hash; an invite code or e-mail address in it is masked.
 export function normalizePath(value: unknown): string {
   try {
-    return text(new URL(typeof value === "string" ? value : "").pathname);
+    return text(scrubSecrets(new URL(typeof value === "string" ? value : "").pathname));
   } catch {
     return "";
   }
@@ -67,7 +56,7 @@ function fromLegacy(body: unknown): Violation[] {
   if (!report || typeof report !== "object") return [];
   return [
     {
-      directive: text(report["effective-directive"] ?? report["violated-directive"]),
+      directive: normalizeDirective(report["effective-directive"] ?? report["violated-directive"]),
       blocked: normalizeBlocked(report["blocked-uri"]),
       path: normalizePath(report["document-uri"]),
     },
@@ -82,14 +71,15 @@ function fromReportingApi(body: unknown): Violation[] {
       return candidate?.type === "csp-violation" && typeof candidate.body === "object" && candidate.body !== null;
     })
     .map(({ body: report }) => ({
-      directive: text(report.effectiveDirective),
+      directive: normalizeDirective(report.effectiveDirective),
       blocked: normalizeBlocked(report.blockedURL),
       path: normalizePath(report.documentURL),
     }));
 }
 
-// Public on purpose: browsers send CSP reports without credentials, from any page of the site. Only the normalized
-// directive, blocked origin and path reach the log; full URLs, the script sample and the request headers do not.
+// Public on purpose: browsers send CSP reports without credentials, from any page of the site. JSON is accepted although
+// Astro's origin check does not cover it, because the route authorizes nothing and only logs: the normalized directive,
+// blocked origin and masked path reach the log; full URLs, the script sample and the request headers do not.
 export const POST: APIRoute = async (context) => {
   const headers = { "Cache-Control": "no-store" };
   const mediaType = (context.request.headers.get("content-type") ?? "").split(";")[0].trim().toLowerCase();
@@ -110,7 +100,7 @@ export const POST: APIRoute = async (context) => {
     return new Response(null, { status: 400, headers });
   }
   const violations = mediaType === "application/csp-report" ? fromLegacy(body) : fromReportingApi(body);
-  for (const violation of violations) {
+  for (const violation of violations.slice(0, MAX_LOGGED_VIOLATIONS)) {
     reportInfo("csp.violation", { ...violation });
   }
   return new Response(null, { status: 204, headers });

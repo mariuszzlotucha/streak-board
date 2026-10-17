@@ -118,4 +118,37 @@ describe("POST /api/csp-report", () => {
     expect(response.status).toBe(413);
     expect(reportInfo).not.toHaveBeenCalled();
   });
+
+  it("masks an invite code and an e-mail address in the logged path and drops a free-text directive", async () => {
+    await call(
+      JSON.stringify({
+        "csp-report": {
+          "document-uri": "https://streakboard.app/join/abc123",
+          "effective-directive": "script-src\nforged line",
+          "blocked-uri": "inline",
+        },
+      }),
+    );
+    await call(
+      JSON.stringify({
+        "csp-report": { "document-uri": "https://streakboard.app/x/a@b.com", "effective-directive": "img-src" },
+      }),
+    );
+
+    expect(vi.mocked(reportInfo).mock.calls).toEqual([
+      ["csp.violation", { directive: "", blocked: "inline", path: "/join/[code]" }],
+      ["csp.violation", { directive: "img-src", blocked: "", path: "/x/[email]" }],
+    ]);
+  });
+
+  it("logs at most five violations from one batch", async () => {
+    const entry = {
+      type: "csp-violation",
+      body: { effectiveDirective: "img-src", documentURL: "https://streakboard.app/" },
+    };
+    const response = await call(JSON.stringify(Array.from({ length: 6 }, () => entry)), "application/reports+json");
+
+    expect(response.status).toBe(204);
+    expect(reportInfo).toHaveBeenCalledTimes(5);
+  });
 });

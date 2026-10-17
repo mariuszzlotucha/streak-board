@@ -1,32 +1,12 @@
 import type { APIRoute } from "astro";
 import { reportError, requestFields } from "@/lib/log";
+import { readAtMost } from "@/lib/read-body";
 import { CLIENT_ERROR_CODES, type ClientErrorCode } from "@/lib/pwa/register";
 
 export const prerender = false;
 
 // The largest body accepted; a known code is far shorter.
 const MAX_BODY_BYTES = 256;
-
-async function readAtMost(request: Request, limit: number): Promise<Uint8Array> {
-  if (!request.body) return new Uint8Array();
-  const reader = request.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-  while (total < limit) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    chunks.push(value);
-    total += value.byteLength;
-  }
-  await reader.cancel();
-  const bytes = new Uint8Array(total);
-  let offset = 0;
-  for (const chunk of chunks) {
-    bytes.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  return bytes;
-}
 
 // Public on purpose (a failure can happen before sign-in). Only `text/plain` is accepted: it is what `sendBeacon` sends
 // for a string, and Astro's origin check guards it, while a JSON POST from a foreign origin would pass that check.
