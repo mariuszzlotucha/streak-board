@@ -327,13 +327,13 @@ No database migrations. Rolling back the code (`npx wrangler rollback`) leaves t
 
 #### Automated
 
-- [x] 1.1 Lint and formatting pass: `npm run lint`
-- [x] 1.2 Token contrast passes: `node scripts/token-contrast.mjs`
-- [x] 1.3 Types and build pass: `npx astro check && npm run build`
-- [x] 1.4 Unit tests pass (incl. `client-errors` and `pwa-register`): `npm run test:unit`
-- [x] 1.5 Smoke passes with the new PWA steps: `npm run smoke`
-- [x] 1.6 E2E passes (incl. `pwa.spec.ts`): `npx playwright test`
-- [x] 1.7 Integration tests pass: `npm test`
+- [x] 1.1 Lint and formatting pass: `npm run lint` — 3f29bf6
+- [x] 1.2 Token contrast passes: `node scripts/token-contrast.mjs` — 3f29bf6
+- [x] 1.3 Types and build pass: `npx astro check && npm run build` — 3f29bf6
+- [x] 1.4 Unit tests pass (incl. `client-errors` and `pwa-register`): `npm run test:unit` — 3f29bf6
+- [x] 1.5 Smoke passes with the new PWA steps: `npm run smoke` — 3f29bf6
+- [x] 1.6 E2E passes (incl. `pwa.spec.ts`): `npx playwright test` — 3f29bf6
+- [x] 1.7 Integration tests pass: `npm test` — 3f29bf6
 
 #### Manual
 
