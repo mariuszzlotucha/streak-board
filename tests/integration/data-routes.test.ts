@@ -208,7 +208,7 @@ const errorTarget = (route: RouteId, code: string): string => `${ROUTES[route].h
 /**
  * Where a completed action ends: the dashboard (or `page`, for the nickname change that ends on settings) with its
  * `?notice=<code>`. Spelled out here rather than through `noticePath`, so the route's address is checked against an
- * oracle that shares nothing with it. A stale or repeated submit gets the same notice as a real one (owner decision).
+ * oracle that shares nothing with it. A stale or repeated submit gets the same notice when its outcome holds (left, deleted, already joined); an update or join of a task that is gone keeps the plain dashboard.
  */
 const noticeTarget = (code: string, page: string = DASHBOARD): string => `${page}?notice=${code}`;
 
@@ -805,10 +805,10 @@ const ROWS: Row[] = [
     expect: { location: FORBIDDEN, client: "none" },
   },
   {
-    name: "task not visible: dashboard with the notice",
+    name: "task not visible: dashboard, no notice",
     route: "tasks/update",
     script: [ok(null)],
-    expect: { location: noticeTarget("task_updated"), calls: [GET_TASK] },
+    expect: { location: DASHBOARD, calls: [GET_TASK] },
   },
   {
     name: "task read fails: the helper throws, unknown with the exception line",
@@ -880,10 +880,10 @@ const ROWS: Row[] = [
     expect: { location: FORBIDDEN, client: "none" },
   },
   {
-    name: "task not visible: dashboard with the notice",
+    name: "task not visible: dashboard, no notice",
     route: "tasks/join",
     script: [ok(null)],
-    expect: { location: noticeTarget("task_joined"), calls: [TASK_EXISTS] },
+    expect: { location: DASHBOARD, calls: [TASK_EXISTS] },
   },
   {
     name: "insert ok: dashboard with task_joined, the caller enrolled on the task",
@@ -901,10 +901,10 @@ const ROWS: Row[] = [
     expect: { location: noticeTarget("task_joined") },
   },
   {
-    name: "the task was deleted meanwhile: dashboard with the notice",
+    name: "the task was deleted meanwhile: dashboard, no notice",
     route: "tasks/join",
     script: [ok({ id: TASK }), err("23503", 409)],
-    expect: { location: noticeTarget("task_joined") },
+    expect: { location: DASHBOARD },
   },
   ...mutationFailures("tasks/join", [ok({ id: TASK })], []),
   nonFormBody("tasks/join"),

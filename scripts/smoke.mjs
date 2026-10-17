@@ -2041,14 +2041,14 @@ const steps = [
     },
   ],
   [
-    "joining a task that does not exist still confirms",
+    "joining a task that does not exist ends on the dashboard without a toast",
     () =>
       request("/api/tasks/join", {
         method: "POST",
         form: { task_id: "00000000-0000-4000-8000-000000000000" },
         jar: jarB,
       }),
-    { status: 302, locationExact: "/dashboard?notice=task_joined" },
+    { status: 302, locationExact: "/dashboard" },
   ],
   ...["checkoff", "uncheck"].flatMap((action) => [
     [

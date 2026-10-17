@@ -26,17 +26,22 @@ export const POST: APIRoute = async (context) => {
       return context.redirect("/dashboard?error=not_configured");
     }
 
-    // Not visible to the caller (already deleted, other group): a stale submit is no error and gets the same confirmation as a real one.
-    // Without this check the insert policy would answer 42501, which maps to a loud `forbidden` banner.
+    // Not visible to the caller (already deleted, other group): a stale submit is no error, and with nothing joined it
+    // gets no confirmation either; the missing task shows on the dashboard. Without this check the insert policy would
+    // answer 42501, which maps to a loud `forbidden` banner.
     if (!(await taskExists(supabase, taskId))) {
-      return context.redirect(noticePath("/dashboard", "task_joined"));
+      return context.redirect("/dashboard");
     }
 
     const { error, status } = await supabase.from("task_participants").insert({ task_id: taskId, user_id: user.id });
     if (error) {
-      // 23505: already joined. 23503: the task was deleted between the check above and the insert. Both are idempotent and confirm like a real join.
-      if (error.code === "23505" || error.code === "23503") {
+      // 23505: already joined, so the caller is in the task and the confirmation is true.
+      if (error.code === "23505") {
         return context.redirect(noticePath("/dashboard", "task_joined"));
+      }
+      // 23503: the task was deleted between the check above and the insert: nothing joined, no confirmation.
+      if (error.code === "23503") {
+        return context.redirect("/dashboard");
       }
       const errorCode = toTaskErrorCode(error);
       reportMapped("tasks.join.failed", errorCode, error, { ...requestFields(context), status });

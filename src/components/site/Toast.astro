@@ -57,9 +57,10 @@ const position = "fixed inset-x-4 bottom-28 z-50 mx-auto max-w-md";
 )}
 
 <script>
-  // The close button (or Escape inside the toast) hides it; a success toast also hides on its own after about 5 s,
-  // paused while the pointer or keyboard focus is on it. An error toast never hides on its own.
+  // The close button or Escape hides it; a success toast also hides on its own after about 5 s, paused while the pointer
+  // or keyboard focus is on it. An error toast never hides on its own.
   const AUTO_HIDE_MS = 5000;
+  const hides: (() => void)[] = [];
   for (const toast of document.querySelectorAll<HTMLElement>("[data-toast]")) {
     let timer: number | undefined;
     const hide = () => {
@@ -74,9 +75,7 @@ const position = "fixed inset-x-4 bottom-28 z-50 mx-auto max-w-md";
       }
     };
     toast.querySelector("[data-toast-close]")?.addEventListener("click", hide);
-    toast.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") hide();
-    });
+    hides.push(hide);
     if (toast.dataset.toast === "success" && toast.dataset.toastPinned === undefined) {
       const start = () => {
         window.clearTimeout(timer);
@@ -93,5 +92,12 @@ const position = "fixed inset-x-4 bottom-28 z-50 mx-auto max-w-md";
       });
       start();
     }
+  }
+  // Escape anywhere closes the toasts, unless an open dialog owns the key (it closes on Escape itself).
+  if (hides.length > 0) {
+    document.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape" || document.querySelector('[role="dialog"], [role="alertdialog"]')) return;
+      for (const hide of hides) hide();
+    });
   }
 </script>

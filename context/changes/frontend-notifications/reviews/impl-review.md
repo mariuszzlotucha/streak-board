@@ -46,7 +46,7 @@ Success criteria on `dce74fd`: lint, test:unit (40 files), npm test (62 files, 1
 - **Location**: src/components/site/Toast.astro:64-66
 - **Detail**: Closing a toast (or the auto-hide while its close button has focus) sets `hidden` on the focused element; focus falls back to `<body>`. No Escape key to close.
 - **Fix**: In `hide()`, when the toast contains `document.activeElement`, move focus to `<main>` (`tabindex="-1"`); close on Escape.
-- **Decision**: FIXED — focus moves to <main> on hide; Escape closes
+- **Decision**: FIXED — focus moves to <main> on hide; Escape anywhere closes the toasts unless a dialog is open (after PR #182 comments)
 
 ### F3 — Toast position off by the space-y margin; error toast can cover controls
 
@@ -85,7 +85,7 @@ Success criteria on `dce74fd`: lint, test:unit (40 files), npm test (62 files, 1
   - Tradeoff: Partly reverses the owner's decision; smoke and data-routes rows change back.
   - Confidence: HIGH — small edit.
   - Blind spot: None significant.
-- **Decision**: ACCEPTED — Fix A, owner decision kept
+- **Decision**: FIXED after PR #182 comments — update or join of a gone task (not visible, 23503) keeps the plain `/dashboard`; the other stale paths still confirm
 
 ### F6 — Stale comment on noticeTarget
 
