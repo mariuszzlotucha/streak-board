@@ -1,6 +1,6 @@
 # Decyzje właściciela
 
-Stan z 2026-10-16. Odpowiedzi właściciela na pytania z `open-items.md` i `open-items-blocked.md`, zadane w rozmowie. Każdy wpis ma decyzję, skutek i to, co zostaje do zrobienia. Źródła pytań Q-01…Q-09: `context/domain/01-domain-distillation.md` §5.
+Stan z 2026-10-16, uzupełniony 2026-10-17. Odpowiedzi właściciela na pytania z `open-items.md` i `open-items-blocked.md`, zadane w rozmowie. Każdy wpis ma decyzję, skutek i to, co zostaje do zrobienia. Źródła pytań Q-01…Q-09: `context/domain/01-domain-distillation.md` §5.
 
 ## Produkt i dane
 
@@ -18,8 +18,13 @@ Stan z 2026-10-16. Odpowiedzi właściciela na pytania z `open-items.md` i `open
 - **Taski weekly z datą inną niż poniedziałek (Q-08)**: wynik zapytania na produkcji to 0. Podał go właściciel, nie sprawdzałem tego sam.
   - Do zrobienia: nic.
 - **Nazwa członka widoczna dla grupy (Q-05)**: e-mail przestaje być nazwą członka. Decyzje z `/10x-frame nickname` (2026-10-16): członkowie rozpoznają się po nazwie; nick obowiązkowy dla każdego konta, także istniejących; aplikacja może używać imienia przekazywanego przez Google (polityka do zmiany); własny e-mail widoczny tylko na `/settings`; ujawnieniem jest też to, co inny członek dostaje w HTML i z RPC.
-  - Decyzje z `/10x-plan nickname` (2026-10-16): unikalność nicka dosłowna w całej aplikacji („Kasia” i „kasia” to dwa nicki); długość 2–24 znaki po przycięciu, dowolne znaki jak w nazwie grupy; bez backfillu istniejących kont, czyli do pierwszego logowania inni widzą takie konto jako „Unknown member” (świadomy okres przejściowy wobec „inni nigdy nie widzą konta bez nazwy”); imię od Google tylko jako podpowiedź w polu nicka; S-14 idzie przed S-13 i wchodzi do „Done when” M-2.
+  - Decyzje z `/10x-plan nickname` (2026-10-16): unikalność nicka dosłowna w całej aplikacji („Kasia” i „kasia” to dwa nicki; zastąpione 2026-10-17, zob. „Unikalne nazwy”); długość 2–24 znaki po przycięciu, dowolne znaki jak w nazwie grupy; bez backfillu istniejących kont, czyli do pierwszego logowania inni widzą takie konto jako „Unknown member” (świadomy okres przejściowy wobec „inni nigdy nie widzą konta bez nazwy”); imię od Google tylko jako podpowiedź w polu nicka; S-14 idzie przed S-13 i wchodzi do „Done when” M-2.
   - Do zrobienia: wycinek S-14 `nickname` według `context/changes/nickname/plan.md` (dwie fazy, dwa wydania), razem z poprawką polityki prywatności, tekstu przy rejestracji, słownika i PRD.
+- **Unikalne nazwy (2026-10-17)**: tytuł tasku jest unikalny w grupie, nazwa grupy i nick w całej aplikacji. Wszystkie trzy porównywane są bez względu na wielkość liter, po przycięciu spacji, tabulatorów, CR i LF. To zastępuje decyzję S-14 o dosłownej unikalności nicka.
+  - Skutek: migracja `20261017150000_unique_names.sql` (indeksy `tasks_group_title_key`, `groups_name_key`, `nicknames_nickname_key` na `lower(...)`), kody błędów `title_taken` i `name_taken`, zdanie w polityce prywatności (zajęta nazwa jest zgłaszana bez wskazania, czyja jest). PR #184.
+  - Migracja nie ma backfillu. Przed wdrożeniem produkcja nie miała żadnego konta (właściciel usunął jedyne), więc nie miała duplikatów.
+  - Znane ograniczenie (code review #184, niska waga): `lower()` zależy od collation bazy (en_US.UTF-8, libc). Zmiana collation albo wersji glibc mogłaby po cichu zmienić, które nazwy są uznane za równe.
+  - Do zrobienia: nic.
 
 ## Strażnik migracji i testy
 
