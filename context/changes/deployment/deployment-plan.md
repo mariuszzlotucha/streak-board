@@ -410,6 +410,19 @@ Rollback:
 - [x] Owner's check on `streakboard.app` (2026-10-17), reported OK: a task create shows the toast, it hides after about 5 s and waits while hovered, Escape and the close button hide it, a reload does not repeat it, and a bad invite code shows an error toast that stays until closed. This covers plan rows 2.6 and, in substance, 1.6 (except the CSP report check on `npm run preview`).
 - [ ] Open, owner's checks (plan rows still `[ ]` in the archive): 1.6 (no CSP report on `npm run preview`), 1.7 (phone width: the toast covers neither the update notice nor page controls), 1.8 (`?notice=bogus` shows nothing), 2.7 (the `action-error` and `notice-success` kitchen-sink PNGs in light and dark mode).
 
+## Phase 23 — Unique names and the landing grid text (PRs #184, #187; no change folder)
+
+**Status: released 2026-10-17.** Task titles are unique within a group, and group names and nicknames across the app, all regardless of letter case (PR #184, docs in PR #185). The landing page describes the per-task grid instead of a shared spreadsheet (PR #187). Both went out in one release, with one migration. Neither has a change folder: both are small direct PRs, not roadmap slices. M-3 was closed in PR #186, docs-only, the same day.
+
+- [x] Code: PR #184, merged on 2026-10-17 as `ff8b7bf`. Its master run 39071289558 had `ci`, `smoke`, `e2e` and `integration` green, then waited for approval and was cancelled when the next release queued (superseded, not approved). PR #187, merged as `96ce53c`; master run 39072156107: `ci`, `smoke`, `e2e` and `integration` green, `compat` skipped on `master`. The docs-only merges PR #185 (`3e01842`, run 39071304890) and PR #186 (`0c25907`, run 39072229889) skipped `release`.
+- [x] `release` for `96ce53c` (it carries #184 and #187): job 117512613802, approved by the owner. `supabase migration list` showed `20261017150000` as local only. `supabase db push` printed "Applying migration 20261017150000_unique_names.sql..." and "Finished supabase db push.". `wrangler deploy` printed `Current Version ID: 6871079b-9133-4ebc-a7e1-3297301e6a86`. The tag moved `7b81aec...96ce53c production -> production (forced update)`.
+- [x] No backfill needed: before the release the owner deleted the only production account, so the new unique indexes had no rows to check. As a side effect, production has no accounts and no push subscriptions. The `reminder_secret` hash does not depend on accounts and stays.
+- [x] Agent's live check (2026-10-17, anonymous `curl` on `https://streakboard.app`): `/` 200 with the "Every task, at a glance" section and no "shared spreadsheet"; `/privacy` 200 with the sentence on unique nicknames and group names; `/dashboard` 302 to `/auth/signin`; `/auth/callback` 302 to `/auth/signin?error=link_expired`. `supabase migration list --linked` lists `20261017150000` both locally and remotely. `git ls-remote --tags origin production` shows `96ce53c`.
+- [ ] Open, owner's checks:
+  - Sign up again, choose a nickname, and create a group and tasks.
+  - A second task whose title differs only in case shows "Your group already has a task with this name. Pick another one."
+  - Turn reminders on again in Settings on the phone before the next 20:00 Warsaw run. The S-16 fan-out CPU check with `wrangler tail` needs at least one subscription.
+
 ## Verification checklist (end-to-end, once unblocked)
 
 - [x] Fresh browser session against the live `*.workers.dev` URL: sign up, confirm-email flow (or note if stubbed), sign in, hit `/dashboard`, sign out. — superseded by the Phase 10 production checks on `https://streakboard.app` (`workers.dev` is switched off by Phase 4 of that change).
