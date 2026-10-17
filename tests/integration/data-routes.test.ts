@@ -208,7 +208,7 @@ const errorTarget = (route: RouteId, code: string): string => `${ROUTES[route].h
 /**
  * Where a completed action ends: the dashboard (or `page`, for the nickname change that ends on settings) with its
  * `?notice=<code>`. Spelled out here rather than through `noticePath`, so the route's address is checked against an
- * oracle that shares nothing with it. A quiet no-op (a stale submit) keeps the plain dashboard.
+ * oracle that shares nothing with it. A stale or repeated submit gets the same notice as a real one (owner decision).
  */
 const noticeTarget = (code: string, page: string = DASHBOARD): string => `${page}?notice=${code}`;
 

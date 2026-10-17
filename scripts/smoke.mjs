@@ -555,9 +555,9 @@ const ACCOUNT_DELETED_STATUS =
 const DELETION_SHARED_WARNING = "Your account, nickname and check-offs are deleted right away. This cannot be undone.";
 const DELETION_VARIANT_TRACES = ["You leave ", "Choose who takes over", "is deleted with all its tasks and check-offs"];
 
-// The inline script that drops `?error=` from the address after the page has shown the alert.
+// The inline script that drops `?error=` and `?notice=` from the address after the page has shown the toast.
 const ERROR_PARAM_SCRIPT =
-  /<script[^>]*>(?:(?!<\/script>)[\s\S])*searchParams\.delete\("error"\)(?:(?!<\/script>)[\s\S])*history\.replaceState/;
+  /<script[^>]*>(?:(?!<\/script>)[\s\S])*searchParams\.delete\("error"\)(?:(?!<\/script>)[\s\S])*searchParams\.delete\("notice"\)(?:(?!<\/script>)[\s\S])*history\.replaceState/;
 
 // B's dashboard while B takes part in the daily task and nothing is ticked: the row offers the tick with a streak of 0
 // and A, B and C all share position 1 with a total of 0. B's task Leave dialog (island props in the server HTML) warns

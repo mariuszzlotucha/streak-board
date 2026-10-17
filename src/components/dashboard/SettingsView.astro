@@ -64,28 +64,31 @@ const deletion =
     </a>
   </div>
 ) : (
-  <div class="space-y-6">
-    {/* The toast is fixed to the bottom of the screen; in the markup it comes first, before the page's <h1>. */}
+  <>
+    {/* The toast is fixed to the bottom of the screen; in the markup it comes first, before the page's <h1>, and
+        outside the `space-y` stack, whose margin would shift its fixed position. */}
     {notice !== null && <Toast message={notice} variant="success" />}
-    <PageHeading title="Settings" />
-    <div class="max-w-xl space-y-6">
-      {group ? (
-        <GroupSettingsCard groupName={group.name} isOwner={group.owner_id === viewerId} otherMembers={otherMembers} />
-      ) : (
-        <p class="text-muted-foreground">
-          You are not in a group yet.{" "}
-          <a href="/dashboard" class="font-medium text-foreground underline underline-offset-4">
-            Create or join a group
-          </a>{" "}
-          on your dashboard.
-        </p>
-      )}
-      <RemindersCard
-        vapidPublicKey={reminders.vapidPublicKey}
-        hasSubscriptions={reminders.hasSubscriptions}
-        fixedState={remindersState}
-      />
-      <AccountCard email={email} nickname={nickname} deletion={deletion} />
+    <div class="space-y-6">
+      <PageHeading title="Settings" />
+      <div class="max-w-xl space-y-6">
+        {group ? (
+          <GroupSettingsCard groupName={group.name} isOwner={group.owner_id === viewerId} otherMembers={otherMembers} />
+        ) : (
+          <p class="text-muted-foreground">
+            You are not in a group yet.{" "}
+            <a href="/dashboard" class="font-medium text-foreground underline underline-offset-4">
+              Create or join a group
+            </a>{" "}
+            on your dashboard.
+          </p>
+        )}
+        <RemindersCard
+          vapidPublicKey={reminders.vapidPublicKey}
+          hasSubscriptions={reminders.hasSubscriptions}
+          fixedState={remindersState}
+        />
+        <AccountCard email={email} nickname={nickname} deletion={deletion} />
+      </div>
     </div>
-  </div>
+  </>
 )}

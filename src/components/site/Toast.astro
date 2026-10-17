@@ -57,15 +57,41 @@ const position = "fixed inset-x-4 bottom-28 z-50 mx-auto max-w-md";
 )}
 
 <script>
-  // The close button hides its toast; a success toast also hides on its own, an error toast never does.
+  // The close button (or Escape inside the toast) hides it; a success toast also hides on its own after about 5 s,
+  // paused while the pointer or keyboard focus is on it. An error toast never hides on its own.
   const AUTO_HIDE_MS = 5000;
   for (const toast of document.querySelectorAll<HTMLElement>("[data-toast]")) {
+    let timer: number | undefined;
     const hide = () => {
+      window.clearTimeout(timer);
+      // Hiding the focused close button would drop focus to <body>: hand it to <main> instead.
+      const hadFocus = toast.contains(document.activeElement);
       toast.hidden = true;
+      const main = document.querySelector<HTMLElement>("main");
+      if (hadFocus && main) {
+        main.tabIndex = -1;
+        main.focus({ preventScroll: true });
+      }
     };
     toast.querySelector("[data-toast-close]")?.addEventListener("click", hide);
+    toast.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") hide();
+    });
     if (toast.dataset.toast === "success" && toast.dataset.toastPinned === undefined) {
-      window.setTimeout(hide, AUTO_HIDE_MS);
+      const start = () => {
+        window.clearTimeout(timer);
+        timer = window.setTimeout(hide, AUTO_HIDE_MS);
+      };
+      const pause = () => window.clearTimeout(timer);
+      toast.addEventListener("mouseenter", pause);
+      toast.addEventListener("focusin", pause);
+      toast.addEventListener("mouseleave", () => {
+        if (!toast.contains(document.activeElement)) start();
+      });
+      toast.addEventListener("focusout", (event) => {
+        if (!toast.contains(event.relatedTarget as Node | null) && !toast.matches(":hover")) start();
+      });
+      start();
     }
   }
 </script>
