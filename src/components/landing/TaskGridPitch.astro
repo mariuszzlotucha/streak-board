@@ -1,0 +1,18 @@
+---
+import { Card, CardContent } from "@/components/ui/card";
+---
+
+<section aria-labelledby="task-grid">
+  <Card className="mx-auto max-w-3xl">
+    <CardContent className="space-y-3 text-center">
+      <h2 id="task-grid" class="font-heading text-2xl font-semibold text-foreground">
+        Every task, at a glance
+      </h2>
+      <p class="text-base leading-relaxed text-muted-foreground">
+        Each task has its own small grid: one row per person, one column per recent day (the last 7) or week (the last
+        4), so you can see who kept up without asking. No spreadsheet to color in by hand. Miss a day — or a week, on a
+        weekly task — and your streak is halved (rounded down) rather than reset, so a long run survives a bad day.
+      </p>
+    </CardContent>
+  </Card>
+</section>

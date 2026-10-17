@@ -2,7 +2,7 @@
 import PublicLayout from "@/layouts/PublicLayout.astro";
 import Hero from "@/components/landing/Hero.astro";
 import HowItWorks from "@/components/landing/HowItWorks.astro";
-import SpreadsheetPitch from "@/components/landing/SpreadsheetPitch.astro";
+import TaskGridPitch from "@/components/landing/TaskGridPitch.astro";
 import { CircleCheck } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { buttonVariants } from "@/components/ui/button";
@@ -34,6 +34,6 @@ const accountDeleted = accountDeletedNotice(Astro.url);
     )}
     <Hero />
     <HowItWorks />
-    <SpreadsheetPitch />
+    <TaskGridPitch />
   </div>
 </PublicLayout>
