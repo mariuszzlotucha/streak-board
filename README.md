@@ -165,6 +165,16 @@ Users can then sign in immediately after sign-up without clicking a confirmation
 
 Both pages, and the auth pages below, share `src/layouts/PublicLayout.astro`: a header with the StreakBoard name and a footer that names the operator and links the policy and the contact address. The dashboard shows the same footer.
 
+Any other address renders the 404 page `src/pages/404.astro` ("Page not found", status 404). `POST /api/client-errors` is public too: it takes a fixed service-worker error code as a `text/plain` body (what `navigator.sendBeacon` sends), reports it as `client.sw.<code>` and answers 204; another content type gets 415, an unknown code or a body over 256 bytes 400.
+
+### Installable app (PWA)
+
+The app can be installed from Chrome and Edge and added to the iOS home screen. The pieces are static files in `public/`: `manifest.webmanifest` (start URL `/dashboard`, standalone), the icons in `public/icons/` and `sw.js`; `public/_headers` keeps `sw.js` and the manifest out of HTTP caches and serves the manifest as `application/manifest+json`. `src/layouts/Layout.astro` links them and loads `src/lib/pwa/register.ts`, which registers the worker in a production build only and shows `UpdateNotice` ("A new version of StreakBoard is available.") when a release takes over an open page.
+
+- **`sw.js` must not cache anything** (PRD Non-Goals: no offline mode, no page or data cache). It has no `fetch` handler, takes over at once (`skipWaiting`, `clients.claim`) and deletes any cache on activate; smoke fails if it ever contains `respondWith` or `caches.put`. S-16 adds `push` there.
+- **Theme colour**: `#007a55`, the light `--primary` token (`oklch(0.508 0.118 165.612)` in `src/styles/global.css`). It is repeated in `THEME_COLOR` (`src/lib/site.ts`), `public/manifest.webmanifest`, `public/favicon.svg` and `scripts/pwa-icons.mjs`; change them together.
+- **Icons**: regenerate them from `public/favicon.svg` with `node scripts/pwa-icons.mjs` (sharp comes with Astro; if it is missing, `npx --yes -p sharp node scripts/pwa-icons.mjs`) and commit `public/icons/`.
+
 ### Auth routes
 
 | Route                        | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |

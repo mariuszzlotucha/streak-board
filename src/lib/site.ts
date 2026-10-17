@@ -10,3 +10,8 @@ export function contactEmail(): string | null {
   const email = CONTACT_EMAIL?.trim() ?? "";
   return email.length > 0 ? email : null;
 }
+
+// The app's theme colour (manifest, `theme-color`, icon background): the light `--primary` token in
+// src/styles/global.css, `oklch(0.508 0.118 165.612)`, which is exactly this value; public/favicon.svg and
+// public/manifest.webmanifest repeat it. Change all of them together.
+export const THEME_COLOR = "#007a55";

@@ -1,0 +1,26 @@
+---
+import PublicLayout from "@/layouts/PublicLayout.astro";
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
+import { buttonVariants } from "@/components/ui/button";
+
+// Astro renders this page (SSR, no prerender) for every address that matches no file and no route.
+Astro.response.status = 404;
+---
+
+<PublicLayout title="Page not found">
+  <div class="flex flex-1 items-center justify-center p-4">
+    <Card className="w-full max-w-sm text-center">
+      <CardHeader>
+        <h1 class="font-heading text-2xl font-semibold">Page not found</h1>
+      </CardHeader>
+      <CardContent className="text-muted-foreground">
+        <p>There is nothing at this address. It may have moved, or the link may be mistyped.</p>
+      </CardContent>
+      <CardFooter className="justify-center">
+        <a href="/" class:list={buttonVariants({ size: "sm" })}>
+          Go to StreakBoard
+        </a>
+      </CardFooter>
+    </Card>
+  </div>
+</PublicLayout>

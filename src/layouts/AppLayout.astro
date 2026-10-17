@@ -13,9 +13,11 @@ interface Props {
    * it out, because for a user without a nickname both links would lead back to that page.
    */
   current?: "dashboard" | "settings";
+  /** Dev-only: the kitchen sink's `update-notice` state renders the new-version message visible. */
+  showUpdateNotice?: boolean;
 }
 
-const { title, nickname, current } = Astro.props;
+const { title, nickname, current, showUpdateNotice } = Astro.props;
 const NAV_LINKS = [
   { id: "dashboard", href: "/dashboard", label: "Dashboard" },
   { id: "settings", href: "/settings", label: "Settings" },
@@ -23,7 +25,7 @@ const NAV_LINKS = [
 ---
 
 {/* The frame of the signed-in pages: brand header with the Main nav and the only Sign out, the page's own content, then who is signed in and the footer. */}
-<Layout title={title}>
+<Layout title={title} showUpdateNotice={showUpdateNotice}>
   <div class="flex min-h-screen flex-col bg-muted">
     <SiteHeader compactBrand>
       {current && (
