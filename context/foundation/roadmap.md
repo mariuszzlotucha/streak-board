@@ -45,7 +45,7 @@ Grono znajomych korzystało wcześniej ze wspólnego arkusza Google, w którym r
 | ID   | Change ID       | Outcome (user can …)                                                                                             | Prerequisites | PRD refs                                     | Status      |
 | ---- | --------------- | ---------------------------------------------------------------------------------------------------------------- | ------------- | -------------------------------------------- | ----------- |
 | S-13 | checkoff-grid   | zobaczyć siatkę odznaczeń grupy: kto wykonał task w każdym z ostatnich okresów                                   | S-11, S-14    | PRD §Vision, FR-013; MS-01                   | in-progress |
-| S-16 | task-reminders  | dostać przypomnienie o tasku, do którego jest zapisany, a którego nie odznaczył w bieżącym okresie               | —             | — (PRD §Success Criteria → Secondary; MS-02) | ready       |
+| S-16 | task-reminders  | dostać przypomnienie o tasku, do którego jest zapisany, a którego nie odznaczył w bieżącym okresie               | —             | — (PRD §Success Criteria → Secondary; MS-02) | planning    |
 | S-17 | installable-pwa | zainstalować aplikację na ekranie głównym telefonu albo na komputerze i uruchamiać ją jak osobną aplikację (PWA) | —             | — (opis właściciela; MS-03)                  | done        |
 
 ## Baseline
@@ -100,7 +100,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
   - Jak aplikacja wysyła i planuje przypomnienia: dziś e-maile wysyła tylko Supabase Auth (SMTP Resend), a Worker nie ma harmonogramu, więc potrzebny jest klucz dostawcy jako sekret Workera (krok właściciela) i zadanie cykliczne mieszczące się w limicie CPU planu. — Owner: team. Block: no — rozstrzyga `/10x-research`.
 - **Źródło zakresu:** PRD §Success Criteria → Secondary („Powiadomienia/przypomnienia o niewykonanym tasku”), do 2026-10-17 w `## Parked`; odparkowane decyzją właściciela 2026-10-17 przy wyborze źródeł M-3.
 - **Risk:** Pierwszy wycinek, który działa bez żądania użytkownika: zadanie cykliczne musi zmieścić się w limicie CPU Workera (10 ms na planie Free, ryzyko znane z S-08) przy przeglądaniu wszystkich zapisanych uczestników, a nieudana wysyłka nie może zginąć po cichu (kontrakt błędów z S-08). Wiadomości do użytkowników zmieniają to, co polityka prywatności mówi o użyciu adresu e-mail, więc polityka, PRD i słownik zmieniają się w tej samej zmianie, a usunięcie konta (S-15) musi usuwać też ustawienia przypomnień. Idzie po S-13, ale nic go od niej nie uzależnia, więc może iść równolegle.
-- **Status:** ready
+- **Status:** planning
 
 ### S-17: Aplikacja do zainstalowania (PWA)
 
