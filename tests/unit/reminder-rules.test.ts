@@ -53,6 +53,7 @@ describe("runReminders", () => {
       due: true,
       today: "2026-10-04",
       week: "2026-09-28",
+      outcome: "config_missing",
     });
     expect(info).toHaveBeenCalledWith(
       expect.objectContaining({ event: "reminders.run.started", today: "2026-10-04", week: "2026-09-28" }),

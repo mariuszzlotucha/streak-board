@@ -406,10 +406,10 @@ The table and functions are additive. The release step runs `supabase migration 
 
 #### Automated
 
-- [ ] 2.1 Migration guard passes
-- [x] 2.2 Types are current
-- [x] 2.3 RLS scenarios pass
-- [x] 2.4 Integration tests pass
+- [x] 2.1 Migration guard passes — 22e6002
+- [x] 2.2 Types are current — 22e6002
+- [x] 2.3 RLS scenarios pass — 22e6002
+- [x] 2.4 Integration tests pass — 22e6002
 
 #### Manual
 
@@ -419,10 +419,10 @@ The table and functions are additive. The release step runs `supabase migration 
 
 #### Automated
 
-- [ ] 3.1 Crypto unit tests pass with the RFC 8291 vector
-- [ ] 3.2 Unit tests for the send loop pass with a stubbed fetch
-- [ ] 3.3 Mutation testing on the send-outcome mapping
-- [ ] 3.4 Lint and build pass
+- [x] 3.1 Crypto unit tests pass with the RFC 8291 vector
+- [x] 3.2 Unit tests for the send loop pass with a stubbed fetch
+- [x] 3.3 Mutation testing on the send-outcome mapping
+- [x] 3.4 Lint and build pass
 
 #### Manual
 
