@@ -1,7 +1,7 @@
 ---
 change_id: installable-pwa
 title: Installable pwa
-status: implemented
+status: impl_reviewed
 created: 2026-10-17
 updated: 2026-10-17
 archived_at: null

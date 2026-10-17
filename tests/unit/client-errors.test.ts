@@ -39,11 +39,32 @@ describe("POST /api/client-errors", () => {
   it.each([
     ["an unknown code", "sw_exploded"],
     ["an empty body", ""],
-    ["a body over 256 bytes", `sw_register_failed${" ".repeat(300)}`],
   ])("answers 400 to %s without a report", async (_label, body) => {
     const response = await call(body);
 
     expect(response.status).toBe(400);
+    expect(reportError).not.toHaveBeenCalled();
+  });
+
+  it("answers 413 to a body over 256 bytes without a declared length, without a report", async () => {
+    const response = await call(`sw_register_failed${" ".repeat(300)}`);
+
+    expect(response.status).toBe(413);
+    expect(reportError).not.toHaveBeenCalled();
+  });
+
+  it("answers 413 to a declared length over 256 bytes before reading the body", async () => {
+    const request = new Request("http://localhost/api/client-errors", {
+      method: "POST",
+      headers: { "Content-Type": "text/plain", "Content-Length": "100000" },
+      body: "sw_register_failed",
+    });
+    const read = vi.spyOn(request, "arrayBuffer");
+    const response = await POST({ request, routePattern: "/api/client-errors", locals: { user: null } } as never);
+
+    expect(response.status).toBe(413);
+    expect(request.bodyUsed).toBe(false);
+    expect(read).not.toHaveBeenCalled();
     expect(reportError).not.toHaveBeenCalled();
   });
 });
