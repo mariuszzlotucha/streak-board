@@ -23,7 +23,7 @@ export const POST: APIRoute = async (context) => {
     if (!group) {
       // No group left to delete: a stale second submit after the delete already went through ends where the user
       // wanted to be, not on a "not allowed" alert.
-      return context.redirect("/dashboard");
+      return context.redirect(noticePath("/dashboard", "group_deleted"));
     }
 
     // Only the owner may delete the group. RLS turns "not the owner" into an empty result, not an error.

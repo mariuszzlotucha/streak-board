@@ -31,7 +31,7 @@ export const POST: APIRoute = async (context) => {
       // Nothing was deleted: the caller is the owner (still in their group), or they had already left (a stale
       // second submit), which is the outcome they asked for.
       const group = await getMyGroup(supabase);
-      return context.redirect(group ? "/dashboard?error=forbidden" : "/dashboard");
+      return context.redirect(group ? "/dashboard?error=forbidden" : noticePath("/dashboard", "group_left"));
     }
 
     return context.redirect(noticePath("/dashboard", "group_left"));

@@ -30,9 +30,9 @@ export const POST: APIRoute = async (context) => {
       return context.redirect("/dashboard?error=not_configured");
     }
 
-    // Not visible to the caller (deleted, other group): a stale submit ends quietly on the dashboard.
+    // Not visible to the caller (deleted, other group): a stale submit is no error and gets the same confirmation as a real one.
     if (!(await getTask(supabase, taskId))) {
-      return context.redirect("/dashboard");
+      return context.redirect(noticePath("/dashboard", "task_updated"));
     }
 
     // Only the title column is updatable. RLS turns "not the creator" into an empty result, not an error.

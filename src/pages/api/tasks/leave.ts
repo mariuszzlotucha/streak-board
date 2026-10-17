@@ -25,8 +25,8 @@ export const POST: APIRoute = async (context) => {
       return context.redirect("/dashboard?error=not_configured");
     }
 
-    // Only the caller's own row can match (RLS), so "not joined" and "task gone" both come back empty: a quiet no-op.
-    const { data, error, status } = await supabase
+    // Only the caller's own row can match (RLS), so "not joined" and "task gone" both come back empty: no error, and the same confirmation as a real leave.
+    const { error, status } = await supabase
       .from("task_participants")
       .delete()
       .eq("task_id", taskId)
@@ -36,9 +36,6 @@ export const POST: APIRoute = async (context) => {
       const errorCode = toTaskErrorCode(error);
       reportMapped("tasks.leave.failed", errorCode, error, { ...requestFields(context), status });
       return context.redirect(`/dashboard?error=${errorCode}`);
-    }
-    if (data.length === 0) {
-      return context.redirect("/dashboard");
     }
 
     return context.redirect(noticePath("/dashboard", "task_left"));

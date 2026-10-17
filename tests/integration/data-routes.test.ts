@@ -539,10 +539,10 @@ const ROWS: Row[] = [
     },
   },
   {
-    name: "nothing deleted and no group (already left): dashboard, quiet",
+    name: "nothing deleted and no group (already left): dashboard with the notice",
     route: "groups/leave",
     script: [ok([]), ok(null)],
-    expect: { location: DASHBOARD },
+    expect: { location: noticeTarget("group_left") },
   },
   {
     name: "nothing deleted and the group read fails: unknown with the exception line",
@@ -556,10 +556,10 @@ const ROWS: Row[] = [
   // groups/delete
   ...common("groups/delete"),
   {
-    name: "no group (already deleted): dashboard, quiet",
+    name: "no group (already deleted): dashboard with the notice",
     route: "groups/delete",
     script: [ok(null)],
-    expect: { location: DASHBOARD, calls: [MY_GROUP] },
+    expect: { location: noticeTarget("group_deleted"), calls: [MY_GROUP] },
   },
   {
     name: "delete ok: dashboard with group_deleted, the caller's group by id",
@@ -594,10 +594,10 @@ const ROWS: Row[] = [
     expect: { location: FORBIDDEN, client: "none" },
   },
   {
-    name: "no group (deleted meanwhile): dashboard, quiet",
+    name: "no group (deleted meanwhile): dashboard with the notice",
     route: "groups/remove-member",
     script: [ok(null)],
-    expect: { location: DASHBOARD, calls: [MY_GROUP] },
+    expect: { location: noticeTarget("member_removed"), calls: [MY_GROUP] },
   },
   {
     name: "delete ok: dashboard with member_removed, the lowercased target in the caller's group, never the caller's own row",
@@ -620,10 +620,10 @@ const ROWS: Row[] = [
     },
   },
   {
-    name: "nothing deleted as the owner (target already gone): dashboard, quiet",
+    name: "nothing deleted as the owner (target already gone): dashboard with the notice",
     route: "groups/remove-member",
     script: [ok(GROUP), ok([])],
-    expect: { location: DASHBOARD },
+    expect: { location: noticeTarget("member_removed") },
   },
   {
     name: "nothing deleted as a member: forbidden, quiet",
@@ -805,10 +805,10 @@ const ROWS: Row[] = [
     expect: { location: FORBIDDEN, client: "none" },
   },
   {
-    name: "task not visible: dashboard, quiet",
+    name: "task not visible: dashboard with the notice",
     route: "tasks/update",
     script: [ok(null)],
-    expect: { location: DASHBOARD, calls: [GET_TASK] },
+    expect: { location: noticeTarget("task_updated"), calls: [GET_TASK] },
   },
   {
     name: "task read fails: the helper throws, unknown with the exception line",
@@ -848,10 +848,10 @@ const ROWS: Row[] = [
     expect: { location: FORBIDDEN, client: "none" },
   },
   {
-    name: "task not visible: dashboard, quiet",
+    name: "task not visible: dashboard with the notice",
     route: "tasks/delete",
     script: [ok(null)],
-    expect: { location: DASHBOARD, calls: [GET_TASK] },
+    expect: { location: noticeTarget("task_deleted"), calls: [GET_TASK] },
   },
   {
     name: "delete ok: dashboard with task_deleted, the task by id",
@@ -880,10 +880,10 @@ const ROWS: Row[] = [
     expect: { location: FORBIDDEN, client: "none" },
   },
   {
-    name: "task not visible: dashboard, quiet",
+    name: "task not visible: dashboard with the notice",
     route: "tasks/join",
     script: [ok(null)],
-    expect: { location: DASHBOARD, calls: [TASK_EXISTS] },
+    expect: { location: noticeTarget("task_joined"), calls: [TASK_EXISTS] },
   },
   {
     name: "insert ok: dashboard with task_joined, the caller enrolled on the task",
@@ -895,16 +895,16 @@ const ROWS: Row[] = [
     },
   },
   {
-    name: "the user already joined the task: dashboard, quiet",
+    name: "the user already joined the task: dashboard with the notice",
     route: "tasks/join",
     script: [ok({ id: TASK }), err("23505", 409)],
-    expect: { location: DASHBOARD },
+    expect: { location: noticeTarget("task_joined") },
   },
   {
-    name: "the task was deleted meanwhile: dashboard, quiet",
+    name: "the task was deleted meanwhile: dashboard with the notice",
     route: "tasks/join",
     script: [ok({ id: TASK }), err("23503", 409)],
-    expect: { location: DASHBOARD },
+    expect: { location: noticeTarget("task_joined") },
   },
   ...mutationFailures("tasks/join", [ok({ id: TASK })], []),
   nonFormBody("tasks/join"),
@@ -935,10 +935,10 @@ const ROWS: Row[] = [
     },
   },
   {
-    name: "nothing deleted (not joined or task gone): dashboard, quiet",
+    name: "nothing deleted (not joined or task gone): dashboard with the notice",
     route: "tasks/leave",
     script: [ok([])],
-    expect: { location: DASHBOARD },
+    expect: { location: noticeTarget("task_left") },
   },
   ...mutationFailures("tasks/leave", [], []),
   nonFormBody("tasks/leave"),

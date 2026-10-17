@@ -1511,9 +1511,9 @@ const steps = [
     },
   ],
   [
-    "leaving again after having left is not an error",
+    "leaving again after having left still confirms",
     () => request("/api/groups/leave", { method: "POST", jar: jarB }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=group_left" },
   ],
   [
     "user B joins again with the same code",
@@ -1807,7 +1807,7 @@ const steps = [
     // A double click or a stale page: the target is gone already, which is not the owner's mistake.
     "removing an already removed member is not an error",
     () => request("/api/groups/remove-member", { method: "POST", form: { user_id: memberIdB } }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=member_removed" },
   ],
   [
     "user B joins again with the same code after being removed",
@@ -2023,9 +2023,9 @@ const steps = [
     },
   ],
   [
-    "joining the task again is a quiet redirect",
+    "joining the task again still confirms",
     () => request("/api/tasks/join", { method: "POST", form: { task_id: taskId }, jar: jarB }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=task_joined" },
   ],
   [
     "participants are unchanged after the repeated join",
@@ -2041,14 +2041,14 @@ const steps = [
     },
   ],
   [
-    "joining a task that does not exist is a quiet redirect",
+    "joining a task that does not exist still confirms",
     () =>
       request("/api/tasks/join", {
         method: "POST",
         form: { task_id: "00000000-0000-4000-8000-000000000000" },
         jar: jarB,
       }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=task_joined" },
   ],
   ...["checkoff", "uncheck"].flatMap((action) => [
     [
@@ -2325,9 +2325,9 @@ const steps = [
     },
   ],
   [
-    "leaving a task that was not joined is a quiet redirect",
+    "leaving a task that was not joined still confirms",
     () => request("/api/tasks/leave", { method: "POST", form: { task_id: taskId }, jar: jarB }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=task_left" },
   ],
   [
     "task participation of the creator is intact after the member left",
@@ -2538,9 +2538,9 @@ const steps = [
     },
   ],
   [
-    "deleting the task again is a quiet redirect",
+    "deleting the task again still confirms",
     () => request("/api/tasks/delete", { method: "POST", form: { task_id: taskId } }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=task_deleted" },
   ],
   // S-15: the ownership transfer, at the end of the owner-member sequence so the steps above keep their owner. A hands
   // the group to B, B sees the one-time notice and dismisses it, and B hands it back so A deletes the group below.
@@ -2792,12 +2792,12 @@ const steps = [
   [
     "deleting again after the group is gone is not an error",
     () => request("/api/groups/delete", { method: "POST" }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=group_deleted" },
   ],
   [
     "removing a member after the group is gone is not an error",
     () => request("/api/groups/remove-member", { method: "POST", form: { user_id: memberIdB } }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=member_removed" },
   ],
   // S-15: account deletion, after the group above is gone. A starts a new group with B and C. C, a member whose task B
   // has ticked, deletes the account: the task stays in the group with B's tick and passes to A, the owner. B then leaves
