@@ -379,7 +379,7 @@ Rollback:
 
 ## Phase 21 — Installable app (change `installable-pwa`, S-17)
 
-**Status: released 2026-10-17; device checks open.** The change makes StreakBoard installable: a manifest, icons, a service worker that caches nothing, the "new version" notice, `POST /api/client-errors`, the 404 page, the installed-app invite hint and a privacy policy line (`context/changes/installable-pwa/plan.md`). It shipped as one release with no migrations.
+**Status: released 2026-10-17; Android and desktop confirmed, iOS pending.** The change makes StreakBoard installable: a manifest, icons, a service worker that caches nothing, the "new version" notice, `POST /api/client-errors`, the 404 page, the installed-app invite hint and a privacy policy line (`context/changes/installable-pwa/plan.md`). It shipped as one release with no migrations.
 
 - [x] Code: PR #168, merged on 2026-10-17 as merge commit `d2b2323`. Master run 39033118236: `ci`, `smoke`, `e2e` and `integration` green; `compat` skipped on `master`.
 - [x] `release` for PR #168: job 117398261198, approved by the owner. `supabase db push` reported "Remote database is up to date" (no migrations); `wrangler deploy` printed `Current Version ID: c7060200-0c8d-4817-bc8d-8042eb0f65e9`; "Mark the deployed commit" moved the tag `bcbaec9...d2b2323 production -> production (forced update)`.
@@ -394,10 +394,10 @@ Rollback:
 
   This covers plan row 2.2.
 
-- [ ] Open, owner's checks:
-  - 2.3 Android Chrome: install, sign in (e-mail, Google), invite, check-off.
-  - 2.4 Desktop Chrome/Edge: install, own window, check-off.
-  - 2.5 After sign-out, the installed app does not show the previous user's data.
+- [x] Owner's device checks (2026-10-17):
+  - 2.3 Android Chrome: installed through the ⋮ menu ("Install app"); sign-in with e-mail and with Google, invite link pasted into "Join with code", and check-off all confirmed in the installed app. Chrome showed no automatic install prompt; that is expected, since the plan chose the browser's prompt only, with no prompt of our own.
+  - 2.4 Desktop: Chrome on Ubuntu, installed and opened in its own window, check-off confirmed. Edge skipped by the owner.
+  - 2.5 After sign-out, the installed app showed no data of the previous user.
 - [ ] Open, iOS: `context/changes/installable-pwa/ios-check.md` handed to a group member with an iPhone; result pending (plan row 2.6).
 
 ## Verification checklist (end-to-end, once unblocked)

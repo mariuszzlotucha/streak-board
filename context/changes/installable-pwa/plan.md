@@ -348,8 +348,8 @@ No database migrations. Rolling back the code (`npx wrangler rollback`) leaves t
 
 - [x] 2.1 PR merged to `master` and the `release` run approved and green — d2b2323
 - [x] 2.2 Production manifest and `sw.js` answer 200 with the expected headers — d2b2323
-- [ ] 2.3 Android Chrome: install, sign in (e-mail, Google), invite, check-off
-- [ ] 2.4 Desktop Chrome/Edge: install, own window, check-off
-- [ ] 2.5 After sign-out the installed app does not show the previous user's data
+- [x] 2.3 Android Chrome: install, sign in (e-mail, Google), invite, check-off
+- [x] 2.4 Desktop Chrome/Edge: install, own window, check-off
+- [x] 2.5 After sign-out the installed app does not show the previous user's data
 - [ ] 2.6 `ios-check.md` handed over; iOS result or "pending" recorded
 - [x] 2.7 Release recorded in `deployment-plan.md` — d2b2323
