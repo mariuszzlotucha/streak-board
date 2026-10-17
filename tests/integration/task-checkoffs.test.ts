@@ -15,6 +15,7 @@ import {
   type TestGroup,
   type TestUser,
   utcDay,
+  uniqueName,
 } from "../helpers/supabase";
 
 // Expectations come from the PRD (Access Control, FR-008, US-01) and the settled terms of the S-04 plan, not from the
@@ -54,10 +55,10 @@ describe("task check-offs", () => {
   });
 
   beforeEach(async () => {
-    ga = await createGroupAs(a, "Group A");
+    ga = await createGroupAs(a, uniqueName("Group A"));
     await joinGroupAs(c, ga.joinCode);
     await joinGroupAs(m, ga.joinCode);
-    gb = await createGroupAs(b, "Group B");
+    gb = await createGroupAs(b, uniqueName("Group B"));
     taskId = await createTaskAs(c, ga.id, "Water the plants", "daily");
     // Every test except the window test uses periods between six days back and tomorrow, which stay valid if UTC
     // midnight passes mid-test; the window test waits out the last seconds before midnight instead.

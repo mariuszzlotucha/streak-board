@@ -12,6 +12,7 @@ import {
   joinGroupAs,
   type TestGroup,
   type TestUser,
+  uniqueName,
 } from "../helpers/supabase";
 
 // Contract tests for the rules that exist twice, in the TypeScript normalisers and in the database (the CHECKs
@@ -124,7 +125,7 @@ describe("rules duplicated in SQL and TS", () => {
     let group: TestGroup;
 
     beforeEach(async () => {
-      group = await createGroupAs(owner, "Contract group");
+      group = await createGroupAs(owner, uniqueName("Contract group"));
     });
 
     async function rawTaskInsert(title: string) {
@@ -182,7 +183,7 @@ describe("rules duplicated in SQL and TS", () => {
     let group: TestGroup;
 
     beforeEach(async () => {
-      group = await createGroupAs(owner, "Contract group");
+      group = await createGroupAs(owner, uniqueName("Contract group"));
     });
 
     it("both accept once, daily and weekly", async () => {
@@ -286,7 +287,7 @@ describe("rules duplicated in SQL and TS", () => {
 
   describe("join code: normalizeJoinCode, the join_code default and join_group", () => {
     it("a generated code is lowercase hex that normalizes to itself, also inside an invite link", async () => {
-      const group = await createGroupAs(owner, "Contract group");
+      const group = await createGroupAs(owner, uniqueName("Contract group"));
 
       expect(group.joinCode).toMatch(/^[0-9a-f]+$/);
       expect(normalizeJoinCode(group.joinCode)).toBe(group.joinCode);
@@ -294,7 +295,7 @@ describe("rules duplicated in SQL and TS", () => {
     });
 
     it("join_group accepts the normalized code for a second user", async () => {
-      const group = await createGroupAs(owner, "Contract group");
+      const group = await createGroupAs(owner, uniqueName("Contract group"));
       const code = normalizeJoinCode(`https://streak.example/join/${group.joinCode.toUpperCase()}/?x=1#y`);
       expect(code).toBe(group.joinCode);
       if (code === null) throw new Error("unreachable: the generated code normalizes to itself");

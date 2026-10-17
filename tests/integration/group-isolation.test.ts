@@ -8,6 +8,7 @@ import {
   joinGroupAs,
   type TestGroup,
   type TestUser,
+  uniqueName,
 } from "../helpers/supabase";
 
 // Expectations come from the PRD (Access Control, FR-003): a group is a private
@@ -15,7 +16,8 @@ import {
 // outsiders (other groups' users, users without a group, anonymous clients)
 // can neither read nor change it.
 
-const GA_NAME = "Group A";
+const GA_NAME = uniqueName("Group A");
+const RENAMED_NAME = uniqueName("Renamed by A");
 const RLS_VIOLATION = "42501";
 
 describe("cross-group data isolation", () => {
@@ -36,7 +38,7 @@ describe("cross-group data isolation", () => {
   beforeEach(async () => {
     ga = await createGroupAs(a, GA_NAME);
     await joinGroupAs(a2, ga.joinCode);
-    gb = await createGroupAs(b, "Group B");
+    gb = await createGroupAs(b, uniqueName("Group B"));
   });
 
   async function adminGroupA() {
@@ -137,12 +139,12 @@ describe("cross-group data isolation", () => {
 
       const { data: allowed, error: ownerError } = await a.client
         .from("groups")
-        .update({ name: "Renamed by A" })
+        .update({ name: RENAMED_NAME })
         .eq("id", ga.id)
         .select("id");
       expect(ownerError).toBeNull();
       expect(allowed).toEqual([{ id: ga.id }]);
-      expect(await adminGroupA()).toEqual([{ id: ga.id, name: "Renamed by A" }]);
+      expect(await adminGroupA()).toEqual([{ id: ga.id, name: RENAMED_NAME }]);
     });
 
     it("B's delete of GA affects 0 rows; GA and its memberships survive", async () => {
@@ -178,7 +180,7 @@ describe("cross-group data isolation", () => {
       expect(forged?.map((row) => row.id)).toEqual([ga.id]);
 
       // Control: the same insert with C's own id succeeds, so the denial above came from RLS.
-      const own = await createGroupAs(c, "C's own group");
+      const own = await createGroupAs(c, uniqueName("C's own group"));
       expect(own.id).not.toBe(ga.id);
     });
   });

@@ -12,6 +12,7 @@ import {
   joinTaskAs,
   type TestGroup,
   type TestUser,
+  uniqueName,
 } from "../helpers/supabase";
 
 // Expectations come from the PRD (Access Control, FR-006): a member joins or
@@ -41,10 +42,10 @@ describe("task participation", () => {
   });
 
   beforeEach(async () => {
-    ga = await createGroupAs(a, "Group A");
+    ga = await createGroupAs(a, uniqueName("Group A"));
     await joinGroupAs(c, ga.joinCode);
     await joinGroupAs(m, ga.joinCode);
-    await createGroupAs(b, "Group B");
+    await createGroupAs(b, uniqueName("Group B"));
     taskId = await createTaskAs(c, ga.id, "Water the plants", "daily");
   });
 

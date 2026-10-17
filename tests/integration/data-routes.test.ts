@@ -149,11 +149,13 @@ const ROUTE_IDS = Object.keys(ROUTES) as RouteId[];
 
 // Scripted results.
 const ok = (data: unknown = null, status = 200): ScriptedResult => ({ data, error: null, status });
-const err = (code: string, status: number): ScriptedResult => ({
+const err = (code: string, status: number, message = `sqlstate ${code}`): ScriptedResult => ({
   data: null,
-  error: { code, message: `sqlstate ${code}` },
+  error: { code, message },
   status,
 });
+// PostgREST's message for a unique violation names the index; the group and task mappers read it.
+const duplicateKey = (index: string): string => `duplicate key value violates unique constraint "${index}"`;
 const RLS = err("42501", 403);
 const UNMAPPED = err("XX000", 500);
 const task = (recurrence: string) => ({ id: TASK, title: "Run", recurrence, created_by: USER });
@@ -232,7 +234,11 @@ function common(route: RouteId): Row[] {
 
 // A redirect route's mutation outcomes: the 42501 and unmapped reports and, when given, the quiet domain codes,
 // each with the words that name its case in the row title.
-function mutationFailures(route: RouteId, preRead: ScriptedResult[], quiet: [string, string, string][]): Row[] {
+function mutationFailures(
+  route: RouteId,
+  preRead: ScriptedResult[],
+  quiet: [code: string, outcome: string, label: string, message?: string][],
+): Row[] {
   return [
     {
       name: "permission error: forbidden, with an error line carrying the status",
@@ -240,10 +246,10 @@ function mutationFailures(route: RouteId, preRead: ScriptedResult[], quiet: [str
       script: [...preRead, RLS],
       expect: { location: errorTarget(route, "forbidden"), errors: [failed(route, "forbidden", "42501", 403)] },
     },
-    ...quiet.map(([code, outcome, label]): Row => ({
+    ...quiet.map(([code, outcome, label, message]): Row => ({
       name: `${label}: ${outcome}, quiet`,
       route,
-      script: [...preRead, err(code, 400)],
+      script: [...preRead, err(code, 400, message)],
       expect: { location: errorTarget(route, outcome) },
     })),
     {
@@ -427,7 +433,8 @@ const ROWS: Row[] = [
     [],
     [
       ["23514", "invalid_name", "the name fails its check constraint"],
-      ["23505", "already_in_group", "the user already has a group"],
+      ["23505", "already_in_group", "the user already has a group", duplicateKey("group_members_user_id_key")],
+      ["23505", "name_taken", "another group has the name", duplicateKey("groups_name_key")],
     ],
   ),
   nonFormBody("groups/create"),
@@ -515,7 +522,14 @@ const ROWS: Row[] = [
     script: [ok(GROUP), ok([])],
     expect: { location: FORBIDDEN },
   },
-  ...mutationFailures("groups/rename", [ok(GROUP)], [["23514", "invalid_name", "the name fails its check constraint"]]),
+  ...mutationFailures(
+    "groups/rename",
+    [ok(GROUP)],
+    [
+      ["23514", "invalid_name", "the name fails its check constraint"],
+      ["23505", "name_taken", "another group has the name", duplicateKey("groups_name_key")],
+    ],
+  ),
   nonFormBody("groups/rename"),
 
   // groups/leave
@@ -780,7 +794,10 @@ const ROWS: Row[] = [
   ...mutationFailures(
     "tasks/create",
     [ok(GROUP)],
-    [["23514", "invalid_title", "the title fails its check constraint"]],
+    [
+      ["23514", "invalid_title", "the title fails its check constraint"],
+      ["23505", "title_taken", "another task of the group has the title", duplicateKey("tasks_group_title_key")],
+    ],
   ),
   nonFormBody("tasks/create"),
 
@@ -835,7 +852,10 @@ const ROWS: Row[] = [
   ...mutationFailures(
     "tasks/update",
     [ok(task("daily"))],
-    [["23514", "invalid_title", "the title fails its check constraint"]],
+    [
+      ["23514", "invalid_title", "the title fails its check constraint"],
+      ["23505", "title_taken", "another task of the group has the title", duplicateKey("tasks_group_title_key")],
+    ],
   ),
   nonFormBody("tasks/update"),
 

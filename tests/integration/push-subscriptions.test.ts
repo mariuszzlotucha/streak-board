@@ -10,6 +10,7 @@ import {
   joinGroupAs,
   joinTaskAs,
   type TestUser,
+  uniqueName,
 } from "../helpers/supabase";
 
 // Expectations come from the S-16 plan (context/changes/task-reminders/plan.md, Phase 2): a subscription per device,
@@ -176,7 +177,7 @@ describe("push subscriptions", () => {
       owner = await createTestUser();
       member = await createTestUser();
       silent = await createTestUser();
-      const group = await createGroupAs(owner, "Reminders group");
+      const group = await createGroupAs(owner, uniqueName("Reminders group"));
       await joinGroupAs(member, group.joinCode);
       await joinGroupAs(silent, group.joinCode);
 

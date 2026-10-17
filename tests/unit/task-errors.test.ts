@@ -1,12 +1,19 @@
 import { describe, expect, it } from "vitest";
 import { resolveTaskError, toTaskErrorCode } from "@/lib/task-errors";
 
-// 23514 is the CHECK on the title length or the recurrence list (src/lib/task-errors.ts); every other SQLSTATE goes
-// through the group mapper.
+// 23514 is the CHECK on the title length or the recurrence list (src/lib/task-errors.ts), a 23505 that names
+// tasks_group_title_key the unique title within a group (migration unique_names); everything else goes through the
+// group mapper.
 
 describe("toTaskErrorCode", () => {
   it("maps 23514 to invalid_title", () => {
     expect(toTaskErrorCode({ code: "23514" })).toBe("invalid_title");
+  });
+
+  it("maps a 23505 that names tasks_group_title_key to title_taken", () => {
+    const message = 'duplicate key value violates unique constraint "tasks_group_title_key"';
+    expect(toTaskErrorCode({ code: "23505", message })).toBe("title_taken");
+    expect(toTaskErrorCode({ code: "23503", message })).toBe("unknown");
   });
 
   it.each([
@@ -25,8 +32,9 @@ describe("toTaskErrorCode", () => {
 });
 
 describe("resolveTaskError", () => {
-  it("returns the message of the two task codes", () => {
+  it("returns the message of the three task codes", () => {
     expect(resolveTaskError("invalid_title")).toBe("Enter a task title between 1 and 80 characters.");
+    expect(resolveTaskError("title_taken")).toBe("Your group already has a task with this name. Pick another one.");
     expect(resolveTaskError("invalid_recurrence")).toBe("Choose once, daily or weekly.");
   });
 

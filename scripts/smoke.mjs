@@ -1274,6 +1274,13 @@ const steps = [
     },
   ],
   [
+    // Group names are unique across the app regardless of case (migration unique_names); the name index answers
+    // before the one-group-per-user check.
+    "group create with a taken name in another case is rejected",
+    () => request("/api/groups/create", { method: "POST", form: { name: groupName.toLowerCase() } }),
+    { status: 302, location: "/dashboard?error=name_taken" },
+  ],
+  [
     "second group create is rejected",
     () => request("/api/groups/create", { method: "POST", form: { name: `${groupName} 2` } }),
     { status: 302, location: "/dashboard?error=already_in_group" },
@@ -1827,6 +1834,16 @@ const steps = [
     "task create by the creator succeeds",
     () => request("/api/tasks/create", { method: "POST", form: { title: taskTitle, recurrence: "daily" } }),
     { status: 302, locationExact: "/dashboard?notice=task_created" },
+  ],
+  [
+    // Titles are unique within a group regardless of case and surrounding space (migration unique_names).
+    "task create with the group's existing title in another case is rejected",
+    () =>
+      request("/api/tasks/create", {
+        method: "POST",
+        form: { title: ` ${taskTitle.toUpperCase()} `, recurrence: "weekly" },
+      }),
+    { status: 302, locationExact: "/dashboard?error=title_taken" },
   ],
   [
     // The page the create redirect lands on: the toast confirms the action above the new task's row; it is a status,

@@ -71,7 +71,8 @@ as $$
 declare
   v_id uuid;
 begin
-  insert into public.groups (owner_id, name) values (p_owner, 'rls-check group') returning id into v_id;
+  -- Group names are unique across the app (unique_names), so each one carries its owner's id.
+  insert into public.groups (owner_id, name) values (p_owner, 'rls-check group ' || p_owner) returning id into v_id;
   return v_id;
 end;
 $$;
@@ -531,7 +532,7 @@ begin
   -- D is not in the group and cannot read it directly; the preview is the only path to the name.
   perform rls_check.as_user(d);
   perform rls_check.expect_value(format('select count(*) from public.groups where id = %L', ga), '0', 'S-01 setup: a non-member cannot read the group directly');
-  perform rls_check.expect_value(format('select public.preview_group(%L)', code_a), 'rls-check group', 'S-01 preview_group returns the name for the right code');
+  perform rls_check.expect_value(format('select public.preview_group(%L)', code_a), 'rls-check group ' || a, 'S-01 preview_group returns the name for the right code');
   perform rls_check.expect_value($q$select public.preview_group('ffffffffffff')$q$, null, 'S-01 preview_group returns NULL for an unknown code');
   perform rls_check.expect_value($q$select public.preview_group('')$q$, null, 'S-01 preview_group returns NULL for an empty code');
 
@@ -1250,7 +1251,7 @@ $$;
 
 -- ---------------------------------------------------------------------------
 -- S-14: nicknames (20261016162551_add_nicknames.sql): a user reads only their own row and writes it only through
--- set_nickname; the database enforces exact uniqueness, the trim, the length and visible characters; the row goes with the account
+-- set_nickname; the database enforces uniqueness regardless of case (since unique_names), the trim, the length and visible characters; the row goes with the account
 -- ---------------------------------------------------------------------------
 
 do $$
@@ -1277,8 +1278,8 @@ begin
   perform rls_check.as_user(b);
   perform rls_check.expect_error('23505', format('select public.set_nickname(%L)', nick_a), 'S-14 another account''s nickname is taken (23505)');
   perform rls_check.expect_value(format('select nickname from public.nicknames where user_id = %L', b), 'u-' || left(b::text, 8), 'S-14 a refused nickname leaves the caller''s row unchanged');
-  perform public.set_nickname(upper(nick_a));
-  perform rls_check.expect_value(format('select nickname from public.nicknames where user_id = %L', b), upper(nick_a), 'S-14 the same nickname in another case is allowed (uniqueness is exact)');
+  perform rls_check.expect_error('23505', format('select public.set_nickname(%L)', upper(nick_a)), 'unique_names another account''s nickname in another case is taken (23505)');
+  perform rls_check.expect_value(format('select nickname from public.nicknames where user_id = %L', b), 'u-' || left(b::text, 8), 'unique_names a nickname refused for its case leaves the caller''s row unchanged');
 
   perform rls_check.expect_error('23514', $q$select public.set_nickname('a')$q$, 'S-14 a 1-character nickname is rejected (23514)');
   perform rls_check.expect_error('23514', format('select public.set_nickname(%L)', repeat('n', 25)), 'S-14 a 25-character nickname is rejected (23514)');

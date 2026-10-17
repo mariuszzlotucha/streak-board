@@ -56,6 +56,11 @@ export async function createTestUser(): Promise<TestUser> {
   return { id: data.user.id, email, nickname, client };
 }
 
+/** A label made unique across parallel test files: group names are unique app-wide (migration unique_names). */
+export function uniqueName(label: string): string {
+  return `${label} ${randomUUID().slice(0, 8)}`;
+}
+
 export async function createGroupAs(user: TestUser, name: string): Promise<TestGroup> {
   const { error } = await user.client.from("groups").insert({ name, owner_id: user.id });
   if (error) throw new Error(`createGroupAs: insert failed: ${error.message}`);
