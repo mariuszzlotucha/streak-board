@@ -26,7 +26,7 @@ milestone_status: open
 - **Source materials:** `context/foundation/prd.md` (v1), §Success Criteria → Secondary; punkty tej sekcji nie mają identyfikatorów FR ani US, więc zakres jest zapisany jako kotwice `MS-NN` poniżej. Decyzje właściciela: 2026-10-08 (z historii tylko prosta siatka, bez wykresów i statystyk) i 2026-10-17 (S-13 przeniesiony z M-2, M-3 oparty na kryteriach drugorzędnych PRD, przypomnienia odparkowane). Opis właściciela z 2026-10-17: „Żeby aplikacja była PWA” (kotwica MS-03). Konieczne FR z PRD (FR-001 do FR-012) pokryły M-1 i M-2 (`## Milestone History`).
 - **Done when:** każdy S-NN poniżej (S-13, S-16, S-17) ma status `done`.
 - **Scope anchors:** po jednej na wycinek: MS-01 i MS-02 przepisane z PRD §Success Criteria → Secondary, MS-03 z opisu właściciela:
-  - MS-01: członek grupy widzi historię wykonania tasku jako prostą siatkę: uczestnicy × ostatnie okresy, wykonane i niewykonane (PRD: „Historia/statystyki długoterminowe (wykresy streaków w czasie)”; decyzja właściciela 2026-10-08: w zakresie samej siatki, wykresy i statystyki zostają w `## Parked`; do 2026-10-17 kotwica MS-08 kamienia M-2).
+  - MS-01: członek grupy widzi historię wykonania tasku jako prostą siatkę: uczestnicy × ostatnie okresy, wykonane i niewykonane (PRD §Vision: zielono-czerwona siatka jako pierwotna wartość, FR-013; §Success Criteria → Secondary „Historia/statystyki długoterminowe” bez zmian; decyzja właściciela 2026-10-08: w zakresie samej siatki, wykresy i statystyki zostają w `## Parked`; do 2026-10-17 kotwica MS-08 kamienia M-2).
   - MS-02: użytkownik dostaje przypomnienie o tasku, do którego jest zapisany, a którego nie odznaczył w bieżącym okresie (PRD: „Powiadomienia/przypomnienia o niewykonanym tasku”; odparkowane decyzją właściciela 2026-10-17).
   - MS-03: aplikacja jest PWA: użytkownik instaluje ją na ekranie głównym telefonu (albo na komputerze) i uruchamia jak osobną aplikację (opis właściciela 2026-10-17: „Żeby aplikacja była PWA”; działanie offline zostaje wyłączone przez PRD §Non-Goals, chyba że właściciel zdecyduje inaczej).
 
@@ -44,7 +44,7 @@ Grono znajomych korzystało wcześniej ze wspólnego arkusza Google, w którym r
 
 | ID   | Change ID       | Outcome (user can …)                                                                                             | Prerequisites | PRD refs                                     | Status      |
 | ---- | --------------- | ---------------------------------------------------------------------------------------------------------------- | ------------- | -------------------------------------------- | ----------- |
-| S-13 | checkoff-grid   | zobaczyć siatkę odznaczeń grupy: kto wykonał task w każdym z ostatnich okresów                                   | S-11, S-14    | — (PRD §Success Criteria → Secondary; MS-01) | in-progress |
+| S-13 | checkoff-grid   | zobaczyć siatkę odznaczeń grupy: kto wykonał task w każdym z ostatnich okresów                                   | S-11, S-14    | PRD §Vision, FR-013; MS-01                   | in-progress |
 | S-16 | task-reminders  | dostać przypomnienie o tasku, do którego jest zapisany, a którego nie odznaczył w bieżącym okresie               | —             | — (PRD §Success Criteria → Secondary; MS-02) | ready       |
 | S-17 | installable-pwa | zainstalować aplikację na ekranie głównym telefonu albo na komputerze i uruchamiać ją jak osobną aplikację (PWA) | —             | — (opis właściciela; MS-03)                  | planning    |
 
@@ -73,7 +73,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 - **Outcome:** członek grupy widzi dla każdego tasku siatkę: uczestnicy × ostatnie okresy, z zaznaczeniem, kto w danym okresie wykonał task, a kto nie.
 - **Change ID:** checkoff-grid
-- **PRD refs:** — (PRD §Success Criteria → Secondary; MS-01)
+- **PRD refs:** PRD §Vision, FR-013; MS-01
 - **Prerequisites:** S-11, S-14 (oba `done` w M-2; decyzja właściciela 2026-10-16: nick przed siatką, bo oba wycinki edytują politykę prywatności, PRD, słownik, `dashboard-data.ts`, smoke i fixture'y, a siatka ma od razu pokazywać nicki)
 - **Parallel with:** S-16, S-17 (różne widoki; wspólne mogą być PRD, polityka prywatności, słownik, smoke i fixture'y kitchen sinka, więc uzgodnić kolejność merge'y)
 - **Blockers:** —

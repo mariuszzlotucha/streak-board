@@ -521,7 +521,7 @@ const ERROR_PARAM_SCRIPT =
 // that leaving erases the streak; the group Leave dialog's warning is on /settings.
 const B_NOTHING_TICKED = {
   status: 200,
-  bodyIncludes: "and your streak on it will be lost",
+  bodyIncludes: "and your streak and check-off history on it will be lost",
   bodyMatches: [
     taskRowWithCheckoffForm(renamedTaskTitle, "/api/tasks/checkoff"),
     taskRowStreak(renamedTaskTitle, 0),
@@ -1287,7 +1287,7 @@ const steps = [
     () => request("/settings", { jar: jarB }),
     {
       status: 200,
-      bodyIncludes: "and your streaks in its tasks will be lost",
+      bodyIncludes: "and your streaks and check-off history in its tasks will be lost",
       bodyMatches: [
         groupSettingsFor(groupName),
         formPostingTo("/api/groups/leave"),
@@ -2091,7 +2091,7 @@ const steps = [
     {
       status: 200,
       // The owner's Remove dialog warns that removing a member erases their streaks.
-      bodyIncludes: "and their streaks in its tasks will be lost",
+      bodyIncludes: "and their streaks and check-off history in its tasks will be lost",
       bodyMatches: [
         taskRowWithCheckoffForm(renamedTaskTitle, "/api/tasks/checkoff"),
         taskRowStreak(renamedTaskTitle, 0),
