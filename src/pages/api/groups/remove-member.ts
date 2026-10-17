@@ -4,6 +4,7 @@ import { reportError, reportMapped, requestFields } from "@/lib/log";
 import { toGroupErrorCode } from "@/lib/group-errors";
 import { normalizeUuid } from "@/lib/group-rules";
 import { getMyGroup } from "@/lib/groups";
+import { noticePath } from "@/lib/notices";
 
 export const prerender = false;
 
@@ -56,7 +57,7 @@ export const POST: APIRoute = async (context) => {
       return context.redirect(group.owner_id === user.id ? "/dashboard" : "/dashboard?error=forbidden");
     }
 
-    return context.redirect("/dashboard");
+    return context.redirect(noticePath("/dashboard", "member_removed"));
   } catch (error) {
     // Malformed body or a thrown Supabase/network error: end on the dashboard with a fixed message.
     reportError("groups.remove_member.exception", error, requestFields(context));

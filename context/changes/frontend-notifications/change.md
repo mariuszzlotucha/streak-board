@@ -1,7 +1,7 @@
 ---
 change_id: frontend-notifications
 title: Frontend toast notifications
-status: plan_reviewed
+status: implementing
 created: 2026-10-17
 updated: 2026-10-17
 archived_at: null

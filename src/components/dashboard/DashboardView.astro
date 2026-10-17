@@ -4,6 +4,7 @@ import NoGroupCards from "@/components/dashboard/NoGroupCards.astro";
 import PageHeading from "@/components/dashboard/PageHeading.astro";
 import PendingInviteCard from "@/components/dashboard/PendingInviteCard.astro";
 import TasksCard from "@/components/dashboard/TasksCard.astro";
+import Toast from "@/components/site/Toast.astro";
 import Leaderboard from "@/components/tasks/Leaderboard";
 import { CircleAlert, Crown, TriangleAlert } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -16,6 +17,10 @@ import type { DashboardData } from "@/lib/dashboard-data";
 interface Props extends DashboardData {
   viewerId: string | undefined;
   inviteLink: string | null;
+  /** The fixed message of a `?notice=` code (a completed action), shown as a success toast. */
+  notice: string | null;
+  /** Dev-only: the kitchen sink keeps the success toast on screen. */
+  pinToast?: boolean;
 }
 
 const {
@@ -34,6 +39,8 @@ const {
   grids,
   viewerId,
   inviteLink,
+  notice,
+  pinToast = false,
 } = Astro.props;
 
 const isOwner = group !== null && group.owner_id === viewerId;
@@ -51,6 +58,9 @@ const ownerNoticeGroupName = isOwner && group.owner_notice_pending ? group.name 
   </div>
 ) : (
   <div class="space-y-6">
+    {/* The toast is fixed to the bottom of the screen; in the markup it comes first, before the page's <h1>. */}
+    {notice !== null && <Toast message={notice} variant="success" visible={pinToast} />}
+
     {error && (
       <Alert variant="destructive">
         <CircleAlert />

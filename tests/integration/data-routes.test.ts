@@ -205,6 +205,13 @@ const UNKNOWN = "/dashboard?error=unknown";
 /** Where the route sends a rejected submit with this error code. */
 const errorTarget = (route: RouteId, code: string): string => `${ROUTES[route].home ?? DASHBOARD}?error=${code}`;
 
+/**
+ * Where a completed action ends: the dashboard (or `page`, for the nickname change that ends on settings) with its
+ * `?notice=<code>`. Spelled out here rather than through `noticePath`, so the route's address is checked against an
+ * oracle that shares nothing with it. A quiet no-op (a stale submit) keeps the plain dashboard.
+ */
+const noticeTarget = (code: string, page: string = DASHBOARD): string => `${page}?notice=${code}`;
+
 // Rows every route shares, with the route's own valid form.
 function common(route: RouteId): Row[] {
   return [
@@ -359,18 +366,21 @@ const ROWS: Row[] = [
     expect: { location: "/account/nickname?error=invalid_nickname", client: "none" },
   },
   {
-    name: "rpc ok on the first choice: dashboard, the trimmed nickname in the call",
+    name: "rpc ok on the first choice: dashboard with nickname_saved, the trimmed nickname in the call",
     route: "account/nickname",
     form: { nickname: "  Kasia \t" },
     script: [ok(null, 204)],
-    expect: { location: DASHBOARD, calls: [rpc("set_nickname", { p_nickname: "Kasia" })] },
+    expect: { location: noticeTarget("nickname_saved"), calls: [rpc("set_nickname", { p_nickname: "Kasia" })] },
   },
   {
-    name: "rpc ok on a change: back to settings",
+    name: "rpc ok on a change: back to settings with nickname_saved",
     route: "account/nickname",
     locals: { user: { id: USER }, nickname: "Old" },
     script: [ok(null, 204)],
-    expect: { location: "/settings", calls: [rpc("set_nickname", { p_nickname: "Kasia" })] },
+    expect: {
+      location: noticeTarget("nickname_saved", "/settings"),
+      calls: [rpc("set_nickname", { p_nickname: "Kasia" })],
+    },
   },
   ...mutationFailures(
     "account/nickname",
@@ -403,11 +413,11 @@ const ROWS: Row[] = [
     expect: { location: "/dashboard?error=invalid_name", client: "none" },
   },
   {
-    name: "insert ok: dashboard, join cookie cleared, the trimmed name and the owner in the insert",
+    name: "insert ok: dashboard with group_created, join cookie cleared, the trimmed name and the owner in the insert",
     route: "groups/create",
     script: [ok(null, 201)],
     expect: {
-      location: DASHBOARD,
+      location: noticeTarget("group_created"),
       cookie: "cleared",
       calls: [from("groups", step("insert", { name: "Runners", owner_id: USER }))],
     },
@@ -435,7 +445,11 @@ const ROWS: Row[] = [
     route: "groups/join",
     form: { code: `https://streak.example/join/${CODE.toUpperCase()}/?utm=x` },
     script: [ok(GROUP.id)],
-    expect: { location: DASHBOARD, cookie: "cleared", calls: [rpc("join_group", { p_join_code: CODE })] },
+    expect: {
+      location: noticeTarget("group_joined"),
+      cookie: "cleared",
+      calls: [rpc("join_group", { p_join_code: CODE })],
+    },
   },
   {
     name: "no group matches the code: invalid_code, quiet, the spent invite cleared",
@@ -484,11 +498,11 @@ const ROWS: Row[] = [
     expect: { location: UNKNOWN, errors: [{ ...exception("groups/rename"), error: { code: "XX000" } }] },
   },
   {
-    name: "update ok: dashboard, the trimmed name on the caller's group only",
+    name: "update ok: dashboard with group_renamed, the trimmed name on the caller's group only",
     route: "groups/rename",
     script: [ok(GROUP), ok([{ id: GROUP.id }])],
     expect: {
-      location: DASHBOARD,
+      location: noticeTarget("group_renamed"),
       calls: [
         MY_GROUP,
         from("groups", step("update", { name: "Runners" }), step("eq", "id", GROUP.id), step("select", "id")),
@@ -507,11 +521,11 @@ const ROWS: Row[] = [
   // groups/leave
   ...common("groups/leave"),
   {
-    name: "delete ok: dashboard, only the caller's own membership row",
+    name: "delete ok: dashboard with group_left, only the caller's own membership row",
     route: "groups/leave",
     script: [ok([{ id: "m-1" }])],
     expect: {
-      location: DASHBOARD,
+      location: noticeTarget("group_left"),
       calls: [from("group_members", step("delete"), step("eq", "user_id", USER), step("select", "id"))],
     },
   },
@@ -548,11 +562,11 @@ const ROWS: Row[] = [
     expect: { location: DASHBOARD, calls: [MY_GROUP] },
   },
   {
-    name: "delete ok: dashboard, the caller's group by id",
+    name: "delete ok: dashboard with group_deleted, the caller's group by id",
     route: "groups/delete",
     script: [ok(GROUP), ok([{ id: GROUP.id }])],
     expect: {
-      location: DASHBOARD,
+      location: noticeTarget("group_deleted"),
       calls: [MY_GROUP, from("groups", step("delete"), step("eq", "id", GROUP.id), step("select", "id"))],
     },
   },
@@ -586,12 +600,12 @@ const ROWS: Row[] = [
     expect: { location: DASHBOARD, calls: [MY_GROUP] },
   },
   {
-    name: "delete ok: dashboard, the lowercased target in the caller's group, never the caller's own row",
+    name: "delete ok: dashboard with member_removed, the lowercased target in the caller's group, never the caller's own row",
     route: "groups/remove-member",
     form: { user_id: OTHER.toUpperCase() },
     script: [ok(GROUP), ok([{ id: "m-2" }])],
     expect: {
-      location: DASHBOARD,
+      location: noticeTarget("member_removed"),
       calls: [
         MY_GROUP,
         from(
@@ -635,11 +649,14 @@ const ROWS: Row[] = [
     expect: { location: "/dashboard?error=invalid_successor", client: "none" },
   },
   {
-    name: "rpc ok with an uppercase id: dashboard, the lowercased successor in the call",
+    name: "rpc ok with an uppercase id: dashboard with ownership_transferred, the lowercased successor in the call",
     route: "groups/transfer",
     form: { new_owner_id: OTHER.toUpperCase() },
     script: [ok(null, 204)],
-    expect: { location: DASHBOARD, calls: [rpc("transfer_group_ownership", { p_new_owner: OTHER })] },
+    expect: {
+      location: noticeTarget("ownership_transferred"),
+      calls: [rpc("transfer_group_ownership", { p_new_owner: OTHER })],
+    },
   },
   ...mutationFailures(
     "groups/transfer",
@@ -749,11 +766,11 @@ const ROWS: Row[] = [
     expect: { location: FORBIDDEN, calls: [MY_GROUP] },
   },
   {
-    name: "insert ok: dashboard, the trimmed title in the caller's group with the caller as creator",
+    name: "insert ok: dashboard with task_created, the trimmed title in the caller's group with the caller as creator",
     route: "tasks/create",
     script: [ok(GROUP), ok(null, 201)],
     expect: {
-      location: DASHBOARD,
+      location: noticeTarget("task_created"),
       calls: [
         MY_GROUP,
         from("tasks", step("insert", { group_id: GROUP.id, created_by: USER, title: "Run", recurrence: "daily" })),
@@ -800,12 +817,12 @@ const ROWS: Row[] = [
     expect: { location: UNKNOWN, errors: [{ ...exception("tasks/update"), error: { code: "XX000" } }] },
   },
   {
-    name: "update ok with an uppercase id: dashboard, the trimmed title on the lowercased id",
+    name: "update ok with an uppercase id: dashboard with task_updated, the trimmed title on the lowercased id",
     route: "tasks/update",
     form: { task_id: TASK.toUpperCase(), title: "  Run  " },
     script: [ok(task("daily")), ok([{ id: TASK }])],
     expect: {
-      location: DASHBOARD,
+      location: noticeTarget("task_updated"),
       calls: [GET_TASK, from("tasks", step("update", { title: "Run" }), step("eq", "id", TASK), step("select", "id"))],
     },
   },
@@ -837,11 +854,11 @@ const ROWS: Row[] = [
     expect: { location: DASHBOARD, calls: [GET_TASK] },
   },
   {
-    name: "delete ok: dashboard, the task by id",
+    name: "delete ok: dashboard with task_deleted, the task by id",
     route: "tasks/delete",
     script: [ok(task("daily")), ok([{ id: TASK }])],
     expect: {
-      location: DASHBOARD,
+      location: noticeTarget("task_deleted"),
       calls: [GET_TASK, from("tasks", step("delete"), step("eq", "id", TASK), step("select", "id"))],
     },
   },
@@ -869,11 +886,11 @@ const ROWS: Row[] = [
     expect: { location: DASHBOARD, calls: [TASK_EXISTS] },
   },
   {
-    name: "insert ok: dashboard, the caller enrolled on the task",
+    name: "insert ok: dashboard with task_joined, the caller enrolled on the task",
     route: "tasks/join",
     script: [ok({ id: TASK }), ok(null, 201)],
     expect: {
-      location: DASHBOARD,
+      location: noticeTarget("task_joined"),
       calls: [TASK_EXISTS, from("task_participants", step("insert", { task_id: TASK, user_id: USER }))],
     },
   },
@@ -901,11 +918,11 @@ const ROWS: Row[] = [
     expect: { location: FORBIDDEN, client: "none" },
   },
   {
-    name: "delete ok: dashboard, only the caller's own enrolment",
+    name: "delete ok: dashboard with task_left, only the caller's own enrolment",
     route: "tasks/leave",
     script: [ok([{ task_id: TASK }])],
     expect: {
-      location: DASHBOARD,
+      location: noticeTarget("task_left"),
       calls: [
         from(
           "task_participants",

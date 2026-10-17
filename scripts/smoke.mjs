@@ -167,6 +167,17 @@ function alertMessage(text) {
   return new RegExp(`data-slot="alert-description"[^>]*>\\s*${escapeRegExp(text)}`);
 }
 
+// The success toast of a completed action, holding exactly `text`: a `role="status"` element (never an alert) inside
+// <main> before the page's <h1>, where the page renders it (CSS fixes it to the bottom of the screen). The island props
+// never carry this markup, so the match proves the server rendered the toast.
+function successToast(text) {
+  return new RegExp(
+    `<main[^>]*>(?:(?!<h1|</main>)[\\s\\S])*<div(?=[^>]*data-toast="success")(?=[^>]*role="status")[^>]*>(?:(?!</div>)[\\s\\S])*<p[^>]*>\\s*${escapeRegExp(text)}\\s*</p>`,
+  );
+}
+// Any trace of a rendered toast.
+const TOAST_TRACE = "data-toast=";
+
 // The message inside a rendered field error (`<p id="<field>-error" role="alert">`, an icon first). The island's
 // serialized props repeat the text too, so this is the check that needs the element itself.
 function fieldError(field, text) {
@@ -1015,7 +1026,7 @@ const steps = [
   [
     "user A chooses a nickname and lands on the dashboard",
     () => request("/api/account/nickname", { method: "POST", form: { nickname: nickA0 } }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=nickname_saved" },
   ],
   [
     "nickname page offers user A a change, prefilled with the nickname",
@@ -1035,7 +1046,7 @@ const steps = [
   [
     "user A changes the nickname and goes back to settings",
     () => request("/api/account/nickname", { method: "POST", form: { nickname: nickA } }),
-    { status: 302, locationExact: "/settings" },
+    { status: 302, locationExact: "/settings?notice=nickname_saved" },
   ],
   [
     // The settings page is the one place with the user's own address; the runner checks it shows no other one.
@@ -1119,7 +1130,7 @@ const steps = [
   [
     "group create succeeds",
     () => request("/api/groups/create", { method: "POST", form: { name: groupName } }),
-    { status: 302, locationExact: "/dashboard", setCookie: "join_code=deleted" },
+    { status: 302, locationExact: "/dashboard?notice=group_created", setCookie: "join_code=deleted" },
   ],
   ...["create", "update", "delete", "join", "leave", "checkoff", "uncheck"].flatMap((action) => [
     [
@@ -1305,7 +1316,7 @@ const steps = [
     // The preview step below proves the invite survived: the dashboard offers it to B.
     "user B chooses a nickname and lands on the dashboard with the invite still pending",
     () => request("/api/account/nickname", { method: "POST", form: { nickname: nickB }, jar: jarB }),
-    { status: 302, locationExact: "/dashboard", setCookieExcludes: "join_code" },
+    { status: 302, locationExact: "/dashboard?notice=nickname_saved", setCookieExcludes: "join_code" },
   ],
   [
     // An empty form joins nothing even if the Origin check were off (it would answer 302 invalid_code), but it would
@@ -1346,7 +1357,7 @@ const steps = [
   [
     "join with the invite code succeeds",
     () => request("/api/groups/join", { method: "POST", form: { code: joinCode }, jar: jarB }),
-    { status: 302, locationExact: "/dashboard", setCookie: "join_code=deleted" },
+    { status: 302, locationExact: "/dashboard?notice=group_joined", setCookie: "join_code=deleted" },
   ],
   [
     "dashboard shows the group to user B after joining",
@@ -1427,7 +1438,7 @@ const steps = [
   [
     "rename by the owner succeeds",
     () => request("/api/groups/rename", { method: "POST", form: { name: renamedGroupName } }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=group_renamed" },
   ],
   [
     "owner dashboard shows the new name, both members and no leave control",
@@ -1480,7 +1491,7 @@ const steps = [
   [
     "leave by a member succeeds",
     () => request("/api/groups/leave", { method: "POST", jar: jarB }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=group_left" },
   ],
   [
     "dashboard shows the create form to user B after leaving",
@@ -1499,7 +1510,7 @@ const steps = [
   [
     "user B joins again with the same code",
     () => request("/api/groups/join", { method: "POST", form: { code: joinCode }, jar: jarB }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=group_joined" },
   ],
   [
     "dashboard shows the renamed group to user B after rejoining",
@@ -1526,7 +1537,7 @@ const steps = [
   [
     "user C chooses a nickname and lands on the dashboard",
     () => request("/api/account/nickname", { method: "POST", form: { nickname: nickC }, jar: jarC }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=nickname_saved" },
   ],
   [
     // The gated join did not run: C is still outside the group.
@@ -1541,7 +1552,7 @@ const steps = [
   [
     "user C joins the group with the invite code",
     () => request("/api/groups/join", { method: "POST", form: { code: joinCode }, jar: jarC }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=group_joined" },
   ],
   [
     "dashboard shows the group to user C after joining",
@@ -1749,7 +1760,7 @@ const steps = [
   [
     "remove-member by the owner succeeds",
     () => request("/api/groups/remove-member", { method: "POST", form: { user_id: memberIdB } }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=member_removed" },
   ],
   [
     "removed user B sees the create form",
@@ -1791,7 +1802,7 @@ const steps = [
   [
     "user B joins again with the same code after being removed",
     () => request("/api/groups/join", { method: "POST", form: { code: joinCode }, jar: jarB }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=group_joined" },
   ],
   [
     "dashboard shows the group to user B after being re-added",
@@ -1805,7 +1816,22 @@ const steps = [
   [
     "task create by the creator succeeds",
     () => request("/api/tasks/create", { method: "POST", form: { title: taskTitle, recurrence: "daily" } }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=task_created" },
+  ],
+  [
+    // The page the create redirect lands on: the toast confirms the action above the new task's row; it is a status,
+    // so no role="alert" is on the page.
+    "the dashboard after the task create shows the success toast and the new task",
+    () => request("/dashboard?notice=task_created"),
+    {
+      status: 200,
+      bodyMatches: [
+        successToast("Task created."),
+        groupHeading(renamedGroupName),
+        taskRowWithBadge(taskTitle, "Daily"),
+      ],
+      bodyExcludes: NO_ERROR_ALERT,
+    },
   ],
   [
     "creator dashboard shows the task with edit and confirmed delete controls",
@@ -1832,7 +1858,8 @@ const steps = [
         taskRowListing(taskTitle, nickA, { you: true }),
       ],
       bodyNotMatches: [SUBMIT_IN_DESTRUCTIVE_FORM, taskRowListing(taskTitle, nickB)],
-      bodyExcludes: NO_ERROR_ALERT,
+      // Without `?notice=` (a reload after the address was cleared) the toast does not show again.
+      bodyExcludes: [NO_ERROR_ALERT, TOAST_TRACE],
     },
   ],
   [
@@ -1909,7 +1936,7 @@ const steps = [
         method: "POST",
         form: { task_id: taskId, title: renamedTaskTitle, recurrence: "weekly" },
       }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=task_updated" },
   ],
   [
     "member dashboard shows the new title and the unchanged recurrence",
@@ -1951,7 +1978,7 @@ const steps = [
   [
     "task join by a member succeeds",
     () => request("/api/tasks/join", { method: "POST", form: { task_id: taskId }, jar: jarB }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=task_joined" },
   ],
   [
     "joined member is listed on the task and offered to leave it",
@@ -2238,7 +2265,7 @@ const steps = [
   [
     "task leave by a member succeeds",
     () => request("/api/tasks/leave", { method: "POST", form: { task_id: taskId }, jar: jarB }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=task_left" },
   ],
   [
     "left member is gone from the task and offered to join again",
@@ -2306,7 +2333,7 @@ const steps = [
     // The group-departure cleanup can only be checked once a task exists: the earlier leave/remove steps ran without one.
     "user B joins the task again before leaving the group",
     () => request("/api/tasks/join", { method: "POST", form: { task_id: taskId }, jar: jarB }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=task_joined" },
   ],
   [
     "user B is listed on the task before leaving the group",
@@ -2336,12 +2363,12 @@ const steps = [
   [
     "user B leaves the group while taking part in the task",
     () => request("/api/groups/leave", { method: "POST", jar: jarB }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=group_left" },
   ],
   [
     "user B joins the group again with the invite code after taking part in the task",
     () => request("/api/groups/join", { method: "POST", form: { code: joinCode }, jar: jarB }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=group_joined" },
   ],
   [
     "returning user B is not listed on the task until joining again",
@@ -2374,7 +2401,7 @@ const steps = [
   [
     "user B joins the task again after returning to the group",
     () => request("/api/tasks/join", { method: "POST", form: { task_id: taskId }, jar: jarB }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=task_joined" },
   ],
   [
     // Leaving the group erased the tick the same way: B starts again at 0 and the board shows no score for B.
@@ -2385,7 +2412,7 @@ const steps = [
   [
     "task create of a once task by the creator succeeds",
     () => request("/api/tasks/create", { method: "POST", form: { title: onceTitle, recurrence: "once" } }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=task_created" },
   ],
   [
     "creator dashboard offers Mark done on the once task without a streak figure",
@@ -2470,7 +2497,7 @@ const steps = [
   [
     "task delete of the once task by the creator succeeds",
     () => request("/api/tasks/delete", { method: "POST", form: { task_id: onceTaskId } }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=task_deleted" },
   ],
   [
     "creator dashboard no longer lists the once task and keeps the daily one",
@@ -2487,7 +2514,7 @@ const steps = [
   [
     "task delete by the creator succeeds",
     () => request("/api/tasks/delete", { method: "POST", form: { task_id: taskId } }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=task_deleted" },
   ],
   [
     "deleted task is gone from the member dashboard",
@@ -2559,7 +2586,7 @@ const steps = [
   [
     "transfer to member B succeeds",
     () => request("/api/groups/transfer", { method: "POST", form: { new_owner_id: memberIdB } }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=ownership_transferred" },
   ],
   [
     "new owner B's dashboard shows the notice above the cards, and the owner's controls",
@@ -2690,7 +2717,7 @@ const steps = [
   [
     "new owner B hands the group back to A",
     () => request("/api/groups/transfer", { method: "POST", form: { new_owner_id: sessionUserId(jarA) }, jar: jarB }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=ownership_transferred" },
   ],
   [
     "A owns the group again and sees the notice",
@@ -2705,7 +2732,7 @@ const steps = [
   [
     "delete by the owner succeeds",
     () => request("/api/groups/delete", { method: "POST" }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=group_deleted" },
   ],
   [
     "owner dashboard shows the create form after deleting the group",
@@ -2768,7 +2795,7 @@ const steps = [
   [
     "group create for the account-deletion steps succeeds",
     () => request("/api/groups/create", { method: "POST", form: { name: farewellGroupName } }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=group_created" },
   ],
   [
     "dashboard shows the account-deletion group and its invite link",
@@ -2786,18 +2813,18 @@ const steps = [
   [
     "user B joins the account-deletion group",
     () => request("/api/groups/join", { method: "POST", form: { code: farewellJoinCode }, jar: jarB }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=group_joined" },
   ],
   [
     "user C joins the account-deletion group",
     () => request("/api/groups/join", { method: "POST", form: { code: farewellJoinCode }, jar: jarC }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=group_joined" },
   ],
   [
     "member C creates a task",
     () =>
       request("/api/tasks/create", { method: "POST", form: { title: keptTaskTitle, recurrence: "daily" }, jar: jarC }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=task_created" },
   ],
   [
     "member C's dashboard shows C's task with the creator's controls",
@@ -2819,7 +2846,7 @@ const steps = [
   [
     "user B joins member C's task",
     () => request("/api/tasks/join", { method: "POST", form: { task_id: keptTaskId }, jar: jarB }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=task_joined" },
   ],
   [
     "user B ticks member C's task",
@@ -2943,7 +2970,7 @@ const steps = [
   [
     "user B leaves the account-deletion group",
     () => request("/api/groups/leave", { method: "POST", jar: jarB }),
-    { status: 302, locationExact: "/dashboard" },
+    { status: 302, locationExact: "/dashboard?notice=group_left" },
   ],
   [
     "settings offer user B without a group Delete account with the shared warning only",

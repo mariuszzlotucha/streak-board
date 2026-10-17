@@ -199,11 +199,11 @@ No schema change. Code rolls back with `npx wrangler rollback`.
 
 #### Automated
 
-- [ ] 1.1 Unit tests pass: `npm run test:unit`
-- [ ] 1.2 Lint and token contrast pass: `npm run lint && node scripts/token-contrast.mjs`
-- [ ] 1.3 Build passes: `npm run build`
-- [ ] 1.4 Integration tests pass: `npm test`
-- [ ] 1.5 Smoke passes with a step asserting the success toast after creating a task: `npm run smoke`
+- [x] 1.1 Unit tests pass: `npm run test:unit`
+- [x] 1.2 Lint and token contrast pass: `npm run lint && node scripts/token-contrast.mjs`
+- [x] 1.3 Build passes: `npm run build`
+- [x] 1.4 Integration tests pass: `npm test`
+- [x] 1.5 Smoke passes with a step asserting the success toast after creating a task: `npm run smoke`
 
 #### Manual
 
