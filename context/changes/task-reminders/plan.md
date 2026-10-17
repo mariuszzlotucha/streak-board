@@ -55,7 +55,7 @@ The secret-guarded functions are granted to `anon`. Each compares `sha256(p_secr
 
 ## Critical Implementation Details
 
-- **Timing & lifecycle**: `scheduled` must hand the whole send to `ctx.waitUntil`, so the run is not cut off. `withSentry` must wrap the whole exported handler, `fetch` included, with the same options as `runWithSentry`, so request-path reporting does not regress. Keep `runWithSentry` only if `withSentry` can't replace it without changing behaviour. Decide in Phase 1 and record which in the phase notes.
+- **Timing & lifecycle**: `scheduled` must hand the whole send to `ctx.waitUntil`, so the run is not cut off. Sentry for requests stays in middleware (`src/middleware.ts:75` → `runWithSentry`), so `fetch` is exported as the plain `handle`, not wrapped by `withSentry`; wrapping it would set up a second client per request. Only `scheduled` is wrapped, by `runScheduledWithSentry` in `src/lib/sentry.ts`, which reuses `sentryOptions(env)` and flushes inside `waitUntil`.
 - **Performance constraints**: Free plan, 10 ms CPU per invocation (`context/foundation/infrastructure.md:92`). Signing and encryption cost CPU; waiting on `fetch` does not. Import the VAPID private key once per run, compute the JWT once per push-service origin, and run sends with bounded concurrency (e.g. 6). Log `subscriptions`, `sent`, `pruned` and `failed` per run so CPU can be judged in Workers Logs.
 - **State sequencing**: the period for each task comes from `periodKeyFor(recurrence, now)` in TypeScript, passed into SQL as `p_today` (Warsaw date) and `p_week` (Warsaw Monday). SQL never computes Warsaw dates, so the two rule sets cannot drift.
 
@@ -69,11 +69,11 @@ The Worker gets a `scheduled` entry that runs at 20:00 Warsaw, is reported throu
 
 #### 1. Custom Worker entry
 
-**File**: `src/worker.ts`, `wrangler.jsonc`
+**File**: `src/worker.ts`, `wrangler.jsonc`, `src/lib/sentry.ts`
 
 **Intent**: Add a scheduled handler next to Astro's request handler without changing request behaviour. Add the cron triggers.
 
-**Contract**: The default export is `withSentry(options, { fetch: handle, scheduled })`. `wrangler.jsonc` sets `main` to the built worker entry and adds `"triggers": { "crons": ["0 18 * * *", "0 19 * * *"] }`. If wrangler cannot bundle a custom `main` with Astro's output, fall back to the adapter's documented custom-entrypoint option and record that in the phase notes. Either way, `npm run build && npm run preview` must still serve every page.
+**Contract**: The default export is `{ fetch: handle, scheduled }`. `handle` comes from the default export of `@astrojs/cloudflare/entrypoints/server`, unwrapped. `scheduled(controller, env, ctx)` calls `ctx.waitUntil(runScheduledWithSentry(env, () => runReminders(env, new Date(controller.scheduledTime))))`. `runScheduledWithSentry` is new in `src/lib/sentry.ts`: it reuses `sentryOptions(env)`, runs `fn` in its own scope, and awaits `flush`. `astro preview` runs the built `main` in workerd (adapter `dist/entrypoints/preview.js:20,44`), so smoke exercises the custom entry. `wrangler.jsonc` sets `main` to the built worker entry and adds `"triggers": { "crons": ["0 18 * * *", "0 19 * * *"] }`. If wrangler cannot bundle a custom `main` with Astro's output, fall back to the adapter's documented custom-entrypoint option and record that in the phase notes. Either way, `npm run build && npm run preview` must still serve every page.
 
 #### 2. Reminder rules
 
@@ -132,8 +132,9 @@ Store per-device subscriptions and expose exactly what the cron needs, behind a 
   - An `https://` check on `endpoint`.
 - `subscribe_push(p_endpoint, p_p256dh, p_auth)`: definer on `auth.uid()`. Upserts on `endpoint`; a re-subscribe moves the row to the caller.
 - `unsubscribe_push(p_endpoint)` and `unsubscribe_all_push()`: definer on `auth.uid()`, granted to authenticated.
-- `reminder_secret(hash bytea)`: one-row config table, no grants to API roles.
-- `due_reminders(p_secret text, p_today date, p_week date)`: definer, granted to anon. Raises `42501` unless `sha256(p_secret::bytea)` matches. Returns `(endpoint, p256dh, auth, task_names text[])`.
+- `reminder_secret(id boolean primary key default true check (id), hash bytea not null)`: a one-row config table. RLS on, no policies, everything revoked from anon, authenticated and public.
+- The secret is at least 32 random bytes (the owner runs `openssl rand -base64 32`). Both functions reject a `p_secret` shorter than 32 characters before hashing, and compare `sha256(p_secret::bytea)` with the stored digest inside the function.
+- `due_reminders(p_secret text, p_today date, p_week date)`: definer, `set search_path = ''`, execute granted to anon only (revoked from public and authenticated). Raises `42501` unless the digest matches. Returns `(endpoint, p256dh, auth, task_names text[])`.
   - A row is returned per subscription of a user who has at least one joined task whose period has no check-off: `daily` against `p_today`, and `weekly` against `p_week` when it is not null.
   - Task names are sorted. `once` tasks are excluded.
 - `prune_push_subscriptions(p_secret text, p_endpoints text[])`: same guard; deletes those endpoints.
@@ -143,7 +144,12 @@ Store per-device subscriptions and expose exactly what the cron needs, behind a 
 
 **File**: `src/types.ts`, `supabase/checks/rls-scenarios.sql`, `tests/integration/push-subscriptions.test.ts`
 
-**Intent**: Regenerated types. RLS rows pin the grants in both directions. Integration tests for subscribe, re-subscribe, unsubscribe and unsubscribe-all; the due selection (daily ticked/unticked, weekly on Sunday or not, once ignored, left task ignored); a wrong secret is rejected; prune; cascade on account deletion.
+**Intent**: Regenerated types. RLS rows pin the grants in both directions:
+- `has_function_privilege` rows, following `rls-scenarios.sql:1398`: anon may execute `due_reminders` and `prune_push_subscriptions` and no other new function; authenticated may execute only `subscribe_push`, `unsubscribe_push` and `unsubscribe_all_push`.
+- No API role holds any privilege on `reminder_secret`.
+- `push_subscriptions` is added to the S-12 table-grants block (`:1442-1475`).
+
+Integration tests seed the secret hash through `adminClient()` (`tests/helpers/supabase.ts:27`). Integration tests for subscribe, re-subscribe, unsubscribe and unsubscribe-all; the due selection (daily ticked/unticked, weekly on Sunday or not, once ignored, left task ignored); a wrong secret is rejected; prune; cascade on account deletion.
 
 **Contract**: The types are generated with the CLAUDE.md command. `npm run types:check` passes.
 
@@ -187,7 +193,7 @@ The cron fetches due rows and sends one encrypted push per subscription. Expired
 
 **File**: `src/lib/reminders/run.ts`
 
-**Intent**: Call `due_reminders` with the secret and the rule periods, send with bounded concurrency, and collect expired endpoints. Delete them in one call. Report a per-run summary.
+**Intent**: Build a cookieless client with a new `createAnonClient(url, key)` in `src/lib/supabase.ts` (plain supabase-js, `persistSession: false`, `autoRefreshToken: false`) from the scheduled `env` values `SUPABASE_URL` and `SUPABASE_KEY`. Call `due_reminders` with the secret and the rule periods, send with bounded concurrency, and collect expired endpoints. Delete them in one call. Report a per-run summary.
 
 **Contract**:
 - Payload JSON: `{ "title": "StreakBoard", "body": "Still to do today: <names>", "url": "/dashboard" }`. On Sunday weekly names are included; the body text for weekly is decided by the implementer and covered by a unit test.
@@ -198,11 +204,16 @@ The cron fetches due rows and sends one encrypted push per subscription. Expired
 
 #### 3. Secrets
 
-**File**: `README.md` (Deployment), `.dev.vars.example` if present
+**File**: `README.md` (Deployment and the `.dev.vars` section)
 
-**Intent**: The owner creates the VAPID key pair and the shared secret, and stores them with `wrangler secret put`: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `REMINDER_SECRET`. The owner also inserts the hash into `reminder_secret` on production. Document the exact commands. The public key also goes to the browser (Phase 4) as a public env value.
+**Intent**: The owner creates the VAPID key pair and the shared secret, and stores them with `wrangler secret put`: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `REMINDER_SECRET`. The README documents three things:
+- The exact commands.
+- The production SQL Editor statement: `insert into public.reminder_secret (hash) values (sha256('<secret>'::bytea)) on conflict (id) do update set hash = excluded.hash;`.
+- The three `.dev.vars` lines for local `wrangler dev --test-scheduled`. There is no `.dev.vars.example`.
 
-**Contract**: Declare the secrets in the `env.schema` of `astro.config.mjs` (`optional: true`). The cron reads them from the `scheduled` `env`. A missing secret logs `reminders.config.missing` and skips the run.
+The public key stays a server secret. Phase 4 renders it into the page.
+
+**Contract**: Declare all three in the `env.schema` of `astro.config.mjs` as server secrets (`optional: true`). The cron reads them from the `scheduled` `env`. A missing secret logs `reminders.config.missing` and skips the run.
 
 ### Success Criteria:
 
@@ -241,7 +252,7 @@ The user turns reminders on or off per device from Settings. The service worker 
 
 **File**: `src/lib/pwa/push.ts`, `src/lib/pwa/register.ts`
 
-**Intent**: Detect support, request permission on a click, subscribe with `applicationServerKey` = the VAPID public key via `navigator.serviceWorker.ready`, POST to the API, and unsubscribe. Failures use new codes in `CLIENT_ERROR_CODES`.
+**Intent**: Detect support, request permission on a click, subscribe with `applicationServerKey` = the VAPID public key via `navigator.serviceWorker.ready`. `loadSettings` reads `VAPID_PUBLIC_KEY` on the server and passes it to the Reminders card as a prop; the island takes it from there. A missing key renders the `unsupported` state. Then the module should: POST to the API, and unsubscribe. Failures use new codes in `CLIENT_ERROR_CODES`.
 
 **Contract**: The states are `unsupported`, `denied`, `off` and `on`. Testable with a `PwaEnvironment`-style stub (the same pattern as `register.ts:42-50`).
 

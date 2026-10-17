@@ -60,7 +60,7 @@ In Settings → Reminders, a member turns reminders on for a device. Every eveni
 
 ## Architecture / Approach
 
-Cron (18:00 and 19:00 UTC) → `scheduled` in `src/worker.ts` (wrapped by `withSentry`) → `reminderRun(now)` checks that it is 20:00 Warsaw and picks the periods → `due_reminders(secret, today, week)` returns subscriptions and task names → each one gets an encrypted push request through `fetch` to the push service → expired endpoints go to `prune_push_subscriptions` → a summary is logged. Browser: Settings card → permission → `pushManager.subscribe` → `POST /api/reminders/subscribe` → `subscribe_push`. The service worker shows the notification and opens `/dashboard`.
+Cron (18:00 and 19:00 UTC) → `scheduled` in `src/worker.ts` (wrapped by `runScheduledWithSentry`; requests keep their middleware Sentry) → `reminderRun(now)` checks that it is 20:00 Warsaw and picks the periods → `due_reminders(secret, today, week)` returns subscriptions and task names → each one gets an encrypted push request through `fetch` to the push service → expired endpoints go to `prune_push_subscriptions` → a summary is logged. Browser: Settings card → permission → `pushManager.subscribe` → `POST /api/reminders/subscribe` → `subscribe_push`. The service worker shows the notification and opens `/dashboard`.
 
 ## Phases at a Glance
 
@@ -78,7 +78,7 @@ Cron (18:00 and 19:00 UTC) → `scheduled` in `src/worker.ts` (wrapped by `withS
 ## Open Risks & Assumptions
 
 - The custom Worker entry is unproven with Astro 7 and adapter 14.3.1; Phase 1 proves it first and records any fallback.
-- `withSentry` must not change request-path reporting; verified in Phase 1.
+- The anon-callable RPCs rest on a secret of at least 32 bytes; RLS checks pin who may call which function.
 - The Free-plan CPU limit (10 ms) has never been measured; it is watched through the per-run summary.
 - iOS standalone sign-in is still unverified (from S-17); it affects who can opt in on iPhone.
 
