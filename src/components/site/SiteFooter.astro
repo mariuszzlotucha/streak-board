@@ -11,7 +11,13 @@ const email = contactEmail();
 const linkClass = "underline-offset-4 hover:text-foreground hover:underline";
 ---
 
-<footer class:list={cn("px-4 py-6 text-sm text-muted-foreground", className)}>
+{/* The bottom padding adds the safe-area inset, so the end of the page clears the home indicator and the gesture bar. */}
+<footer
+  class:list={cn(
+    "px-4 pt-6 pb-[calc(--spacing(6)+env(safe-area-inset-bottom))] text-sm text-muted-foreground",
+    className,
+  )}
+>
   <div class="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-center gap-x-4 gap-y-2 text-center">
     <p>StreakBoard is run by {SITE_OPERATOR}.</p>
     <nav aria-label="Legal" class="flex items-center gap-4">

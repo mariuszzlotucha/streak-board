@@ -13,8 +13,9 @@ interface Props {
 }
 
 const { message, variant, visible = false } = Astro.props;
-// Fixed at the bottom like `UpdateNotice` (bottom-4), but higher, so a new-version message under it stays readable.
-const position = "fixed inset-x-4 bottom-28 z-50 mx-auto max-w-md";
+// Fixed at the bottom like `UpdateNotice`, but higher, so a new-version message under it stays readable. Both add the
+// bottom safe-area inset (home indicator, gesture bar), so the gap between them stays the same.
+const position = "fixed inset-x-4 bottom-[calc(--spacing(28)+env(safe-area-inset-bottom))] z-50 mx-auto max-w-md";
 ---
 
 {/* Rendered in the server HTML where the page puts it (inside <main>, before the page's <h1>) and positioned fixed.
