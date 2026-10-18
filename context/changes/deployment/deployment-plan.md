@@ -428,7 +428,7 @@ Rollback:
 **Status: released 2026-10-18; device checks pending.** StreakBoard now promotes its own installation: an "Install StreakBoard" card on the dashboard and an always-present block in the Settings Reminders card, with the offer chosen per browser, "Not now" kept in local storage on that device, and a privacy policy line on it (`context/changes/install-promotion/plan.md`). One release, no migrations.
 
 - [x] Code: PR #191, merged on 2026-10-18 as merge commit `1b51d4d`. Master run 39080963661: `ci`, `smoke`, `e2e` and `integration` green; `compat` skipped on `master`.
-- [x] `release` for PR #191: job 117538378740, approved by the owner. `supabase db push` reported "Remote database is up to date." (no migrations); `wrangler deploy` printed `Current Version ID: 29a855da-0e59-4ff6-a43e-cdb47a1ccc38`; the tag moved `1d0fc23...1b51d4d production -> production (forced update)`. The job's "Check the live deployment" step passed. This covers plan row 3.1. The previous tag, `1d0fc23`, is the merge of PR #189 (invite auto-join), whose release is not recorded in this file.
+- [x] `release` for PR #191: job 117538378740, approved by the owner. `supabase db push` reported "Remote database is up to date." (no migrations); `wrangler deploy` printed `Current Version ID: 29a855da-0e59-4ff6-a43e-cdb47a1ccc38`; the tag moved `1d0fc23...1b51d4d production -> production (forced update)`. The job's "Check the live deployment" step passed. This covers plan row 3.1. The previous tag, `1d0fc23`, is the merge of PR #189 (invite auto-join), recorded in Phase 25.
 - [x] Agent's live check (2026-10-18, anonymous `curl` on `https://streakboard.app`):
   - `/` 200;
   - `/privacy` 200 with the sentence on "Not now" kept in local storage;
@@ -441,6 +441,14 @@ Rollback:
   - 3.4 iPhone, by a group member through `context/changes/install-promotion/ios-check.md`: the card in Safari, installing from it, no card in the installed app, reminders turned on there and the 20:00 reminder received. Phase 21's iOS row is a separate check (S-17's `ios-check.md`) and stays open.
   - 3.5 A messenger's in-app browser on a phone shows "Open this page in Safari to install StreakBoard." on an iPhone and "Open this page in Safari or Chrome to install StreakBoard." elsewhere.
   - Still open from Phases 1-2: 1.3 (the `IN_APP_BROWSER_PATTERNS` list reviewed against the messengers the group uses), 2.7 (kitchen-sink screenshots of every install state in light and dark mode at phone width), 2.8 (the card and the inline block at 412 px, with no collision with the toast or the update notice).
+
+## Phase 25 — Invite auto-join (PR #189; no change folder)
+
+**Status: released 2026-10-17, before Phase 24 (recorded afterwards).** A pending invite is joined at once on the first dashboard visit, and it survives a sign-up in one browser and a sign-in in another: `POST /api/auth/signup` keeps the code with the account (`user_metadata.join_code`), `/dashboard` joins through `joinPendingInvite` (`src/lib/pending-invite.ts`, cookie first, then the stored code), and the `join_code` cookie lives 7 days instead of 1 hour. The privacy policy, README and CLAUDE.md were updated in the same PR. A small direct PR, not a roadmap slice, so no change folder. One release, no migrations.
+
+- [x] Code: PR #189, merged on 2026-10-17 as merge commit `1d0fc23`. Master run 39075155221: `ci`, `smoke`, `e2e` and `integration` green; `compat` skipped on `master`. The next merge, PR #190 (`dc9adf3`, run 39076725932, the S-19 plan), was docs-only and skipped `release`, so production stayed on `1d0fc23` until Phase 24.
+- [x] `release` for PR #189: job 117521519959, approved by the owner. `supabase db push` reported "Remote database is up to date." (no migrations); `wrangler deploy` printed `Current Version ID: 8e81b990-f32c-4f95-a19a-42622f452655`; the tag moved `96ce53c...1d0fc23 production -> production (forced update)`. The job's "Check the live deployment" step passed.
+- [ ] Open: no check of the invite path on `streakboard.app` is recorded (open an invite link, sign up, confirm, land in the group with the "You joined the group." toast; and the same with the confirmation link opened in another browser).
 
 ## Verification checklist (end-to-end, once unblocked)
 
