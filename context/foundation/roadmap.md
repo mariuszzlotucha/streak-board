@@ -44,13 +44,13 @@ Grono znajomych korzystało wcześniej ze wspólnego arkusza Google, w którym r
 
 ## At a glance
 
-| ID   | Change ID                | Outcome (user can …)                                                                                                                                      | Prerequisites | PRD refs                                     | Status      |
-| ---- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | -------------------------------------------- | ----------- |
-| S-13 | checkoff-grid            | zobaczyć siatkę odznaczeń grupy: kto wykonał task w każdym z ostatnich okresów                                                                            | S-11, S-14    | PRD §Vision, FR-013; MS-01                   | done        |
-| S-16 | task-reminders           | dostać przypomnienie o tasku, do którego jest zapisany, a którego nie odznaczył w bieżącym okresie                                                        | —             | — (PRD §Success Criteria → Secondary; MS-02) | done        |
-| S-17 | installable-pwa          | zainstalować aplikację na ekranie głównym telefonu albo na komputerze i uruchamiać ją jak osobną aplikację (PWA)                                          | —             | — (opis właściciela; MS-03)                  | done        |
-| S-18 | public-surface-hardening | odwiedzać aplikację, która wysyła nagłówki bezpieczeństwa, publikuje kontakt do zgłaszania luk i której domeny nie da się podrobić w poczcie              | —             | — (prośba właściciela; MS-04)                | done        |
-| S-19 | install-promotion        | dowiedzieć się w aplikacji, jak zainstalować ją na swoim urządzeniu (na iPhonie instrukcja, w Chrome i Edge przycisk), i po co (przypomnienia na iPhonie) | S-16, S-17    | — (opis właściciela; MS-05)                  | in-progress |
+| ID   | Change ID                | Outcome (user can …)                                                                                                                                      | Prerequisites | PRD refs                                     | Status |
+| ---- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | -------------------------------------------- | ------ |
+| S-13 | checkoff-grid            | zobaczyć siatkę odznaczeń grupy: kto wykonał task w każdym z ostatnich okresów                                                                            | S-11, S-14    | PRD §Vision, FR-013; MS-01                   | done   |
+| S-16 | task-reminders           | dostać przypomnienie o tasku, do którego jest zapisany, a którego nie odznaczył w bieżącym okresie                                                        | —             | — (PRD §Success Criteria → Secondary; MS-02) | done   |
+| S-17 | installable-pwa          | zainstalować aplikację na ekranie głównym telefonu albo na komputerze i uruchamiać ją jak osobną aplikację (PWA)                                          | —             | — (opis właściciela; MS-03)                  | done   |
+| S-18 | public-surface-hardening | odwiedzać aplikację, która wysyła nagłówki bezpieczeństwa, publikuje kontakt do zgłaszania luk i której domeny nie da się podrobić w poczcie              | —             | — (prośba właściciela; MS-04)                | done   |
+| S-19 | install-promotion        | dowiedzieć się w aplikacji, jak zainstalować ją na swoim urządzeniu (na iPhonie instrukcja, w Chrome i Edge przycisk), i po co (przypomnienia na iPhonie) | S-16, S-17    | — (opis właściciela; MS-05)                  | done   |
 
 ## Baseline
 
@@ -151,7 +151,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
   - Jak rozpoznać iPhone'a z Safari i inne przeglądarki bez własnego monitu instalacji, i co pokazać w przeglądarce wbudowanej w komunikator, z której nie da się zainstalować aplikacji? — Owner: team. Block: no — rozstrzyga `/10x-research`.
 - **Źródło zakresu:** opis właściciela z 2026-10-18 po teście z kolegą na iPhonie: dziś jedyną wskazówką jest napis przy przełączniku przypomnień w ustawieniach („Install StreakBoard on your home screen to get reminders.”), a Safari na iPhonie nie pokazuje żadnego monitu instalacji.
 - **Risk:** Zachęta nie może być natrętna ani pokazywać się w zainstalowanej aplikacji; systemowy monit instalacji jest tylko w przeglądarkach Chromium, a rozpoznawanie iPhone'a po przeglądarce bywa zawodne, więc zachęta musi mieć sensowny wariant domyślny. Zmienia decyzję z planu S-17 (bez własnego przycisku i bez podpowiedzi dla iOS).
-- **Status:** in-progress
+- **Status:** done
 
 ## Backlog Handoff
 
@@ -193,3 +193,4 @@ Brak otwartych pytań na poziomie roadmapy: PRD `## Open Questions` mówi „Non
 - **S-17: użytkownik instaluje StreakBoard na ekranie głównym telefonu (albo na komputerze) i uruchamia go jak osobną aplikację, z własną ikoną i bez paska przeglądarki.** — Archived 2026-10-17 → `context/archive/2026-10-17-installable-pwa/`. Lesson: —.
 - **S-13: członek grupy widzi dla każdego tasku siatkę: uczestnicy × ostatnie okresy, z zaznaczeniem, kto w danym okresie wykonał task, a kto nie.** — Archived 2026-10-17 → `context/archive/2026-10-17-checkoff-grid/`. Lesson: —.
 - **S-18: odwiedzający dostaje strony z nagłówkami bezpieczeństwa (nosniff, Referrer-Policy, zakaz osadzania w ramkach, Permissions-Policy, CSP najpierw w trybie Report-Only), badacz znajduje kontakt w `/.well-known/security.txt`, a nikt nie wyśle poczty podszywającej się pod domenę aplikacji.** — Archived 2026-10-17 → `context/archive/2026-10-17-public-surface-hardening/`. Lesson: —.
+- **S-19: użytkownik, który otwiera StreakBoard w przeglądarce, dowiaduje się w aplikacji, jak zainstalować ją na swoim urządzeniu: na iPhonie widzi instrukcję „Udostępnij → Do ekranu początkowego”, w Chrome i Edge przycisk instalacji, i wie, że na iPhonie przypomnienia działają tylko z zainstalowanej aplikacji. W zainstalowanej aplikacji zachęty nie ma.** — Archived 2026-10-18 → `context/archive/2026-10-18-install-promotion/`. Lesson: —.
