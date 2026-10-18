@@ -1,10 +1,10 @@
 ---
 change_id: claude-review
 title: Claude review
-status: impl_reviewed
+status: archived
 created: 2026-10-18
 updated: 2026-10-18
-archived_at: null
+archived_at: 2026-10-18T01:10:02Z
 ---
 
 ## Notes
