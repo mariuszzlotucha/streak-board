@@ -1,7 +1,7 @@
 ---
 change_id: claude-review
 title: Claude review
-status: implementing
+status: implemented
 created: 2026-10-18
 updated: 2026-10-18
 archived_at: null

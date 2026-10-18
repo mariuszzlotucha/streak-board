@@ -306,8 +306,8 @@ Opus runs are slower than the 16-114 s measured on Sonnet. The job's `timeout-mi
 
 #### Automated
 
-- [x] 2.1 Prettier accepts README
-- [x] 2.2 README names the prompt file and the model
+- [x] 2.1 Prettier accepts README — 0e8b075
+- [x] 2.2 README names the prompt file and the model — 0e8b075
 
 #### Manual
 
