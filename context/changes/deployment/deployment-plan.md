@@ -452,11 +452,15 @@ Rollback:
 
 ## Phase 26 — iOS status bar and safe areas (PR #198; no change folder)
 
-**Status: in review.** On a friend's iPhone the iOS status bar overlapped the app header (S-19 research, Open Question 5). `SiteHeader` is now sticky, so iOS 26 Safari tints the status bar with the header's background. `viewport-fit=cover` with `env(safe-area-inset-*)` paddings keeps the header, the footer, the toast and the new-version message clear of the status bar, the home indicator and Android's gesture bar wherever the page runs under them. It is a small direct PR, not a roadmap slice, so it has no change folder. One release, no migrations. M-3 is closed in PR #197, docs-only, after this release.
+**Status: released 2026-10-18; device checks pending.** On a friend's iPhone the iOS status bar overlapped the app header (S-19 research, Open Question 5). `SiteHeader` is now sticky, so iOS 26 Safari tints the status bar with the header's background. `viewport-fit=cover` with `env(safe-area-inset-*)` paddings keeps the header, the footer, the toast and the new-version message clear of the status bar, the home indicator and Android's gesture bar wherever the page runs under them. It is a small direct PR, not a roadmap slice, so it has no change folder. One release, no migrations. M-3 is closed in PR #197, docs-only, after this release.
 
-- [ ] Code: PR #198 merged; master run with `ci`, `smoke`, `e2e` and `integration` green.
-- [ ] `release` for PR #198, approved by the owner: `wrangler deploy` version ID and the `production` tag move.
-- [ ] Agent's live check (anonymous `curl` on `https://streakboard.app`): `/` 200 with `viewport-fit=cover`; `/dashboard` 302 to `/auth/signin`.
+- [x] Code: PR #198, merged on 2026-10-18 as merge commit `4aec9e0`. Master run 39128715819: `ci`, `smoke`, `e2e` and `integration` green; `compat` skipped on `master`.
+- [x] `release` for PR #198: job 117679987400, approved by the owner. `supabase db push` reported "Remote database is up to date." (no migrations); `wrangler deploy` printed `Current Version ID: 7aa51b8f-8f02-4933-aef8-22dd82168df3`; the tag moved `f249d77...4aec9e0 production -> production (forced update)`. The job's "Check the live deployment" step passed. The previous tag, `f249d77`, is the merge of PR #195 (`claude-review`), which changed no app code since `1b51d4d` (Phase 24) and is not recorded elsewhere in this plan.
+- [x] Agent's live check (2026-10-18, anonymous `curl` on `https://streakboard.app`):
+  - `/` 200 with `<meta name="viewport" content="width=device-width, viewport-fit=cover">` and the header classes `sticky top-0 z-40 … pt-[env(safe-area-inset-top)]`; its stylesheet has the `scroll-padding-top` rule;
+  - `/privacy` 200;
+  - `/dashboard` 302 to `/auth/signin`;
+  - `git ls-remote --tags origin production` shows `4aec9e0`.
 - [ ] Open, device checks (the list in PR #198):
   - iPhone, Safari: on a scrolled dashboard the status bar takes the header's colour, and no page content shows behind the clock.
   - iPhone: in the installed app and in a messenger's in-app browser the header sits below the status bar, and the footer and the new-version message clear the home indicator.
