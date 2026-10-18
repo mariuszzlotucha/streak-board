@@ -1,7 +1,7 @@
 ---
 project: "StreakBoard"
 version: 1
-status: draft
+status: reviewed
 created: 2026-09-14
 context_type: greenfield
 product_type: web-app

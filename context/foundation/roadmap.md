@@ -1,7 +1,7 @@
 ---
 project: "StreakBoard"
 version: 1
-status: draft
+status: locked
 created: 2026-09-24
 updated: 2026-10-18
 prd_version: 1
