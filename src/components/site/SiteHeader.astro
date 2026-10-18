@@ -2,6 +2,9 @@
 // The brand header of both layouts. `PublicLayout` passes a public page's links into `actions`; `AppLayout` passes the
 // Main nav into `nav` (right after the brand) and the Sign out form into `actions`, and sets `compactBrand` so that brand,
 // nav and Sign out fit one row at 375 px. The brand link goes to `/`, which sends a signed-in visitor on to `/dashboard`.
+// It sticks to the top of the screen, so iOS 26 Safari tints the status bar with its background instead of showing the
+// scrolled page through it, and it pads its top by the safe-area inset where the page runs under the status bar
+// (`viewport-fit=cover` in `Layout.astro`). z-40 keeps it under the toasts, the new-version message and dialogs (z-50).
 interface Props {
   /** Below `sm` the wordmark is visually hidden; it stays in the HTML, so the link keeps its accessible name. */
   compactBrand?: boolean;
@@ -10,7 +13,7 @@ interface Props {
 const { compactBrand = false } = Astro.props;
 ---
 
-<header class="border-b border-border bg-background">
+<header class="sticky top-0 z-40 border-b border-border bg-background pt-[env(safe-area-inset-top)]">
   <div class="mx-auto flex w-full max-w-5xl items-center justify-between gap-3 px-4 py-3">
     <div class="flex min-w-0 items-center gap-2 sm:gap-4">
       <a href="/" class="flex shrink-0 items-center gap-2 font-heading text-lg font-semibold text-foreground">

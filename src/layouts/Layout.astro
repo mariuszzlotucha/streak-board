@@ -28,7 +28,10 @@ const description =
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width" />
+    {/* viewport-fit=cover lets the page run under the iPhone status bar and home indicator and Android's gesture bar
+        where the browser allows it: SiteHeader, SiteFooter and the bottom-fixed messages pad themselves by
+        env(safe-area-inset-*), and global.css keeps the sides clear in landscape. */}
+    <meta name="viewport" content="width=device-width, viewport-fit=cover" />
     <link rel="icon" type="image/svg+xml" sizes="any" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="48x48" href="/favicon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
