@@ -328,8 +328,8 @@ Added after the implementation review (`reviews/impl-review.md`, F3). The phase 
 
 #### Manual
 
-- [ ] 2.3 CI on the PR passes, including ai-review
-- [ ] 2.4 The implementation PR's own claude-review label run posts exactly one "prompt not found" comment and no review
+- [x] 2.3 CI on the PR passes, including ai-review — f249d77
+- [x] 2.4 The implementation PR's own claude-review label run posts exactly one "prompt not found" comment and no review — f249d77
 - [ ] 2.5 After the merge, the first real PR labelled claude-review gets an English review on Opus in the new summary format with a rule-consistent verdict
 - [ ] 2.6 That run's log shows no permission denials for tools the prompt mentions
 - [ ] 2.7 A second label run on the same PR minimizes the first marked summary and leaves ai-review's comment untouched
