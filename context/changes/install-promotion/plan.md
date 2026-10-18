@@ -357,7 +357,7 @@ None: no schema, no server state. A device that dismissed the card keeps the fla
 
 #### Automated
 
-- [x] 3.1 The release run is green and the live checks pass in the `release` job
+- [x] 3.1 The release run is green and the live checks pass in the `release` job — b25d161
 
 #### Manual
 
