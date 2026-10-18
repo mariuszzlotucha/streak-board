@@ -423,6 +423,25 @@ Rollback:
   - A second task whose title differs only in case shows "Your group already has a task with this name. Pick another one."
   - Turn reminders on again in Settings on the phone before the next 20:00 Warsaw run. The S-16 fan-out CPU check with `wrangler tail` needs at least one subscription.
 
+## Phase 24 — Install promotion (change `install-promotion`, S-19)
+
+**Status: released 2026-10-18; device checks pending.** StreakBoard now promotes its own installation: an "Install StreakBoard" card on the dashboard and an always-present block in the Settings Reminders card, with the offer chosen per browser, "Not now" kept in local storage on that device, and a privacy policy line on it (`context/changes/install-promotion/plan.md`). One release, no migrations.
+
+- [x] Code: PR #191, merged on 2026-10-18 as merge commit `1b51d4d`. Master run 39080963661: `ci`, `smoke`, `e2e` and `integration` green; `compat` skipped on `master`.
+- [x] `release` for PR #191: job 117538378740, approved by the owner. `supabase db push` reported "Remote database is up to date." (no migrations); `wrangler deploy` printed `Current Version ID: 29a855da-0e59-4ff6-a43e-cdb47a1ccc38`; the tag moved `1d0fc23...1b51d4d production -> production (forced update)`. The job's "Check the live deployment" step passed. This covers plan row 3.1. The previous tag, `1d0fc23`, is the merge of PR #189 (invite auto-join), whose release is not recorded in this file.
+- [x] Agent's live check (2026-10-18, anonymous `curl` on `https://streakboard.app`):
+  - `/` 200;
+  - `/privacy` 200 with the sentence on "Not now" kept in local storage;
+  - `/dashboard` 302 to `/auth/signin`;
+  - `/manifest.webmanifest` 200 `application/manifest+json`;
+  - `/sw.js` 200 `text/javascript`.
+- [ ] Open, owner's and group member's device checks (plan rows still `[ ]`):
+  - 3.2 Android Chrome: the dashboard shows either the "Install app" button or the menu instruction; the owner reports which (resolves research Open Question 1).
+  - 3.3 Desktop Chrome: the same check; installing opens the app window with no card. Then `streakboard.app` in a normal tab: Chrome sends no `beforeinstallprompt` once installed, so the card still offers installing there until "Not now" (impl review F7); decide whether that needs a follow-up (`getInstalledRelatedApps`).
+  - 3.4 iPhone, by a group member through `context/changes/install-promotion/ios-check.md`: the card in Safari, installing from it, no card in the installed app, reminders turned on there and the 20:00 reminder received. Phase 21's iOS row is a separate check (S-17's `ios-check.md`) and stays open.
+  - 3.5 A messenger's in-app browser on a phone shows "Open this page in Safari to install StreakBoard." on an iPhone and "Open this page in Safari or Chrome to install StreakBoard." elsewhere.
+  - Still open from Phases 1-2: 1.3 (the `IN_APP_BROWSER_PATTERNS` list reviewed against the messengers the group uses), 2.7 (kitchen-sink screenshots of every install state in light and dark mode at phone width), 2.8 (the card and the inline block at 412 px, with no collision with the toast or the update notice).
+
 ## Verification checklist (end-to-end, once unblocked)
 
 - [x] Fresh browser session against the live `*.workers.dev` URL: sign up, confirm-email flow (or note if stubbed), sign in, hit `/dashboard`, sign out. — superseded by the Phase 10 production checks on `https://streakboard.app` (`workers.dev` is switched off by Phase 4 of that change).
