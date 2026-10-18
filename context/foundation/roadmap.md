@@ -165,7 +165,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ## Open Roadmap Questions
 
-Brak otwartych pytań na poziomie roadmapy: PRD `## Open Questions` mówi „None”, a niewiadome wycinków są zapisane przy S-13, S-16 i S-17. Zamknięte pytania M-2 (publikacja aplikacji Google, flaga Safe Browsing) są w historii tego pliku i w `context/changes/deployment/deployment-plan.md` (Phase 13).
+Jedno pytanie zostaje otwarte u właściciela: jak bez analityki sprawdzić, czy siatka odznaczeń (S-13, FR-013) spełnia gwiazdę przewodnią M-3. S-13 celowo nie dodał analityki ani testu hipotezy, bo polityka prywatności obiecuje „No analytics” (`context/archive/2026-10-17-checkoff-grid/plan.md`, „What We're NOT Doing”), a M-3 zamknięto bez odpowiedzi. Pytanie nie blokuje żadnego wycinka. PRD `## Open Questions` zapisuje to samo pytanie i znaną lukę Q-04 (okno dat w `task_checkoffs`, zaakceptowana przez właściciela, kod bez zmian). Niewiadome wycinków są zapisane przy każdym z nich (S-13, S-16, S-17, S-18, S-19). Zamknięte pytania M-2 (publikacja aplikacji Google, flaga Safe Browsing) są w historii tego pliku i w `context/changes/deployment/deployment-plan.md` (Phase 13).
 
 ## Parked
 
