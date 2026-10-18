@@ -289,13 +289,13 @@ Opus runs are slower than the 16-114 s measured on Sonnet. The job's `timeout-mi
 
 #### Automated
 
-- [x] 1.1 actionlint passes on the workflow
-- [x] 1.2 Prettier accepts the prompt file
-- [x] 1.3 The prompt file is not ignored by git
-- [x] 1.4 The inline prompt references the file and no longer contains the old template
-- [x] 1.5 The model is pinned
-- [x] 1.6 The prompt file contains the summary marker and heading, the verdict rule and the ai-review marker ban
-- [x] 1.7 Lint still passes
+- [x] 1.1 actionlint passes on the workflow — 81ce1f2
+- [x] 1.2 Prettier accepts the prompt file — 81ce1f2
+- [x] 1.3 The prompt file is not ignored by git — 81ce1f2
+- [x] 1.4 The inline prompt references the file and no longer contains the old template — 81ce1f2
+- [x] 1.5 The model is pinned — 81ce1f2
+- [x] 1.6 The prompt file contains the summary marker and heading, the verdict rule and the ai-review marker ban — 81ce1f2
+- [x] 1.7 Lint still passes — 81ce1f2
 
 #### Manual
 
@@ -306,8 +306,8 @@ Opus runs are slower than the 16-114 s measured on Sonnet. The job's `timeout-mi
 
 #### Automated
 
-- [ ] 2.1 Prettier accepts README
-- [ ] 2.2 README names the prompt file and the model
+- [x] 2.1 Prettier accepts README
+- [x] 2.2 README names the prompt file and the model
 
 #### Manual
 
