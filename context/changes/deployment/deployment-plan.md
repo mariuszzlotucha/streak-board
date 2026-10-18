@@ -450,6 +450,18 @@ Rollback:
 - [x] `release` for PR #189: job 117521519959, approved by the owner. `supabase db push` reported "Remote database is up to date." (no migrations); `wrangler deploy` printed `Current Version ID: 8e81b990-f32c-4f95-a19a-42622f452655`; the tag moved `96ce53c...1d0fc23 production -> production (forced update)`. The job's "Check the live deployment" step passed.
 - [ ] Open: no check of the invite path on `streakboard.app` is recorded (open an invite link, sign up, confirm, land in the group with the "You joined the group." toast; and the same with the confirmation link opened in another browser).
 
+## Phase 26 — iOS status bar and safe areas (PR #198; no change folder)
+
+**Status: in review.** On a friend's iPhone the iOS status bar overlapped the app header (S-19 research, Open Question 5). `SiteHeader` is now sticky, so iOS 26 Safari tints the status bar with the header's background. `viewport-fit=cover` with `env(safe-area-inset-*)` paddings keeps the header, the footer, the toast and the new-version message clear of the status bar, the home indicator and Android's gesture bar wherever the page runs under them. It is a small direct PR, not a roadmap slice, so it has no change folder. One release, no migrations. M-3 is closed in PR #197, docs-only, after this release.
+
+- [ ] Code: PR #198 merged; master run with `ci`, `smoke`, `e2e` and `integration` green.
+- [ ] `release` for PR #198, approved by the owner: `wrangler deploy` version ID and the `production` tag move.
+- [ ] Agent's live check (anonymous `curl` on `https://streakboard.app`): `/` 200 with `viewport-fit=cover`; `/dashboard` 302 to `/auth/signin`.
+- [ ] Open, device checks (the list in PR #198):
+  - iPhone, Safari: on a scrolled dashboard the status bar takes the header's colour, and no page content shows behind the clock.
+  - iPhone: in the installed app and in a messenger's in-app browser the header sits below the status bar, and the footer and the new-version message clear the home indicator.
+  - Android, the owner's installed app: the status bar and the header look as before, and the end of the page clears the gesture bar.
+
 ## Verification checklist (end-to-end, once unblocked)
 
 - [x] Fresh browser session against the live `*.workers.dev` URL: sign up, confirm-email flow (or note if stubbed), sign in, hit `/dashboard`, sign out. — superseded by the Phase 10 production checks on `https://streakboard.app` (`workers.dev` is switched off by Phase 4 of that change).
