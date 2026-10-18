@@ -9,7 +9,7 @@ main_goal: market-feedback
 top_blocker: time
 milestone_id: history-and-reminders
 milestone_seq: 3
-milestone_status: open
+milestone_status: done
 ---
 
 # Roadmap: StreakBoard
@@ -20,7 +20,7 @@ milestone_status: open
 
 ## Milestone
 
-**M-3: Historia, przypomnienia i instalacja: siatka odznaczeń grupy, przypomnienie o niewykonanym tasku i aplikacja PWA** — Status: open
+**M-3: Historia, przypomnienia i instalacja: siatka odznaczeń grupy, przypomnienie o niewykonanym tasku i aplikacja PWA** — Status: done
 
 - **Intent:** Domknąć kryteria drugorzędne PRD v1 i dać aplikacji miejsce na telefonie: członek grupy widzi historię wykonania tasków w prostej siatce, którą grono prowadziło wcześniej ręcznie we wspólnym arkuszu, użytkownik dostaje przypomnienie o tasku, którego jeszcze nie odznaczył, a aplikację można zainstalować na ekranie głównym jak zwykłą aplikację (PWA). Wszystkie trzy mają podtrzymać codzienny powrót do odznaczania, a ich wartość sprawdzamy u realnych użytkowników.
 - **Source materials:** `context/foundation/prd.md` (v1), §Success Criteria → Secondary; punkty tej sekcji nie mają identyfikatorów FR ani US, więc zakres jest zapisany jako kotwice `MS-NN` poniżej. Decyzje właściciela: 2026-10-08 (z historii tylko prosta siatka, bez wykresów i statystyk) i 2026-10-17 (S-13 przeniesiony z M-2, M-3 oparty na kryteriach drugorzędnych PRD, przypomnienia odparkowane). Opis właściciela z 2026-10-17: „Żeby aplikacja była PWA” (kotwica MS-03). Prośba właściciela z 2026-10-17 o utwardzenie publicznej powierzchni po skanach botów w logach Cloudflare (kotwica MS-04). Opis właściciela z 2026-10-18: „aplikacja powinna promować bardziej PWA, instalowanie samej siebie”, i decyzja, że to jeszcze M-3 (kotwica MS-05). Konieczne FR z PRD (FR-001 do FR-012) pokryły M-1 i M-2 (`## Milestone History`).
@@ -186,6 +186,7 @@ Brak otwartych pytań na poziomie roadmapy: PRD `## Open Questions` mówi „Non
 - **M-2: Gotowość na realnych użytkowników: adres, logowanie, strona startowa, widok, testy i widoczne awarie** (`ready-for-real-users`) — closed 2026-10-17. S-06, S-07, S-08, S-09, S-10, S-11, S-12, S-14 i S-15 `done`: aplikacja działa pod `streakboard.app` z logowaniem Google, stroną startową z polityką prywatności, nowym widokiem grupy, nickami zamiast e-maili i usuwaniem konta, awarie trafiają do odpowiedzi API i do monitoringu, a testy dobrane według ryzyka (z e2e i testami mutacyjnymi) pilnują zmian; zmiany zarchiwizowane w `context/archive/` (2026-10-02 do 2026-10-16). S-13 (siatka odznaczeń, kotwica MS-08) przeniesiony do M-3 decyzją właściciela 2026-10-17.
 - **M-3: Historia, przypomnienia i instalacja: siatka odznaczeń grupy, przypomnienie o niewykonanym tasku i aplikacja PWA** (`history-and-reminders`) — closed 2026-10-17. S-13, S-16, S-17 i S-18 `done`: członek grupy widzi siatkę odznaczeń przy każdym tasku, przypomnienia Web Push przychodzą o 20:00 czasu warszawskiego, aplikację da się zainstalować jako PWA, a publiczna powierzchnia ma nagłówki bezpieczeństwa, CSP w trybie Report-Only i `security.txt`, a domeny nie da się podrobić w poczcie; zmiany zarchiwizowane w `context/archive/` (2026-10-17). Przy zamknięciu strona główna przestała opisywać aplikację jako wspólny arkusz i opisuje siatkę przy każdym tasku (PR #187). Właściciel nie otwiera kolejnego kamienia milowego (decyzja 2026-10-17).
 - **M-3: Historia, przypomnienia i instalacja: siatka odznaczeń grupy, przypomnienie o niewykonanym tasku i aplikacja PWA** (`history-and-reminders`) — reopened 2026-10-18. Decyzja właściciela: zachęta do instalacji aplikacji (S-19, kotwica MS-05) należy jeszcze do M-3, więc kamień milowy jest znowu otwarty; wpis o zamknięciu powyżej zostaje bez zmian.
+- **M-3: Historia, przypomnienia i instalacja: siatka odznaczeń grupy, przypomnienie o niewykonanym tasku i aplikacja PWA** (`history-and-reminders`) — closed 2026-10-18. Po ponownym otwarciu S-19 `done`: aplikacja otwarta w przeglądarce sama zachęca do instalacji — karta „Install StreakBoard” na dashboardzie (do „Not now” na danym urządzeniu) i stały blok przy przełączniku przypomnień w ustawieniach podają kroki dla danej przeglądarki (w Chrome i Edge przycisk instalacji, gdy przeglądarka na to pozwala, w przeglądarce komunikatora prośbę o otwarcie strony w Safari albo Chrome) i powód (na iPhonie przypomnienia działają tylko z zainstalowanej aplikacji), a w zainstalowanej aplikacji zachęty nie ma; zmiana zarchiwizowana w `context/archive/2026-10-18-install-promotion/`. Przy zamknięciu nagłówek przykleił się do góry ekranu, a strona omija pasek stanu i dolną krawędź ekranu (`viewport-fit=cover` i wcięcia `env(safe-area-inset-*)`), bo na iPhonie kolegi pasek stanu nachodził na nagłówek (PR #198). Kontrole na urządzeniach czekają w `context/changes/deployment/deployment-plan.md` (Phase 24 i 26). Właściciel nie otwiera kolejnego kamienia milowego (decyzja 2026-10-17, potwierdzona 2026-10-18).
 
 ## Done
 
