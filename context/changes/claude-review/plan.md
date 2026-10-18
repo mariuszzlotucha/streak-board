@@ -281,6 +281,23 @@ Opus runs are slower than the 16-114 s measured on Sonnet. The job's `timeout-mi
 - ai-review sticky-comment match to stay clear of: `.github/workflows/review.yml:242-249`, `README.md:508`
 - Hardening that stays: `context/archive/2026-10-14-ci-cd-code-review/reviews/impl-review.md:76-115`, `context/archive/2026-10-14-ci-cd-code-review/plan.md:279-290`
 
+## Implementation notes
+
+Added after the implementation review (`reviews/impl-review.md`, F3). The phase blocks above are kept as planned. Two of their statements turned out wrong, and the code follows these corrections:
+
+- **`lessons.md` is not restored from the base branch.** The action restores only `.claude`, `.mcp.json`, `.claude.json`, `.gitmodules`, `.ripgreprc`, `CLAUDE.md`, `CLAUDE.local.md` and `.husky`. The checkout therefore holds the PR's copy of `context/foundation/lessons.md`. The prompt says so: if the PR changes `lessons.md`, the base version (the old side of the diff) is the rule, and a weakened rule is a finding. This corrects the Desired End State and Phase 1 section 3.
+- **A waiting branch needs `master` merged in only for the workflow file.** The action fetches `origin/<base.ref>` at run time, so the prompt file always comes from the current `master`. The workflow file (the inline `prompt:`, the model and the hide step) is the PR's own version on `pull_request`, and that is why README asks for `master` to be merged into a waiting branch. This corrects the reason given in Critical Implementation Details, Phase 2's README contract and Migration Notes.
+- **The prompt has eleven sections, not ten.** The owner compared the new prompt with the old inline one and asked to restore the defect classes it had dropped. Section 6, "What to look for", sits before the risk surfaces and covers:
+  - untrusted input and security (validation, XSS, SSRF, command injection, authorization);
+  - correctness;
+  - test quality;
+  - React islands;
+  - accessibility and UI states;
+  - performance;
+  - types and maintainability.
+
+  The old Astro-specific checks that do not apply here stay out. Sections 6-10 of the contract are now 7-11, and row 1.8 is read against eleven sections.
+
 ## Progress
 
 > Convention: `- [ ]` pending, `- [x]` done. Append ` — <commit sha>` when a step lands. Do not rename step titles. See `references/progress-format.md`.
@@ -289,13 +306,13 @@ Opus runs are slower than the 16-114 s measured on Sonnet. The job's `timeout-mi
 
 #### Automated
 
-- [ ] 1.1 actionlint passes on the workflow
-- [ ] 1.2 Prettier accepts the prompt file
-- [ ] 1.3 The prompt file is not ignored by git
-- [ ] 1.4 The inline prompt references the file and no longer contains the old template
-- [ ] 1.5 The model is pinned
-- [ ] 1.6 The prompt file contains the summary marker and heading, the verdict rule and the ai-review marker ban
-- [ ] 1.7 Lint still passes
+- [x] 1.1 actionlint passes on the workflow — 81ce1f2
+- [x] 1.2 Prettier accepts the prompt file — 81ce1f2
+- [x] 1.3 The prompt file is not ignored by git — 81ce1f2
+- [x] 1.4 The inline prompt references the file and no longer contains the old template — 81ce1f2
+- [x] 1.5 The model is pinned — 81ce1f2
+- [x] 1.6 The prompt file contains the summary marker and heading, the verdict rule and the ai-review marker ban — 81ce1f2
+- [x] 1.7 Lint still passes — 81ce1f2
 
 #### Manual
 
@@ -306,8 +323,8 @@ Opus runs are slower than the 16-114 s measured on Sonnet. The job's `timeout-mi
 
 #### Automated
 
-- [ ] 2.1 Prettier accepts README
-- [ ] 2.2 README names the prompt file and the model
+- [x] 2.1 Prettier accepts README — 0e8b075
+- [x] 2.2 README names the prompt file and the model — 0e8b075
 
 #### Manual
 
