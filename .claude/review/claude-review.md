@@ -20,7 +20,7 @@ You have exactly these tools:
 
 Any other command is denied, so do not try it: no `sed`, `awk`, `cat`, `head` or `git`, no writes, no redirections and no pipes into writers.
 
-Post the summary in one `gh pr comment <n> --body '...'` call with the body in single quotes. No `$(...)`, no heredoc, no file and no apostrophes inside the body (write "do not", "it is"). Run 38592940294 had `sed -n` denied, an unanalysable `--body "..."` denied and a Write to `/tmp` for `--body-file` denied.
+Post the summary in one `gh pr comment <n> --body '...'` call with the body in single quotes. No `$(...)`, no heredoc, no file, and no single-quote character (`'`) anywhere in the body, not even inside quoted code: write "do not" and "it is", and quote code with backticks and double quotes (`from "@/lib/x"`). Run 38592940294 had `sed -n` denied, an unanalysable `--body "..."` denied and a Write to `/tmp` for `--body-file` denied.
 
 The checkout has no `node_modules`. You cannot build, lint, type-check or run tests, so never claim that any of them passed or failed.
 
