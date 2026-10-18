@@ -287,6 +287,16 @@ Added after the implementation review (`reviews/impl-review.md`, F3). The phase 
 
 - **`lessons.md` is not restored from the base branch.** The action restores only `.claude`, `.mcp.json`, `.claude.json`, `.gitmodules`, `.ripgreprc`, `CLAUDE.md`, `CLAUDE.local.md` and `.husky`. The checkout therefore holds the PR's copy of `context/foundation/lessons.md`. The prompt says so: if the PR changes `lessons.md`, the base version (the old side of the diff) is the rule, and a weakened rule is a finding. This corrects the Desired End State and Phase 1 section 3.
 - **A waiting branch needs `master` merged in only for the workflow file.** The action fetches `origin/<base.ref>` at run time, so the prompt file always comes from the current `master`. The workflow file (the inline `prompt:`, the model and the hide step) is the PR's own version on `pull_request`, and that is why README asks for `master` to be merged into a waiting branch. This corrects the reason given in Critical Implementation Details, Phase 2's README contract and Migration Notes.
+- **The prompt has eleven sections, not ten.** The owner compared the new prompt with the old inline one and asked to restore the defect classes it had dropped. Section 6, "What to look for", sits before the risk surfaces and covers:
+  - untrusted input and security (validation, XSS, SSRF, command injection, authorization);
+  - correctness;
+  - test quality;
+  - React islands;
+  - accessibility and UI states;
+  - performance;
+  - types and maintainability.
+
+  The old Astro-specific checks that do not apply here stay out. Sections 6-10 of the contract are now 7-11, and row 1.8 is read against eleven sections.
 
 ## Progress
 

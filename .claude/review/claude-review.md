@@ -44,10 +44,22 @@ The checkout is the PR merge commit at depth 1, so local git history is useless.
 
 ## 5. Large diffs
 
-- When the diff is too large to read whole (over about 40,000 characters), rank the changed files by risk: the risk surfaces in section 6 first, then code before docs. Read the top files in full from the checkout.
+- When the diff is too large to read whole (over about 40,000 characters), rank the changed files by risk: the risk surfaces in section 7 first, then code before docs. Read the top files in full from the checkout.
 - List the files you did not cover under "Not verified". Never pipe the diff through `head` and present the result as a full review.
 
-## 6. Risk surfaces
+## 6. What to look for
+
+Check the changed code for these defect classes. Each finding needs a concrete scenario in this code, not a mere possibility.
+
+- **Untrusted input and security**: validation of URL parameters, form fields, cookies, headers and external API responses; XSS (`set:html`, `dangerouslySetInnerHTML`, unescaped HTML); SSRF (a fetch to a URL or host built from input); command injection; missing authentication or authorization checks; server-only data or secrets reaching the client.
+- **Correctness**: wrong logic, edge cases (empty, missing, duplicate and boundary values, time zones), error paths, and regressions in the callers of a changed function.
+- **Tests**: a behaviour change with no test where the repository tests that area; a test that would still pass if the code were wrong (asserts too little, or mocks the code under test); edge cases the change introduces but no test covers. Do not ask for tests a change does not need.
+- **React islands**: hook dependencies, stale closures, effects without cleanup, state updates after unmount, interactive code that is never hydrated.
+- **Accessibility and UI states**: labels, focus, keyboard use, `role="alert"` and `role="status"` messages for assistive technology; loading, error, empty and success states the change breaks or forgets.
+- **Performance**: data fetched in a loop or several times per render, unbounded queries, JavaScript shipped to the client that could stay on the server.
+- **Types and maintainability**: `any`, unchecked casts, suppressed TypeScript errors, and dead code or duplication the diff adds. No refactors from personal preference.
+
+## 7. Risk surfaces
 
 When the PR touches one of these, apply the rule `CLAUDE.md` or `lessons.md` states for it and cite that rule in the finding:
 
@@ -64,7 +76,7 @@ When the PR touches one of these, apply the rule `CLAUDE.md` or `lessons.md` sta
 
 Do not run generic framework checklists.
 
-## 7. Finding rules
+## 8. Finding rules
 
 - Report only issues the diff introduces or touches, each with a concrete scenario and its impact.
 - A suspicion you cannot point to in the code is not a finding; put it under "Not verified" if it matters.
@@ -72,14 +84,14 @@ Do not run generic framework checklists.
 - No pre-existing issues, no style or lint, no "not run locally" notes, no duplicates.
 - At most 8 findings, most severe first.
 
-## 8. Severity
+## 9. Severity
 
 - **CRITICAL**: direct risk of data loss, privilege takeover, secret exposure or a serious production outage.
 - **HIGH**: a serious functional bug, security hole or regression in a common scenario.
 - **MEDIUM**: affects some users, reliability, performance, accessibility or maintainability.
 - **LOW**: minor, worth fixing, does not block a release.
 
-## 9. Verdict rule
+## 10. Verdict rule
 
 Exactly one verdict:
 
@@ -89,7 +101,7 @@ Exactly one verdict:
 
 Never write two verdicts or an arrow between verdicts.
 
-## 10. Output
+## 11. Output
 
 Write everything in English.
 
