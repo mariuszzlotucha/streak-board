@@ -1,8 +1,8 @@
-# Zaległości projektu poza S-13
+# Zaległości projektu
 
-Stan z 2026-10-16, po scaleniu PR #146 (`68efab0`). Decyzje właściciela z tego dnia są w `context/foundation/owner-decisions.md`. `[x]` oznacza wykonane albo rozstrzygnięte, `[ ]` oznacza, że zostało do zrobienia. Powody i szczegóły przy punktach, które czekają, są w `context/foundation/open-items-blocked.md`.
+Stan z 2026-10-18, po scaleniu PR #199 (`8f3957c`); poprzedni stan z 2026-10-16, po PR #146 (`68efab0`). Decyzje właściciela są w `context/foundation/owner-decisions.md`. `[x]` oznacza wykonane albo rozstrzygnięte, `[ ]` oznacza niewykonane: dziś to tylko 2.8 i 5.12, które właściciel postanowił pominąć. Powody i szczegóły przy punktach odroczonych są w `context/foundation/open-items-blocked.md`.
 
-Poza tą listą: otwarty wycinek roadmapy (`context/foundation/roadmap.md`) to S-13 `checkoff-grid`. S-14 `nickname` wydany 2026-10-16 w dwóch wydaniach (`deployment-plan.md`, Phase 18), zostało jego archiwum (`/10x-archive nickname`). Decyzja właściciela z 2026-10-16: S-14 wchodzi do „Done when” M-2, więc M-2 jest spełniony po zamknięciu S-13, a roadmapa nie ma następnego kamienia milowego.
+Poza tą listą: roadmapa (`context/foundation/roadmap.md`) nie ma otwartego wycinka. M-2 zamknięty 2026-10-17 (PR #164), S-13 `checkoff-grid` przeniesiony do M-3 i zarchiwizowany 2026-10-17 (PR #174), S-14 `nickname` zarchiwizowany 2026-10-16 (PR #154). M-3 zamknięty 2026-10-18 (PR #197, `04b9e2a`); właściciel potwierdził tego dnia, że następny kamień milowy się nie otwiera. Otwarte zostają ręczne sprawdzenia właściciela i na urządzeniach w `context/changes/deployment/deployment-plan.md` (Phase 20–26).
 
 ## 1. Ręczne sprawdzenia S-12
 
@@ -41,15 +41,15 @@ Szczegóły i źródła są w `context/foundation/owner-decisions.md`.
 - [x] **Q-03**: usunięty członek może wrócić tym samym linkiem, jak dziś. Kod zaproszenia zostaje bez rotacji.
 - [x] **Q-04**: okno dat `UTC−7 … UTC+1` w `task_checkoffs` to akceptowana luka zaufania. Kod bez zmian.
 - [x] **Q-06**: poziomy i taski indywidualne znikają z PRD, bo kodu ich nie ma.
-- [ ] **Poprawki dokumentów razem z S-13**: PRD (streak `prd.md:97`, sekcja `## Open Questions` `:116-118`, poziomy i taski indywidualne `:20`, `:29`), polityka prywatności (streak), słownik, opis okna dat jako znanej luki (Q-04).
+- [x] **Poprawki dokumentów razem z S-13**: zrobione 2026-10-17 w fazie 4 S-13 (commit `06921d6`, PR #169), tekst przyjęty przez właściciela (wiersz 4.3 planu `context/archive/2026-10-17-checkoff-grid/plan.md`). PRD: §Business Logic (streak dzielony na pół w dół, 1 → 0), §Open Questions (okno dat Q-04 jako znana luka), §Vision i §Success Criteria bez poziomów i tasków indywidualnych. Słownik: `context/domain/glossary.md`. Punkt „polityka prywatności (streak)” wskazywał zły plik: polityka nie opisywała reguły spadku, więc poprawka trafiła do opisu streaka na stronie głównej (`src/components/landing/SpreadsheetPitch.astro`; frame S-13).
 
 ## 4. Dług z przeglądów AI
 
 Plan `code-review-evals` jest tylko w follow-upach, nie w roadmapie. Wymaga planu, bo dotyka bramki `ai-review`. Decyzja 2026-10-16: zaplanować całość przez `/10x-plan`. Źródła: `context/archive/2026-10-14-ci-cd-code-review/follow-ups/review-fixes.md` i `context/archive/2026-10-13-tool-loop-agent/follow-ups/review-fixes.md` (F2).
 
-Zamknięte 2026-10-17: plan w `context/changes/code-review-evals/plan.md` (PR #158, scalony jako `274c5f7`), faza 1 w commicie `d09ab4e` na gałęzi `code-review-evals/implementation`, wyniki ewaluacji w `context/changes/code-review-evals/eval-results.md`. Punkty planu niżej to „Changes Required” fazy 1.
+Zamknięte 2026-10-17: plan w `context/archive/2026-10-16-code-review-evals/plan.md` (PR #158, scalony jako `274c5f7`), faza 1 w commicie `d09ab4e` (PR #159), wyniki ewaluacji w `context/archive/2026-10-16-code-review-evals/eval-results.md`, archiwum w PR #162 (`0f39ac7`). Punkty planu niżej to „Changes Required” fazy 1.
 
-- [x] Zaplanować `code-review-evals` przez `/10x-plan`. Zrobione: `context/changes/code-review-evals/plan.md`, PR #158 (`274c5f7`). Zakres:
+- [x] Zaplanować `code-review-evals` przez `/10x-plan`. Zrobione: `context/archive/2026-10-16-code-review-evals/plan.md`, PR #158 (`274c5f7`). Zakres:
 - [x] Podrobione znaczniki w diffie (`＜/diff＞`, homoglify, znaki zerowej szerokości) nie są neutralizowane. Zrobione: losowy sufiks tagów (plan, pkt 10; `d09ab4e`); `fence-lookalikes` oblał 2/2 (`eval-results.md`).
 - [x] Wstrzyknięcia, które podbijają same wyniki (a nie werdykt), reguła werdyktu nie łapie. Zmierzone, nie wykrywane w kodzie (decyzja planu): `score-raising` oblał przez oceny 2/2 (`eval-results.md`), wyniki z datą w Known limits `packages/code-reviewer/README.md`.
 - [x] Plik z bajtem NUL: `git diff` pokazuje „Binary files differ", więc model nie widzi treści. Zrobione: fail closed z wynikiem `unreviewable` (plan, pkt 11; `d09ab4e`); `nul-hidden` skończył się `unreviewable` 2/2 (`eval-results.md`).
@@ -62,7 +62,7 @@ Odroczone świadomie, z wyzwalaczami w planach. Nie są zadaniami, dopóki wyzwa
 - OPP-6, OPP-7 i OPP-8 z S-12 (info trace, szkielet tras, jeden klient Supabase na żądanie): wyzwalacze w sekcji „What We're NOT Doing" planu S-12, m.in. czternasta trasa danych. Ten wyzwalacz zapalił się 2026-10-16: S-14 dodał czternastą trasę danych `POST /api/account/nickname` (strażnik pokrycia w `tests/integration/data-routes.test.ts` liczy 14 plików). Czy otworzyć zmianę, decyduje właściciel.
 - OPP-10 z S-12 (ochrona każdej `/api/*`): wyzwalacz to nowa rodzina `/api/*`. Wyzwalacz zapala S-14 (`/api/account`, plan z 2026-10-16); plan S-14 dopisuje rodzinę do `PROTECTED_ROUTES` i zostawia OPP-10 jako osobną zmianę, bo zmienia odpowiedź nieznanych ścieżek `/api/*` z 404 na 302.
 - CODEOWNERS dla `.github/`: decyzja 2026-10-16 to odroczyć, bo repozytorium ma jednego właściciela.
-- S-14 `nickname`, dwie rzeczy poza zakresem: (1) baza nie wymusza, że członek grupy ma nick, więc bezpośrednie wywołanie `join_group` przez PostgREST własnym tokenem dodaje członka widocznego jako „Unknown member” (sekcja „What We're NOT Doing” planu, `context/changes/nickname/plan.md`); (2) nicki z łudząco podobnych liter (np. cyrylickie „а”) są dozwolone, bo nie ma kontroli confusables (przegląd fazy 1, F3). Wyzwalacz: „Unknown member” w grupie, której wszyscy członkowie logowali się po 2026-10-16, albo zgłoszony nick podszywający się pod innego członka.
+- S-14 `nickname`, dwie rzeczy poza zakresem: (1) baza nie wymusza, że członek grupy ma nick, więc bezpośrednie wywołanie `join_group` przez PostgREST własnym tokenem dodaje członka widocznego jako „Unknown member” (sekcja „What We're NOT Doing” planu, `context/archive/2026-10-16-nickname/plan.md`); (2) nicki z łudząco podobnych liter (np. cyrylickie „а”) są dozwolone, bo nie ma kontroli confusables (przegląd fazy 1, F3). Wyzwalacz: „Unknown member” w grupie, której wszyscy członkowie logowali się po 2026-10-16, albo zgłoszony nick podszywający się pod innego członka.
 
 ## 5. Porządki lokalne i ustawienia repozytorium
 
@@ -73,6 +73,10 @@ Odroczone świadomie, z wyzwalaczami w planach. Nie są zadaniami, dopóki wyzwa
 
 ## Sugerowana kolejność (aktualna)
 
-1. S-14 `nickname`: oba wydania są na produkcji; zostało `/10x-archive nickname`.
-2. S-13 `checkoff-grid` (`/10x-frame`), razem z poprawkami dokumentów (streak, poziomy, okno dat).
-3. `/10x-plan` dla `code-review-evals`: zamknięte. Plan w PR #158, implementacja 2026-10-16/17 na gałęzi `code-review-evals/implementation` (§4).
+Kolejność z 2026-10-16 jest wykonana:
+
+1. S-14 `nickname`: zarchiwizowany 2026-10-16 (PR #154).
+2. S-13 `checkoff-grid` razem z poprawkami dokumentów (§3): zarchiwizowany 2026-10-17 (PR #174).
+3. `code-review-evals`: zarchiwizowany 2026-10-17 (PR #162).
+
+Nic z tej listy nie czeka na wykonanie. Zostają ręczne sprawdzenia w `deployment-plan.md` (Phase 20–26) i pozycje odroczone z wyzwalaczami (§4).

@@ -1,6 +1,6 @@
 # Zaległości, których nie udało się wykonać albo rozstrzygnąć
 
-Stan z 2026-10-16, po scaleniu PR #146 (`68efab0`). Wykonane i rozstrzygnięte pozycje są w `open-items.md`, a odpowiedzi właściciela w `owner-decisions.md`. Tutaj zostało to, co nadal czeka: poprawki po decyzjach.
+Stan z 2026-10-18, po scaleniu PR #199 (`8f3957c`); poprzedni stan z 2026-10-16, po PR #146 (`68efab0`). Wykonane i rozstrzygnięte pozycje są w `open-items.md`, a odpowiedzi właściciela w `owner-decisions.md`. Poprawki po decyzjach są wykonane; nadal czekają tylko pozycje odroczone z wyzwalaczami.
 
 ## Dlaczego to nie jest przebieg `/10x-goal-implement`
 
@@ -8,10 +8,10 @@ Skill pracuje nad zatwierdzonym `context/changes/<change-id>/plan.md`. `open-ite
 
 Pracę wykonałem bez Twojej interwencji, ale nie w trybie `/goal`. Zmiany były na osobnym branchu, a PR był bramką przeglądu. Niczego nie scaliłem ani nie wypchnąłem na `master`. Jeśli chcesz, żeby takie prace szły planem, potrzebny jest `/10x-plan` i zatwierdzenie.
 
-## Do zrobienia po decyzjach
+## Do zrobienia po decyzjach (wykonane)
 
-- **Poprawki dokumentów razem z S-13**: decyzje: reguła streaka stoi (1 → 0), poziomy i taski indywidualne znikają z PRD, okno dat `UTC−7 … UTC+1` jest znaną luką. Do poprawy: `context/foundation/prd.md` (`:20`, `:29`, `:97`, sekcja `## Open Questions` na `:116-118`), polityka prywatności (streak), słownik, opis okna dat.
-- **Plan `code-review-evals`**: zamknięte 2026-10-17. Zaplanowany w `context/changes/code-review-evals/plan.md` (PR #158), zaimplementowany na gałęzi `code-review-evals/implementation`; punkty zakresu z odnośnikami są odhaczone w `open-items.md` §4.
+- **Poprawki dokumentów razem z S-13**: decyzje: reguła streaka stoi (1 → 0), poziomy i taski indywidualne znikają z PRD, okno dat `UTC−7 … UTC+1` jest znaną luką. Zrobione 2026-10-17 w S-13 (commit `06921d6`, PR #169); szczegóły w `open-items.md` §3.
+- **Plan `code-review-evals`**: zamknięte 2026-10-17. Zaplanowany w `context/archive/2026-10-16-code-review-evals/plan.md` (PR #158), zaimplementowany w PR #159, zarchiwizowany w PR #162; punkty zakresu z odnośnikami są odhaczone w `open-items.md` §4.
 
 ## Odroczone z wyzwalaczami (nie są zadaniami)
 
