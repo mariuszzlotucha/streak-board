@@ -461,6 +461,7 @@ Rollback:
   - `/privacy` 200;
   - `/dashboard` 302 to `/auth/signin`;
   - `git ls-remote --tags origin production` shows `4aec9e0`.
+- [x] M-3 closure: PR #197, docs-only, merged on 2026-10-18 as merge commit `04b9e2a`. Master run 39129573970 skipped `ci`, `smoke`, `e2e`, `integration` and `release`, so production stays on `4aec9e0`. Later docs-only merges, including the one that added this row, skip `release` the same way.
 - [ ] Open, device checks (the list in PR #198):
   - iPhone, Safari: on a scrolled dashboard the status bar takes the header's colour, and no page content shows behind the clock.
   - iPhone: in the installed app and in a messenger's in-app browser the header sits below the status bar, and the footer and the new-version message clear the home indicator.
