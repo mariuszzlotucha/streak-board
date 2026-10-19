@@ -41,6 +41,8 @@ function viewerCell(page: Page, title: string, nickname: string, state: "open" |
  * row's grid wrapper scrolls sideways. The wrapper is the table's parent.
  */
 async function expectNoSidewaysScroll(page: Page, title: string) {
+  // The Outfit font changes the widths: measure with it loaded, as the screenshot gate does.
+  await page.evaluate(() => document.fonts.ready);
   const pageOverrun = await page.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );

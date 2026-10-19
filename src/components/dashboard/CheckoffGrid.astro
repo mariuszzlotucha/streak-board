@@ -18,8 +18,9 @@ const current = grid.periods.length - 1;
 
 {/* A table, never a list: the smoke row regexes stop at the first </li>. From 360 px nothing scrolls sideways; below
     that only the wrapper does, never the page. The wrapper is positioned so the cells' sr-only labels (absolute) are
-    clipped with it and cannot widen the page. Only the viewer's current cell is an island: it follows the row's tick
-    at once. */}
+    clipped with it and cannot widen the page. The header columns are 28 px (w-7, daily) and 48 px (w-12, weekly and
+    once), the width budget of the lines periodHeader returns in src/lib/grid-labels.ts. Only the viewer's current
+    cell is an island: it follows the row's tick at once. */}
 <div class="relative max-w-full overflow-x-auto">
   <table
     aria-label={`Check-offs of ${title}`}

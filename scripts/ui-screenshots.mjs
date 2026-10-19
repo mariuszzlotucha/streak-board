@@ -315,6 +315,9 @@ function fail(message) {
   console.log(`FAIL  ${message}`);
 }
 
+// The kitchen-sink states whose tasks carry a check-off grid: each must show at least one (S-20).
+const GRID_STATES = ["owner", "member", "long-text"];
+
 function pathFor(target) {
   return target.startsWith("/") ? target : `${KITCHEN_SINK}?state=${encodeURIComponent(target)}`;
 }
@@ -369,8 +372,10 @@ async function open(context, target) {
       const wrapper = table.parentElement;
       return [table.getAttribute("aria-label"), wrapper.scrollWidth - wrapper.clientWidth];
     });
-    return { page: root.scrollWidth - root.clientWidth, grids: grids.filter(([, by]) => by > 0) };
+    return { page: root.scrollWidth - root.clientWidth, count: grids.length, grids: grids.filter(([, by]) => by > 0) };
   });
+  // A gate that finds no grid checks nothing: a renamed aria-label or a fixture without tasks would stay green.
+  if (GRID_STATES.includes(target) && sideways.count === 0) fail(`${where}: no check-off grid found to measure`);
   if (sideways.page > 0) fail(`${where}: the page scrolls sideways by ${sideways.page}px`);
   for (const [label, by] of sideways.grids) fail(`${where}: the grid "${label}" scrolls sideways by ${by}px`);
   page.off("console", onConsole);

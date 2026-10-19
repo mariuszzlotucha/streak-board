@@ -32,7 +32,7 @@ Success criteria: unit tests (727), lint, prettier and `astro check` (0 errors) 
 - **Location**: scripts/ui-screenshots.mjs:366-375
 - **Detail**: The check maps over `table[aria-label^="Check-offs of "]` and passes silently when the set is empty. If the aria-label is renamed, a state loses its grid or the fixture changes, the gate stays green and checks nothing. Only the manual stash proof (row 1.7) showed it can go red.
 - **Fix**: For the task-carrying states (`owner`, `member`, `long-text`) fail when no grid was found, or print "N grids checked" once at the end of the run.
-- **Decision**: PENDING
+- **Decision**: FIXED — `GRID_STATES` in `open()` fails the run when `owner`, `member` or `long-text` shows no grid; proven red with the list set to `no-group`, then restored.
 
 ### F2 — E2E helper measures before the font is ready
 
@@ -42,7 +42,7 @@ Success criteria: unit tests (727), lint, prettier and `astro check` (0 errors) 
 - **Location**: tests/e2e/checkoff-round-trip.spec.ts:39-53 (call at :98)
 - **Detail**: `expectNoSidewaysScroll` reads the overrun right after `toBeAttached()`. Attached does not mean the Outfit variable font has loaded, and fallback metrics differ, so a reading before the swap could be a false green or a false red. The screenshot script waits for `document.fonts.ready`; the helper does not. Hydration is not an issue (`ViewerGridCell` renders the same markup as `GridCell`).
 - **Fix**: Add `await page.evaluate(() => document.fonts.ready)` at the top of the helper.
-- **Decision**: PENDING
+- **Decision**: FIXED — `expectNoSidewaysScroll` waits for `document.fonts.ready` first; e2e passes in both projects.
 
 ### F3 — The 360 px width is covered by the screenshot gate only
 
@@ -52,7 +52,7 @@ Success criteria: unit tests (727), lint, prettier and `astro check` (0 errors) 
 - **Location**: tests/e2e/checkoff-round-trip.spec.ts:39-53; context/foundation/test-plan.md §6.3
 - **Detail**: The e2e projects run at 1280 and 412 px (Pixel 7) with one short nickname, so 360 px and the long-text clamp are guarded by the screenshot run alone. The test-plan sentence ("każdy projekt sprawdza przy własnej szerokości") is accurate and does not claim 360 px. Related to row 1.7: the e2e went red on the stashed layout through the page assertion (12 px at 412) before reaching the grid-wrapper assertion, so it does not name a grid as the plan's wording says; the screenshot run does.
 - **Fix**: Leave as is, and do not describe 360 px as covered by e2e.
-- **Decision**: PENDING
+- **Decision**: SKIPPED — accepted: the screenshot gate covers 360 px and the long-text clamp; e2e is not described as covering them.
 
 ### F4 — The width budget is tight and its numbers live in two places
 
@@ -62,7 +62,7 @@ Success criteria: unit tests (727), lint, prettier and `astro check` (0 errors) 
 - **Location**: src/components/dashboard/CheckoffGrid.astro:23-37,54; src/lib/grid-labels.ts:18-22
 - **Detail**: At 360 px the room is 280 px and the daily grid is 278 px, so 2 px remain. Larger text or a narrower inset makes the wrapper scroll, and the page stays put (the plan accepts this). The unit test guards a character-count proxy, not width, and the 28/48 px column widths appear both in the `grid-labels.ts` comment and as `w-7`/`w-12` in the Astro file.
 - **Fix**: Optionally add a comment in `CheckoffGrid.astro` pointing at `grid-labels.ts` for the column widths. The screenshot gate stays the real guard.
-- **Decision**: PENDING
+- **Decision**: FIXED — the `CheckoffGrid.astro` comment now names the 28/48 px columns and points at `periodHeader` in `grid-labels.ts`.
 
 ### F5 — Names are clipped without a full-name hint and the "You" marker is weaker
 
@@ -81,7 +81,7 @@ Success criteria: unit tests (727), lint, prettier and `astro check` (0 errors) 
   - Tradeoff: No effect on touch screens, and it adds markup outside the plan.
   - Confidence: MEDIUM — hover is not the phone case this slice targets.
   - Blind spot: Whether the repo uses `title` for truncated text elsewhere.
-- **Decision**: PENDING
+- **Decision**: ACCEPTED via Fix A — kept as planned; the owner judges the clipped name and the weaker marker on the screenshots (row 1.8) and the devices (rows 2.2 to 2.4).
 
 ### F6 — The page-level check now covers every captured page
 
@@ -91,4 +91,4 @@ Success criteria: unit tests (727), lint, prettier and `astro check` (0 errors) 
 - **Location**: scripts/ui-screenshots.mjs:366-373
 - **Detail**: The sideways-scroll check also runs on the `public` and `controls` sets, once at load. Any unrelated overflow at 360 px now fails the run, which the plan intends. States a control opens later, such as a dialog, are not measured. The `/* global document */` line is the conventional ESLint annotation and is accepted.
 - **Fix**: None needed.
-- **Decision**: PENDING
+- **Decision**: SKIPPED — accepted: no change needed.
