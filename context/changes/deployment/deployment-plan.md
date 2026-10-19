@@ -435,9 +435,10 @@ Rollback:
   - `/dashboard` 302 to `/auth/signin`;
   - `/manifest.webmanifest` 200 `application/manifest+json`;
   - `/sw.js` 200 `text/javascript`.
+- Production state, owner's report 2026-10-19: production has users again. Before the 2026-10-17 release the owner had deleted their only account, so production had zero accounts and zero push subscriptions. The owner re-created the account on Android and turned reminders on (the fan-out check of S-16 is possible now). A group member (iPhone) signed up but could not install the app: iOS seemed to send them to Safari. Suspected cause: the Google account on the phone differs from the Gmail used at sign-up. Not verified; the install problem and the Google-account problem may be separate.
 - [ ] Open, owner's and group member's device checks (plan rows still `[ ]` in the archive; record the results here):
-  - 3.2 Android Chrome: the dashboard shows either the "Install app" button or the menu instruction; the owner reports which (resolves research Open Question 1).
-  - 3.3 Desktop Chrome: the same check; installing opens the app window with no card. Then `streakboard.app` in a normal tab: Chrome sends no `beforeinstallprompt` once installed, so the card still offers installing there until "Not now" (impl review F7); decide whether that needs a follow-up (`getInstalledRelatedApps`).
+  - [x] 3.2 Android Chrome: the dashboard shows either the "Install app" button or the menu instruction; the owner reports which (resolves research Open Question 1). Owner's report, 2026-10-19: OK.
+  - [x] 3.3 Desktop Chrome: the same check; installing opens the app window with no card. Owner's report, 2026-10-19: OK (the follow-up question below was not reported separately). Then `streakboard.app` in a normal tab: Chrome sends no `beforeinstallprompt` once installed, so the card still offers installing there until "Not now" (impl review F7); decide whether that needs a follow-up (`getInstalledRelatedApps`).
   - 3.4 iPhone, by a group member through `context/archive/2026-10-18-install-promotion/ios-check.md`: the card in Safari, installing from it, no card in the installed app, reminders turned on there and the 20:00 reminder received. Phase 21's iOS row is a separate check (S-17's `ios-check.md`) and stays open.
   - 3.5 A messenger's in-app browser on a phone shows "Open this page in Safari to install StreakBoard." on an iPhone and "Open this page in Safari or Chrome to install StreakBoard." elsewhere.
   - Still open from Phases 1-2: 1.3 (the `IN_APP_BROWSER_PATTERNS` list reviewed against the messengers the group uses), 2.7 (kitchen-sink screenshots of every install state in light and dark mode at phone width), 2.8 (the card and the inline block at 412 px, with no collision with the toast or the update notice).
@@ -448,6 +449,7 @@ Rollback:
 
 - [x] Code: PR #189, merged on 2026-10-17 as merge commit `1d0fc23`. Master run 39075155221: `ci`, `smoke`, `e2e` and `integration` green; `compat` skipped on `master`. The next merge, PR #190 (`dc9adf3`, run 39076725932, the S-19 plan), was docs-only and skipped `release`, so production stayed on `1d0fc23` until Phase 24.
 - [x] `release` for PR #189: job 117521519959, approved by the owner. `supabase db push` reported "Remote database is up to date." (no migrations); `wrangler deploy` printed `Current Version ID: 8e81b990-f32c-4f95-a19a-42622f452655`; the tag moved `96ce53c...1d0fc23 production -> production (forced update)`. The job's "Check the live deployment" step passed.
+- Owner's report 2026-10-19: a group member (iPhone, see Phase 24) signed up on production through the owner's invite link, got into the owner's group and saw the group's tasks. Not reported: the "You joined the group." toast, and the confirmation link opened in another browser. The row above stays open for those two.
 - [ ] Open: no check of the invite path on `streakboard.app` is recorded (open an invite link, sign up, confirm, land in the group with the "You joined the group." toast; and the same with the confirmation link opened in another browser).
 
 ## Phase 26 — iOS status bar and safe areas (PR #198; no change folder)
