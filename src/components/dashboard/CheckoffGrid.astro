@@ -1,7 +1,7 @@
 ---
 import GridCell from "@/components/tasks/GridCell";
 import ViewerGridCell from "@/components/tasks/ViewerGridCell";
-import { cellLabelPrefix, periodHeader } from "@/lib/grid-labels";
+import { cellLabelPrefix, currentPeriodWord, periodHeader } from "@/lib/grid-labels";
 import type { TaskGrid } from "@/lib/grid-rules";
 import type { TaskRecurrence } from "@/lib/task-rules";
 
@@ -14,13 +14,17 @@ interface Props {
 
 const { taskId, title, recurrence, grid } = Astro.props;
 const current = grid.periods.length - 1;
+const currentWord = currentPeriodWord(recurrence);
 ---
 
 {/* A table, never a list: the smoke row regexes stop at the first </li>. From 360 px nothing scrolls sideways; below
     that only the wrapper does, never the page. The wrapper is positioned so the cells' sr-only labels (absolute) are
     clipped with it and cannot widen the page. The header columns are 28 px (w-7, daily) and 48 px (w-12, weekly and
     once), the width budget of the lines periodHeader returns in src/lib/grid-labels.ts. Only the viewer's current
-    cell is an island: it follows the row's tick at once. */}
+    cell is an island: it follows the row's tick at once. The current column's header (daily and weekly, never once) is
+    marked: aria-current, the foreground colour, a heavier weight and a primary underline, so the column is findable at
+    a glance. The word "today" / "this week" is sr-only after the visible lines: it would not fit the column width, and
+    a screen reader hears "Su 11 today". */}
 <div class="relative max-w-full overflow-x-auto">
   <table
     aria-label={`Check-offs of ${title}`}
@@ -32,16 +36,27 @@ const current = grid.periods.length - 1;
         <th scope="col">
           <span class="sr-only">Participant</span>
         </th>
-        {grid.periods.map((period) => (
-          <th
-            scope="col"
-            class:list={["px-0.5 font-normal text-muted-foreground", recurrence === "daily" ? "w-7" : "w-12"]}
-          >
-            {periodHeader(recurrence, period).map((line) => (
-              <span class="block whitespace-nowrap">{line}</span>
-            ))}
-          </th>
-        ))}
+        {grid.periods.map((period, index) => {
+          const isCurrent = index === current && currentWord !== null;
+          return (
+            <th
+              scope="col"
+              aria-current={isCurrent ? "true" : undefined}
+              class:list={[
+                "px-0.5",
+                isCurrent
+                  ? "border-b-2 border-primary font-medium text-foreground"
+                  : "font-normal text-muted-foreground",
+                recurrence === "daily" ? "w-7" : "w-12",
+              ]}
+            >
+              {periodHeader(recurrence, period).map((line) => (
+                <span class="block whitespace-nowrap">{line}</span>
+              ))}
+              {isCurrent && <span class="sr-only"> {currentWord}</span>}
+            </th>
+          );
+        })}
       </tr>
     </thead>
     <tbody>

@@ -32,6 +32,15 @@ export function periodName(recurrence: TaskRecurrence, key: PeriodKey): string |
   return recurrence === "daily" ? `${WEEKDAYS[weekday]} ${day} ${month}` : `week from ${day} ${month}`;
 }
 
+/**
+ * The word a screen reader hears after the current column's header lines: "today" (daily), "this week" (weekly), null
+ * (once, which has no current column). It is not part of `periodName`: the cell labels stay "Mon 13 Oct".
+ */
+export function currentPeriodWord(recurrence: TaskRecurrence): string | null {
+  if (recurrence === "once") return null;
+  return recurrence === "daily" ? "today" : "this week";
+}
+
 export const CELL_STATE_LABELS: Record<CellState, string> = {
   done: "done",
   missed: "missed",

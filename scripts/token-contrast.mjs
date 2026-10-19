@@ -31,6 +31,7 @@ const PAIRS = [
   ["primary-foreground on primary", "primary-foreground", "primary", 4.5, true],
   ["secondary-foreground on secondary", "secondary-foreground", "secondary", 4.5, true],
   ["foreground on card", "foreground", "card", 4.5, true],
+  ["primary on card (open cell border and dash, current header underline)", "primary", "card", 4.5, true],
   // Deferred D6 of `dashboard-ui`: `hover:bg-primary/80` in ui/button.tsx. Reported, never gating.
   ["primary-foreground on the 80 % hover tint (D6)", "primary-foreground", "primary/80", 4.5, false],
 ];
