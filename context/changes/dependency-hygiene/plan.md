@@ -439,17 +439,17 @@ The job's id, name and every other step stay as they are; no other job gets the 
 
 #### Automated
 
-- [ ] 1.1 Production-path audit clean: `npm audit --omit=dev --audit-level=high` exits 0
-- [ ] 1.2 Full audit: only the patch-package and shadcn chains are high or critical
-- [ ] 1.3 One copy each of wrangler and miniflare, all four outside the advisory ranges: `npm ls wrangler miniflare undici sharp`
-- [ ] 1.4 package.json changed only by the one removal and the seven moves: `git diff origin/master -- package.json`
-- [ ] 1.5 Clean install from the lockfile applies the Stryker patch: `rm -rf node_modules && npm ci`
-- [ ] 1.6 Lint passes: `npm run lint`
-- [ ] 1.7 Type check passes: `npx astro check`
-- [ ] 1.8 Unit tests pass: `npm run test:unit`
-- [ ] 1.9 Build passes: `npm run build`
-- [ ] 1.10 Prettier passes: `npx prettier --check package.json`
-- [ ] 1.11 shadcn CLI still runs through npx: `npx shadcn@latest add --dry-run button`
+- [x] 1.1 Production-path audit clean: `npm audit --omit=dev --audit-level=high` exits 0 — 9561f1c
+- [x] 1.2 Full audit: only the patch-package and shadcn chains are high or critical — 9561f1c
+- [x] 1.3 One copy each of wrangler and miniflare, all four outside the advisory ranges: `npm ls wrangler miniflare undici sharp` — 9561f1c
+- [x] 1.4 package.json changed only by the one removal and the seven moves: `git diff origin/master -- package.json` — 9561f1c
+- [x] 1.5 Clean install from the lockfile applies the Stryker patch: `rm -rf node_modules && npm ci` — 9561f1c
+- [x] 1.6 Lint passes: `npm run lint` — 9561f1c
+- [x] 1.7 Type check passes: `npx astro check` — 9561f1c
+- [x] 1.8 Unit tests pass: `npm run test:unit` — 9561f1c
+- [x] 1.9 Build passes: `npm run build` — 9561f1c
+- [x] 1.10 Prettier passes: `npx prettier --check package.json` — 9561f1c
+- [x] 1.11 shadcn CLI still runs through npx: `npx shadcn@latest add --dry-run button` — 9561f1c
 
 #### Manual
 
@@ -459,13 +459,13 @@ The job's id, name and every other step stay as they are; no other job gets the 
 
 #### Automated
 
-- [ ] 2.1 `nvm use` picks 22.23.3 from .nvmrc
-- [ ] 2.2 `npm ci` on 22.23.3 prints no EBADENGINE or EBADDEVENGINES
-- [ ] 2.3 Node 24 gets the EBADDEVENGINES warning from `npm run` and still runs it
-- [ ] 2.4 Lint passes: `npm run lint`
-- [ ] 2.5 Unit tests pass: `npm run test:unit`
-- [ ] 2.6 Example files hold only comments and `KEY=` lines, with the six schema secrets in both
-- [ ] 2.7 Prettier passes on the changed docs
+- [x] 2.1 `nvm use` picks 22.23.3 from .nvmrc — a0c19d2
+- [x] 2.2 `npm ci` on 22.23.3 prints no EBADENGINE or EBADDEVENGINES — a0c19d2
+- [x] 2.3 Node 24 gets the EBADDEVENGINES warning from `npm run` and still runs it — a0c19d2
+- [x] 2.4 Lint passes: `npm run lint` — a0c19d2
+- [x] 2.5 Unit tests pass: `npm run test:unit` — a0c19d2
+- [x] 2.6 Example files hold only comments and `KEY=` lines, with the six schema secrets in both — a0c19d2
+- [x] 2.7 Prettier passes on the changed docs — a0c19d2
 
 #### Manual
 
@@ -475,12 +475,12 @@ The job's id, name and every other step stay as they are; no other job gets the 
 
 #### Automated
 
-- [ ] 3.1 dependabot.yml validates against the SchemaStore schema
-- [ ] 3.2 actionlint passes on ci.yml (pre-existing SC2034 ignored)
-- [ ] 3.3 The audit step's command passes locally: `npm audit --omit=dev --audit-level=high`
-- [ ] 3.4 Lint passes: `npm run lint`
-- [ ] 3.5 Unit tests pass: `npm run test:unit`
-- [ ] 3.6 Prettier passes on the changed files
+- [x] 3.1 dependabot.yml validates against the SchemaStore schema — e2ed10b
+- [x] 3.2 actionlint passes on ci.yml (pre-existing SC2034 ignored) — e2ed10b
+- [x] 3.3 The audit step's command passes locally: `npm audit --omit=dev --audit-level=high` — e2ed10b
+- [x] 3.4 Lint passes: `npm run lint` — e2ed10b
+- [x] 3.5 Unit tests pass: `npm run test:unit` — e2ed10b
+- [x] 3.6 Prettier passes on the changed files — e2ed10b
 
 #### Manual
 

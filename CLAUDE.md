@@ -55,7 +55,7 @@ Pre-commit hooks (husky + lint-staged) run `eslint --fix` on `*.{ts,tsx,astro}` 
 
 ## Environment
 
-Node.js v22.14.0 (`.nvmrc`). Local Supabase/env-var setup, deployment, and CI jobs are documented in `@README.md` (Supabase Configuration, Deployment, CI) — don't duplicate that here.
+Node.js v22.23.3 (`.nvmrc`); `devEngines` in `package.json` makes npm warn (`npm warn EBADDEVENGINES`) on another Node major, so run `nvm use` first. Local Supabase/env-var setup, deployment, and CI jobs are documented in `@README.md` (Supabase Configuration, Deployment, CI) — don't duplicate that here.
 
 ## Mutation testing
 

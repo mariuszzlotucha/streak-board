@@ -43,12 +43,12 @@ Grono znajomych korzystało wcześniej ze wspólnego arkusza Google, w którym r
 
 ## At a glance
 
-| ID   | Change ID               | Outcome (user can …)                                                                                                                                                                                    | Prerequisites | PRD refs                                          | Status   |
-| ---- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------------------- | -------- |
-| S-20 | grid-mobile-readability | czytać siatkę odznaczeń grupy na ekranie telefonu bez przewijania w poziomie i rozpoznać uczestników i okresy                                                                                           | —             | PRD §NFR (smartfon); MS-01                        | ready    |
-| S-21 | grid-state-feedback     | rozpoznać bez legendy odznaczone, zaległe i bieżący okres oraz dostać potwierdzenie po odznaczeniu                                                                                                      | S-20          | PRD §Vision; MS-02                                | ready    |
-| S-22 | grid-save-reliability   | odznaczyć szybko, a po błędzie zapisu zobaczyć komunikat i prawdziwy stan siatki                                                                                                                        | —             | PRD guardrail (odznaczenie natychmiastowe); MS-03 | ready    |
-| S-23 | dependency-hygiene      | (jakościowy) korzystać z aplikacji budowanej z zależności bez znanych podatności z dostępną poprawką, przy narzędziach poza zależnościami produkcyjnymi, przypiętym Node i alertach bezpieczeństwa w CI | —             | — (jakościowe; MS-04)                             | planning |
+| ID   | Change ID               | Outcome (user can …)                                                                                                                                                                                    | Prerequisites | PRD refs                                          | Status      |
+| ---- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------------------- | ----------- |
+| S-20 | grid-mobile-readability | czytać siatkę odznaczeń grupy na ekranie telefonu bez przewijania w poziomie i rozpoznać uczestników i okresy                                                                                           | —             | PRD §NFR (smartfon); MS-01                        | ready       |
+| S-21 | grid-state-feedback     | rozpoznać bez legendy odznaczone, zaległe i bieżący okres oraz dostać potwierdzenie po odznaczeniu                                                                                                      | S-20          | PRD §Vision; MS-02                                | ready       |
+| S-22 | grid-save-reliability   | odznaczyć szybko, a po błędzie zapisu zobaczyć komunikat i prawdziwy stan siatki                                                                                                                        | —             | PRD guardrail (odznaczenie natychmiastowe); MS-03 | ready       |
+| S-23 | dependency-hygiene      | (jakościowy) korzystać z aplikacji budowanej z zależności bez znanych podatności z dostępną poprawką, przy narzędziach poza zależnościami produkcyjnymi, przypiętym Node i alertach bezpieczeństwa w CI | —             | — (jakościowe; MS-04)                             | in-progress |
 
 ## Baseline
 
@@ -122,7 +122,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
   - `patch-package` zostaje (upstream Strykera bez poprawki) i lockfile evals: zostawić z wyłączonymi PR-ami Dependabota czy usunąć i uruchamiać evale jednorazowo? — Owner: user (open-items 6.3 i 6.9). Block: no — rozstrzyga `/10x-plan`.
   - Czy krok audytu w CI ma od razu blokować merge, czy najpierw tylko raportować? — Owner: user. Block: no — rozstrzyga `/10x-plan`.
 - **Risk:** aktualizacja lockfile dotyka całego drzewa naraz, więc faza musi przejść pełne CI, smoke i e2e, nie tylko testy jednostkowe; `npm audit fix --force` cofnęłoby `shadcn` i `patch-package` do starych wersji głównych (zakaz w `open-items.md` §6.1); zmiana zakresu pakietów nie zmienia wdrażanego bundla, więc nie ma skutku widocznego dla użytkownika do sprawdzenia.
-- **Status:** planning
+- **Status:** in-progress
 
 ## Backlog Handoff
 
