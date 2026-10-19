@@ -9,15 +9,7 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json;
-          operationName?: string;
-          query?: string;
-          variables?: Json;
-        };
-        Returns: Json;
-      };
+      graphql: { Args: { extensions?: Json; operationName?: string; query?: string; variables?: Json }; Returns: Json };
     };
     Enums: {
       [_ in never]: never;
@@ -35,6 +27,7 @@ export type Database = {
           joined_at: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           group_id: string;
           id?: string;
@@ -66,6 +59,7 @@ export type Database = {
           owner_id: string;
           owner_notice_pending: boolean;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           id?: string;
@@ -90,6 +84,7 @@ export type Database = {
           nickname: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           nickname: string;
@@ -111,6 +106,7 @@ export type Database = {
           p256dh: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           auth: string;
           created_at?: string;
@@ -134,6 +130,7 @@ export type Database = {
           hash: string;
           id: boolean;
         };
+        ComputedFields: never;
         Insert: {
           hash: string;
           id?: boolean;
@@ -151,6 +148,7 @@ export type Database = {
           task_id: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           checked_at?: string;
           period: string;
@@ -179,6 +177,7 @@ export type Database = {
           task_id: string;
           user_id: string;
         };
+        ComputedFields: never;
         Insert: {
           joined_at?: string;
           task_id: string;
@@ -208,6 +207,7 @@ export type Database = {
           recurrence: string;
           title: string;
         };
+        ComputedFields: never;
         Insert: {
           created_at?: string;
           created_by: string;
@@ -242,6 +242,7 @@ export type Database = {
           task_id: string | null;
           user_id: string | null;
         };
+        ComputedFields: never;
         Relationships: [
           {
             foreignKeyName: "task_checkoffs_task_id_user_id_fkey";
@@ -255,10 +256,7 @@ export type Database = {
     };
     Functions: {
       check_reminder_secret: { Args: { p_secret: string }; Returns: undefined };
-      delete_account: {
-        Args: { p_successor?: string; p_user_id: string };
-        Returns: undefined;
-      };
+      delete_account: { Args: { p_successor?: string; p_user_id: string }; Returns: undefined };
       delete_own_account: { Args: { p_successor?: string }; Returns: undefined };
       due_reminders: {
         Args: { p_secret: string; p_today: string; p_week: string };
@@ -281,24 +279,12 @@ export type Database = {
         }[];
       };
       preview_group: { Args: { p_join_code: string }; Returns: string };
-      prune_push_subscriptions: {
-        Args: { p_endpoints: string[]; p_secret: string };
-        Returns: undefined;
-      };
+      prune_push_subscriptions: { Args: { p_endpoints: string[]; p_secret: string }; Returns: undefined };
       set_nickname: { Args: { p_nickname: string }; Returns: undefined };
-      subscribe_push: {
-        Args: { p_auth: string; p_endpoint: string; p_p256dh: string };
-        Returns: undefined;
-      };
-      transfer_group_ownership: {
-        Args: { p_new_owner: string };
-        Returns: undefined;
-      };
-      transfer_group_ownership_for: {
-        Args: { p_new_owner: string; p_owner: string };
-        Returns: undefined;
-      };
-      unsubscribe_all_push: { Args: never; Returns: undefined };
+      subscribe_push: { Args: { p_auth: string; p_endpoint: string; p_p256dh: string }; Returns: undefined };
+      transfer_group_ownership: { Args: { p_new_owner: string }; Returns: undefined };
+      transfer_group_ownership_for: { Args: { p_new_owner: string; p_owner: string }; Returns: undefined };
+      unsubscribe_all_push: { Args: Record<PropertyKey, never>; Returns: undefined };
       unsubscribe_push: { Args: { p_endpoint: string }; Returns: undefined };
     };
     Enums: {
@@ -323,9 +309,7 @@ export type Tables<
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
     : never) = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
-}
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
       DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R;
@@ -347,9 +331,7 @@ export type TablesInsert<
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never) = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
-}
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I;
     }
@@ -370,9 +352,7 @@ export type TablesUpdate<
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never) = never,
-> = DefaultSchemaTableNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
-}
+> = DefaultSchemaTableNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U;
     }
@@ -393,9 +373,7 @@ export type Enums<
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
     : never) = never,
-> = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
-}
+> = DefaultSchemaEnumNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
     ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
@@ -409,9 +387,7 @@ export type CompositeTypes<
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
     : never) = never,
-> = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals;
-}
+> = PublicCompositeTypeNameOrOptions extends { schema: keyof DatabaseWithoutInternals }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
     ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
