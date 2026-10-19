@@ -449,7 +449,7 @@ Rollback:
 
 - [x] Code: PR #189, merged on 2026-10-17 as merge commit `1d0fc23`. Master run 39075155221: `ci`, `smoke`, `e2e` and `integration` green; `compat` skipped on `master`. The next merge, PR #190 (`dc9adf3`, run 39076725932, the S-19 plan), was docs-only and skipped `release`, so production stayed on `1d0fc23` until Phase 24.
 - [x] `release` for PR #189: job 117521519959, approved by the owner. `supabase db push` reported "Remote database is up to date." (no migrations); `wrangler deploy` printed `Current Version ID: 8e81b990-f32c-4f95-a19a-42622f452655`; the tag moved `96ce53c...1d0fc23 production -> production (forced update)`. The job's "Check the live deployment" step passed.
-- Note, owner's report 2026-10-19: a group member (iPhone, see Phase 24) signed up on production. It is not known whether that sign-up used an invite link, or whether the confirmation link was opened in the same browser; the invite path is therefore not verified by it. Outcome not recorded.
+- Owner's report 2026-10-19: a group member (iPhone, see Phase 24) signed up on production through the owner's invite link, got into the owner's group and saw the group's tasks. Not reported: the "You joined the group." toast, and the confirmation link opened in another browser. The row above stays open for those two.
 - [ ] Open: no check of the invite path on `streakboard.app` is recorded (open an invite link, sign up, confirm, land in the group with the "You joined the group." toast; and the same with the confirmation link opened in another browser).
 
 ## Phase 26 — iOS status bar and safe areas (PR #198; no change folder)
