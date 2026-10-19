@@ -435,6 +435,7 @@ Rollback:
   - `/dashboard` 302 to `/auth/signin`;
   - `/manifest.webmanifest` 200 `application/manifest+json`;
   - `/sw.js` 200 `text/javascript`.
+- Production state, owner's report 2026-10-19: production has users again. Before the 2026-10-17 release the owner had deleted their only account, so production had zero accounts and zero push subscriptions. The owner re-created the account on Android and turned reminders on (the fan-out check of S-16 is possible now). A group member (iPhone) signed up but could not install the app: iOS seemed to send them to Safari. Suspected cause: the Google account on the phone differs from the Gmail used at sign-up. Not verified; the install problem and the Google-account problem may be separate.
 - [ ] Open, owner's and group member's device checks (plan rows still `[ ]` in the archive; record the results here):
   - [x] 3.2 Android Chrome: the dashboard shows either the "Install app" button or the menu instruction; the owner reports which (resolves research Open Question 1). Owner's report, 2026-10-19: OK.
   - [x] 3.3 Desktop Chrome: the same check; installing opens the app window with no card. Owner's report, 2026-10-19: OK (the follow-up question below was not reported separately). Then `streakboard.app` in a normal tab: Chrome sends no `beforeinstallprompt` once installed, so the card still offers installing there until "Not now" (impl review F7); decide whether that needs a follow-up (`getInstalledRelatedApps`).
@@ -448,6 +449,7 @@ Rollback:
 
 - [x] Code: PR #189, merged on 2026-10-17 as merge commit `1d0fc23`. Master run 39075155221: `ci`, `smoke`, `e2e` and `integration` green; `compat` skipped on `master`. The next merge, PR #190 (`dc9adf3`, run 39076725932, the S-19 plan), was docs-only and skipped `release`, so production stayed on `1d0fc23` until Phase 24.
 - [x] `release` for PR #189: job 117521519959, approved by the owner. `supabase db push` reported "Remote database is up to date." (no migrations); `wrangler deploy` printed `Current Version ID: 8e81b990-f32c-4f95-a19a-42622f452655`; the tag moved `96ce53c...1d0fc23 production -> production (forced update)`. The job's "Check the live deployment" step passed.
+- Note, owner's report 2026-10-19: a group member (iPhone, see Phase 24) signed up on production. It is not known whether that sign-up used an invite link, or whether the confirmation link was opened in the same browser; the invite path is therefore not verified by it. Outcome not recorded.
 - [ ] Open: no check of the invite path on `streakboard.app` is recorded (open an invite link, sign up, confirm, land in the group with the "You joined the group." toast; and the same with the confirmation link opened in another browser).
 
 ## Phase 26 — iOS status bar and safe areas (PR #198; no change folder)
