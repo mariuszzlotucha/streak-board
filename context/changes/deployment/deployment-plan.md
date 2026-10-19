@@ -436,8 +436,8 @@ Rollback:
   - `/manifest.webmanifest` 200 `application/manifest+json`;
   - `/sw.js` 200 `text/javascript`.
 - [ ] Open, owner's and group member's device checks (plan rows still `[ ]` in the archive; record the results here):
-  - 3.2 Android Chrome: the dashboard shows either the "Install app" button or the menu instruction; the owner reports which (resolves research Open Question 1).
-  - 3.3 Desktop Chrome: the same check; installing opens the app window with no card. Then `streakboard.app` in a normal tab: Chrome sends no `beforeinstallprompt` once installed, so the card still offers installing there until "Not now" (impl review F7); decide whether that needs a follow-up (`getInstalledRelatedApps`).
+  - [x] 3.2 Android Chrome: the dashboard shows either the "Install app" button or the menu instruction; the owner reports which (resolves research Open Question 1). Owner's report, 2026-10-19: OK.
+  - [x] 3.3 Desktop Chrome: the same check; installing opens the app window with no card. Owner's report, 2026-10-19: OK (the follow-up question below was not reported separately). Then `streakboard.app` in a normal tab: Chrome sends no `beforeinstallprompt` once installed, so the card still offers installing there until "Not now" (impl review F7); decide whether that needs a follow-up (`getInstalledRelatedApps`).
   - 3.4 iPhone, by a group member through `context/archive/2026-10-18-install-promotion/ios-check.md`: the card in Safari, installing from it, no card in the installed app, reminders turned on there and the 20:00 reminder received. Phase 21's iOS row is a separate check (S-17's `ios-check.md`) and stays open.
   - 3.5 A messenger's in-app browser on a phone shows "Open this page in Safari to install StreakBoard." on an iPhone and "Open this page in Safari or Chrome to install StreakBoard." elsewhere.
   - Still open from Phases 1-2: 1.3 (the `IN_APP_BROWSER_PATTERNS` list reviewed against the messengers the group uses), 2.7 (kitchen-sink screenshots of every install state in light and dark mode at phone width), 2.8 (the card and the inline block at 412 px, with no collision with the toast or the update notice).
