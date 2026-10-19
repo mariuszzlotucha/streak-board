@@ -1,10 +1,10 @@
 ---
 change_id: grid-mobile-readability
 title: Grid mobile readability
-status: impl_reviewed
+status: archived
 created: 2026-10-19
 updated: 2026-10-19
-archived_at: null
+archived_at: 2026-10-19T21:26:38Z
 ---
 
 ## Notes
