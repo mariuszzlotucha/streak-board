@@ -247,13 +247,13 @@ None: no schema, data or API change. `periodHeader`'s return type changes from `
 
 #### Automated
 
-- [ ] 1.1 Unit tests pass, including the new header-lines test: `npm run test:unit`
-- [ ] 1.2 Lint, format and types pass: `npm run lint`, `npx prettier --check context/changes/grid-mobile-readability context/foundation/test-plan.md`, `npx astro check`
-- [ ] 1.3 Build passes: `npm run build`
-- [ ] 1.4 Smoke passes against the local stack with the row regexes unchanged: `npm run smoke`
-- [ ] 1.5 E2E round trip with the sideways-scroll assertion passes in both projects: `npx playwright test tests/e2e/checkoff-round-trip.spec.ts`
-- [ ] 1.6 Visual gate passes at 360, 375 and 1280 px with the sideways-scroll check: `OUT_DIR=<scratch> BASE_URL=http://localhost:4321 node scripts/ui-screenshots.mjs phase-1 states` ends with "All screenshots taken"
-- [ ] 1.7 Red proof: with `git stash push -- src/components/dashboard/CheckoffGrid.astro src/lib/grid-labels.ts`, the e2e spec on `--project=mobile-chromium` and the screenshot run both fail naming a check-off grid (exit 1); after `git stash pop` both pass again
+- [x] 1.1 Unit tests pass, including the new header-lines test: `npm run test:unit` — 6bed959
+- [x] 1.2 Lint, format and types pass: `npm run lint`, `npx prettier --check context/changes/grid-mobile-readability context/foundation/test-plan.md`, `npx astro check` — 6bed959
+- [x] 1.3 Build passes: `npm run build` — 6bed959
+- [x] 1.4 Smoke passes against the local stack with the row regexes unchanged: `npm run smoke` — 6bed959
+- [x] 1.5 E2E round trip with the sideways-scroll assertion passes in both projects: `npx playwright test tests/e2e/checkoff-round-trip.spec.ts` — 6bed959
+- [x] 1.6 Visual gate passes at 360, 375 and 1280 px with the sideways-scroll check: `OUT_DIR=<scratch> BASE_URL=http://localhost:4321 node scripts/ui-screenshots.mjs phase-1 states` ends with "All screenshots taken" — 6bed959
+- [x] 1.7 Red proof: with `git stash push -- src/components/dashboard/CheckoffGrid.astro src/lib/grid-labels.ts`, the e2e spec on `--project=mobile-chromium` and the screenshot run both fail naming a check-off grid (exit 1); after `git stash pop` both pass again — 6bed959
 
 #### Manual
 
