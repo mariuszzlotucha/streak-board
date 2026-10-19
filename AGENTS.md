@@ -35,4 +35,4 @@ Conventional Commits with a scope: `fix(layout): ...`, `docs(roadmap): ...`. Hus
 
 ## Secrets
 
-`SUPABASE_URL`, `SUPABASE_KEY`, `CONTACT_EMAIL`, `REMINDER_SECRET` live in git-ignored `.env` / `.dev.vars` (template `@.env.example`). Never commit or log them.
+`SUPABASE_URL`, `SUPABASE_KEY`, `CONTACT_EMAIL`, `REMINDER_SECRET` live in git-ignored `.env` / `.dev.vars` (templates `@.env.example` and `@.dev.vars.example`). Never commit or log them.

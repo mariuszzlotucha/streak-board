@@ -15,7 +15,7 @@ StreakBoard is a habit tracker for a group of friends: everyone tracks the same 
 
 ## Prerequisites
 
-- Node.js v22.14.0 (as specified in `.nvmrc`)
+- Node.js v22.23.3 (`.nvmrc`; `nvm install` reads it). `package.json` pins the major through `devEngines`, so on another Node major `npm ci`, `npm install`, `npm run` and `npx` print `npm warn EBADDEVENGINES` first and continue: run `nvm use` before them.
 - npm (comes with Node.js)
 
 ## Getting Started
@@ -30,15 +30,16 @@ cd streak-board
 2. Install dependencies:
 
 ```bash
+nvm use
 npm install
 ```
 
 3. Set up Supabase and configure environment variables — see [Supabase Configuration](#supabase-configuration) below.
 
-4. Create a `.dev.vars` file for local Cloudflare dev secrets:
+4. Create a `.dev.vars` file for local Cloudflare dev secrets from its template, then fill in the Supabase values from [Supabase Configuration](#supabase-configuration):
 
 ```bash
-cp .env.example .dev.vars
+cp .dev.vars.example .dev.vars
 ```
 
 5. Run the development server:
@@ -120,7 +121,7 @@ SUPABASE_URL=http://127.0.0.1:54321
 SUPABASE_KEY=<anon key from CLI output>
 ```
 
-To try the evening reminders locally with `npx wrangler dev --test-scheduled`, add three more lines to `.dev.vars` (generated as in [Reminder secrets](#reminder-secrets); `CONTACT_EMAIL` must be set too) and store the secret's hash in the local database with the SQL statement given there (Studio → SQL Editor):
+To try the evening reminders locally with `npx wrangler dev --test-scheduled`, fill in the three reminder lines of `.dev.vars` (they are in `.dev.vars.example` and `.env.example`; the values are generated as in [Reminder secrets](#reminder-secrets); `CONTACT_EMAIL` must be set too) and store the secret's hash in the local database with the SQL statement given there (Studio → SQL Editor):
 
 ```
 VAPID_PUBLIC_KEY=<base64url public key>

@@ -1,0 +1,12 @@
+# Local Cloudflare runtime secrets for `npm run dev`, `npm run preview` and `wrangler dev` (README, "Supabase Configuration").
+# Copy to .dev.vars and fill in; .dev.vars is git-ignored, never commit it.
+SUPABASE_URL=
+SUPABASE_KEY=
+CONTACT_EMAIL=
+# Reminder secrets (README, "Reminder secrets"), needed only to run the evening cron locally.
+VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+REMINDER_SECRET=
+# Optional (README, "Observability"): report errors of a local preview to Sentry.
+# SENTRY_DSN=
+# SENTRY_ENVIRONMENT=local

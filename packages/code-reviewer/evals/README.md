@@ -19,7 +19,7 @@ All three configs share the cases, the grader of the `llm-rubric` assertions (`o
 
 ## Setup
 
-The suite is its own npm package (`package.json` and `package-lock.json` here, `promptfoo` pinned to 0.124.1), so its 626 packages and its own `ai@6` never reach the root install that every CI job, the gate's action and `release` run. It needs Node 22.22 or later, newer than the repository's `.nvmrc`:
+The suite is its own npm package (`package.json` and `package-lock.json` here, `promptfoo` pinned to 0.124.1), so its 626 packages and its own `ai@6` never reach the root install that every CI job, the gate's action and `release` run. It needs Node 22.22 or later, which the repository's `.nvmrc` (22.23.3) satisfies:
 
 ```bash
 npm ci                                          # the root: the reviewer's own dependencies and tsx
@@ -29,7 +29,7 @@ npm run --prefix packages/code-reviewer/evals validate   # checks the three conf
 
 `OPENROUTER_API_KEY` comes from the shell environment, for the reviewer and for the grader alike. The scripts read no `.env` file: the root `.env` holds the app's Supabase keys and the E2E account, which the evals do not need, and the suite runs hundreds of third-party packages.
 
-`npm ci` here reports 7 high-severity advisories (2026-10-17), all deep in promptfoo's tree: `basic-ftp` (through `get-uri`, `pac-proxy-agent` and `proxy-agent`), `braces` (through `chokidar` and `nunjucks`) and `node-forge` (through `jks-js`). npm's only offer is a downgrade to promptfoo 0.116.7. The suite stays on 0.124.1: it runs only locally, never in CI or the app, and an eval against OpenRouter should not reach FTP or PAC proxies, Java keystores or file watching. Check again when promptfoo is next bumped.
+`npm ci` here reports 10 high-severity advisories (2026-10-19), all deep in promptfoo's tree: `basic-ftp` (through `get-uri`, `pac-proxy-agent` and `proxy-agent`), `braces` (through `chokidar` and `nunjucks`) and `node-forge` (through `jks-js`). npm's only offer is a downgrade to promptfoo 0.116.7. The suite stays on 0.124.1: it runs only locally, never in CI or the app, and an eval against OpenRouter should not reach FTP or PAC proxies, Java keystores or file watching. Check again when promptfoo is next bumped.
 
 ## Runs
 
