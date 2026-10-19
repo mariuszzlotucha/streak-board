@@ -283,10 +283,20 @@ describe("runReminders", () => {
     const { factory } = client({ data: rows, error: null });
     let inFlight = 0;
     let peak = 0;
+    // Hold every send until the limit is reached, so the peak does not depend on how fast signing and encryption run
+    // on the host. A runner too slow for a fixed pause saw 5 instead of 6. If the limit were lower, the timeout lets
+    // the test fail on the peak instead of hanging.
+    let reachLimit!: () => void;
+    const limitReached = new Promise<void>((resolve) => {
+      reachLimit = resolve;
+      setTimeout(resolve, 1000);
+    });
     const fetch = vi.fn(async () => {
       inFlight++;
       peak = Math.max(peak, inFlight);
-      await new Promise((resolve) => setTimeout(resolve, 2));
+      if (inFlight >= SEND_CONCURRENCY) reachLimit();
+      await limitReached;
+      await new Promise((resolve) => setTimeout(resolve, 1));
       inFlight--;
       return new Response(null, { status: 201 });
     });
