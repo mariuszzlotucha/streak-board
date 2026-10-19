@@ -3,13 +3,13 @@ project: "StreakBoard"
 version: 1
 status: locked
 created: 2026-09-24
-updated: 2026-10-18
+updated: 2026-10-19
 prd_version: 1
-main_goal: market-feedback
-top_blocker: time
-milestone_id: history-and-reminders
-milestone_seq: 3
-milestone_status: done
+main_goal: quality
+top_blocker: none
+milestone_id: grid-polish
+milestone_seq: 4
+milestone_status: open
 ---
 
 # Roadmap: StreakBoard
@@ -20,17 +20,15 @@ milestone_status: done
 
 ## Milestone
 
-**M-3: Historia, przypomnienia i instalacja: siatka odznaczeń grupy, przypomnienie o niewykonanym tasku i aplikacja PWA** — Status: done
+**M-4: Siatka odznaczeń: czytelna na telefonie, z jasnym stanem i szybkim zapisem** — Status: open
 
-- **Intent:** Domknąć kryteria drugorzędne PRD v1 i dać aplikacji miejsce na telefonie: członek grupy widzi historię wykonania tasków w prostej siatce, którą grono prowadziło wcześniej ręcznie we wspólnym arkuszu, użytkownik dostaje przypomnienie o tasku, którego jeszcze nie odznaczył, a aplikację można zainstalować na ekranie głównym jak zwykłą aplikację (PWA). Wszystkie trzy mają podtrzymać codzienny powrót do odznaczania, a ich wartość sprawdzamy u realnych użytkowników.
-- **Source materials:** `context/foundation/prd.md` (v1), §Success Criteria → Secondary; punkty tej sekcji nie mają identyfikatorów FR ani US, więc zakres jest zapisany jako kotwice `MS-NN` poniżej. Decyzje właściciela: 2026-10-08 (z historii tylko prosta siatka, bez wykresów i statystyk) i 2026-10-17 (S-13 przeniesiony z M-2, M-3 oparty na kryteriach drugorzędnych PRD, przypomnienia odparkowane). Opis właściciela z 2026-10-17: „Żeby aplikacja była PWA” (kotwica MS-03). Prośba właściciela z 2026-10-17 o utwardzenie publicznej powierzchni po skanach botów w logach Cloudflare (kotwica MS-04). Opis właściciela z 2026-10-18: „aplikacja powinna promować bardziej PWA, instalowanie samej siebie”, i decyzja, że to jeszcze M-3 (kotwica MS-05). Konieczne FR z PRD (FR-001 do FR-012) pokryły M-1 i M-2 (`## Milestone History`).
-- **Done when:** każdy S-NN poniżej (S-13, S-16, S-17, S-18, S-19) ma status `done`.
-- **Scope anchors:** po jednej na wycinek: MS-01 i MS-02 przepisane z PRD §Success Criteria → Secondary, MS-03 z opisu właściciela:
-  - MS-01: członek grupy widzi historię wykonania tasku jako prostą siatkę: uczestnicy × ostatnie okresy, wykonane i niewykonane (PRD §Vision: zielono-czerwona siatka jako pierwotna wartość, FR-013; §Success Criteria → Secondary „Historia/statystyki długoterminowe” bez zmian; decyzja właściciela 2026-10-08: w zakresie samej siatki, wykresy i statystyki zostają w `## Parked`; do 2026-10-17 kotwica MS-08 kamienia M-2).
-  - MS-02: użytkownik dostaje przypomnienie o tasku, do którego jest zapisany, a którego nie odznaczył w bieżącym okresie (PRD: „Powiadomienia/przypomnienia o niewykonanym tasku”; odparkowane decyzją właściciela 2026-10-17).
-  - MS-03: aplikacja jest PWA: użytkownik instaluje ją na ekranie głównym telefonu (albo na komputerze) i uruchamia jak osobną aplikację (opis właściciela 2026-10-17: „Żeby aplikacja była PWA”; działanie offline zostaje wyłączone przez PRD §Non-Goals, chyba że właściciel zdecyduje inaczej).
-  - MS-04: publiczna powierzchnia aplikacji jest utwardzona: odpowiedzi niosą nagłówki bezpieczeństwa (nosniff, Referrer-Policy, ochrona przed osadzaniem w ramkach, Permissions-Policy, najpierw CSP w trybie Report-Only), jest `/.well-known/security.txt`, a operator ustawia w Cloudflare HSTS, rekordy SPF i DMARC (domena nie wysyła poczty) i regułę WAF na skany `/wp-*` i `*.php` (prośba właściciela 2026-10-17: produkcja nie wysyła żadnego nagłówka bezpieczeństwa, domena nie ma SPF ani DMARC, boty pytają o `/wp-admin/install.php`).
-  - MS-05: aplikacja sama zachęca do instalacji: użytkownik, który otwiera ją w przeglądarce, dowiaduje się, jak zainstalować ją na swoim urządzeniu i co mu to daje (na iPhonie przypomnienia działają tylko po instalacji) (opis właściciela 2026-10-18: „aplikacja powinna promować bardziej PWA, instalowanie samej siebie”; zmienia decyzję z planu S-17 z 2026-10-17, by nie robić własnego przycisku instalacji ani podpowiedzi dla iOS).
+- **Intent:** Poprawić siatkę odznaczeń grupy (S-13), którą członkowie grupy otwierają przy każdym tasku: ma być czytelna na ekranie telefonu, pokazywać wyraźnie, co już odznaczone, co zaległe i co zostało zapisane, oraz zapisywać odznaczenie szybko i bez cichych błędów. Zakres dotyczy wyłącznie widoku; pytanie właściciela o north star siatki (jak sprawdzić, czy działa, bez analityki) zostaje otwarte i nie blokuje tego kamienia milowego.
+- **Source materials:** opis właściciela z 2026-10-19 (kotwice MS-01 do MS-03, wybór „Czytelność na telefonie”, „Stan i informacja zwrotna”, „Szybkość i błędy zapisu”; decyzja: tylko poprawka widoku, bez pomiaru). Główne ograniczenia z istniejących dokumentów: PRD §Non-Functional Requirements (pełna używalność na ekranie smartfona), guardrail PRD (odznaczenie natychmiastowe), polityka prywatności bez analityki. Wycinek S-13 pozostaje wzorcem zakresu (`context/archive/2026-10-17-checkoff-grid/`).
+- **Done when:** każdy S-NN poniżej (S-20, S-21, S-22) ma status `done`.
+- **Scope anchors:**
+  - MS-01: siatka odznaczeń jest czytelna na ekranie telefonu: rozmiar komórek, odstępy, nazwy uczestników i okresów mieszczą się bez poziomego przewijania, a nazwisko/nick nie zasłania kolumny (opis właściciela: „Czytelność na telefonie”).
+  - MS-02: stan siatki jest widoczny od razu: odznaczone, zaległe i bieżący okres są rozróżnialne bez legendy, a po kliknięciu użytkownik dostaje potwierdzenie zapisu (opis właściciela: „Stan i informacja zwrotna”).
+  - MS-03: odznaczenie zapisuje się szybko, a błąd zapisu jest pokazany użytkownikowi i nie znika po cichu; po błędzie stan siatki wraca do prawdziwego (opis właściciela: „Szybkość i błędy zapisu”).
 
 ## Vision recap
 
@@ -38,19 +36,17 @@ Grono znajomych korzystało wcześniej ze wspólnego arkusza Google, w którym r
 
 ## North star
 
-**S-13: członek grupy widzi siatkę odznaczeń: uczestnicy × ostatnie okresy tasku, wykonane i niewykonane** — PRD §Vision mówi, że „sam prosty widok siatki (zielony/czerwony) już wystarczał, by to działało”, więc siatka najtańszym kosztem sprawdza u realnych użytkowników, czy powrót tego widoku podtrzymuje regularność; dane już są, a S-11 i S-14 są zrobione, więc może iść od razu.
+**S-20: członek grupy widzi na telefonie siatkę odznaczeń, w której od razu widać, kto wykonał task, a kto nie** — MS-01 i MS-02 w jednym wycinku, bo bez czytelnego układu na telefonie nie ma czego pokazywać; to najmniejszy widoczny dla użytkownika kawałek poprawki, a S-21 i S-22 zmieniają to, co już jest na ekranie.
 
-> Gwiazda przewodnia (ang. north star) to najmniejszy kompleksowy wycinek widoczny dla użytkownika, którego dostarczenie jako pierwszego potwierdza główną hipotezę tego kamienia milowego — umieszczony tak wcześnie, jak pozwalają jego zależności, bo reszta ma znaczenie tylko wtedy, gdy to działa. Tutaj hipoteza brzmi: widok historii, który grono prowadziło ręcznie w arkuszu, wraca automatycznie, a członkowie grupy zaglądają do niego, żeby widzieć nawzajem swoją konsekwencję.
+> Gwiazda przewodnia (ang. north star) to najmniejszy kompleksowy wycinek widoczny dla użytkownika, którego dostarczenie jako pierwszego potwierdza główną hipotezę kamienia milowego — umieszczony tak wcześnie, jak pozwalają jego zależności. Tutaj hipoteza brzmi: siatka czytelna na telefonie jest czytana przez członków grupy przy każdym tasku, a nie tylko na komputerze.
 
 ## At a glance
 
-| ID   | Change ID                | Outcome (user can …)                                                                                                                                      | Prerequisites | PRD refs                                     | Status |
-| ---- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | -------------------------------------------- | ------ |
-| S-13 | checkoff-grid            | zobaczyć siatkę odznaczeń grupy: kto wykonał task w każdym z ostatnich okresów                                                                            | S-11, S-14    | PRD §Vision, FR-013; MS-01                   | done   |
-| S-16 | task-reminders           | dostać przypomnienie o tasku, do którego jest zapisany, a którego nie odznaczył w bieżącym okresie                                                        | —             | — (PRD §Success Criteria → Secondary; MS-02) | done   |
-| S-17 | installable-pwa          | zainstalować aplikację na ekranie głównym telefonu albo na komputerze i uruchamiać ją jak osobną aplikację (PWA)                                          | —             | — (opis właściciela; MS-03)                  | done   |
-| S-18 | public-surface-hardening | odwiedzać aplikację, która wysyła nagłówki bezpieczeństwa, publikuje kontakt do zgłaszania luk i której domeny nie da się podrobić w poczcie              | —             | — (prośba właściciela; MS-04)                | done   |
-| S-19 | install-promotion        | dowiedzieć się w aplikacji, jak zainstalować ją na swoim urządzeniu (na iPhonie instrukcja, w Chrome i Edge przycisk), i po co (przypomnienia na iPhonie) | S-16, S-17    | — (opis właściciela; MS-05)                  | done   |
+| ID   | Change ID               | Outcome (user can …)                                                                                          | Prerequisites | PRD refs                                          | Status |
+| ---- | ----------------------- | ------------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------------------- | ------ |
+| S-20 | grid-mobile-readability | czytać siatkę odznaczeń grupy na ekranie telefonu bez przewijania w poziomie i rozpoznać uczestników i okresy | —             | PRD §NFR (smartfon); MS-01                        | ready  |
+| S-21 | grid-state-feedback     | rozpoznać bez legendy odznaczone, zaległe i bieżący okres oraz dostać potwierdzenie po odznaczeniu            | S-20          | PRD §Vision; MS-02                                | ready  |
+| S-22 | grid-save-reliability   | odznaczyć szybko, a po błędzie zapisu zobaczyć komunikat i prawdziwy stan siatki                              | —             | PRD guardrail (odznaczenie natychmiastowe); MS-03 | ready  |
 
 ## Baseline
 
@@ -69,99 +65,56 @@ Foundations below assume these are present and do NOT re-scaffold them.
 
 ## Foundations
 
-(brak — M-3 nie wymaga przekrojowego odblokowania. Harmonogram i wysyłka przypomnień, których stan bazowy nie ma, wchodzą do S-16, pierwszego wycinka, który ich potrzebuje, a manifest aplikacji i service worker do S-17, zgodnie z zasadą progresywnego ujawniania elementów technicznych; siatka korzysta z danych, które już są.)
+(brak — M-4 nie wymaga przekrojowego odblokowania: siatka i jej dane z S-13 już istnieją.)
 
 ## Slices
 
-### S-13: Siatka odznaczeń grupy
+### S-20: Siatka odznaczeń czytelna na telefonie
 
-- **Outcome:** członek grupy widzi dla każdego tasku siatkę: uczestnicy × ostatnie okresy, z zaznaczeniem, kto w danym okresie wykonał task, a kto nie.
-- **Change ID:** checkoff-grid
-- **PRD refs:** PRD §Vision, FR-013; MS-01
-- **Prerequisites:** S-11, S-14 (oba `done` w M-2; decyzja właściciela 2026-10-16: nick przed siatką, bo oba wycinki edytują politykę prywatności, PRD, słownik, `dashboard-data.ts`, smoke i fixture'y, a siatka ma od razu pokazywać nicki)
-- **Parallel with:** S-16, S-17 (różne widoki; wspólne mogą być PRD, polityka prywatności, słownik, smoke i fixture'y kitchen sinka, więc uzgodnić kolejność merge'y)
-- **Blockers:** —
-- **Unknowns:**
-  - Ile okresów pokazuje siatka (np. 7 dni / 4 tygodnie) i czy zależy to od tasku `daily`/`weekly`? — Owner: user. Block: no — rozstrzyga `/10x-frame`.
-  - PRD §Success Criteria → Secondary wymienia „historię/statystyki długoterminowe (wykresy streaków w czasie)”, a S-13 daje tylko siatkę: doprecyzować ten punkt w PRD (siatka w zakresie, wykresy i statystyki nadal w `## Parked`) w tej samej zmianie? — Owner: user. Block: no — rozstrzyga `/10x-frame`.
-- **Źródło zakresu:** PRD §Success Criteria → Secondary („Historia/statystyki długoterminowe”) w zakresie samej siatki (decyzja właściciela 2026-10-08, odparkowanie z `## Parked`); PRD §Vision opisuje siatkę zielono-czerwoną jako pierwotną wartość produktu. Do 2026-10-17 wycinek M-2 (kotwica MS-08), przeniesiony do M-3 decyzją właściciela. Poprawki dokumentów, które właściciel związał z S-13 (2026-10-16, `context/foundation/open-items.md` §3): PRD (opis streaka, poziomy i taski indywidualne, sekcja Open Questions), polityka prywatności (streak), słownik i opis okna dat jako znanej luki (Q-04).
-- **Stan wejściowy (2026-10-08):** po podziale `dashboard.astro` nowy odczyt wielu okresów trafia do `loadDashboard` (`src/lib/dashboard-data.ts`, z testami jednostkowymi), a siatka to nowy komponent obok `TaskRow`/`TasksCard` w `src/components/dashboard/`. Polityka prywatności też jest podzielona na sekcje (`src/components/privacy/`), więc zmiana „kto co widzi” to edycja `WhoCanSee.astro`.
-- **Risk:** Dane już są (`task_checkoffs` per okres), więc to głównie nowy odczyt i widok; idzie pierwszy w M-3 jako gwiazda przewodnia. Siatka uczestnicy × okresy to najszerszy widok w aplikacji, a PRD wymaga pełnej używalności na ekranie smartfona, więc układ na wąskim ekranie należy do zakresu. Zmienia, co członkowie grupy widzą o sobie nawzajem (historia zamiast bieżącego okresu), więc w tej samej zmianie trzeba zaktualizować politykę prywatności, słownik (`glossary.md` dziś zalicza historię do rzeczy, których aplikacja nie obiecuje) i PRD. Odczyt wielu okresów dokłada pracy do `/dashboard`, którego czas CPU nie był mierzony (otwarte ryzyko po S-04).
-- **Status:** done
-
-### S-16: Przypomnienie o niewykonanym tasku
-
-- **Outcome:** użytkownik dostaje przypomnienie o tasku, do którego jest zapisany, a którego nie odznaczył w bieżącym okresie (dzień albo tydzień).
-- **Change ID:** task-reminders
-- **PRD refs:** — (PRD §Success Criteria → Secondary; MS-02)
+- **Outcome:** członek grupy na ekranie telefonu widzi siatkę każdego tasku bez poziomego przewijania; uczestnicy i okresy są czytelne, a długi nick nie wypycha kolumn.
+- **Change ID:** grid-mobile-readability
+- **PRD refs:** PRD §Non-Functional Requirements (pełna używalność na smartfonie); MS-01
 - **Prerequisites:** —
-- **Parallel with:** S-13, S-17 (różne widoki; wspólne mogą być PRD, polityka prywatności, słownik, smoke i fixture'y kitchen sinka, więc uzgodnić kolejność merge'y; przy kanale push S-17 idzie pierwszy, patrz Unknowns)
+- **Parallel with:** S-22 (inne pliki: układ siatki kontra logika zapisu; wspólny może być tylko smoke i fixture'y kitchen sinka)
 - **Blockers:** —
 - **Unknowns:**
-  - Jakim kanałem: e-mail, powiadomienie w przeglądarce (push) czy tylko w aplikacji? Przypomnienie w samej aplikacji nie dotrze do kogoś, kto jej nie otwiera, a push wymaga zgody przeglądarki i service workera, których dziś nie ma. Przy kanale push S-17 (PWA) staje się warunkiem wstępnym, bo na iOS powiadomienia web push działają tylko w aplikacji dodanej do ekranu głównego. — Owner: user. Block: no — rozstrzyga `/10x-frame`.
-  - Kiedy i jak często: o której porze i w jakiej strefie czasowej (okres liczy się od dnia albo tygodnia), raz na okres czy częściej, i jak dla tasku tygodniowego? — Owner: user. Block: no — rozstrzyga `/10x-frame`.
-  - Zgoda i wypisanie się: przypomnienia domyślnie włączone czy dopiero po włączeniu przez użytkownika, gdzie jest to ustawienie i czy wiadomość ma link wypisania? — Owner: user. Block: no — rozstrzyga `/10x-frame`; polityka prywatności zmienia się w tej samej zmianie.
-  - Jak aplikacja wysyła i planuje przypomnienia: dziś e-maile wysyła tylko Supabase Auth (SMTP Resend), a Worker nie ma harmonogramu, więc potrzebny jest klucz dostawcy jako sekret Workera (krok właściciela) i zadanie cykliczne mieszczące się w limicie CPU planu. — Owner: team. Block: no — rozstrzyga `/10x-research`.
-- **Źródło zakresu:** PRD §Success Criteria → Secondary („Powiadomienia/przypomnienia o niewykonanym tasku”), do 2026-10-17 w `## Parked`; odparkowane decyzją właściciela 2026-10-17 przy wyborze źródeł M-3.
-- **Risk:** Pierwszy wycinek, który działa bez żądania użytkownika: zadanie cykliczne musi zmieścić się w limicie CPU Workera (10 ms na planie Free, ryzyko znane z S-08) przy przeglądaniu wszystkich zapisanych uczestników, a nieudana wysyłka nie może zginąć po cichu (kontrakt błędów z S-08). Wiadomości do użytkowników zmieniają to, co polityka prywatności mówi o użyciu adresu e-mail, więc polityka, PRD i słownik zmieniają się w tej samej zmianie, a usunięcie konta (S-15) musi usuwać też ustawienia przypomnień. Idzie po S-13, ale nic go od niej nie uzależnia, więc może iść równolegle.
-- **Status:** done
+  - Co dokładnie jest nieczytelne na telefonie: liczba okresów, szerokość kolumny nicku, czy przewijanie w poziomie? Owner: user (zrzut ekranu z telefonu). Block: no — rozstrzyga `/10x-frame`.
+- **Risk:** siatka to najszerszy widok w aplikacji; zmiana układu nie może zepsuć widoku komputerowego ani kitchen sinka (`scripts/smoke.mjs` wiąże markup siatki).
+- **Status:** ready
 
-### S-17: Aplikacja do zainstalowania (PWA)
+### S-21: Stan siatki i potwierdzenie zapisu
 
-- **Outcome:** użytkownik instaluje StreakBoard na ekranie głównym telefonu (albo na komputerze) i uruchamia go jak osobną aplikację, z własną ikoną i bez paska przeglądarki.
-- **Change ID:** installable-pwa
-- **PRD refs:** — (opis właściciela; MS-03)
-- **Prerequisites:** —
-- **Parallel with:** S-13, S-16 (wspólne mogą być nagłówek stron, smoke i polityka prywatności, jeśli zmieni się to, co aplikacja zapisuje w przeglądarce, więc uzgodnić kolejność merge'y)
-- **Blockers:** —
-- **Unknowns:**
-  - Czy PWA ma działać offline? PRD §Non-Goals wyklucza tryb offline-first, więc domyślnie aplikacja zostaje online, a service worker nie pokazuje starych danych; zmiana wymaga decyzji właściciela i zmiany PRD. — Owner: user. Block: no — rozstrzyga `/10x-frame`.
-  - Ikony i wygląd po instalacji: dziś są tylko `favicon.svg` i `favicon.png` (48×48), a instalacja potrzebuje większych ikon, nazwy, koloru motywu i ekranu startowego. — Owner: user. Block: no — rozstrzyga `/10x-frame`.
-  - Na jakich systemach sprawdzamy instalację (Android, iOS, komputer) i co aplikacja pokazuje, gdy nie ma sieci? — Owner: user. Block: no — rozstrzyga `/10x-frame`.
-- **Źródło zakresu:** opis właściciela z 2026-10-17: „Żeby aplikacja była PWA”. PRD §User & Persona: użytkownik sięga po produkt codziennie, żeby odznaczyć task, a PRD §Non-Functional Requirements wymaga pełnej używalności na ekranie smartfona.
-- **Risk:** Service worker zostaje w przeglądarce między sesjami i wydaniami: zbyt szeroka pamięć podręczna mogłaby po wylogowaniu pokazać cudzy dashboard na wspólnym urządzeniu (guardrail PRD: widoczność tylko dla własnej grupy) albo trzymać stary kod po wycofaniu wydania, więc strony i dane po zalogowaniu nie trafiają do cache, a aktualizacja service workera należy do zakresu. Odznaczenie ma zostać natychmiastowe (guardrail PRD). Idzie po S-16, chyba że S-16 wybierze kanał push: wtedy S-17 idzie pierwszy.
-- **Status:** done
-
-### S-18: Utwardzenie publicznej powierzchni
-
-- **Outcome:** odwiedzający dostaje strony z nagłówkami bezpieczeństwa (nosniff, Referrer-Policy, zakaz osadzania w ramkach, Permissions-Policy, CSP najpierw w trybie Report-Only), badacz znajduje kontakt w `/.well-known/security.txt`, a nikt nie wyśle poczty podszywającej się pod domenę aplikacji.
-- **Change ID:** public-surface-hardening
-- **PRD refs:** — (prośba właściciela; MS-04)
-- **Prerequisites:** —
-- **Parallel with:** S-16 (wspólne mogą być middleware i polityka prywatności, więc uzgodnić kolejność merge'y)
-- **Blockers:** —
-- **Unknowns:**
-  - Jaką CSP wymusić po okresie Report-Only (Supabase, Google OAuth, Sentry, service worker, push) i gdzie zbierać raporty? — Owner: team. Block: no — rozstrzyga `/10x-research`.
-  - Czy domena wysyła albo będzie wysyłać pocztę (np. potwierdzenia Supabase przez własny SMTP)? Od tego zależy, czy SPF i DMARC mogą być `-all` i `p=reject`. — Owner: user. Block: no — rozstrzyga `/10x-frame`.
-  - Czy zastąpić zarządzany przez Cloudflare `robots.txt` własnym w repo? — Owner: user. Block: no.
-- **Źródło zakresu:** prośba właściciela z 2026-10-17 po przeglądzie logów Cloudflare (skany `/wp-admin/install.php`) i sprawdzeniu produkcji: brak nagłówków bezpieczeństwa, brak SPF i DMARC, `security.txt` daje 404.
-- **Risk:** Zbyt ciasna CSP albo `X-Frame-Options` mogą zepsuć logowanie Google, push albo service worker, więc CSP idzie najpierw jako Report-Only; HSTS, DNS i WAF to kroki operatora w panelu Cloudflare (ręczne wiersze planu), nie kod.
-- **Status:** done
-
-### S-19: Zachęta do instalacji aplikacji
-
-- **Outcome:** użytkownik, który otwiera StreakBoard w przeglądarce, dowiaduje się w aplikacji, jak zainstalować ją na swoim urządzeniu: na iPhonie widzi instrukcję „Udostępnij → Do ekranu początkowego”, w Chrome i Edge przycisk instalacji, i wie, że na iPhonie przypomnienia działają tylko z zainstalowanej aplikacji. W zainstalowanej aplikacji zachęty nie ma.
-- **Change ID:** install-promotion
-- **PRD refs:** — (opis właściciela; MS-05)
-- **Prerequisites:** S-17 (aplikacja da się zainstalować), S-16 (przypomnienia, o których zachęta mówi)
+- **Outcome:** odznaczone, zaległe i bieżący okres są rozróżnialne bez legendy, a po odznaczeniu pojawia się krótkie potwierdzenie.
+- **Change ID:** grid-state-feedback
+- **PRD refs:** PRD §Vision (zielono-czerwona siatka); MS-02
+- **Prerequisites:** S-20 (stan ma być czytelny na telefonie, zanim zostanie dopracowany)
 - **Parallel with:** —
 - **Blockers:** —
 - **Unknowns:**
-  - Gdzie zachęta się pokazuje (dashboard, strona główna, ustawienia przy przełączniku przypomnień) i czy da się ją zamknąć na stałe na danym urządzeniu? — Owner: user. Block: no — rozstrzyga `/10x-frame` albo `/10x-plan`.
-  - Jak rozpoznać iPhone'a z Safari i inne przeglądarki bez własnego monitu instalacji, i co pokazać w przeglądarce wbudowanej w komunikator, z której nie da się zainstalować aplikacji? — Owner: team. Block: no — rozstrzyga `/10x-research`.
-- **Źródło zakresu:** opis właściciela z 2026-10-18 po teście z kolegą na iPhonie: dziś jedyną wskazówką jest napis przy przełączniku przypomnień w ustawieniach („Install StreakBoard on your home screen to get reminders.”), a Safari na iPhonie nie pokazuje żadnego monitu instalacji.
-- **Risk:** Zachęta nie może być natrętna ani pokazywać się w zainstalowanej aplikacji; systemowy monit instalacji jest tylko w przeglądarkach Chromium, a rozpoznawanie iPhone'a po przeglądarce bywa zawodne, więc zachęta musi mieć sensowny wariant domyślny. Zmienia decyzję z planu S-17 (bez własnego przycisku i bez podpowiedzi dla iOS).
-- **Status:** done
+  - Jak oznaczyć zaległość bez mylenia z odznaczeniem (kolor z tokenów, kształt, tekst)? Owner: user. Block: no — rozstrzyga `/10x-frame`.
+- **Risk:** nowe kolory muszą przejść `node scripts/token-contrast.mjs` w obu motywach; potwierdzenie nie może zasłaniać siatki.
+- **Status:** ready
+
+### S-22: Szybki zapis odznaczenia i jawne błędy
+
+- **Outcome:** odznaczenie zapisuje się od razu w widoku; gdy zapis się nie uda, użytkownik widzi komunikat, a siatka wraca do prawdziwego stanu.
+- **Change ID:** grid-save-reliability
+- **PRD refs:** PRD guardrail (odznaczenie natychmiastowe); MS-03
+- **Prerequisites:** —
+- **Parallel with:** S-20 (logika zapisu kontra układ siatki)
+- **Blockers:** —
+- **Unknowns:**
+  - Czy odznaczenie ma być optymistyczne (od razu w widoku, cofane przy błędzie), czy czekać na odpowiedź serwera? Owner: user. Block: no — rozstrzyga `/10x-frame`.
+- **Risk:** błąd, który znika po cichu, wraca do stanu sprzed S-08 (połknięte błędy); kontrakt błędów z S-08 obowiązuje.
+- **Status:** ready
 
 ## Backlog Handoff
 
-| Roadmap ID | Change ID                | Suggested issue title                                                                           | Ready for `/10x-plan` | Notes                                                                                                                                                                         |
-| ---------- | ------------------------ | ----------------------------------------------------------------------------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| S-13       | checkoff-grid            | Siatka odznaczeń grupy: uczestnicy × ostatnie okresy                                            | yes                   | Gwiazda przewodnia M-3. Najpierw `/10x-frame` (liczba okresów, doprecyzowanie PRD); w zakresie PRD, polityka prywatności, słownik i poprawki dokumentów z `open-items.md` §3. |
-| S-16       | task-reminders           | Przypomnienie o niewykonanym tasku: kanał, harmonogram, zgoda                                   | yes                   | Najpierw `/10x-frame` (kanał, pora, zgoda), potem `/10x-research` (wysyłka i harmonogram na Workerze). Polityka prywatności, PRD i słownik w zakresie.                        |
-| S-17       | installable-pwa          | Aplikacja PWA: instalacja na ekranie głównym, ikony, service worker bez cache danych            | yes                   | Najpierw `/10x-frame` (offline czy nie, ikony, systemy), potem `/10x-research`. Przy kanale push w S-16 idzie przed S-16.                                                     |
-| S-18       | public-surface-hardening | Utwardzenie publicznej powierzchni: nagłówki bezpieczeństwa, security.txt, SPF/DMARC, HSTS, WAF | yes                   | Kod: nagłówki w middleware, CSP Report-Only, `security.txt`. Ręcznie w Cloudflare: HSTS, SPF/DMARC, reguła WAF.                                                               |
-| S-19       | install-promotion        | Zachęta do instalacji: instrukcja dla iPhone'a, przycisk w Chrome i Edge, powód (przypomnienia) | yes                   | Zmienia decyzję z planu S-17. Najpierw `/10x-frame` (miejsca, zamykanie, przeglądarki w komunikatorach), potem `/10x-plan`.                                                   |
+| Roadmap ID | Change ID               | Suggested issue title                                            | Ready for `/10x-plan` | Notes                                                         |
+| ---------- | ----------------------- | ---------------------------------------------------------------- | --------------------- | ------------------------------------------------------------- |
+| S-20       | grid-mobile-readability | Siatka odznaczeń czytelna na telefonie                           | yes                   | Gwiazda przewodnia M-4. Najpierw zrzut ekranu od właściciela. |
+| S-21       | grid-state-feedback     | Stan siatki (odznaczone, zaległe, bieżący okres) i potwierdzenie | yes                   | Po S-20.                                                      |
+| S-22       | grid-save-reliability   | Szybki zapis odznaczenia i jawny błąd                            | yes                   | Równolegle z S-20.                                            |
 
 ## Open Roadmap Questions
 
