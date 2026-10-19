@@ -1,6 +1,6 @@
 # Zaległości projektu
 
-Stan z 2026-10-18, po scaleniu PR #199 (`8f3957c`); poprzedni stan z 2026-10-16, po PR #146 (`68efab0`). Decyzje właściciela są w `context/foundation/owner-decisions.md`. `[x]` oznacza wykonane albo rozstrzygnięte, `[ ]` oznacza niewykonane: dziś to tylko 2.8 i 5.12, które właściciel postanowił pominąć. Powody i szczegóły przy punktach odroczonych są w `context/foundation/open-items-blocked.md`.
+Stan z 2026-10-19, po otwarciu PR #203 (health check i `AGENTS.md`); poprzednie stany z 2026-10-18, po scaleniu PR #199 (`8f3957c`), i z 2026-10-16, po PR #146 (`68efab0`). Decyzje właściciela są w `context/foundation/owner-decisions.md`. `[x]` oznacza wykonane albo rozstrzygnięte, `[ ]` oznacza niewykonane: dziś to tylko 2.8 i 5.12, które właściciel postanowił pominąć. Powody i szczegóły przy punktach odroczonych są w `context/foundation/open-items-blocked.md`.
 
 Poza tą listą: roadmapa (`context/foundation/roadmap.md`) nie ma otwartego wycinka. M-2 zamknięty 2026-10-17 (PR #164), S-13 `checkoff-grid` przeniesiony do M-3 i zarchiwizowany 2026-10-17 (PR #174), S-14 `nickname` zarchiwizowany 2026-10-16 (PR #154). M-3 zamknięty 2026-10-18 (PR #197, `04b9e2a`); właściciel potwierdził tego dnia, że następny kamień milowy się nie otwiera. Otwarte zostają ręczne sprawdzenia właściciela i na urządzeniach w `context/changes/deployment/deployment-plan.md` (Phase 20–26).
 
@@ -71,6 +71,17 @@ Odroczone świadomie, z wyzwalaczami w planach. Nie są zadaniami, dopóki wyzwa
 - [x] `git fetch --tags --force`: lokalny tag `production` wskazuje `1e971f1`, tak jak zdalny.
 - [x] Dependabot alerts: włączone 2026-10-16 przez API (`PUT …/vulnerability-alerts` zwróciło 204, odczyt też 204).
 
+## 6. Health check 2026-10-19 (poza roadmapą)
+
+Źródło: `context/foundation/health-check.md` (PR #203). Werdykt `needs-attention`: `npm audit` 0 CRITICAL, 18 HIGH, 4 MODERATE, wszystkie przechodnie albo w narzędziach deweloperskich poza `devalue` (zależność `astro` i `@astrojs/react`, używana w runtime). Runner testów, CI, strict TypeScript, lint i format są na miejscu. To praca utrzymaniowa bez wartości widocznej dla użytkownika, więc nie wchodzi do M-4 ani do żadnego wycinka; idzie jako zmiana bez ID roadmapy (gałąź `<change-id>/phase-N`, zgodnie z `lessons.md`).
+
+- [ ] **6.1** Zmiana `dependency-hygiene` przez `/10x-new` (bez ID roadmapy): `npm update wrangler devalue undici sharp source-map-js http-cache-semantics brace-expansion fast-uri qs smol-toml typed-rest-client`, potem `npm uninstall shadcn` (CLI uruchamiane przez `npx shadcn@latest`, nigdy nie importowane, a siedzi w `dependencies` i wnosi 6 wpisów HIGH, których npm nie potrafi naprawić). Pełne CI, smoke i e2e, bo zmienia się `package-lock.json`. Nie używać `npm audit fix --force`: cofnęłoby `shadcn` i `patch-package` do wersji sprzed lat.
+- [ ] **6.2** W tej samej zmianie, ostatnia faza: `.github/dependabot.yml` z tygodniowymi aktualizacjami `npm` dla `/`, grupowanymi minor/patch. Alerty Dependabota są włączone od 2026-10-16 (§5); brakuje aktualizacji wersji i kroku `npm audit --audit-level=high --omit=dev` w jobie `ci`, który ma sens dopiero po 6.1.
+- [ ] **6.3** Decyzja właściciela o `patch-package`: jedna łatka `patches/@stryker-mutator+vitest-runner+10.0.0.patch`, a pakiet ciągnie łańcuch `micromatch`/`braces` z HIGH bez poprawki. Sprawdzić, czy nowszy `@stryker-mutator/vitest-runner` zawiera zmianę; jeśli tak, usunąć łatkę, pakiet i skrypt `postinstall`; jeśli nie, zaakceptować jako dev-only i zapisać w `owner-decisions.md`.
+- [ ] **6.4** Trzy wersje główne, każda osobnym PR i tylko gdy nic innego nie jest w toku: `lint-staged` 16 → 17 (najmniejsze ryzyko), `@astrojs/react` 6 → 7 (sprawdzić wyspy React w kitchen sinku i `scripts/ui-screenshots.mjs`), `typescript` 6 → 7 na końcu, po lekturze noty migracyjnej i `npx astro check`. Bez terminu; wyzwalacz: luka rośnie do dwóch wersji głównych albo Astro 7 przestaje wspierać TS 6.
+- [ ] **6.5** `.editorconfig` (root, 2 spacje, LF, końcowy newline, utf-8). Wygoda dla edytorów bez Prettiera; dołożyć do 6.1.
+- [ ] **6.6** Z `/10x-rule-review` nowego `AGENTS.md`: przepisać zdanie o mutation testing na postać sprawdzalną (odwołanie do reguły z `CLAUDE.md` i `mutation-baseline.md`) oraz zdecydować, czy `const prerender = false` zostaje w twardych regułach, skoro przy `output: "server"` to domyślne zachowanie Astro. Jedna zmiana na raz, każda sprawdzona w następnej sesji agenta.
+
 ## Sugerowana kolejność (aktualna)
 
 Kolejność z 2026-10-16 jest wykonana:
@@ -79,4 +90,4 @@ Kolejność z 2026-10-16 jest wykonana:
 2. S-13 `checkoff-grid` razem z poprawkami dokumentów (§3): zarchiwizowany 2026-10-17 (PR #174).
 3. `code-review-evals`: zarchiwizowany 2026-10-17 (PR #162).
 
-Nic z tej listy nie czeka na wykonanie. Zostają ręczne sprawdzenia w `deployment-plan.md` (Phase 20–26) i pozycje odroczone z wyzwalaczami (§4).
+Nic z tej listy nie czeka na wykonanie. Zostają ręczne sprawdzenia w `deployment-plan.md` (Phase 20–26), pozycje odroczone z wyzwalaczami (§4) i porządki z health checku (§6), z których tylko 6.1 i 6.2 mają być zrobione bez wyzwalacza.
