@@ -22,13 +22,14 @@ milestone_status: open
 
 **M-4: Siatka odznaczeń: czytelna na telefonie, z jasnym stanem i szybkim zapisem** — Status: open
 
-- **Intent:** Poprawić siatkę odznaczeń grupy (S-13), którą członkowie grupy otwierają przy każdym tasku: ma być czytelna na ekranie telefonu, pokazywać wyraźnie, co już odznaczone, co zaległe i co zostało zapisane, oraz zapisywać odznaczenie szybko i bez cichych błędów. Zakres dotyczy wyłącznie widoku; pytanie właściciela o north star siatki (jak sprawdzić, czy działa, bez analityki) zostaje otwarte i nie blokuje tego kamienia milowego.
-- **Source materials:** opis właściciela z 2026-10-19 (kotwice MS-01 do MS-03, wybór „Czytelność na telefonie”, „Stan i informacja zwrotna”, „Szybkość i błędy zapisu”; decyzja: tylko poprawka widoku, bez pomiaru). Główne ograniczenia z istniejących dokumentów: PRD §Non-Functional Requirements (pełna używalność na ekranie smartfona), guardrail PRD (odznaczenie natychmiastowe), polityka prywatności bez analityki. Wycinek S-13 pozostaje wzorcem zakresu (`context/archive/2026-10-17-checkoff-grid/`).
-- **Done when:** każdy S-NN poniżej (S-20, S-21, S-22) ma status `done`.
+- **Intent:** Poprawić siatkę odznaczeń grupy (S-13), którą członkowie grupy otwierają przy każdym tasku: ma być czytelna na ekranie telefonu, pokazywać wyraźnie, co już odznaczone, co zaległe i co zostało zapisane, oraz zapisywać odznaczenie szybko i bez cichych błędów. Zakres dotyczy widoku siatki; decyzją właściciela z 2026-10-19 kamień milowy niesie też jeden wycinek jakościowy (S-23, kotwica MS-04): porządki po health checku, bez zmiany zachowania widocznego dla użytkownika. Pytanie właściciela o north star siatki (jak sprawdzić, czy działa, bez analityki) zostaje otwarte i nie blokuje tego kamienia milowego.
+- **Source materials:** opis właściciela z 2026-10-19 (kotwice MS-01 do MS-03, wybór „Czytelność na telefonie”, „Stan i informacja zwrotna”, „Szybkość i błędy zapisu”; decyzja: tylko poprawka widoku, bez pomiaru). Główne ograniczenia z istniejących dokumentów: PRD §Non-Functional Requirements (pełna używalność na ekranie smartfona), guardrail PRD (odznaczenie natychmiastowe), polityka prywatności bez analityki. Wycinek S-13 pozostaje wzorcem zakresu (`context/archive/2026-10-17-checkoff-grid/`). Dla S-23: `context/foundation/health-check.md` (2026-10-19) i `context/foundation/open-items.md` §6 (decyzja właściciela 2026-10-19: porządki z health checku wchodzą do M-4, wzorem wycinków jakościowych S-08, S-10 i S-12 w M-2).
+- **Done when:** każdy S-NN poniżej (S-20, S-21, S-22, S-23) ma status `done`.
 - **Scope anchors:**
   - MS-01: siatka odznaczeń jest czytelna na ekranie telefonu: rozmiar komórek, odstępy, nazwy uczestników i okresów mieszczą się bez poziomego przewijania, a nazwisko/nick nie zasłania kolumny (opis właściciela: „Czytelność na telefonie”).
   - MS-02: stan siatki jest widoczny od razu: odznaczone, zaległe i bieżący okres są rozróżnialne bez legendy, a po kliknięciu użytkownik dostaje potwierdzenie zapisu (opis właściciela: „Stan i informacja zwrotna”).
   - MS-03: odznaczenie zapisuje się szybko, a błąd zapisu jest pokazany użytkownikowi i nie znika po cichu; po błędzie stan siatki wraca do prawdziwego (opis właściciela: „Szybkość i błędy zapisu”).
+  - MS-04: (jakościowy) zależności i runtime są uporządkowane według `context/foundation/health-check.md` z 2026-10-19: żadna znana podatność z dostępną poprawką nie zostaje w drzewie zależności (jedyna w kodzie wdrażanym to `devalue`), pakiety narzędziowe nie figurują jako zależności produkcyjne, wersja Node jest przypięta, a nowe podatności trafiają do PR-ów i do CI zamiast czekać na ręczny audyt (decyzja właściciela 2026-10-19).
 
 ## Vision recap
 
@@ -42,11 +43,12 @@ Grono znajomych korzystało wcześniej ze wspólnego arkusza Google, w którym r
 
 ## At a glance
 
-| ID   | Change ID               | Outcome (user can …)                                                                                          | Prerequisites | PRD refs                                          | Status |
-| ---- | ----------------------- | ------------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------------------- | ------ |
-| S-20 | grid-mobile-readability | czytać siatkę odznaczeń grupy na ekranie telefonu bez przewijania w poziomie i rozpoznać uczestników i okresy | —             | PRD §NFR (smartfon); MS-01                        | ready  |
-| S-21 | grid-state-feedback     | rozpoznać bez legendy odznaczone, zaległe i bieżący okres oraz dostać potwierdzenie po odznaczeniu            | S-20          | PRD §Vision; MS-02                                | ready  |
-| S-22 | grid-save-reliability   | odznaczyć szybko, a po błędzie zapisu zobaczyć komunikat i prawdziwy stan siatki                              | —             | PRD guardrail (odznaczenie natychmiastowe); MS-03 | ready  |
+| ID   | Change ID               | Outcome (user can …)                                                                                                                                                                                    | Prerequisites | PRD refs                                          | Status |
+| ---- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------------------- | ------ |
+| S-20 | grid-mobile-readability | czytać siatkę odznaczeń grupy na ekranie telefonu bez przewijania w poziomie i rozpoznać uczestników i okresy                                                                                           | —             | PRD §NFR (smartfon); MS-01                        | ready  |
+| S-21 | grid-state-feedback     | rozpoznać bez legendy odznaczone, zaległe i bieżący okres oraz dostać potwierdzenie po odznaczeniu                                                                                                      | S-20          | PRD §Vision; MS-02                                | ready  |
+| S-22 | grid-save-reliability   | odznaczyć szybko, a po błędzie zapisu zobaczyć komunikat i prawdziwy stan siatki                                                                                                                        | —             | PRD guardrail (odznaczenie natychmiastowe); MS-03 | ready  |
+| S-23 | dependency-hygiene      | (jakościowy) korzystać z aplikacji budowanej z zależności bez znanych podatności z dostępną poprawką, przy narzędziach poza zależnościami produkcyjnymi, przypiętym Node i alertach bezpieczeństwa w CI | —             | — (jakościowe; MS-04)                             | ready  |
 
 ## Baseline
 
@@ -108,13 +110,28 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Risk:** błąd, który znika po cichu, wraca do stanu sprzed S-08 (połknięte błędy); kontrakt błędów z S-08 obowiązuje.
 - **Status:** ready
 
+### S-23: Czyste zależności, przypięty runtime i alerty bezpieczeństwa w CI
+
+- **Outcome:** (jakościowy) drzewo zależności nie ma znanych podatności z dostępną poprawką (jedyna w kodzie wdrażanym, `devalue`, znika w pierwszej fazie), pakiety narzędziowe nie figurują jako zależności produkcyjne, wersja Node jest przypięta tak, że maszyna z innym Node dowiaduje się o tym przy instalacji, a nowe podatności trafiają do PR-ów Dependabota i do kroku audytu w CI.
+- **Change ID:** dependency-hygiene
+- **PRD refs:** — (jakościowe; MS-04). Źródło: `context/foundation/health-check.md` (2026-10-19), lista kroków w `context/foundation/open-items.md` §6 (6.1, 6.2, 6.5, 6.7, 6.8; decyzje 6.3 i 6.9).
+- **Prerequisites:** —
+- **Parallel with:** S-20, S-21, S-22 (inne pliki: manifest pakietów, lockfile i konfiguracja CI kontra widok siatki; wspólny jest tylko lockfile, którego wycinki siatki nie powinny ruszać)
+- **Blockers:** —
+- **Unknowns:**
+  - `patch-package` zostaje (upstream Strykera bez poprawki) i lockfile evals: zostawić z wyłączonymi PR-ami Dependabota czy usunąć i uruchamiać evale jednorazowo? — Owner: user (open-items 6.3 i 6.9). Block: no — rozstrzyga `/10x-plan`.
+  - Czy krok audytu w CI ma od razu blokować merge, czy najpierw tylko raportować? — Owner: user. Block: no — rozstrzyga `/10x-plan`.
+- **Risk:** aktualizacja lockfile dotyka całego drzewa naraz, więc faza musi przejść pełne CI, smoke i e2e, nie tylko testy jednostkowe; `npm audit fix --force` cofnęłoby `shadcn` i `patch-package` do starych wersji głównych (zakaz w `open-items.md` §6.1); zmiana zakresu pakietów nie zmienia wdrażanego bundla, więc nie ma skutku widocznego dla użytkownika do sprawdzenia.
+- **Status:** ready
+
 ## Backlog Handoff
 
-| Roadmap ID | Change ID               | Suggested issue title                                            | Ready for `/10x-plan` | Notes                                                         |
-| ---------- | ----------------------- | ---------------------------------------------------------------- | --------------------- | ------------------------------------------------------------- |
-| S-20       | grid-mobile-readability | Siatka odznaczeń czytelna na telefonie                           | yes                   | Gwiazda przewodnia M-4. Najpierw zrzut ekranu od właściciela. |
-| S-21       | grid-state-feedback     | Stan siatki (odznaczone, zaległe, bieżący okres) i potwierdzenie | yes                   | Po S-20.                                                      |
-| S-22       | grid-save-reliability   | Szybki zapis odznaczenia i jawny błąd                            | yes                   | Równolegle z S-20.                                            |
+| Roadmap ID | Change ID               | Suggested issue title                                            | Ready for `/10x-plan` | Notes                                                                                                                                                                         |
+| ---------- | ----------------------- | ---------------------------------------------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| S-20       | grid-mobile-readability | Siatka odznaczeń czytelna na telefonie                           | yes                   | Gwiazda przewodnia M-4. Najpierw zrzut ekranu od właściciela.                                                                                                                 |
+| S-21       | grid-state-feedback     | Stan siatki (odznaczone, zaległe, bieżący okres) i potwierdzenie | yes                   | Po S-20.                                                                                                                                                                      |
+| S-22       | grid-save-reliability   | Szybki zapis odznaczenia i jawny błąd                            | yes                   | Równolegle z S-20.                                                                                                                                                            |
+| S-23       | dependency-hygiene      | Czyste zależności, przypięty Node i alerty bezpieczeństwa w CI   | yes                   | Jakościowy, niezależny od S-20 do S-22. Najpierw decyzje właściciela 6.3 i 6.9 z `open-items.md`, potem Run `/10x-plan dependency-hygiene` (po `/10x-new` i `/10x-research`). |
 
 ## Open Roadmap Questions
 
