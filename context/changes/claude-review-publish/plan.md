@@ -202,18 +202,18 @@ None. Rollback is a revert of the PR: the prompt returns to `--body '...'`, whic
 
 #### Automated
 
-- [ ] 1.1 Workflow lints with actionlint
-- [ ] 1.2 `display_report: "true"` is set in the workflow
-- [ ] 1.3 Allow-list and model unchanged in the workflow
-- [ ] 1.4 Prompt posts the summary from a quoted heredoc and no longer bans it or uses `--body`
-- [ ] 1.5 Marker ban kept in the prompt
-- [ ] 1.6 `npm run lint` passes
-- [ ] 1.7 `npm run deps` passes
-- [ ] 1.8 `npm run test:unit` passes, the dry-run checks included
-- [ ] 1.9 Dry-run script parses and refuses to run without a PR number
-- [ ] 1.10 Prettier check passes on the edited files
-- [ ] 1.11 README names the report and the dry run
-- [ ] 1.12 open-items 7.1 names the report
+- [x] 1.1 Workflow lints with actionlint
+- [x] 1.2 `display_report: "true"` is set in the workflow
+- [x] 1.3 Allow-list and model unchanged in the workflow
+- [x] 1.4 Prompt posts the summary from a quoted heredoc and no longer bans it or uses `--body`
+- [x] 1.5 Marker ban kept in the prompt
+- [x] 1.6 `npm run lint` passes
+- [x] 1.7 `npm run deps` passes
+- [x] 1.8 `npm run test:unit` passes, the dry-run checks included
+- [x] 1.9 Dry-run script parses and refuses to run without a PR number
+- [x] 1.10 Prettier check passes on the edited files
+- [x] 1.11 README names the report and the dry run
+- [x] 1.12 open-items 7.1 names the report
 
 #### Manual
 

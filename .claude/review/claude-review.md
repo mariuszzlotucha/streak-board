@@ -15,12 +15,12 @@ You have exactly these tools:
 - the read tool, for files in the checkout;
 - plain read-only `grep`, `find` and `ls`, for searching the checkout (no `find -exec` or `-delete`);
 - `gh pr view <n> --json <fields>`, `gh pr diff <n>` and `gh pr diff <n> --name-only`;
-- `gh pr comment <n> --body '<text>'`, for the one summary;
+- `gh pr comment <n> --body-file - <<'EOF' … EOF`, for the one summary;
 - the inline-comment tool `mcp__github_inline_comment__create_inline_comment`, always with `confirmed: true`.
 
-Any other command is denied, so do not try it: no `sed`, `awk`, `cat`, `head` or `git`, no writes, no redirections and no pipes into writers.
+Use only the commands above: do not use `sed`, `awk` or `git`, no writes, no redirections and no pipes into writers.
 
-Post the summary in one `gh pr comment <n> --body '...'` call with the body in single quotes. No `$(...)`, no heredoc, no file, and no single-quote character (`'`) anywhere in the body, not even inside quoted code: write "do not" and "it is", and quote code with backticks and double quotes (`from "@/lib/x"`). Run 38592940294 had `sed -n` denied, an unanalysable `--body "..."` denied and a Write to `/tmp` for `--body-file` denied.
+Post the summary with exactly one `gh pr comment <n> --body-file - <<'EOF'` call: the delimiter is quoted, the body is written verbatim on the lines between the command and the closing `EOF`, and `EOF` stands alone on the last line and never inside the body. Never pass the body as `--body '...'` or `--body "..."`: a quoted argument whose text has a newline followed by `#` is rejected before it runs, and the heading lines of the summary are exactly that. Never use `$(...)` outside the heredoc and never a file.
 
 The checkout has no `node_modules`. You cannot build, lint, type-check or run tests, so never claim that any of them passed or failed.
 
@@ -107,9 +107,10 @@ Write everything in English.
 
 **Inline comments.** For each finding tied to a changed line, post one inline comment on that line with `mcp__github_inline_comment__create_inline_comment` (`confirmed: true`): severity, problem, impact, fix.
 
-**Summary.** Post exactly one summary with `gh pr comment <n> --body '...'`, in exactly this shape:
+**Summary.** Post exactly one summary with `gh pr comment <n> --body-file - <<'EOF'`, the body on the lines between the command and the closing `EOF`, in exactly this shape:
 
 ```
+gh pr comment <n> --body-file - <<'EOF'
 <!-- claude-review:summary -->
 ## Claude review: NEEDS ATTENTION
 
@@ -123,11 +124,13 @@ Commit 1a2b3c4. One to three sentences on why this verdict.
 ### Not verified
 
 - What you could not check, and why.
+EOF
 ```
 
 - Line 1 is exactly `<!-- claude-review:summary -->`; line 2 is `## Claude review: ` followed by the verdict.
 - `Commit` is followed by the first 7 characters of `headRefOid`.
 - Under `### Findings`, one line per finding: `**SEVERITY** path:line — one sentence`. Add "(inline)" to a finding already posted inline instead of repeating it. With no findings, write "None.".
 - `### Not verified` is optional; leave it out when there is nothing to list.
+- The body never contains a line that is only `EOF`.
 - No impact checklist and no "extra tests" line.
 - Never write the marker `<!-- ai-cr:summary -->` anywhere: it belongs to the `ai-review` comment.

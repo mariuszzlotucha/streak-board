@@ -5,6 +5,7 @@
 # adding it again re-runs the review. The review prompt lives in .claude/review/claude-review.md,
 # read from the base branch (the action restores .claude/), so a PR cannot change the prompt it
 # is reviewed with. A PR that edits this workflow file still can, so the owner reads such a PR.
+# The job's step summary holds the action's redacted Claude Code Report (display_report), so a denied command and its reason are readable there.
 # Concurrency is set on the job, not the workflow: a job skipped by its `if:` never
 # joins the group, so another label added to the PR cannot cancel a running review.
 name: Claude Code Review
@@ -67,6 +68,10 @@ jobs:
             --model claude-opus-5-5
             --setting-sources user
             --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
+          # The job's step summary gets the action's Claude Code Report: every tool call with its parameters and result,
+          # redacted as a whole, each non-error result truncated at 3,000 characters. It is as public as the log; the log
+          # itself still prints only the init and result lines.
+          display_report: "true"
           prompt: |
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.pull_request.number }}

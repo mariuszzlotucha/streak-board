@@ -1,7 +1,7 @@
 ---
 change_id: claude-review-publish
 title: Claude review posts nothing: surface the denied calls and fix the summary
-status: plan_reviewed
+status: implementing
 created: 2026-10-19
 updated: 2026-10-19
 archived_at: null
