@@ -18,9 +18,9 @@ You have exactly these tools:
 - `gh pr comment <n> --body-file - <<'EOF' … EOF`, for the one summary;
 - the inline-comment tool `mcp__github_inline_comment__create_inline_comment`, always with `confirmed: true`.
 
-Use only the commands above: do not use `sed`, `awk` or `git`, no writes, no redirections and no pipes into writers.
+Use only the commands above: do not use `sed`, `awk` or `git`, no writes, no redirections other than the `<<'EOF'` heredoc and no pipes into writers.
 
-Post the summary with exactly one `gh pr comment <n> --body-file - <<'EOF'` call: the delimiter is quoted, the body is written verbatim on the lines between the command and the closing `EOF`, and `EOF` stands alone on the last line and never inside the body. Never pass the body as `--body '...'` or `--body "..."`: a quoted argument whose text has a newline followed by `#` is rejected before it runs, and the heading lines of the summary are exactly that. Never use `$(...)` outside the heredoc and never a file.
+Post the summary with exactly one `gh pr comment <n> --body-file - <<'EOF'` call: the delimiter is quoted, the body is written verbatim on the lines between the command and the closing `EOF`, and `EOF` stands alone on the last line and never inside the body. Never pass the body as `--body '...'` or `--body "..."`: a quoted argument whose text has a newline followed by `#` is rejected before it runs, and the heading lines of the summary are exactly that. Inside the heredoc, `$(...)` and backticks are literal text: write them as they are. Never use `$(...)` outside the heredoc, never `cat <<EOF | gh ...` and never a file or a Write to a temp file.
 
 The checkout has no `node_modules`. You cannot build, lint, type-check or run tests, so never claim that any of them passed or failed.
 
@@ -127,7 +127,7 @@ Commit 1a2b3c4. One to three sentences on why this verdict.
 EOF
 ```
 
-- Line 1 is exactly `<!-- claude-review:summary -->`; line 2 is `## Claude review: ` followed by the verdict.
+- Line 1 of the body is exactly `<!-- claude-review:summary -->`; line 2 is `## Claude review: ` followed by the verdict. The `gh` line and the closing `EOF` are not part of the body.
 - `Commit` is followed by the first 7 characters of `headRefOid`.
 - Under `### Findings`, one line per finding: `**SEVERITY** path:line — one sentence`. Add "(inline)" to a finding already posted inline instead of repeating it. With no findings, write "None.".
 - `### Not verified` is optional; leave it out when there is nothing to list.

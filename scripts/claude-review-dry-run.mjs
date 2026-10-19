@@ -6,7 +6,7 @@
 // Run: node scripts/claude-review-dry-run.mjs <pr-number> [--model <id>] [--max-turns <n>] [--claude <command>]
 //      --claude defaults to `claude` and is split on spaces (CI installs 2.1.296: `npx -y @anthropic-ai/claude-code@2.1.296`).
 // Exit 0 passes; exit 1 when the recorded comment is missing, doubled, in the wrong form or fails the body checks, or when a
-// `gh pr comment` call was denied; exit 2 on a usage error. The inline-comment MCP tool does not exist locally.
+// `gh pr comment` call was denied or the run ended in an error; exit 2 on a usage error or when gh or Claude cannot be started. The inline-comment MCP tool does not exist locally.
 
 import { Buffer } from "node:buffer";
 import { execFileSync, spawn } from "node:child_process";
@@ -39,19 +39,37 @@ const SESSION_VARIABLES = [
   "CLAUDE_EFFORT",
 ];
 
-const GH_WRAPPER = `#!/usr/bin/env node
+/**
+ * The `gh` the model sees: it records a `pr comment` (argv and, with `--body-file -`, `--body-file=-` or `-F -`, the body from
+ * stdin), passes `pr view` and `pr diff` to the real gh (the two read commands of the CI allow-list) and refuses every other
+ * command with exit 2, so a dry run changes nothing on GitHub whatever the user's own Claude settings allow.
+ */
+export const GH_WRAPPER = `#!/usr/bin/env node
 const fs = require("node:fs");
 const { spawnSync } = require("node:child_process");
 const args = process.argv.slice(2);
 if (args[0] === "pr" && args[1] === "comment") {
-  const at = args.indexOf("--body-file");
-  const stdin = at >= 0 && args[at + 1] === "-" ? fs.readFileSync(0, "utf8") : null;
-  fs.appendFileSync(process.env.CLAUDE_REVIEW_DRY_RUN_LOG, JSON.stringify({ argv: args, stdin }) + "\\n");
+  const at = args.findIndex((arg) => arg === "--body-file" || arg === "-F");
+  const fromStdin = (at >= 0 && args[at + 1] === "-") || args.includes("--body-file=-");
+  let stdin = null;
+  let error = null;
+  if (fromStdin) {
+    try {
+      stdin = fs.readFileSync(0, "utf8");
+    } catch (e) {
+      error = String(e && e.message);
+    }
+  }
+  fs.appendFileSync(process.env.CLAUDE_REVIEW_DRY_RUN_LOG, JSON.stringify({ argv: args, stdin, error }) + "\\n");
   console.log("https://github.com/" + process.env.CLAUDE_REVIEW_DRY_RUN_REPO + "/pull/" + args[2] + "#issuecomment-dry-run");
   process.exit(0);
 }
-const result = spawnSync(process.env.CLAUDE_REVIEW_DRY_RUN_REAL_GH, args, { stdio: "inherit" });
-process.exit(result.status ?? 1);
+if (args[0] === "pr" && (args[1] === "view" || args[1] === "diff")) {
+  const result = spawnSync(process.env.CLAUDE_REVIEW_DRY_RUN_REAL_GH, args, { stdio: "inherit" });
+  process.exit(result.status ?? 1);
+}
+console.error("gh " + args.join(" ") + ": not available in the dry run (only pr view, pr diff and a recorded pr comment)");
+process.exit(2);
 `;
 
 /** @param {string[]} argv arguments after the script name; throws an Error with a usage hint when the PR number is missing */
@@ -115,7 +133,7 @@ export function classifyDenials(denials) {
 
 /**
  * @param {string[]} lines stream-json lines of `claude -p --output-format stream-json --verbose`
- * @returns {{ result: { numTurns: number | null, costUsd: number | null, denials: { toolUseId: string, toolName: string, command: string }[] } | null,
+ * @returns {{ result: { numTurns: number | null, costUsd: number | null, isError: boolean, subtype: string | null, denials: { toolUseId: string, toolName: string, command: string }[] } | null,
  *   permissionDenied: { toolUseId: string, toolName: string, command: string, reason: string }[], tools: string[] }}
  * A `permission_denied` system message carries `tool_use_id`, `tool_name` and `decision_reason` but no input, so its command
  * is taken from the `tool_use` block with the same id.
@@ -138,6 +156,8 @@ export function parseStream(lines) {
       result = {
         numTurns: typeof message.num_turns === "number" ? message.num_turns : null,
         costUsd: typeof message.total_cost_usd === "number" ? message.total_cost_usd : null,
+        isError: message.is_error === true,
+        subtype: typeof message.subtype === "string" ? message.subtype : null,
         denials: (Array.isArray(message.permission_denials) ? message.permission_denials : []).map((denial) => ({
           toolUseId: String(denial?.tool_use_id ?? ""),
           toolName: String(denial?.tool_name ?? ""),
@@ -161,6 +181,23 @@ export function parseStream(lines) {
   }
   for (const entry of permissionDenied) entry.command = commands.get(entry.toolUseId) ?? "";
   return { result, permissionDenied, tools: [...tools] };
+}
+
+/**
+ * @param {{ toolUseId: string, toolName: string, command: string }[]} resultDenials the `permission_denials` of the result message
+ * @param {{ toolUseId: string, toolName: string, command: string, reason: string }[]} permissionDenied the `permission_denied` system messages
+ * @returns {{ toolUseId: string, toolName: string, command: string, reason: string }[]} every denial once, from either source, with its reason
+ */
+export function mergeDenials(resultDenials, permissionDenied) {
+  const reasonFor = (toolUseId) =>
+    toolUseId === "" ? "" : (permissionDenied.find((entry) => entry.toolUseId === toolUseId)?.reason ?? "");
+  const merged = resultDenials.map((denial) => ({ ...denial, reason: reasonFor(denial.toolUseId) }));
+  const seen = new Set(resultDenials.map((denial) => denial.toolUseId).filter((id) => id !== ""));
+  for (const entry of permissionDenied) {
+    if (entry.toolUseId !== "" && seen.has(entry.toolUseId)) continue;
+    merged.push({ ...entry });
+  }
+  return merged;
 }
 
 function findOnPath(name) {
@@ -224,10 +261,17 @@ async function main() {
     console.error("gh is not on PATH");
     return 2;
   }
-  const repo = execFileSync(realGh, ["repo", "view", "--json", "nameWithOwner", "--jq", ".nameWithOwner"], {
-    cwd: repoRoot,
-    encoding: "utf8",
-  }).trim();
+  let repo;
+  try {
+    repo = execFileSync(realGh, ["repo", "view", "--json", "nameWithOwner", "--jq", ".nameWithOwner"], {
+      cwd: repoRoot,
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"],
+    }).trim();
+  } catch (error) {
+    console.error(`could not resolve the repository with gh: ${String(error.stderr ?? error.message).trim()}`);
+    return 2;
+  }
 
   const dir = mkdtempSync(path.join(tmpdir(), "claude-review-dry-run-"));
   const logFile = path.join(dir, "comments.jsonl");
@@ -261,7 +305,13 @@ async function main() {
     console.log(
       `Running ${options.claude} on ${repo}#${options.pr} (model ${options.model}, max ${options.maxTurns} turns)...`,
     );
-    const run = await runClaude(options.claude, args, env, repoRoot);
+    let run;
+    try {
+      run = await runClaude(options.claude, args, env, repoRoot);
+    } catch (error) {
+      console.error(`could not start ${options.claude}: ${error.message}`);
+      return 2;
+    }
     const stream = parseStream(run.stdout.split("\n"));
     const comments = readFileSync(logFile, "utf8")
       .split("\n")
@@ -278,15 +328,16 @@ async function main() {
     });
     if (comments.length !== 1) problems.push(`expected exactly one gh pr comment call, got ${comments.length}`);
     for (const comment of comments) {
-      const viaBodyFile = comment.argv.includes("--body-file") && comment.stdin !== null;
-      if (!viaBodyFile || comment.argv.includes("--body") || comment.argv.includes("-b")) {
-        problems.push("the comment was not posted with --body-file - (a --body argument was used)");
+      if (comment.error) {
+        problems.push(`the comment body could not be read from stdin: ${comment.error}`);
+      } else if (comment.stdin === null || comment.argv.includes("--body") || comment.argv.includes("-b")) {
+        problems.push("the comment was not posted with --body-file - (a --body argument or a file was used)");
       } else {
         for (const failure of checkSummaryBody(comment.stdin)) problems.push(`body check: ${failure}`);
       }
     }
 
-    const denials = stream.result?.denials ?? [];
+    const denials = mergeDenials(stream.result?.denials ?? [], stream.permissionDenied);
     const { fatal, warnings } = classifyDenials(denials);
     console.log(`\nPermission denials: ${denials.length}`);
     const byTool = new Map();
@@ -294,13 +345,8 @@ async function main() {
     for (const [tool, items] of byTool) {
       console.log(`  ${tool} (${items.length})`);
       for (const item of items) {
-        const reason = stream.permissionDenied.find((entry) => entry.toolUseId === item.toolUseId)?.reason ?? "";
-        console.log(`    ${shorten(item.command, 120)}${reason === "" ? "" : `  -- ${reason}`}`);
+        console.log(`    ${shorten(item.command, 120)}${item.reason === "" ? "" : `  -- ${item.reason}`}`);
       }
-    }
-    if (denials.length === 0 && stream.permissionDenied.length > 0) {
-      for (const item of stream.permissionDenied)
-        console.log(`  ${item.toolName}: ${shorten(item.command, 120)}  -- ${item.reason}`);
     }
     for (const denial of fatal) problems.push(`a gh pr comment call was denied: ${shorten(denial.command, 120)}`);
     if (warnings.length > 0) console.log(`  (${warnings.length} other denial(s) are warnings)`);
@@ -314,6 +360,10 @@ async function main() {
     if (stream.result === null) {
       problems.push(`no result message in the stream (exit code ${run.code})`);
       if (run.stderr.trim() !== "") console.log(`\nstderr:\n${run.stderr.trim()}`);
+    } else if (stream.result.isError || (stream.result.subtype !== null && stream.result.subtype !== "success")) {
+      problems.push(
+        `the run did not finish cleanly (result subtype ${stream.result.subtype}, is_error ${stream.result.isError})`,
+      );
     }
 
     if (problems.length > 0) {
