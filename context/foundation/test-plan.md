@@ -161,7 +161,7 @@ wdrożeniu odpowiedniego etapu; wcześniej brzmi „TBD — see §3 Phase N."
 
 - Uruchom `/10x-e2e` dla fazy planu, która nazywa ryzyko z §2 wymagające przeglądarki (funkcja już zbudowana); inne ryzyka idą do `/10x-tdd` lub `/10x-implement`.
 - Kopiuj wzorzec seeda `tests/e2e/seed.spec.ts`: lokatory po roli i etykiecie (`getByRole`, `getByLabel`), własne persony z `tests/e2e/local-supabase.ts` (`createPersona`, `createGroupAs`, `joinGroupAs`; spec, który tworzy konto przez formularz, usuwa je przez `deleteAccountsByEmail`), czekanie na stan (URL, widoczny tekst, `waitForHydration` przed wpisywaniem do wyspy React), a sprzątanie w `afterEach` rzuca błąd zamiast przemilczeć brak wiersza.
-- Jeden test na plik, nazwany ryzykiem (`risk #N: …`) w komentarzu na górze; każdy spec biegnie w obu projektach (`chromium` i `mobile-chromium`), więc asercje są funkcjonalne i niezależne od szerokości ekranu.
+- Jeden test na plik, nazwany ryzykiem (`risk #N: …`) w komentarzu na górze; każdy spec biegnie w obu projektach (`chromium` i `mobile-chromium`), więc asercje są funkcjonalne i niezależne od szerokości ekranu. Wyjątek: kontrakt układu (strona i opakowanie siatki nie przewijają się poziomo, S-20), który każdy projekt sprawdza przy własnej szerokości.
 - Przed commitem celowo zepsuj przepływ (np. zmień etykietę przycisku lub trasę) i zobacz czerwony wynik, potem przywróć. Bez porównań zrzutów ekranu (§7).
 - Komendy: `npx playwright test tests/e2e/<name>.spec.ts` (jeden spec), `npx playwright test` (cały zestaw), `npx playwright test --project=mobile-chromium` (sam telefon); konto seeda z `.env` lub `node scripts/e2e-user.mjs` (README, Tests).
 

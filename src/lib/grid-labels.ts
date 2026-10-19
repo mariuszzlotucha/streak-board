@@ -15,11 +15,14 @@ function partsOf(key: PeriodKey) {
   return { day, month: MONTHS[month - 1], weekday };
 }
 
-/** The short column header: "Mo 13" (daily), "from 13 Oct" (weekly), "Done" (once). */
-export function periodHeader(recurrence: TaskRecurrence, key: PeriodKey): string {
-  if (recurrence === "once") return "Done";
+/**
+ * The column header as lines: ["Mo", "13"] (daily), ["13 Oct"] (weekly), ["Done"] (once). The lines are short enough for
+ * a 28 px (daily) or 48 px (weekly, once) column at `text-xs`; the screen-reader label of a cell is `periodName`.
+ */
+export function periodHeader(recurrence: TaskRecurrence, key: PeriodKey): readonly string[] {
+  if (recurrence === "once") return ["Done"];
   const { day, month, weekday } = partsOf(key);
-  return recurrence === "daily" ? `${WEEKDAYS_SHORT[weekday]} ${day}` : `from ${day} ${month}`;
+  return recurrence === "daily" ? [WEEKDAYS_SHORT[weekday], String(day)] : [`${day} ${month}`];
 }
 
 /** The period as a cell label names it: "Mon 13 Oct" (daily), "week from 13 Oct" (weekly), null (once). */

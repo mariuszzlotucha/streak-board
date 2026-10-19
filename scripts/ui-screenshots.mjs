@@ -4,8 +4,10 @@
 // Sets: `public` (the public pages), `states` (every kitchen-sink state of `/dashboard` and `/settings`), `controls`
 // (hover, focus-visible and the pending, failed and fallback states of representative controls). No baselines and no
 // comparison: the PNG files are reviewed by a person. Exits 1 when a page does not answer 200, renders empty, throws, or
-// logs a console error while it loads, or when a listed control is missing.
+// logs a console error while it loads, when a listed control is missing, or when a loaded page, or a check-off grid's
+// wrapper on it, scrolls sideways (at 360 px, the narrowest target width, as at the other viewports).
 
+/* global document */
 import { mkdir } from "node:fs/promises";
 import path from "node:path";
 import { URL } from "node:url";
@@ -17,8 +19,9 @@ const OUT_DIR = process.env.OUT_DIR;
 const KITCHEN_SINK = "/dev/dashboard-kitchen-sink";
 
 const VIEWPORTS = {
-  desktop: { width: 1280, height: 800 },
+  narrow: { width: 360, height: 800 },
   mobile: { width: 375, height: 812 },
+  desktop: { width: 1280, height: 800 },
 };
 
 const PUBLIC_PAGES = [
@@ -331,6 +334,8 @@ async function holdRequests(page, pattern) {
 // Loads a page and waits until it is hydrated, its fonts are in and the dev toolbar is hidden. Null when it is not 200.
 // An uncaught error on the page, or a console error while it loads and hydrates, fails the run: a hydration error would
 // otherwise still yield a PNG. Console errors after `open` (a control's deliberately failed request) do not count.
+// A page, or a check-off grid's wrapper, that scrolls sideways fails the run too (S-20): the S-13 contract is that
+// nothing a phone shows is cut off.
 async function open(context, target) {
   const page = await context.newPage();
   const url = BASE_URL + pathFor(target);
@@ -358,6 +363,16 @@ async function open(context, target) {
   // Astro removes the `ssr` attribute once an island has hydrated.
   await page.waitForFunction("!document.querySelector('astro-island[ssr]')");
   await page.evaluate("document.fonts.ready");
+  const sideways = await page.evaluate(() => {
+    const root = document.documentElement;
+    const grids = [...document.querySelectorAll('table[aria-label^="Check-offs of "]')].map((table) => {
+      const wrapper = table.parentElement;
+      return [table.getAttribute("aria-label"), wrapper.scrollWidth - wrapper.clientWidth];
+    });
+    return { page: root.scrollWidth - root.clientWidth, grids: grids.filter(([, by]) => by > 0) };
+  });
+  if (sideways.page > 0) fail(`${where}: the page scrolls sideways by ${sideways.page}px`);
+  for (const [label, by] of sideways.grids) fail(`${where}: the grid "${label}" scrolls sideways by ${by}px`);
   page.off("console", onConsole);
   return page;
 }

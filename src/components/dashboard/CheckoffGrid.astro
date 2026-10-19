@@ -1,7 +1,6 @@
 ---
 import GridCell from "@/components/tasks/GridCell";
 import ViewerGridCell from "@/components/tasks/ViewerGridCell";
-import { Badge } from "@/components/ui/badge";
 import { cellLabelPrefix, periodHeader } from "@/lib/grid-labels";
 import type { TaskGrid } from "@/lib/grid-rules";
 import type { TaskRecurrence } from "@/lib/task-rules";
@@ -17,10 +16,15 @@ const { taskId, title, recurrence, grid } = Astro.props;
 const current = grid.periods.length - 1;
 ---
 
-{/* A table, never a list: the smoke row regexes stop at the first </li>. Only the wrapper scrolls sideways. Only the
-    viewer's current cell is an island: it follows the row's tick at once. */}
-<div class="max-w-full overflow-x-auto">
-  <table aria-label={`Check-offs of ${title}`} class="border-separate border-spacing-1 text-xs">
+{/* A table, never a list: the smoke row regexes stop at the first </li>. From 360 px nothing scrolls sideways; below
+    that only the wrapper does, never the page. The wrapper is positioned so the cells' sr-only labels (absolute) are
+    clipped with it and cannot widen the page. Only the viewer's current cell is an island: it follows the row's tick
+    at once. */}
+<div class="relative max-w-full overflow-x-auto">
+  <table
+    aria-label={`Check-offs of ${title}`}
+    class="border-separate border-spacing-1 text-xs max-sm:border-spacing-0.5"
+  >
     <caption class="sr-only">{`Check-offs of ${title}`}</caption>
     <thead>
       <tr>
@@ -28,8 +32,13 @@ const current = grid.periods.length - 1;
           <span class="sr-only">Participant</span>
         </th>
         {grid.periods.map((period) => (
-          <th scope="col" class="px-1 font-normal whitespace-nowrap text-muted-foreground">
-            {periodHeader(recurrence, period)}
+          <th
+            scope="col"
+            class:list={["px-0.5 font-normal text-muted-foreground", recurrence === "daily" ? "w-7" : "w-12"]}
+          >
+            {periodHeader(recurrence, period).map((line) => (
+              <span class="block whitespace-nowrap">{line}</span>
+            ))}
           </th>
         ))}
       </tr>
@@ -39,11 +48,16 @@ const current = grid.periods.length - 1;
         const name = row.nickname ?? "Unknown member";
         return (
           <tr>
-            <th scope="row" class="max-w-32 pr-2 text-left font-normal">
-              <span class="inline-flex min-w-0 items-center gap-1">
-                <span class="truncate text-foreground">{name}</span>
-                {row.isYou && <Badge variant="outline">You</Badge>}
+            <th scope="row" class="pr-2 text-left font-normal">
+              <span
+                class:list={[
+                  "line-clamp-2 max-w-14 min-w-14 text-foreground wrap-anywhere sm:max-w-32",
+                  row.isYou && "font-medium",
+                ]}
+              >
+                {name}
               </span>
+              {row.isYou && <span class="sr-only"> (you)</span>}
             </th>
             {row.cells.map((state, index) => {
               const labelPrefix = cellLabelPrefix(name, recurrence, grid.periods[index]);

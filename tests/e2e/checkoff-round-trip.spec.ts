@@ -37,6 +37,22 @@ function viewerCell(page: Page, title: string, nickname: string, state: "open" |
 }
 
 /**
+ * The layout contract of S-20, checked at each project's own width (1280 and 412 px): neither the page nor the task
+ * row's grid wrapper scrolls sideways. The wrapper is the table's parent.
+ */
+async function expectNoSidewaysScroll(page: Page, title: string) {
+  const pageOverrun = await page.evaluate(
+    () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+  );
+  expect(pageOverrun, "the page scrolls sideways").toBe(0);
+  const wrapper = taskRow(page, title)
+    .getByRole("table", { name: `Check-offs of ${title}` })
+    .locator("..");
+  const wrapperOverrun = await wrapper.evaluate((element) => element.scrollWidth - element.clientWidth);
+  expect(wrapperOverrun, "the check-off grid scrolls sideways").toBe(0);
+}
+
+/**
  * The viewer's Leaderboard line: position, nickname, the "You" badge and the total, each in its own element. Members
  * are listed by nickname, never by e-mail address.
  */
@@ -79,6 +95,7 @@ test.describe("risk #4: check-off round trip", () => {
     await expect(row.getByText("0", { exact: true })).toBeVisible();
     await expectViewerTotal(page, owner.nickname, 0);
     await expect(viewerCell(page, title, owner.nickname, "open")).toBeAttached();
+    await expectNoSidewaysScroll(page, title);
 
     // Tick: the row, the grid cell and the board move without a reload.
     await row.getByRole("button", { name: `Mark done ${title}` }).click();
