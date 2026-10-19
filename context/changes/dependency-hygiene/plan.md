@@ -459,13 +459,13 @@ The job's id, name and every other step stay as they are; no other job gets the 
 
 #### Automated
 
-- [x] 2.1 `nvm use` picks 22.23.3 from .nvmrc
-- [x] 2.2 `npm ci` on 22.23.3 prints no EBADENGINE or EBADDEVENGINES
-- [x] 2.3 Node 24 gets the EBADDEVENGINES warning from `npm run` and still runs it
-- [x] 2.4 Lint passes: `npm run lint`
-- [x] 2.5 Unit tests pass: `npm run test:unit`
-- [x] 2.6 Example files hold only comments and `KEY=` lines, with the six schema secrets in both
-- [x] 2.7 Prettier passes on the changed docs
+- [x] 2.1 `nvm use` picks 22.23.3 from .nvmrc — a0c19d2
+- [x] 2.2 `npm ci` on 22.23.3 prints no EBADENGINE or EBADDEVENGINES — a0c19d2
+- [x] 2.3 Node 24 gets the EBADDEVENGINES warning from `npm run` and still runs it — a0c19d2
+- [x] 2.4 Lint passes: `npm run lint` — a0c19d2
+- [x] 2.5 Unit tests pass: `npm run test:unit` — a0c19d2
+- [x] 2.6 Example files hold only comments and `KEY=` lines, with the six schema secrets in both — a0c19d2
+- [x] 2.7 Prettier passes on the changed docs — a0c19d2
 
 #### Manual
 
@@ -475,12 +475,12 @@ The job's id, name and every other step stay as they are; no other job gets the 
 
 #### Automated
 
-- [ ] 3.1 dependabot.yml validates against the SchemaStore schema
-- [ ] 3.2 actionlint passes on ci.yml (pre-existing SC2034 ignored)
-- [ ] 3.3 The audit step's command passes locally: `npm audit --omit=dev --audit-level=high`
-- [ ] 3.4 Lint passes: `npm run lint`
-- [ ] 3.5 Unit tests pass: `npm run test:unit`
-- [ ] 3.6 Prettier passes on the changed files
+- [x] 3.1 dependabot.yml validates against the SchemaStore schema
+- [x] 3.2 actionlint passes on ci.yml (pre-existing SC2034 ignored)
+- [x] 3.3 The audit step's command passes locally: `npm audit --omit=dev --audit-level=high`
+- [x] 3.4 Lint passes: `npm run lint`
+- [x] 3.5 Unit tests pass: `npm run test:unit`
+- [x] 3.6 Prettier passes on the changed files
 
 #### Manual
 

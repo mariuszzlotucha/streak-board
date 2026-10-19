@@ -1,0 +1,29 @@
+# Dependabot (README, "CI" > "Dependency updates"). Version updates: weekly, in range, lockfile only, so a PR carries no
+# manifest change and the ai-review gate passes it as `skipped` (a Dependabot-triggered run has no Actions secrets).
+# The eval suite's lockfile gets no PRs (owner decision 6.9, 2026-10-19); its alerts stay visible on GitHub.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Warsaw
+    versioning-strategy: lockfile-only
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+    ignore:
+      - dependency-name: "*"
+        update-types:
+          - version-update:semver-major
+  - package-ecosystem: npm
+    directory: /packages/code-reviewer/evals
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+    ignore:
+      - dependency-name: "*"

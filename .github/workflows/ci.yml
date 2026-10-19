@@ -61,6 +61,11 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Advisories reachable from `dependencies` only (`--omit=dev`); fails the job at high or critical. npm audit has no
+      # allow list: a high advisory without an in-range fix blocks every PR until the owner lowers the level in a PR of
+      # its own and records it in open-items (README, CI).
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high
       - run: npx astro sync
       - run: npm run lint
       # Fails when a design-token change drops a gating colour pair below its WCAG threshold.
