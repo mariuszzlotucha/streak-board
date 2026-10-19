@@ -24,7 +24,8 @@ const currentWord = currentPeriodWord(recurrence);
     cell is an island: it follows the row's tick at once. The current column's header (daily and weekly, never once) is
     marked: aria-current, the foreground colour, a heavier weight and a primary underline, so the column is findable at
     a glance. The word "today" / "this week" is sr-only after the visible lines: it would not fit the column width, and
-    a screen reader hears "Su 11 today". */}
+    a screen reader hears "Su 11 today". Every header has the 2 px bottom border (transparent unless marked), so the
+    row's headers stay the same height. */}
 <div class="relative max-w-full overflow-x-auto">
   <table
     aria-label={`Check-offs of ${title}`}
@@ -43,10 +44,10 @@ const currentWord = currentPeriodWord(recurrence);
               scope="col"
               aria-current={isCurrent ? "true" : undefined}
               class:list={[
-                "px-0.5",
+                "border-b-2 px-0.5",
                 isCurrent
-                  ? "border-b-2 border-primary font-medium text-foreground"
-                  : "font-normal text-muted-foreground",
+                  ? "border-primary font-medium text-foreground"
+                  : "border-transparent font-normal text-muted-foreground",
                 recurrence === "daily" ? "w-7" : "w-12",
               ]}
             >

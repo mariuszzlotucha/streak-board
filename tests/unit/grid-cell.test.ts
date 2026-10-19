@@ -29,17 +29,21 @@ describe("GridCell", () => {
     expect(new Set(classes).size).toBe(STATES.length);
   });
 
-  it("shows an icon for done, missed and open, and none for not joined", () => {
+  it("shows its own icon for done, missed and open, and none for not joined", () => {
+    const icons = { done: "lucide-check", missed: "lucide-x", open: "lucide-minus" } as const;
     for (const state of ["done", "missed", "open"] as const) {
       expect(markup[state].match(/<svg/g)).toHaveLength(1);
+      expect(markup[state]).toContain(icons[state]);
     }
     expect(markup.notJoined).not.toContain("<svg");
   });
 
   it("draws the open cell as an outlined box on the card colour", () => {
     const classes = classOf(markup.open).split(" ");
+    expect(classes).toContain("border-2");
     expect(classes).toContain("border-primary");
     expect(classes).toContain("bg-card");
+    expect(classes).toContain("text-primary");
   });
 
   it("draws the not-joined cell as a plain muted square without a border", () => {
