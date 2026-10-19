@@ -43,12 +43,12 @@ Grono znajomych korzystało wcześniej ze wspólnego arkusza Google, w którym r
 
 ## At a glance
 
-| ID   | Change ID               | Outcome (user can …)                                                                                                                                                                                    | Prerequisites | PRD refs                                          | Status      |
-| ---- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------------------- | ----------- |
-| S-20 | grid-mobile-readability | czytać siatkę odznaczeń grupy na ekranie telefonu bez przewijania w poziomie i rozpoznać uczestników i okresy                                                                                           | —             | PRD §NFR (smartfon); MS-01                        | ready       |
-| S-21 | grid-state-feedback     | rozpoznać bez legendy odznaczone, zaległe i bieżący okres oraz dostać potwierdzenie po odznaczeniu                                                                                                      | S-20          | PRD §Vision; MS-02                                | ready       |
-| S-22 | grid-save-reliability   | odznaczyć szybko, a po błędzie zapisu zobaczyć komunikat i prawdziwy stan siatki                                                                                                                        | —             | PRD guardrail (odznaczenie natychmiastowe); MS-03 | ready       |
-| S-23 | dependency-hygiene      | (jakościowy) korzystać z aplikacji budowanej z zależności bez znanych podatności z dostępną poprawką, przy narzędziach poza zależnościami produkcyjnymi, przypiętym Node i alertach bezpieczeństwa w CI | —             | — (jakościowe; MS-04)                             | in-progress |
+| ID   | Change ID               | Outcome (user can …)                                                                                                                                                                                    | Prerequisites | PRD refs                                          | Status |
+| ---- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------------------- | ------ |
+| S-20 | grid-mobile-readability | czytać siatkę odznaczeń grupy na ekranie telefonu bez przewijania w poziomie i rozpoznać uczestników i okresy                                                                                           | —             | PRD §NFR (smartfon); MS-01                        | ready  |
+| S-21 | grid-state-feedback     | rozpoznać bez legendy odznaczone, zaległe i bieżący okres oraz dostać potwierdzenie po odznaczeniu                                                                                                      | S-20          | PRD §Vision; MS-02                                | ready  |
+| S-22 | grid-save-reliability   | odznaczyć szybko, a po błędzie zapisu zobaczyć komunikat i prawdziwy stan siatki                                                                                                                        | —             | PRD guardrail (odznaczenie natychmiastowe); MS-03 | ready  |
+| S-23 | dependency-hygiene      | (jakościowy) korzystać z aplikacji budowanej z zależności bez znanych podatności z dostępną poprawką, przy narzędziach poza zależnościami produkcyjnymi, przypiętym Node i alertach bezpieczeństwa w CI | —             | — (jakościowe; MS-04)                             | done   |
 
 ## Baseline
 
@@ -122,7 +122,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
   - `patch-package` zostaje (upstream Strykera bez poprawki) i lockfile evals: zostawić z wyłączonymi PR-ami Dependabota czy usunąć i uruchamiać evale jednorazowo? — Owner: user (open-items 6.3 i 6.9). Block: no — rozstrzyga `/10x-plan`.
   - Czy krok audytu w CI ma od razu blokować merge, czy najpierw tylko raportować? — Owner: user. Block: no — rozstrzyga `/10x-plan`.
 - **Risk:** aktualizacja lockfile dotyka całego drzewa naraz, więc faza musi przejść pełne CI, smoke i e2e, nie tylko testy jednostkowe; `npm audit fix --force` cofnęłoby `shadcn` i `patch-package` do starych wersji głównych (zakaz w `open-items.md` §6.1); zmiana zakresu pakietów nie zmienia wdrażanego bundla, więc nie ma skutku widocznego dla użytkownika do sprawdzenia.
-- **Status:** in-progress
+- **Status:** done
 
 ## Backlog Handoff
 
@@ -165,3 +165,4 @@ Jedno pytanie zostaje otwarte u właściciela: jak bez analityki sprawdzić, czy
 - **S-13: członek grupy widzi dla każdego tasku siatkę: uczestnicy × ostatnie okresy, z zaznaczeniem, kto w danym okresie wykonał task, a kto nie.** — Archived 2026-10-17 → `context/archive/2026-10-17-checkoff-grid/`. Lesson: —.
 - **S-18: odwiedzający dostaje strony z nagłówkami bezpieczeństwa (nosniff, Referrer-Policy, zakaz osadzania w ramkach, Permissions-Policy, CSP najpierw w trybie Report-Only), badacz znajduje kontakt w `/.well-known/security.txt`, a nikt nie wyśle poczty podszywającej się pod domenę aplikacji.** — Archived 2026-10-17 → `context/archive/2026-10-17-public-surface-hardening/`. Lesson: —.
 - **S-19: użytkownik, który otwiera StreakBoard w przeglądarce, dowiaduje się w aplikacji, jak zainstalować ją na swoim urządzeniu: na iPhonie widzi instrukcję „Udostępnij → Do ekranu początkowego”, w Chrome i Edge przycisk instalacji, i wie, że na iPhonie przypomnienia działają tylko z zainstalowanej aplikacji. W zainstalowanej aplikacji zachęty nie ma.** — Archived 2026-10-18 → `context/archive/2026-10-18-install-promotion/`. Lesson: —.
+- **S-23: (jakościowy) drzewo zależności nie ma znanych podatności z dostępną poprawką (jedyna w kodzie wdrażanym, `devalue`, znika w pierwszej fazie), pakiety narzędziowe nie figurują jako zależności produkcyjne, wersja Node jest przypięta tak, że maszyna z innym Node dowiaduje się o tym przy instalacji, a nowe podatności trafiają do PR-ów Dependabota i do kroku audytu w CI.** — Archived 2026-10-19 → `context/archive/2026-10-19-dependency-hygiene/`. Lesson: —.
