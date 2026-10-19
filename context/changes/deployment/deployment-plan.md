@@ -469,6 +469,22 @@ Rollback:
   - iPhone: in the installed app and in a messenger's in-app browser the header sits below the status bar, and the footer and the new-version message clear the home indicator.
   - Android, the owner's installed app: the status bar and the header look as before, and the end of the page clears the gesture bar.
 
+## Phase 28 — Check-off grid readable on a phone (change `grid-mobile-readability`, S-20)
+
+**Status: released 2026-10-19; device checks pending.** The check-off grid of every task fits a phone screen from 360 px up with no sideways scroll of the page or the grid: calendar-style period headers (weekday over day number, "14 Sep" for a week), a nickname clamped to two lines behind a 56 px floor, the "You" badge replaced by medium weight and a screen-reader "(you)", and a positioned wrapper so the cells' `sr-only` labels no longer widen the page. The screenshot script captures 360 px too and fails on any sideways scroll, and the e2e round trip asserts the same (`context/changes/grid-mobile-readability/plan.md`). One release, no migrations. Phase 27 is left to S-23 (`dependency-hygiene`), whose closing docs PR is still to come.
+
+- [x] Code: PR #215, merged on 2026-10-19 as merge commit `b283821`. Master run 39326104841: `ci`, `smoke`, `e2e` and `integration` green; `compat` skipped on `master`. The PR's own checks, `ai-review` (pass, one minor note on the hardcoded state list) and `claude-review` (APPROVED, no findings), passed too.
+- [x] `release` for PR #215: job 118314058449, approved by the owner. `supabase db push` reported "Remote database is up to date." (no migrations); `wrangler deploy` printed `Current Version ID: f291ae01-db40-4577-a578-d7297f568425`; the tag moved `a7d0679...b283821 production -> production (forced update)`. The job's "Check the live deployment" step passed. This covers plan row 2.1. The previous tag, `a7d0679`, is the merge of PR #210 (a Dependabot update).
+- [x] Agent's live check (2026-10-19, anonymous `curl` on `https://streakboard.app`): `/` 200, `/privacy` 200, `/dashboard` 302 to `/auth/signin`, `/manifest.webmanifest` 200. The grid is behind sign-in, so its layout is not checked anonymously; `git ls-remote --tags origin production` shows `b283821`.
+- Owner's decision, 2026-10-19: no device screenshots. The "before" is `screenshots/research-*.png` (the roadmap's own fallback), and rows 2.2 and 2.3 cannot be ticked as written, because they ask for committed PNGs.
+- [ ] Open, owner's and group member's device checks (plan rows still `[ ]`; record the results here):
+  - 1.8 The nine committed screenshots (`phase-1-states-*`): 7 daily and 4 weekly columns at 360 and 375 px, calendar-style headers, the 24-character name in `long-text` on two lines with an ellipsis, the viewer's name in medium weight, compact left-aligned grid at 1280 px.
+  - 1.9 Accessibility tree or a screen reader: each cell reads name, period and state; the viewer's row header reads "<nick> (you)".
+  - 2.2 Android (owner): the production grid shows all 7 daily and 4 weekly columns, no sideways scroll, nicknames readable (no screenshots, see the decision above).
+  - 2.3 iPhone (group member, Safari and the installed app): the same checks, and the name column is no wider than the cap (WebKit `line-clamp`).
+  - 2.4 Android with the system font size above the default: the grid stays readable; if it outgrows the room it scrolls inside its wrapper and the page does not.
+  - 2.5 This entry and the tick of row 2.1 are in the closing docs PR; tick the row once it is merged.
+
 ## Verification checklist (end-to-end, once unblocked)
 
 - [x] Fresh browser session against the live `*.workers.dev` URL: sign up, confirm-email flow (or note if stubbed), sign in, hit `/dashboard`, sign out. — superseded by the Phase 10 production checks on `https://streakboard.app` (`workers.dev` is switched off by Phase 4 of that change).
