@@ -439,17 +439,17 @@ The job's id, name and every other step stay as they are; no other job gets the 
 
 #### Automated
 
-- [ ] 1.1 Production-path audit clean: `npm audit --omit=dev --audit-level=high` exits 0
-- [ ] 1.2 Full audit: only the patch-package and shadcn chains are high or critical
-- [ ] 1.3 One copy each of wrangler and miniflare, all four outside the advisory ranges: `npm ls wrangler miniflare undici sharp`
-- [ ] 1.4 package.json changed only by the one removal and the seven moves: `git diff origin/master -- package.json`
-- [ ] 1.5 Clean install from the lockfile applies the Stryker patch: `rm -rf node_modules && npm ci`
-- [ ] 1.6 Lint passes: `npm run lint`
-- [ ] 1.7 Type check passes: `npx astro check`
-- [ ] 1.8 Unit tests pass: `npm run test:unit`
-- [ ] 1.9 Build passes: `npm run build`
-- [ ] 1.10 Prettier passes: `npx prettier --check package.json`
-- [ ] 1.11 shadcn CLI still runs through npx: `npx shadcn@latest add --dry-run button`
+- [x] 1.1 Production-path audit clean: `npm audit --omit=dev --audit-level=high` exits 0
+- [x] 1.2 Full audit: only the patch-package and shadcn chains are high or critical
+- [x] 1.3 One copy each of wrangler and miniflare, all four outside the advisory ranges: `npm ls wrangler miniflare undici sharp`
+- [x] 1.4 package.json changed only by the one removal and the seven moves: `git diff origin/master -- package.json`
+- [x] 1.5 Clean install from the lockfile applies the Stryker patch: `rm -rf node_modules && npm ci`
+- [x] 1.6 Lint passes: `npm run lint`
+- [x] 1.7 Type check passes: `npx astro check`
+- [x] 1.8 Unit tests pass: `npm run test:unit`
+- [x] 1.9 Build passes: `npm run build`
+- [x] 1.10 Prettier passes: `npx prettier --check package.json`
+- [x] 1.11 shadcn CLI still runs through npx: `npx shadcn@latest add --dry-run button`
 
 #### Manual
 
