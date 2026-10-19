@@ -264,7 +264,7 @@ None: no schema, data or API change. `periodHeader`'s return type changes from `
 
 #### Manual
 
-- [ ] 2.1 The `release` run of the merged PR is green and its "Check the live deployment" step passes
+- [x] 2.1 The `release` run of the merged PR is green and its "Check the live deployment" step passes — b283821
 - [ ] 2.2 Android (owner): a screenshot of today's production grid before approving the release, then the new grid after it: all 7 daily and 4 weekly columns visible, no sideways scroll of the page or the grid, nicknames readable; both PNGs committed
 - [ ] 2.3 iPhone (group member, Safari and the installed app): the same checks, and the name column is no wider than the cap (WebKit, `line-clamp`); screenshot committed
 - [ ] 2.4 Android with the system font size above the default (owner): the grid stays readable; if it outgrows the room it scrolls inside its wrapper and the page does not
