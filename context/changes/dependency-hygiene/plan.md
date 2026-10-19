@@ -475,12 +475,12 @@ The job's id, name and every other step stay as they are; no other job gets the 
 
 #### Automated
 
-- [x] 3.1 dependabot.yml validates against the SchemaStore schema
-- [x] 3.2 actionlint passes on ci.yml (pre-existing SC2034 ignored)
-- [x] 3.3 The audit step's command passes locally: `npm audit --omit=dev --audit-level=high`
-- [x] 3.4 Lint passes: `npm run lint`
-- [x] 3.5 Unit tests pass: `npm run test:unit`
-- [x] 3.6 Prettier passes on the changed files
+- [x] 3.1 dependabot.yml validates against the SchemaStore schema — e2ed10b
+- [x] 3.2 actionlint passes on ci.yml (pre-existing SC2034 ignored) — e2ed10b
+- [x] 3.3 The audit step's command passes locally: `npm audit --omit=dev --audit-level=high` — e2ed10b
+- [x] 3.4 Lint passes: `npm run lint` — e2ed10b
+- [x] 3.5 Unit tests pass: `npm run test:unit` — e2ed10b
+- [x] 3.6 Prettier passes on the changed files — e2ed10b
 
 #### Manual
 
