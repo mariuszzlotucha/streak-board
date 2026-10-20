@@ -219,14 +219,14 @@ None: no schema, no migration, no app code. PR A and PR B touch `packages/code-r
 
 #### Automated
 
-- [x] 1.1 Unit tests pass for the provider, the report and the dry-run checker
-- [x] 1.2 Lint passes
-- [x] 1.3 The eval configs validate
-- [x] 1.4 The `old` provider resolves `eval-old` from a worktree on the `nul-hidden` case at no cost
+- [x] 1.1 Unit tests pass for the provider, the report and the dry-run checker — 4e78776
+- [x] 1.2 Lint passes — 4e78776
+- [x] 1.3 The eval configs validate — 4e78776
+- [x] 1.4 The `old` provider resolves `eval-old` from a worktree on the `nul-hidden` case at no cost — 4e78776
 
 #### Manual
 
-- [x] 1.5 The dry-run on PR #226 exits 0 and its summary is English, with no documentation finding and no mention
+- [x] 1.5 The dry-run on PR #226 exits 0 and its summary is English, with no documentation finding and no mention — 4e78776
 - [ ] 1.6 The owner reads PR A, CI is green and PR A is merged
 
 ### Phase 2: Paid eval session: Japanese-input case and the sentence for all natural-language text (PR B)
