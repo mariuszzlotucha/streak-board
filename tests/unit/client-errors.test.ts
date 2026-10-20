@@ -24,7 +24,11 @@ describe("POST /api/client-errors", () => {
   it.each([
     ["sw_register_failed", "client.sw.sw_register_failed"],
     ["sw_update_failed", "client.sw.sw_update_failed"],
+    ["push_permission_failed", "client.sw.push_permission_failed"],
     ["push_subscribe_failed", "client.sw.push_subscribe_failed"],
+    ["push_save_failed", "client.sw.push_save_failed"],
+    ["push_unsubscribe_failed", "client.sw.push_unsubscribe_failed"],
+    ["push_unsubscribe_all_failed", "client.sw.push_unsubscribe_all_failed"],
     ["checkoff_failed", "client.checkoff.checkoff_failed"],
     ["checkoff_timeout", "client.checkoff.checkoff_timeout"],
     ["uncheck_failed", "client.checkoff.uncheck_failed"],

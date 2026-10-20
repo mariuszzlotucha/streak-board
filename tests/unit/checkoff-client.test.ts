@@ -244,6 +244,27 @@ describe("sendCheckoff", () => {
     expect(requests).toHaveLength(2);
   });
 
+  it("retries a body cut off by the connection, and reports it as a network failure when it stays cut", async () => {
+    const cutBody = () => {
+      const response = new Response("{}", { status: 200 });
+      vi.spyOn(response, "json").mockRejectedValue(new TypeError("network error"));
+      return response;
+    };
+    const cut = respondWith(cutBody);
+
+    await expect(sendCheckoff("checkoff", "task-1", TODAY, cut.fetchImpl)).resolves.toEqual({
+      kind: "failed",
+      reason: "network",
+    });
+    expect(cut.requests).toHaveLength(2);
+
+    let calls = 0;
+    const recovering = respondWith(() => (++calls === 1 ? cutBody() : json(200, { ok: true, period: TODAY })));
+
+    await expect(sendCheckoff("checkoff", "task-1", TODAY, recovering.fetchImpl)).resolves.toEqual({ kind: "saved" });
+    expect(recovering.requests).toHaveLength(2);
+  });
+
   it("leaves no timer behind once the request has settled", async () => {
     vi.useFakeTimers();
 

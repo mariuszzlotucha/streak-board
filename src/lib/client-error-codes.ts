@@ -23,9 +23,24 @@ export type ClientErrorCode = (typeof CLIENT_ERROR_CODES)[number];
 export const CLIENT_ERRORS_PATH = "/api/client-errors";
 
 /**
- * The event a code is reported as. The service worker and reminder codes keep `client.sw.<code>` and the check-off codes
- * report as `client.checkoff.<code>`: the event names are what Sentry groups on, so an existing one never changes.
+ * The event each code is reported as. The service worker and reminder codes keep `client.sw.<code>` and the check-off
+ * codes report as `client.checkoff.<code>`: the event names are what Sentry groups on, so an existing one never
+ * changes. A `Record` makes the compiler ask for the event of every new code.
  */
+const CLIENT_ERROR_EVENTS: Record<ClientErrorCode, string> = {
+  sw_register_failed: "client.sw.sw_register_failed",
+  sw_update_failed: "client.sw.sw_update_failed",
+  push_permission_failed: "client.sw.push_permission_failed",
+  push_subscribe_failed: "client.sw.push_subscribe_failed",
+  push_save_failed: "client.sw.push_save_failed",
+  push_unsubscribe_failed: "client.sw.push_unsubscribe_failed",
+  push_unsubscribe_all_failed: "client.sw.push_unsubscribe_all_failed",
+  checkoff_failed: "client.checkoff.checkoff_failed",
+  checkoff_timeout: "client.checkoff.checkoff_timeout",
+  uncheck_failed: "client.checkoff.uncheck_failed",
+  uncheck_timeout: "client.checkoff.uncheck_timeout",
+};
+
 export function clientErrorEvent(code: ClientErrorCode): string {
-  return code.startsWith("sw_") || code.startsWith("push_") ? `client.sw.${code}` : `client.checkoff.${code}`;
+  return CLIENT_ERROR_EVENTS[code];
 }

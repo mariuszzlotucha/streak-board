@@ -51,6 +51,8 @@ export default function CheckoffControl({
   const [message, setMessage] = useState<string | undefined>();
   const buttonRef = useRef<HTMLButtonElement>(null);
   const focusAfterRender = useRef(false);
+  // Counts taps: the answer to an earlier tap no longer owns the row once a newer tap has started.
+  const tapId = useRef(0);
   // Each number sits alone in its own element: React inserts a comment between adjacent text nodes in server HTML.
   const streak = streakValue(recurrence, snapshot, currentPeriod, checked);
 
@@ -63,7 +65,7 @@ export default function CheckoffControl({
 
   // A page restored from the back/forward cache keeps this state in memory, and the request that set `pending` may have
   // been cut off with the page: give the button back (like `useFormSubmitting`). A late answer of the old request still
-  // runs the tail of `handleSubmit`, which is harmless.
+  // rolls the row back, unless a newer tap has started by then (see `tapId`).
   useEffect(() => {
     function handlePageShow(event: PageTransitionEvent) {
       if (event.persisted) setPending(false);
@@ -79,6 +81,7 @@ export default function CheckoffControl({
     event.preventDefault();
     if (pending) return;
 
+    const tap = ++tapId.current;
     const next = !checked;
     const delta = streakValue(recurrence, snapshot, currentPeriod, next) - streak;
     focusAfterRender.current = true;
@@ -91,8 +94,9 @@ export default function CheckoffControl({
     const action = next ? "checkoff" : "uncheck";
     const result = await sendCheckoff(action, taskId, recurrence === "once" ? null : currentPeriod);
 
+    const superseded = tapId.current !== tap;
     if (result.kind === "saved") {
-      setPending(false);
+      if (!superseded) setPending(false);
       return;
     }
     if (result.kind === "stale") {
@@ -101,6 +105,9 @@ export default function CheckoffControl({
       window.location.reload();
       return;
     }
+    // The session is gone whichever tap this was, so `expired` still reloads below; any other answer to a superseded tap
+    // is dropped: its rollback, message and beacon would describe a row that a newer tap now owns.
+    if (superseded && result.kind !== "expired") return;
     // A rollback can come long after the tap: give focus back only if the user has not moved on in the meantime.
     focusAfterRender.current = document.activeElement === buttonRef.current || document.activeElement === document.body;
     setChecked(!next);
@@ -114,7 +121,8 @@ export default function CheckoffControl({
     setPending(false);
     setMessage(FAILURE_MESSAGES[result.kind]);
     if (result.kind === "failed") {
-      // Tell the operator about a failure the server never saw; `status` is null because the route has logged it.
+      // Tell the operator about a failure the server never saw; `status` has no code, the route logs it (an answer that
+      // never reached the route is a known blind spot).
       const code = checkoffFailureCode(action, result.reason);
       if (code !== null) reportCheckoffFailure(code);
     }

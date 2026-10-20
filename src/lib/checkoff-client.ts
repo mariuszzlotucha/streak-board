@@ -3,7 +3,7 @@
 import { CLIENT_ERRORS_PATH, type ClientErrorCode } from "@/lib/client-error-codes";
 import type { PeriodKey } from "@/lib/streak-rules";
 
-/** How long a tap may wait for the server (the bound of `PENDING_TIMEOUT_MS` in `useFormSubmitting`). */
+/** How long one attempt may wait for the server (the bound of `PENDING_TIMEOUT_MS` in `useFormSubmitting`); a tap makes at most two. */
 export const CHECKOFF_TIMEOUT_MS = 15_000;
 
 export type CheckoffAction = "checkoff" | "uncheck";
@@ -25,14 +25,16 @@ export type CheckoffSendResult =
 
 /**
  * Why a request failed:
- * - `network`: the fetch threw before a response arrived (offline, a dropped connection).
+ * - `network`: the fetch threw before a response arrived (offline, a dropped connection), or the connection dropped while
+ *   the body was read.
  * - `timeout`: no answer within `CHECKOFF_TIMEOUT_MS`, before or while the body was read.
- * - `status`: the Worker answered something other than 200, a redirect, 403 or 404; the route has logged it.
+ * - `status`: something answered other than 200, a redirect, 403 or 404. The route logs its own failures; an answer
+ *   from the edge that never reached the route (a 429, a Worker exception page) leaves no trace, a known limit.
  * - `body`: a 200 whose body is not `{ ok: true, period }`, or is not JSON at all.
  */
 export type CheckoffFailureReason = "network" | "timeout" | "status" | "body";
 
-/** The client-error code that reports a failure to the operator, or null when the server already logged it. */
+/** The client-error code that reports a failure to the operator, or null for `status`, which the route logs itself. */
 export function checkoffFailureCode(action: CheckoffAction, reason: CheckoffFailureReason): ClientErrorCode | null {
   if (reason === "status") return null;
   return reason === "timeout" ? `${action}_timeout` : `${action}_failed`;
@@ -93,9 +95,11 @@ async function attemptCheckoff(
     let body: { ok?: unknown; period?: unknown } | null;
     try {
       body = (await response.json()) as { ok?: unknown; period?: unknown } | null;
-    } catch {
-      // The answer arrived, so a body that does not parse is not a network failure; only our own abort is.
-      return { kind: "failed", reason: controller.signal.aborted ? "timeout" : "body" };
+    } catch (error) {
+      // Our own abort is a timeout, and a body that is not JSON (a SyntaxError) is final. Any other rejection is the
+      // connection dropping mid-body: the route may have saved the row, so it is a `network` failure and goes again.
+      if (controller.signal.aborted) return { kind: "failed", reason: "timeout" };
+      return { kind: "failed", reason: error instanceof SyntaxError ? "body" : "network" };
     }
     if (body?.ok !== true || typeof body.period !== "string") return { kind: "failed", reason: "body" };
     return expectedPeriod === null || body.period === expectedPeriod ? { kind: "saved" } : { kind: "stale" };
