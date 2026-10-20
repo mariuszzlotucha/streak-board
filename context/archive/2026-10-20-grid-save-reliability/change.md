@@ -1,10 +1,10 @@
 ---
 change_id: grid-save-reliability
 title: Grid save reliability
-status: impl_reviewed
+status: archived
 created: 2026-10-20
 updated: 2026-10-20
-archived_at: null
+archived_at: 2026-10-20T10:27:28Z
 ---
 
 ## Notes
