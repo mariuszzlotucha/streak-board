@@ -44,7 +44,7 @@ The checkout is the PR merge commit at depth 1, so local git history is useless.
 
 ## 5. Large diffs
 
-- When the diff is too large to read whole (over about 40,000 characters), rank the changed files by risk: the risk surfaces in section 7 first, then code before docs. Read the top files in full from the checkout.
+- When the diff is too large to read whole (over about 40,000 characters), rank the changed files by risk: the risk surfaces in section 7 first, then code, with documentation last. Read the top files in full from the checkout.
 - List the files you did not cover under "Not verified". Never pipe the diff through `head` and present the result as a full review.
 
 ## 6. What to look for
@@ -78,6 +78,7 @@ Do not run generic framework checklists.
 
 ## 8. Finding rules
 
+- Do not review documentation: no finding on the content, wording, accuracy or absence of Markdown files, README sections, plans, `context/` files or code comments. Read them only as input (the PR body, `CLAUDE.md`, `lessons.md`, `plan.md`), and in a large diff leave them out of the ranking. A rule that code must change together with a page (the privacy policy `src/pages/privacy.astro` and `src/components/privacy/`) is about code and still applies.
 - Report only issues the diff introduces or touches, each with a concrete scenario and its impact.
 - A suspicion you cannot point to in the code is not a finding; put it under "Not verified" if it matters.
 - Do not re-raise what the PR body, the plan or a code comment documents as an accepted trade-off, unless that reasoning is wrong; then say why it is wrong.
@@ -121,7 +122,7 @@ Commit 1a2b3c4. One to three sentences on why this verdict.
 ### Findings
 
 - **MEDIUM** src/pages/api/tasks/create.ts:42 — The returned Supabase error is mapped to a redirect and never reported (inline).
-- **LOW** README.md:10 — One sentence on the problem and the fix.
+- **LOW** src/lib/site.ts:10 — One sentence on the problem and the fix.
 
 ### Not verified
 
