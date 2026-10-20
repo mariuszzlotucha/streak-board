@@ -1483,7 +1483,11 @@ begin
   -- service_role (the test harnesses only) holds the four DML privileges on every data table from an explicit grant
   -- (20261020233514_grant_service_role_table_privileges.sql), not from Supabase's default privileges, which stop
   -- covering new tables on 2026-10-30. One direction only: a database built before that date also holds the defaults.
-  foreach v_table in array array['groups', 'group_members', 'tasks', 'task_participants', 'task_checkoffs', 'nicknames', 'push_subscriptions'] loop
+  -- The tables come from the catalog, so a new table is checked without editing this list; reminder_secret is the one
+  -- table no API role may hold anything on.
+  for v_table in
+    select tablename from pg_tables where schemaname = 'public' and tablename <> 'reminder_secret' order by tablename
+  loop
     perform rls_check.expect_value(
       -- One call per privilege: has_table_privilege with a comma list is true when any one of them is held.
       format($q$select bool_and(has_table_privilege('service_role', %L, p))
