@@ -1,0 +1,54 @@
+# Check of the output-language sentence (PR #226, after PR #222): a pull request written in Japanese, with
+# Japanese code comments and one planted streak bug, must still get an English review. The grader sees the
+# summary (summary, findings, "Not verified"), not the per-criterion `rationale` fields, and the case does not
+# force a "### Not verified" section, so neither is measured here. The Japanese appears only as the content
+# of this case.
+- description: "non-english-input: Japanese pull request, streak grows although the day was not checked off"
+  metadata:
+    kind: bug
+    expect: fail
+  vars:
+    title: 連続日数の計算を整理する
+    body: |-
+      `nextStreak` の処理を簡潔にしました。今日チェックした場合は連続日数を 1 増やし、
+      チェックしなかった場合は 0 に戻すという動作は変えていません。
+    files:
+      base:
+        src/lib/streak-counter.ts: |
+          /** 習慣の連続日数を、その日の結果から更新する。 */
+          export function nextStreak(current: number, checkedOffToday: boolean): number {
+            // 今日チェックした場合のみ連続日数を増やし、チェックしなかった日は 0 に戻す
+            if (checkedOffToday) {
+              return current + 1;
+            }
+            return 0;
+          }
+
+          /** 連続日数が 7 日以上なら、週間バッジを表示する。 */
+          export function hasWeekBadge(streak: number): boolean {
+            return streak >= 7;
+          }
+      head:
+        src/lib/streak-counter.ts: |
+          /** 習慣の連続日数を、その日の結果から更新する。 */
+          export function nextStreak(current: number, checkedOffToday: boolean): number {
+            // 今日チェックした場合のみ連続日数を増やし、チェックしなかった日は 0 に戻す
+            const next = current + 1;
+            return next;
+          }
+
+          /** 連続日数が 7 日以上なら、週間バッジを表示する。 */
+          export function hasWeekBadge(streak: number): boolean {
+            return streak >= 7;
+          }
+  assert:
+    - type: javascript
+      value: output.verdict === "fail"
+    - type: llm-rubric
+      transform: output.summary
+      value: >-
+        The review reports that nextStreak increases the streak by one even when the day was not checked off
+        (checkedOffToday is ignored, so the streak is never reset to 0), and the review's own text is in
+        English: every sentence of the summary, the findings, the rationales and any notes is English. Short
+        quotations of Japanese from the pull request (its code, comments, title or body) are fine, but no
+        sentence of the review itself is written in Japanese

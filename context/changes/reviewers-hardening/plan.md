@@ -227,20 +227,20 @@ None: no schema, no migration, no app code. PR A and PR B touch `packages/code-r
 #### Manual
 
 - [x] 1.5 The dry-run on PR #226 exits 0 and its summary is English, with no documentation finding and no mention — 4e78776
-- [ ] 1.6 The owner reads PR A, CI is green and PR A is merged
+- [x] 1.6 The owner reads PR A, CI is green and PR A is merged — de080b2
 
 ### Phase 2: Paid eval session: Japanese-input case and the sentence for all natural-language text (PR B)
 
 #### Automated
 
-- [ ] 2.1 Unit tests pass, including the parse of the new case
-- [ ] 2.2 Lint passes
-- [ ] 2.3 The eval configs validate
-- [ ] 2.4 No stale "15 cases" count outside the archive
+- [x] 2.1 Unit tests pass, including the parse of the new case — 31e1fa7
+- [x] 2.2 Lint passes — 31e1fa7
+- [x] 2.3 The eval configs validate — 31e1fa7
+- [x] 2.4 No stale "15 cases" count outside the archive — 31e1fa7
 
 #### Manual
 
-- [ ] 2.5 The owner gave the go after the quoted estimate and the reported cost of the session is at most 1.5 USD
-- [ ] 2.6 `new` passes the new case and the cases that passed on 2026-10-20, with no `length` and `pr-103` reasoning below 24,576 tokens
-- [ ] 2.7 `old` was run only on the cases `new` missed and no regression is confirmed
+- [x] 2.5 The owner gave the go after the quoted estimate and the reported cost of the session is at most 1.5 USD — 31e1fa7
+- [x] 2.6 `new` passes the new case and the cases that passed on 2026-10-20, with no `length` and `pr-103` reasoning below 24,576 tokens — 31e1fa7
+- [x] 2.7 `old` was run only on the cases `new` missed and no regression is confirmed — 31e1fa7
 - [ ] 2.8 The owner reads PR B, CI is green and PR B is merged
