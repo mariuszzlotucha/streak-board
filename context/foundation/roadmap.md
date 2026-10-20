@@ -9,7 +9,7 @@ main_goal: quality
 top_blocker: none
 milestone_id: grid-polish
 milestone_seq: 4
-milestone_status: open
+milestone_status: done
 ---
 
 # Roadmap: StreakBoard
@@ -20,7 +20,7 @@ milestone_status: open
 
 ## Milestone
 
-**M-4: Siatka odznaczeń: czytelna na telefonie, z jasnym stanem i szybkim zapisem** — Status: open
+**M-4: Siatka odznaczeń: czytelna na telefonie, z jasnym stanem i szybkim zapisem** — Status: done
 
 - **Intent:** Poprawić siatkę odznaczeń grupy (S-13), którą członkowie grupy otwierają przy każdym tasku: ma być czytelna na ekranie telefonu, pokazywać wyraźnie, co już odznaczone, co zaległe i co zostało zapisane, oraz zapisywać odznaczenie szybko i bez cichych błędów. Zakres dotyczy widoku siatki; decyzją właściciela z 2026-10-19 kamień milowy niesie też wycinek jakościowy S-23 (kotwica MS-04): porządki po health checku, a decyzją z 2026-10-20 drugi, S-24 (kotwica MS-05): dokończenie sprawdzenia recenzentów PR po zmianach z PR #225 i #226. Oba bez zmiany zachowania widocznego dla użytkownika. Pytanie właściciela o north star siatki (jak sprawdzić, czy działa, bez analityki) zostaje otwarte i nie blokuje tego kamienia milowego.
 - **Source materials:** opis właściciela z 2026-10-19 (kotwice MS-01 do MS-03, wybór „Czytelność na telefonie”, „Stan i informacja zwrotna”, „Szybkość i błędy zapisu”; decyzja: tylko poprawka widoku, bez pomiaru). Główne ograniczenia z istniejących dokumentów: PRD §Non-Functional Requirements (pełna używalność na ekranie smartfona), guardrail PRD (odznaczenie natychmiastowe), polityka prywatności bez analityki. Wycinek S-13 pozostaje wzorcem zakresu (`context/archive/2026-10-17-checkoff-grid/`). Dla S-23: `context/foundation/health-check.md` (2026-10-19) i `context/foundation/open-items.md` §6 (decyzja właściciela 2026-10-19: porządki z health checku wchodzą do M-4, wzorem wycinków jakościowych S-08, S-10 i S-12 w M-2). Dla S-24: `context/archive/2026-10-20-reviewer-output-language/eval-results.md` (eval zdania o języku, 2026-10-20) i `context/foundation/open-items.md` §8 (decyzja właściciela 2026-10-20: poprawki po obu zmianach recenzentów w jednym wycinku jakościowym M-4).
@@ -176,6 +176,7 @@ Jedno pytanie zostaje otwarte u właściciela: jak bez analityki sprawdzić, czy
 - **M-3: Historia, przypomnienia i instalacja: siatka odznaczeń grupy, przypomnienie o niewykonanym tasku i aplikacja PWA** (`history-and-reminders`) — closed 2026-10-17. S-13, S-16, S-17 i S-18 `done`: członek grupy widzi siatkę odznaczeń przy każdym tasku, przypomnienia Web Push przychodzą o 20:00 czasu warszawskiego, aplikację da się zainstalować jako PWA, a publiczna powierzchnia ma nagłówki bezpieczeństwa, CSP w trybie Report-Only i `security.txt`, a domeny nie da się podrobić w poczcie; zmiany zarchiwizowane w `context/archive/` (2026-10-17). Przy zamknięciu strona główna przestała opisywać aplikację jako wspólny arkusz i opisuje siatkę przy każdym tasku (PR #187). Właściciel nie otwiera kolejnego kamienia milowego (decyzja 2026-10-17).
 - **M-3: Historia, przypomnienia i instalacja: siatka odznaczeń grupy, przypomnienie o niewykonanym tasku i aplikacja PWA** (`history-and-reminders`) — reopened 2026-10-18. Decyzja właściciela: zachęta do instalacji aplikacji (S-19, kotwica MS-05) należy jeszcze do M-3, więc kamień milowy jest znowu otwarty; wpis o zamknięciu powyżej zostaje bez zmian.
 - **M-3: Historia, przypomnienia i instalacja: siatka odznaczeń grupy, przypomnienie o niewykonanym tasku i aplikacja PWA** (`history-and-reminders`) — closed 2026-10-18. Po ponownym otwarciu S-19 `done`: aplikacja otwarta w przeglądarce sama zachęca do instalacji — karta „Install StreakBoard” na dashboardzie (do „Not now” na danym urządzeniu) i stały blok przy przełączniku przypomnień w ustawieniach podają kroki dla danej przeglądarki (w Chrome i Edge przycisk instalacji, gdy przeglądarka na to pozwala, w przeglądarce komunikatora prośbę o otwarcie strony w Safari albo Chrome) i powód (na iPhonie przypomnienia działają tylko z zainstalowanej aplikacji), a w zainstalowanej aplikacji zachęty nie ma; zmiana zarchiwizowana w `context/archive/2026-10-18-install-promotion/`. Przy zamknięciu nagłówek przykleił się do góry ekranu, a strona omija pasek stanu i dolną krawędź ekranu (`viewport-fit=cover` i wcięcia `env(safe-area-inset-*)`), bo na iPhonie kolegi pasek stanu nachodził na nagłówek (PR #198). Kontrole na urządzeniach czekają w `context/changes/deployment/deployment-plan.md` (Phase 24 i 26). Właściciel nie otwiera kolejnego kamienia milowego (decyzja 2026-10-17, potwierdzona 2026-10-18).
+- **M-4: Siatka odznaczeń: czytelna na telefonie, z jasnym stanem i szybkim zapisem** (`grid-polish`) — closed 2026-10-20. S-20 do S-24 `done`: siatka czytelna na telefonie, stan i potwierdzenie zapisu, błąd zapisu widoczny, zależności uporządkowane, recenzenci PR sprawdzeni po zmianach z #225 i #226.
 
 ## Done
 
