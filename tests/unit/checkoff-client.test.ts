@@ -12,10 +12,22 @@
  *   rejected  403 or 404: the server says the action is not allowed, or the task is gone
  *   expired   a redirect: the middleware sends a signed-out request to the sign-in page, and a browser shows a manual
  *             redirect as an opaque response with status 0. Retrying cannot succeed, so the island reloads instead
- *   failed    everything else: a network error, no answer within 15 s, 5xx, a body that is not the JSON the routes send
+ *   failed    everything else, with the reason: `network` (the fetch threw), `timeout` (no answer within 15 s), `status`
+ *             (any other status, 5xx included) or `body` (a 200 that is not the JSON the routes send)
+ *   retry     S-22: a request with no server answer (`network`, `timeout`) is sent once more at once, each attempt with
+ *             its own 15 s abort, so the worst case is 30 s; what the server answered, and a bad body, is never retried
+ *   code      `checkoffFailureCode` picks the client-error code from the action and the reason (`status` has none: the
+ *             route logged it); `reportCheckoffFailure` sends it as a bare code to `/api/client-errors`
  */
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { CHECKOFF_TIMEOUT_MS, sendCheckoff } from "@/lib/checkoff-client";
+import { CLIENT_ERRORS_PATH } from "@/lib/client-error-codes";
+import {
+  CHECKOFF_TIMEOUT_MS,
+  checkoffFailureCode,
+  reportCheckoffFailure,
+  sendCheckoff,
+  type CheckoffFailureReason,
+} from "@/lib/checkoff-client";
 
 const TODAY = "2026-10-02";
 
@@ -42,6 +54,7 @@ const send = (response: Response | (() => Response | Promise<Response>), expecte
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.unstubAllGlobals();
 });
 
 describe("sendCheckoff", () => {
@@ -90,35 +103,136 @@ describe("sendCheckoff", () => {
     await expect(send(opaqueRedirect)).resolves.toEqual({ kind: "expired" });
   });
 
-  it.each<[string, () => Response | Promise<Response>]>([
-    ["a network error", () => Promise.reject(new TypeError("Failed to fetch"))],
-    ["a 500 server error", () => json(500, { ok: false, error: "unknown" })],
-    ["a 503 (not configured)", () => json(503, { ok: false, error: "not_configured" })],
-    ["a 400 (malformed id)", () => json(400, { ok: false, error: "invalid" })],
-    ["a 500 that carries an ok body", () => json(500, { ok: true, period: TODAY })],
+  it.each<[string, CheckoffFailureReason, () => Response | Promise<Response>]>([
+    ["a 500 server error", "status", () => json(500, { ok: false, error: "unknown" })],
+    ["a 503 (not configured)", "status", () => json(503, { ok: false, error: "not_configured" })],
+    ["a 400 (malformed id)", "status", () => json(400, { ok: false, error: "invalid" })],
+    ["a 500 that carries an ok body", "status", () => json(500, { ok: true, period: TODAY })],
     [
       "an HTML page with status 200",
+      "body",
       () => new Response("<html>Sign in</html>", { status: 200, headers: { "Content-Type": "text/html" } }),
     ],
-    ["a 200 that says ok is false", () => json(200, { ok: false, error: "forbidden" })],
-    ["a 200 without a period", () => json(200, { ok: true })],
-    ["a 200 with an empty object", () => json(200, {})],
-  ])("fails on %s", async (_answer, respond) => {
-    await expect(send(respond)).resolves.toEqual({ kind: "failed" });
+    ["a 200 that says ok is false", "body", () => json(200, { ok: false, error: "forbidden" })],
+    ["a 200 without a period", "body", () => json(200, { ok: true })],
+    ["a 200 with an empty object", "body", () => json(200, {})],
+    ["a 200 with a null body", "body", () => json(200, null)],
+  ])("fails on %s with the reason %s, and does not retry", async (_answer, reason, respond) => {
+    const { fetchImpl, requests } = respondWith(respond);
+
+    await expect(sendCheckoff("checkoff", "task-1", TODAY, fetchImpl)).resolves.toEqual({ kind: "failed", reason });
+    expect(requests).toHaveLength(1);
   });
 
-  it("fails when no answer comes within 15 seconds, and aborts the request", async () => {
-    expect(CHECKOFF_TIMEOUT_MS).toBe(15_000);
+  it("sends the request again after a thrown fetch, and is saved when the second attempt succeeds", async () => {
+    let calls = 0;
+    const { fetchImpl, requests } = respondWith(() =>
+      ++calls === 1 ? Promise.reject(new TypeError("Failed to fetch")) : json(200, { ok: true, period: TODAY }),
+    );
+
+    await expect(sendCheckoff("checkoff", "task-1", TODAY, fetchImpl)).resolves.toEqual({ kind: "saved" });
+    expect(requests).toHaveLength(2);
+    // Each attempt carries the same request, with a signal of its own.
+    expect(requests.map((request) => request.url)).toEqual(["/api/tasks/checkoff", "/api/tasks/checkoff"]);
+    expect(requests[0]?.init.signal).not.toBe(requests[1]?.init.signal);
+  });
+
+  it("fails with the reason network after two thrown fetches", async () => {
+    const { fetchImpl, requests } = respondWith(() => Promise.reject(new TypeError("Failed to fetch")));
+
+    await expect(sendCheckoff("checkoff", "task-1", TODAY, fetchImpl)).resolves.toEqual({
+      kind: "failed",
+      reason: "network",
+    });
+    expect(requests).toHaveLength(2);
+  });
+
+  it("makes a single attempt when told to", async () => {
+    const { fetchImpl, requests } = respondWith(() => Promise.reject(new TypeError("Failed to fetch")));
+
+    await expect(sendCheckoff("checkoff", "task-1", TODAY, fetchImpl, 1)).resolves.toEqual({
+      kind: "failed",
+      reason: "network",
+    });
+    expect(requests).toHaveLength(1);
+  });
+
+  it("asks before the second attempt and stops when the caller says no", async () => {
+    const vetoed = respondWith(() => Promise.reject(new TypeError("Failed to fetch")));
+    const no = vi.fn(() => false);
+
+    await expect(sendCheckoff("checkoff", "task-1", TODAY, vetoed.fetchImpl, 2, no)).resolves.toEqual({
+      kind: "failed",
+      reason: "network",
+    });
+    expect(vetoed.requests).toHaveLength(1);
+    expect(no).toHaveBeenCalledOnce();
+
+    let calls = 0;
+    const allowed = respondWith(() =>
+      ++calls === 1 ? Promise.reject(new TypeError("Failed to fetch")) : json(200, { ok: true, period: TODAY }),
+    );
+    const yes = vi.fn(() => true);
+
+    await expect(sendCheckoff("checkoff", "task-1", TODAY, allowed.fetchImpl, 2, yes)).resolves.toEqual({
+      kind: "saved",
+    });
+    expect(allowed.requests).toHaveLength(2);
+    expect(yes).toHaveBeenCalledOnce();
+  });
+
+  it("does not ask when there is nothing to retry", async () => {
+    const shouldRetry = vi.fn(() => true);
+    const { fetchImpl, requests } = respondWith(() => json(500, { ok: false, error: "unknown" }));
+
+    await expect(sendCheckoff("checkoff", "task-1", TODAY, fetchImpl, 2, shouldRetry)).resolves.toEqual({
+      kind: "failed",
+      reason: "status",
+    });
+    expect(requests).toHaveLength(1);
+    expect(shouldRetry).not.toHaveBeenCalled();
+  });
+
+  it("does not resend after a timeout when the caller says no", async () => {
     vi.useFakeTimers();
-    let signal: AbortSignal | null | undefined;
+    const { fetchImpl, requests } = respondWith(
+      (init) =>
+        new Promise<Response>((_resolve, reject) => {
+          init.signal?.addEventListener("abort", () => {
+            reject(new DOMException("The operation was aborted.", "AbortError"));
+          });
+        }),
+    );
+    const result = sendCheckoff("checkoff", "task-1", TODAY, fetchImpl, 2, () => false);
+
+    await vi.advanceTimersByTimeAsync(30_000);
+
+    await expect(result).resolves.toEqual({ kind: "failed", reason: "timeout" });
+    expect(requests).toHaveLength(1);
+  });
+
+  /** A fetch that never answers and rejects when its request is aborted, like a browser's. */
+  function hangingFetch(answers: (call: number) => Response | undefined = () => undefined) {
+    const signals: (AbortSignal | null | undefined)[] = [];
+    const starts: number[] = [];
     const { fetchImpl } = respondWith((init) => {
-      signal = init.signal;
+      signals.push(init.signal);
+      starts.push(Date.now());
+      const answer = answers(signals.length);
+      if (answer) return answer;
       return new Promise<Response>((_resolve, reject) => {
         init.signal?.addEventListener("abort", () => {
           reject(new DOMException("The operation was aborted.", "AbortError"));
         });
       });
     });
+    return { fetchImpl, signals, starts };
+  }
+
+  it("fails with the reason timeout when no answer comes within 15 seconds, after a second attempt of its own", async () => {
+    expect(CHECKOFF_TIMEOUT_MS).toBe(15_000);
+    vi.useFakeTimers();
+    const { fetchImpl, signals, starts } = hangingFetch();
     let settled = false;
     const result = sendCheckoff("checkoff", "task-1", TODAY, fetchImpl);
     void result.then(() => {
@@ -126,12 +240,83 @@ describe("sendCheckoff", () => {
     });
 
     await vi.advanceTimersByTimeAsync(14_999);
+    expect(signals).toHaveLength(1);
+    expect(signals[0]?.aborted).toBe(false);
+
+    // The first abort starts the second attempt at once.
+    await vi.advanceTimersByTimeAsync(1);
+    expect(signals).toHaveLength(2);
+    expect(signals[0]?.aborted).toBe(true);
+    expect(signals[1]?.aborted).toBe(false);
+    expect(starts[1] - starts[0]).toBe(15_000);
     expect(settled).toBe(false);
-    expect(signal?.aborted).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(14_999);
+    expect(settled).toBe(false);
 
     await vi.advanceTimersByTimeAsync(1);
-    await expect(result).resolves.toEqual({ kind: "failed" });
-    expect(signal?.aborted).toBe(true);
+    await expect(result).resolves.toEqual({ kind: "failed", reason: "timeout" });
+    expect(signals[1]?.aborted).toBe(true);
+    expect(signals).toHaveLength(2);
+    expect(starts[1] - starts[0]).toBe(15_000);
+  });
+
+  it("is saved when the first attempt times out and the second is answered", async () => {
+    vi.useFakeTimers();
+    const { fetchImpl, signals, starts } = hangingFetch((call) =>
+      call === 2 ? json(200, { ok: true, period: TODAY }) : undefined,
+    );
+    const result = sendCheckoff("checkoff", "task-1", TODAY, fetchImpl);
+
+    await vi.advanceTimersByTimeAsync(15_000);
+
+    await expect(result).resolves.toEqual({ kind: "saved" });
+    expect(signals).toHaveLength(2);
+    expect(starts[1] - starts[0]).toBe(15_000);
+  });
+
+  it("counts an abort while the body is read as a timeout, and a body that does not parse as a body failure", async () => {
+    vi.useFakeTimers();
+    const stalledBody = (init: RequestInit) => {
+      const response = new Response("{}", { status: 200 });
+      vi.spyOn(response, "json").mockImplementation(
+        () =>
+          new Promise((_resolve, reject) => {
+            init.signal?.addEventListener("abort", () => {
+              reject(new DOMException("The operation was aborted.", "AbortError"));
+            });
+          }),
+      );
+      return response;
+    };
+    const { fetchImpl, requests } = respondWith(stalledBody);
+    const result = sendCheckoff("checkoff", "task-1", TODAY, fetchImpl);
+
+    await vi.advanceTimersByTimeAsync(30_000);
+
+    await expect(result).resolves.toEqual({ kind: "failed", reason: "timeout" });
+    expect(requests).toHaveLength(2);
+  });
+
+  it("retries a body cut off by the connection, and reports it as a network failure when it stays cut", async () => {
+    const cutBody = () => {
+      const response = new Response("{}", { status: 200 });
+      vi.spyOn(response, "json").mockRejectedValue(new TypeError("network error"));
+      return response;
+    };
+    const cut = respondWith(cutBody);
+
+    await expect(sendCheckoff("checkoff", "task-1", TODAY, cut.fetchImpl)).resolves.toEqual({
+      kind: "failed",
+      reason: "network",
+    });
+    expect(cut.requests).toHaveLength(2);
+
+    let calls = 0;
+    const recovering = respondWith(() => (++calls === 1 ? cutBody() : json(200, { ok: true, period: TODAY })));
+
+    await expect(sendCheckoff("checkoff", "task-1", TODAY, recovering.fetchImpl)).resolves.toEqual({ kind: "saved" });
+    expect(recovering.requests).toHaveLength(2);
   });
 
   it("leaves no timer behind once the request has settled", async () => {
@@ -142,5 +327,45 @@ describe("sendCheckoff", () => {
 
     await send(() => Promise.reject(new TypeError("Failed to fetch")));
     expect(vi.getTimerCount()).toBe(0);
+  });
+});
+
+describe("checkoffFailureCode", () => {
+  it.each<["checkoff" | "uncheck", CheckoffFailureReason, string | null]>([
+    ["checkoff", "network", "checkoff_failed"],
+    ["checkoff", "body", "checkoff_failed"],
+    ["checkoff", "timeout", "checkoff_timeout"],
+    ["checkoff", "status", null],
+    ["uncheck", "network", "uncheck_failed"],
+    ["uncheck", "body", "uncheck_failed"],
+    ["uncheck", "timeout", "uncheck_timeout"],
+    ["uncheck", "status", null],
+  ])("maps %s and %s to %s", (action, reason, code) => {
+    expect(checkoffFailureCode(action, reason)).toBe(code);
+  });
+});
+
+describe("reportCheckoffFailure", () => {
+  it("hands the bare code to the beacon with the client-error path", () => {
+    const beacon = vi.fn(() => true);
+
+    reportCheckoffFailure("uncheck_timeout", beacon);
+
+    expect(beacon).toHaveBeenCalledExactlyOnceWith(CLIENT_ERRORS_PATH, "uncheck_timeout");
+  });
+
+  it("sends through the browser's sendBeacon by default", () => {
+    const sendBeacon = vi.fn(() => true);
+    vi.stubGlobal("navigator", { sendBeacon });
+
+    reportCheckoffFailure("checkoff_timeout");
+
+    expect(sendBeacon).toHaveBeenCalledExactlyOnceWith(CLIENT_ERRORS_PATH, "checkoff_timeout");
+  });
+
+  it("does nothing without a browser to send from", () => {
+    expect(() => {
+      reportCheckoffFailure("checkoff_failed");
+    }).not.toThrow();
   });
 });

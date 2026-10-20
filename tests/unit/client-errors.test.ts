@@ -19,13 +19,27 @@ afterEach(() => {
 });
 
 describe("POST /api/client-errors", () => {
-  it.each(["sw_register_failed", "sw_update_failed"])("reports the known code %s and answers 204", async (code) => {
+  // The event names are what Sentry groups on: the service worker and reminder codes keep `client.sw.`, the check-off
+  // codes report as `client.checkoff.`.
+  it.each([
+    ["sw_register_failed", "client.sw.sw_register_failed"],
+    ["sw_update_failed", "client.sw.sw_update_failed"],
+    ["push_permission_failed", "client.sw.push_permission_failed"],
+    ["push_subscribe_failed", "client.sw.push_subscribe_failed"],
+    ["push_save_failed", "client.sw.push_save_failed"],
+    ["push_unsubscribe_failed", "client.sw.push_unsubscribe_failed"],
+    ["push_unsubscribe_all_failed", "client.sw.push_unsubscribe_all_failed"],
+    ["checkoff_failed", "client.checkoff.checkoff_failed"],
+    ["checkoff_timeout", "client.checkoff.checkoff_timeout"],
+    ["uncheck_failed", "client.checkoff.uncheck_failed"],
+    ["uncheck_timeout", "client.checkoff.uncheck_timeout"],
+  ])("reports the known code %s as %s and answers 204", async (code, event) => {
     const response = await call(code);
 
     expect(response.status).toBe(204);
     expect(response.headers.get("Cache-Control")).toBe("no-store");
     expect(reportError).toHaveBeenCalledOnce();
-    expect(vi.mocked(reportError).mock.calls[0][0]).toBe(`client.sw.${code}`);
+    expect(vi.mocked(reportError).mock.calls[0][0]).toBe(event);
     expect((vi.mocked(reportError).mock.calls[0][1] as Error).message).toBe(code);
   });
 

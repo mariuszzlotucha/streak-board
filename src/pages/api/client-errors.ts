@@ -1,7 +1,7 @@
 import type { APIRoute } from "astro";
 import { reportError, requestFields } from "@/lib/log";
 import { readAtMost } from "@/lib/read-body";
-import { CLIENT_ERROR_CODES, type ClientErrorCode } from "@/lib/pwa/register";
+import { CLIENT_ERROR_CODES, clientErrorEvent, type ClientErrorCode } from "@/lib/client-error-codes";
 
 export const prerender = false;
 
@@ -30,6 +30,6 @@ export const POST: APIRoute = async (context) => {
   if (!(CLIENT_ERROR_CODES as readonly string[]).includes(code)) {
     return new Response(null, { status: 400, headers });
   }
-  reportError(`client.sw.${code as ClientErrorCode}`, new Error(code), requestFields(context));
+  reportError(clientErrorEvent(code as ClientErrorCode), new Error(code), requestFields(context));
   return new Response(null, { status: 204, headers });
 };

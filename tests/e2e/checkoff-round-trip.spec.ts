@@ -170,7 +170,9 @@ test.describe("risk #4: check-off round trip", () => {
     // The server fails the save; the response is held until the optimistic state has been asserted.
     let release!: () => void;
     const held = new Promise<void>((resolve) => (release = resolve));
+    let requests = 0;
     await page.route("**/api/tasks/checkoff", async (route) => {
+      requests += 1;
       await held;
       await route.fulfill({ status: 500, body: "" });
     });
@@ -180,6 +182,87 @@ test.describe("risk #4: check-off round trip", () => {
     release();
 
     // Rollback: the button, the streak, the cell and the board return to their unticked state.
+    await expect(row.getByRole("button", { name: `Mark done ${title}` })).toBeVisible();
+    await expect(row.getByRole("button", { name: `Mark done ${title}` })).not.toHaveAttribute("aria-disabled", "true");
+    await expect(streakOf(row)).toHaveText("0");
+    await expect(viewerCell(page, title, owner.nickname, "open")).toBeAttached();
+    await expectViewerTotal(page, owner.nickname, 0);
+    // The server answered, so the failure is final: no second attempt (it would double the server's log line).
+    await expect(row.getByRole("alert")).toHaveText("Could not save. Try again.");
+    expect(requests).toBe(1);
+  });
+
+  test("an aborted request is retried and the tick converges", async ({ page }) => {
+    const token = uniqueToken("tickretry");
+    test.info().annotations.push({ type: "test-data", description: token });
+
+    const owner = await createPersona(token);
+    personas.push(owner);
+    const groupId = await createGroupAs(owner, `Group ${token}`);
+    const title = `Task ${token}`;
+    await createTaskAs(owner, groupId, title);
+
+    await signInThroughForm(page, owner.email, owner.password);
+    await waitForHydration(page);
+    const row = taskRow(page, title);
+    await expect(viewerCell(page, title, owner.nickname, "open")).toBeAttached();
+
+    // The connection drops on the first attempt; the second one reaches the real server.
+    let requests = 0;
+    await page.route("**/api/tasks/checkoff", async (route) => {
+      requests += 1;
+      if (requests === 1) await route.abort("connectionfailed");
+      else await route.fallback();
+    });
+
+    await row.getByRole("button", { name: `Mark done ${title}` }).click();
+    await expect(row.getByRole("button", { name: `Undo ${title}` })).not.toHaveAttribute("aria-disabled", "true");
+
+    // The retry saved it: nothing rolled back, no message, and exactly two attempts were made.
+    expect(requests).toBe(2);
+    await expect(row.getByText("Done today", { exact: true })).toBeVisible();
+    await expect(viewerCell(page, title, owner.nickname, "done")).toBeAttached();
+    await expect(row.getByRole("alert")).toHaveCount(0);
+
+    // The risk assertion: the server has the row.
+    await page.reload();
+    await expect(row.getByText("Done today", { exact: true })).toBeVisible();
+    await expect(streakOf(row)).toHaveText("1");
+    await expect(viewerCell(page, title, owner.nickname, "done")).toBeAttached();
+  });
+
+  test("two aborted attempts roll back and send the code", async ({ page }) => {
+    const token = uniqueToken("tickabort");
+    test.info().annotations.push({ type: "test-data", description: token });
+
+    const owner = await createPersona(token);
+    personas.push(owner);
+    const groupId = await createGroupAs(owner, `Group ${token}`);
+    const title = `Task ${token}`;
+    await createTaskAs(owner, groupId, title);
+
+    await signInThroughForm(page, owner.email, owner.password);
+    await waitForHydration(page);
+    const row = taskRow(page, title);
+    await expect(viewerCell(page, title, owner.nickname, "open")).toBeAttached();
+
+    // Stub only the check-off route: the client-error route is the real one, and its 204 is enough.
+    let requests = 0;
+    await page.route("**/api/tasks/checkoff", async (route) => {
+      requests += 1;
+      await route.abort("connectionfailed");
+    });
+    // Started before the click: a beacon shows in the request log as a `ping`.
+    const beacon = page.waitForRequest((request) => new URL(request.url()).pathname === "/api/client-errors");
+
+    await row.getByRole("button", { name: `Mark done ${title}` }).click();
+
+    const report = await beacon;
+    expect(report.method()).toBe("POST");
+    expect(report.postData()).toBe("checkoff_failed");
+    expect(requests).toBe(2);
+
+    await expect(row.getByRole("alert")).toHaveText("Could not save. Try again.");
     await expect(row.getByRole("button", { name: `Mark done ${title}` })).toBeVisible();
     await expect(row.getByRole("button", { name: `Mark done ${title}` })).not.toHaveAttribute("aria-disabled", "true");
     await expect(streakOf(row)).toHaveText("0");

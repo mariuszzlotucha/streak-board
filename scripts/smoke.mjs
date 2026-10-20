@@ -846,6 +846,12 @@ const steps = [
     () => clientError("sw_register_failed"),
     { status: 204, header: { name: "Cache-Control", includes: "no-store" } },
   ],
+  [
+    "client error endpoint accepts a check-off code",
+    () => clientError("checkoff_failed"),
+    { status: 204, header: { name: "Cache-Control", includes: "no-store" } },
+  ],
+  ["client error endpoint accepts an undo timeout code", () => clientError("uncheck_timeout"), { status: 204 }],
   ["client error endpoint rejects an unknown code", () => clientError("sw_exploded"), { status: 400 }],
   [
     "client error endpoint from a foreign origin is rejected",

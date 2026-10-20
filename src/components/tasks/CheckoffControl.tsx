@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { CircleCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { sendCheckoff } from "@/lib/checkoff-client";
+import { checkoffFailureCode, reportCheckoffFailure, sendCheckoff } from "@/lib/checkoff-client";
 import { publishChecked, publishDelta } from "@/lib/checkoff-sync";
 import { streakValue, type PeriodKey, type StreakSnapshot } from "@/lib/streak-rules";
 import type { TaskRecurrence } from "@/lib/task-rules";
@@ -51,6 +51,8 @@ export default function CheckoffControl({
   const [message, setMessage] = useState<string | undefined>();
   const buttonRef = useRef<HTMLButtonElement>(null);
   const focusAfterRender = useRef(false);
+  // Counts taps: the answer to an earlier tap no longer owns the row once a newer tap has started.
+  const tapId = useRef(0);
   // Each number sits alone in its own element: React inserts a comment between adjacent text nodes in server HTML.
   const streak = streakValue(recurrence, snapshot, currentPeriod, checked);
 
@@ -61,10 +63,25 @@ export default function CheckoffControl({
     buttonRef.current?.focus();
   }, [checked]);
 
+  // A page restored from the back/forward cache keeps this state in memory, and the request that set `pending` may have
+  // been cut off with the page: give the button back (like `useFormSubmitting`). A late answer of the old request still
+  // rolls the row back, unless a newer tap has started by then (see `tapId`).
+  useEffect(() => {
+    function handlePageShow(event: PageTransitionEvent) {
+      if (event.persisted) setPending(false);
+    }
+
+    window.addEventListener("pageshow", handlePageShow);
+    return () => {
+      window.removeEventListener("pageshow", handlePageShow);
+    };
+  }, []);
+
   async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     if (pending) return;
 
+    const tap = ++tapId.current;
     const next = !checked;
     const delta = streakValue(recurrence, snapshot, currentPeriod, next) - streak;
     focusAfterRender.current = true;
@@ -74,14 +91,19 @@ export default function CheckoffControl({
     setMessage(undefined);
     publishDelta(viewerId, delta);
 
+    const action = next ? "checkoff" : "uncheck";
     const result = await sendCheckoff(
-      next ? "checkoff" : "uncheck",
+      action,
       taskId,
       recurrence === "once" ? null : currentPeriod,
+      undefined,
+      undefined,
+      () => tapId.current === tap,
     );
 
+    const superseded = tapId.current !== tap;
     if (result.kind === "saved") {
-      setPending(false);
+      if (!superseded) setPending(false);
       return;
     }
     if (result.kind === "stale") {
@@ -90,6 +112,9 @@ export default function CheckoffControl({
       window.location.reload();
       return;
     }
+    // The session is gone whichever tap this was, so `expired` still reloads below; any other answer to a superseded tap
+    // is dropped: its rollback, message and beacon would describe a row that a newer tap now owns.
+    if (superseded && result.kind !== "expired") return;
     // A rollback can come long after the tap: give focus back only if the user has not moved on in the meantime.
     focusAfterRender.current = document.activeElement === buttonRef.current || document.activeElement === document.body;
     setChecked(!next);
@@ -102,6 +127,12 @@ export default function CheckoffControl({
     }
     setPending(false);
     setMessage(FAILURE_MESSAGES[result.kind]);
+    if (result.kind === "failed") {
+      // Tell the operator about a failure the server never saw; `status` has no code, the route logs it (an answer that
+      // never reached the route is a known blind spot).
+      const code = checkoffFailureCode(action, result.reason);
+      if (code !== null) reportCheckoffFailure(code);
+    }
   }
 
   return (
