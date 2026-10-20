@@ -20,6 +20,7 @@ export const DEFAULT_MAX_TURNS = 40;
 export const ALLOWED_TOOLS =
   "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)";
 export const SUMMARY_MARKER = "<!-- claude-review:summary -->";
+export const MAX_COMMENT_CHARS = 65_536;
 
 const USAGE =
   "usage: node scripts/claude-review-dry-run.mjs <pr-number> [--model <id>] [--max-turns <n>] [--claude <command>]";
@@ -114,6 +115,19 @@ export function checkSummaryBody(body) {
   if (!lines.some((line) => /Commit [0-9a-f]{7}/.test(line))) failures.push("no `Commit <7 hex characters>` line");
   if (body.includes("<!-- ai-cr:summary -->")) failures.push("contains the ai-review marker <!-- ai-cr:summary -->");
   if (lines.some((line) => line === "EOF")) failures.push("contains a line that is only EOF");
+  // GitHub rejects a comment longer than this; the cap also keeps the regexes below from running for seconds on a huge body.
+  if (body.length > MAX_COMMENT_CHARS) {
+    failures.push(`longer than GitHub's ${MAX_COMMENT_CHARS}-character comment limit`);
+    return failures;
+  }
+  // Mentions and links are checked outside code, where `@scope/pkg` and a URL are only text. A code span ends at a run of
+  // the same length and inside its paragraph, as in CommonMark, so a stray backtick does not hide the text after it. The
+  // mention lookbehind lets an e-mail address pass.
+  const prose = body
+    .replace(/^(`{3,}|~{3,}).*\n[\s\S]*?^\1[`~]*[ \t]*$/gm, "")
+    .replace(/(?<!`)(`+)(?!`)(?:(?!\n\s*\n)[\s\S])*?(?<!`)\1(?!`)/g, "");
+  if (/(?<!\w)@[A-Za-z0-9]/.test(prose)) failures.push("contains an @ mention outside code");
+  if (/https?:\/\/|\bwww\.|\]\(|<a\b/i.test(prose)) failures.push("contains a link outside code");
   return failures;
 }
 

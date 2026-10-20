@@ -1,8 +1,16 @@
+import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { dirname, join, resolve } from "node:path";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { parse } from "yaml";
-import ReviewerProvider, { buildCaseInput, CI_DIFF_PATHSPECS } from "../../packages/code-reviewer/evals/provider";
+import ReviewerProvider, {
+  buildCaseInput,
+  CI_DIFF_PATHSPECS,
+  errorDetail,
+  findMainCheckout,
+  mainCheckoutFromCommonDir,
+  resolveReviewerRoot,
+} from "../../packages/code-reviewer/evals/provider";
 import { readRuns, renderReport } from "../../packages/code-reviewer/evals/report";
 
 const REPO_ROOT = join(import.meta.dirname, "../..");
@@ -88,6 +96,146 @@ describe("ReviewerProvider on a file hidden as binary", () => {
     expect(response.error).toBeUndefined();
     expect(response.output?.outcome).toBe("unreviewable");
     expect(response.output?.paths).toEqual(["a/src/lib/redirect.ts", "b/src/lib/redirect.ts"]);
+  });
+});
+
+describe("mainCheckoutFromCommonDir", () => {
+  it("is the parent of the .git directory, for the main checkout and for a linked worktree alike", () => {
+    // `git rev-parse --path-format=absolute --git-common-dir` prints the main checkout's .git from both.
+    expect(mainCheckoutFromCommonDir("/work/streak-board/.git\n")).toBe("/work/streak-board");
+    expect(mainCheckoutFromCommonDir("/work/streak-board/.git")).toBe("/work/streak-board");
+  });
+
+  it("is undefined for a path that is not an absolute .git directory, so the caller falls back", () => {
+    expect(mainCheckoutFromCommonDir("")).toBeUndefined();
+    expect(mainCheckoutFromCommonDir(".git")).toBeUndefined();
+    expect(mainCheckoutFromCommonDir("/srv/streak-board.git")).toBeUndefined();
+    expect(mainCheckoutFromCommonDir("/work/streak-board/.git/worktrees/x")).toBeUndefined();
+  });
+});
+
+describe("findMainCheckout", () => {
+  const silenced = () => vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+
+  it("takes the parent of git's common directory without a word on stderr", () => {
+    const write = silenced();
+    try {
+      expect(findMainCheckout(() => "/work/streak-board/.git\n")).toBe("/work/streak-board");
+      expect(write).not.toHaveBeenCalled();
+    } finally {
+      write.mockRestore();
+    }
+  });
+
+  it("falls back to this checkout, saying so on stderr, when git fails or names no .git directory", () => {
+    for (const runGit of [
+      () => {
+        throw new Error("git: command not found");
+      },
+      () => "/srv/streak-board.git",
+      () => "",
+    ]) {
+      const write = silenced();
+      try {
+        expect(resolve(findMainCheckout(runGit))).toBe(REPO_ROOT);
+        expect(write).toHaveBeenCalledOnce();
+        expect(String(write.mock.calls[0]?.[0])).toContain("did not name the main checkout");
+      } finally {
+        write.mockRestore();
+      }
+    }
+  });
+});
+
+describe("resolveReviewerRoot", () => {
+  const mainRoot = () => "/work/streak-board";
+
+  it("reads a relative path from the main checkout", () => {
+    expect(resolveReviewerRoot("../streak-board-worktrees/eval-old", mainRoot)).toBe(
+      "/work/streak-board-worktrees/eval-old",
+    );
+  });
+
+  it("leaves an absolute path as it is", () => {
+    expect(resolveReviewerRoot("/elsewhere/eval-old", mainRoot)).toBe("/elsewhere/eval-old");
+  });
+
+  it('keeps "." in any spelling and an unset path on this checkout, without asking for the main one', () => {
+    const asked = () => {
+      throw new Error("the main checkout must not be asked");
+    };
+    expect(resolveReviewerRoot(".", asked)).toBe(resolve(REPO_ROOT));
+    for (const spelling of ["./", "./.", "", ".//"]) {
+      expect(resolveReviewerRoot(spelling, asked)).toBe(resolve(REPO_ROOT));
+    }
+    expect(resolveReviewerRoot(undefined, asked)).toBe(resolve(REPO_ROOT));
+  });
+
+  it("is what the provider reports as reviewerRoot, with git's main checkout as the base", async () => {
+    const commonDir = execFileSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], {
+      cwd: REPO_ROOT,
+      encoding: "utf8",
+    }).trim();
+    const response = await new ReviewerProvider({ config: { reviewerRoot: "no-such-reviewer" } }).callApi("p", {
+      vars: {},
+    });
+    expect(response.error).toBeDefined();
+    expect(response.metadata?.reviewerRoot).toBe(resolve(dirname(commonDir), "no-such-reviewer"));
+  });
+});
+
+describe("errorDetail", () => {
+  const noObject = (props: Record<string, unknown>) =>
+    Object.assign(new Error("response did not match schema"), { name: "AI_NoObjectGeneratedError", ...props });
+  const wrap = (cause: unknown, props: Record<string, unknown> = {}) =>
+    Object.assign(new Error("response did not match schema", { cause }), { name: "ReviewRunError", ...props });
+
+  it("keeps the finish reason, the cause and the head and tail of a long text, 400 characters each", () => {
+    const text = `${"a".repeat(400)}${"m".repeat(300)}${"z".repeat(400)}`;
+    const cause = new Error("Expected number at criteria.tests.score");
+    expect(errorDetail(wrap(noObject({ text, finishReason: "stop", cause })))).toEqual({
+      finishReason: "stop",
+      textChars: 1100,
+      textHead: "a".repeat(400),
+      textTail: "z".repeat(400),
+      causeMessage: "Expected number at criteria.tests.score",
+    });
+  });
+
+  it("keeps a short text once, as the head", () => {
+    expect(errorDetail(noObject({ text: '{"verdict":', finishReason: "length" }))).toEqual({
+      finishReason: "length",
+      textChars: 11,
+      textHead: '{"verdict":',
+    });
+  });
+
+  it("works without a text, taking the finish reason of the wrapping error", () => {
+    expect(
+      errorDetail(wrap(noObject({ text: undefined, finishReason: undefined }), { finishReason: "length" })),
+    ).toEqual({
+      finishReason: "length",
+    });
+    expect(errorDetail(wrap(noObject({ text: "" })))).toBeUndefined();
+  });
+
+  it("is undefined for a plain error and for a value that is not an error", () => {
+    expect(errorDetail(new Error("boom"))).toBeUndefined();
+    expect(errorDetail("boom")).toBeUndefined();
+    expect(errorDetail(undefined)).toBeUndefined();
+  });
+
+  it("cuts a cause message that quotes the whole model output to 400 characters", () => {
+    const cause = new Error(`Type validation failed: Value: ${JSON.stringify({ verdict: "x".repeat(2000) })}`);
+    const detail = errorDetail(wrap(noObject({ text: "{}", cause })));
+    expect(detail?.causeMessage).toHaveLength(400);
+    expect(detail?.causeMessage?.startsWith("Type validation failed: Value: ")).toBe(true);
+  });
+
+  it("gives the message of the cause of a wrapped error that is no schema error", () => {
+    expect(errorDetail(wrap(new Error("The operation was aborted due to timeout")))).toEqual({
+      causeMessage: "The operation was aborted due to timeout",
+    });
   });
 });
 
@@ -234,6 +382,32 @@ describe("report.ts", () => {
     expect(report).toContain("compare -- --repeat 5 --filter-pattern '^slipped$'");
     expect(report).not.toMatch(/^- (accepted|flawed)$/m);
     expect(report).toContain("- accepted (old): ReviewRunError: boom");
+  });
+
+  it("prints the details of a run without an output under its line, the raw text on one line each", () => {
+    const failed = {
+      provider: { id: "file://provider.ts", label: "new" },
+      testCase: { description: "sql-injection", metadata: { expect: "fail" } },
+      success: false,
+      response: {
+        error: "ReviewRunError: response did not match schema",
+        metadata: {
+          errorDetail: {
+            finishReason: "length",
+            textChars: 1100,
+            textHead: '{"summary":\n"cut',
+            textTail: "off}",
+            causeMessage: "Expected | number",
+          },
+        },
+      },
+    };
+    const report = renderReport(readRuns({ results: { results: [failed] } }));
+    expect(report).toContain(
+      "- sql-injection (new): ReviewRunError: response did not match schema (finishReason length; 1100 characters of text; cause: Expected \\| number)",
+    );
+    expect(report).toContain('  - text head: "{\\"summary\\":\\n\\"cut"');
+    expect(report).toContain('  - text tail: "off}"');
   });
 
   it("refuses a file that is not a promptfoo result", () => {
