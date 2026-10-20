@@ -51,6 +51,8 @@ Zmiana: w `REVIEWER_INSTRUCTIONS` zdanie z #226 („Write the summary, every fin
 - **Rozumowanie.** `pr-103`: 13 510 tokenów (próg 24 576 nieprzekroczony, `finishReason: stop`). `pr-116-7d319c1`: 22 780 tokenów i 394 s, czyli poniżej 23 886 i 37 321 z 2026-10-20 oraz 539 s, ale to nadal największy przypadek i warto go obserwować. Żaden przebieg nie skończył się `length`.
 - **8.4, próbka.** 4 przebiegi (`sql-injection` ×3, `pr-111` ×1) i 16 przebiegów kroku b przy włączonej diagnostyce: zero błędów schematu i zero timeoutów. Częstość tych błędów nie została więc zmierzona (nie wystąpiły), diagnostyka (`finishReason`, długość, początek i koniec tekstu, przyczyna) leży gotowa na następny raz.
 
+- **Po sesji, w CI.** Pierwszy przebieg `ai-review` na PR #230 (z nowym zdaniem) skończył się `No object generated: response did not match schema` (`finishReason=stop`, 62 585 tokenów wejścia, 3 015 wyjścia, 6 wywołań narzędzi, 0,061 USD); powtórka etykietą `ai-cr:review` przeszła (81 090 wejścia, 5 117 wyjścia, 10 wywołań, 0,055 USD). To jest ten sam rodzaj błędu, który wystąpił dwa razy w sesji 2026-10-20 przed zmianą, więc nic nie wskazuje, że wprowadziło go zdanie, ale jeden przypadek tego nie rozstrzyga. Produkcyjne CLI drukuje tylko komunikat, bez tekstu i przyczyny, więc diagnostyka z evalu go nie obejmuje.
+
 ## Czego nie zmierzono
 
 - `old`: pominięty, bo `new` przeszedł każdy przypadek; nie ma więc liczników A i B dla `old` ani porównania czasu.
