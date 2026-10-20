@@ -17,6 +17,7 @@ Pracę wykonałem bez Twojej interwencji, ale nie w trybie `/goal`. Zmiany były
 
 - OPP-6, OPP-7, OPP-8 i OPP-10 z S-12: wyzwalacze są w sekcji „What We're NOT Doing" planu `context/archive/2026-10-06-refactor-opportunities/plan.md`, np. czternasta trasa danych albo nowa rodzina `/api/*`.
 - CODEOWNERS dla `.github/`: decyzja 2026-10-16 to odroczyć, bo repozytorium ma jednego właściciela.
+- Uprawnienia `service_role` po zmianie Supabase z 2026-10-30 (nowe tabele w `public` nie dostają już domyślnych grantów, także przy `supabase db reset`): PR #235 (`de014c0`) nadaje je jawnie migracją `20261020233514_grant_service_role_table_privileges.sql` i sprawdza w `supabase/checks/rls-scenarios.sql`. Dziś te sprawdzenia przechodzą także bez migracji, bo lokalny stos (CLI 2.121.0, w CI przypięte 2.117.0) wciąż nadaje stare domyślne granty. Wyzwalacz: aktualizacja Supabase CLI (lokalnie albo pinu w `.github/workflows/ci.yml`) do wersji z nowym zachowaniem. Wtedy jednorazowo `supabase db reset`, `npm test` i `npm run test:rls`.
 
 ## Obserwacje z tego przebiegu (bez działań)
 
