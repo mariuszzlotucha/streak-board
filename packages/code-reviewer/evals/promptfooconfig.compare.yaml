@@ -23,7 +23,7 @@ providers:
     label: old
     config:
       model: z-ai/glm-5.1
-      # Relative to the repository root.
+      # Relative to the main checkout, so it resolves the same from a linked worktree.
       reviewerRoot: ../streak-board-worktrees/eval-old
   - id: file://provider.ts
     label: new

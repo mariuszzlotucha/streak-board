@@ -1,6 +1,6 @@
 // Oracle for the dry-run checks of the Claude review prompt (scripts/claude-review-dry-run.mjs), from the plan of
 // `claude-review-publish`: the summary must have the documented shape (marker, `## Claude review: <VERDICT>`, a Commit line,
-// no ai-review marker, no bare EOF line), a denied `gh pr comment` is fatal and any other denial a warning.
+// no ai-review marker, no bare EOF line, no @ mention and no link outside code), a denied `gh pr comment` is fatal and any other denial a warning.
 import { afterAll, describe, expect, it } from "vitest";
 import { spawnSync } from "node:child_process";
 import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
@@ -55,6 +55,25 @@ describe("checkSummaryBody", () => {
 
   it("rejects a body without a Commit line", () => {
     expect(checkSummaryBody(TEMPLATE.replace("Commit 1a2b3c4.", "Commit abc."))).not.toEqual([]);
+  });
+
+  it("accepts a scoped package, an e-mail address and a path in code, and rejects the same text in prose", () => {
+    expect(checkSummaryBody(`${TEMPLATE}\n\nThe \`@astrojs/react\` island is unchanged.`)).toEqual([]);
+    expect(
+      checkSummaryBody(`${TEMPLATE}\n\n\`\`\`json\n{ "@scope/pkg": "https://example.com", "a": "[x](y)" }\n\`\`\``),
+    ).toEqual([]);
+    expect(checkSummaryBody(`${TEMPLATE}\n\nWrite to dev@example.com.`)).toEqual([]);
+    expect(checkSummaryBody(`${TEMPLATE}\n\nThe @astrojs/react island is unchanged.`)).not.toEqual([]);
+  });
+
+  it("rejects an @ mention", () => {
+    expect(checkSummaryBody(`${TEMPLATE}\n\nThanks @octocat.`)).not.toEqual([]);
+    expect(checkSummaryBody(`${TEMPLATE}\n\n@octocat should look at this.`)).not.toEqual([]);
+  });
+
+  it("rejects a link, bare or in Markdown", () => {
+    expect(checkSummaryBody(`${TEMPLATE}\n\nSee https://example.com.`)).not.toEqual([]);
+    expect(checkSummaryBody(`${TEMPLATE}\n\nSee [x](y).`)).not.toEqual([]);
   });
 });
 

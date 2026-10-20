@@ -11,7 +11,8 @@
  *   difference at ×3 is often noise; a regression is confirmed only when `new`
  *   passes fewer runs in the re-run too.
  * - Runs at or above 75% of `DEFAULT_MAX_OUTPUT_TOKENS` in reasoning tokens,
- *   and the runs that ended in an error.
+ *   and the runs that ended in an error, each with the finish reason, the cause
+ *   and the head and tail of the model's text when the provider kept them.
  * - The verdict criterion per provider: A = runs of `expect: pass` cases with
  *   model `fail` and rule `pass`; B = the same for `expect: fail` cases; `rule`
  *   when B = 0 and A ≥ 1, otherwise `stricter`. Runs without a verdict
@@ -22,7 +23,7 @@
 import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { DEFAULT_MAX_OUTPUT_TOKENS } from "../config";
-import type { CaseOutput } from "./provider";
+import type { CaseOutput, ErrorDetail } from "./provider";
 
 /** Reasoning tokens from which a run is flagged: 75% of the per-call ceiling (24,576 at 32,768). */
 const REASONING_FLAG = Math.floor(DEFAULT_MAX_OUTPUT_TOKENS * 0.75);
@@ -37,6 +38,8 @@ interface Run {
   cost: number | undefined;
   output: Partial<CaseOutput> | undefined;
   error: string | undefined;
+  /** What a failed run still knew of the model's answer; only the provider's `ReviewRunError` branch sets it. */
+  errorDetail: ErrorDetail | undefined;
 }
 
 /** The parts of a promptfoo result row this report reads. */
@@ -47,7 +50,7 @@ interface ResultRow {
   latencyMs?: number;
   cost?: number;
   error?: string;
-  response?: { output?: unknown; error?: string; cost?: number };
+  response?: { output?: unknown; error?: string; cost?: number; metadata?: { errorDetail?: ErrorDetail } };
 }
 
 /** The runs of a promptfoo JSON result file (`results.results[]`). */
@@ -65,6 +68,7 @@ export function readRuns(json: unknown): Run[] {
       cost: row.cost ?? row.response?.cost,
       output: typeof output === "object" && output !== null ? output : undefined,
       error: row.response?.error ?? row.error,
+      errorDetail: row.response?.metadata?.errorDetail,
     };
   });
 }
@@ -170,6 +174,17 @@ function criterion(runs: readonly Run[]) {
   };
 }
 
+/** The one-line part of an error's detail, to append to its bullet; empty without one. */
+function errorSuffix(detail: ErrorDetail | undefined): string {
+  if (!detail) return "";
+  const parts = [
+    detail.finishReason !== undefined ? `finishReason ${detail.finishReason}` : undefined,
+    detail.textChars !== undefined ? `${detail.textChars} characters of text` : undefined,
+    detail.causeMessage !== undefined ? `cause: ${cell(detail.causeMessage)}` : undefined,
+  ].filter((part) => part !== undefined);
+  return parts.length > 0 ? ` (${parts.join("; ")})` : "";
+}
+
 /** The whole Markdown report for the runs of one result file. */
 export function renderReport(runs: readonly Run[]): string {
   const lines: string[] = ["# Code reviewer eval report", ""];
@@ -225,7 +240,16 @@ export function renderReport(runs: readonly Run[]): string {
   const failed = runs.filter((run) => run.output === undefined);
   lines.push("", "## Runs without an output", "");
   if (failed.length === 0) lines.push("None.");
-  for (const run of failed) lines.push(`- ${run.description} (${run.provider}): ${cell(run.error ?? "no error text")}`);
+  for (const run of failed) {
+    lines.push(
+      `- ${run.description} (${run.provider}): ${cell(run.error ?? "no error text")}${errorSuffix(run.errorDetail)}`,
+    );
+    // JSON strings keep the raw model text on one line, whatever Markdown it holds.
+    if (run.errorDetail?.textHead !== undefined)
+      lines.push(`  - text head: ${JSON.stringify(run.errorDetail.textHead)}`);
+    if (run.errorDetail?.textTail !== undefined)
+      lines.push(`  - text tail: ${JSON.stringify(run.errorDetail.textTail)}`);
+  }
 
   lines.push(
     "",

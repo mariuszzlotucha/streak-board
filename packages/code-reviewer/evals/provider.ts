@@ -3,8 +3,9 @@
  * case's diff with the gate's exclusions (`CI_DIFF_PATHSPECS`), resolves the
  * two commits for the repo tools, calls `reviewDiff` and returns one flat
  * result object for the assertions and `report.ts`. The reviewer is loaded
- * from `reviewerRoot` (default: this checkout), so the same cases can run the
- * old reviewer of another checkout next to the new one.
+ * from `reviewerRoot` (default: this checkout; a relative path is read from the
+ * main checkout), so the same cases can run the old reviewer of another
+ * checkout next to the new one.
  *
  * Neither `ai` nor `promptfoo` is imported here: the repo's type check and lint
  * read this file, CI installs no promptfoo, and `ai` resolved from `evals/`
@@ -13,10 +14,10 @@
  * are recognised by `name`, not `instanceof`, since the old and the new
  * reviewer are separate module instances.
  */
-import { execFile } from "node:child_process";
+import { execFile, execFileSync } from "node:child_process";
 import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { dirname, isAbsolute, join, normalize, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, normalize, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { promisify } from "node:util";
 import type * as Reviewer from "../index";
@@ -40,6 +41,9 @@ export const CI_DIFF_PATHSPECS = [
   ":(exclude)packages/code-reviewer/evals/cases/*.yaml",
 ] as const;
 
+/** The longest head and tail of a model's raw text that `errorDetail` keeps, in characters. */
+const ERROR_TEXT_EXCERPT = 400;
+
 /** A full commit SHA: the only form a case's `base` and `head` may take, so no value reaches git as an option. */
 const FULL_SHA = /^[0-9a-f]{40}$/;
 
@@ -47,7 +51,7 @@ const FULL_SHA = /^[0-9a-f]{40}$/;
 export interface ReviewerProviderConfig {
   /** OpenRouter model id; the loaded reviewer's `DEFAULT_REVIEWER_MODEL` when left out. */
   model?: string;
-  /** Checkout whose `packages/code-reviewer` runs; relative to this repo's root; this checkout when left out. */
+  /** Checkout whose `packages/code-reviewer` runs; a relative path is read from the main checkout, an absolute one as it is; this checkout when left out. */
   reviewerRoot?: string;
   /** Passed to `reviewDiff` as `maxDiffChars`; the reviewer's default when left out. */
   maxDiffChars?: number;
@@ -97,13 +101,26 @@ export interface CaseOutput {
   paths?: string[];
 }
 
+/** What a failed review run still knows about the model's answer; `errorDetail` builds it. */
+export interface ErrorDetail {
+  finishReason?: string;
+  /** Length of the model's raw text, in characters. */
+  textChars?: number;
+  /** The first characters of the raw text, at most `ERROR_TEXT_EXCERPT`. */
+  textHead?: string;
+  /** The last characters of the raw text; left out when the head already holds all of it. */
+  textTail?: string;
+  /** The message of the error underneath: the parse or schema failure, the abort. */
+  causeMessage?: string;
+}
+
 /** promptfoo's provider response, as far as this provider fills it. */
 export interface ProviderResponse {
   output?: CaseOutput;
   error?: string;
   cost?: number;
   tokenUsage?: ProviderTokenUsage;
-  metadata?: { model: string; reviewerRoot: string };
+  metadata?: { model: string; reviewerRoot: string; errorDetail?: ErrorDetail };
 }
 
 /** A case's input as `buildCaseInput` prepared it; `cleanup` removes a temporary repository. */
@@ -282,6 +299,81 @@ function describeError(error: unknown): string {
   return error instanceof Error ? `${error.name}: ${error.message}` : `${typeof error}: ${String(error)}`;
 }
 
+/** The `message` of a thrown value, when it has a string one. */
+function errorMessage(error: unknown): string | undefined {
+  const message = (error as { message?: unknown } | null | undefined)?.message;
+  return typeof message === "string" ? message : undefined;
+}
+
+/**
+ * What the SDK's `NoObjectGeneratedError` knows about a failed answer, from the
+ * error itself or from the `cause` of a `ReviewRunError`, which wraps it: the
+ * finish reason, the length, head and tail of the raw text and the message of
+ * its own cause. Recognised by `name`, like every reviewer error here.
+ * `undefined` when the error carries none of it.
+ */
+export function errorDetail(error: unknown): ErrorDetail | undefined {
+  const isNoObject = (value: unknown) => errorName(value).endsWith("NoObjectGeneratedError");
+  const wrapped = (error as { cause?: unknown } | null | undefined)?.cause;
+  const source = isNoObject(error) ? error : isNoObject(wrapped) ? wrapped : undefined;
+  const { text, finishReason, cause } = (source ?? {}) as { text?: unknown; finishReason?: unknown; cause?: unknown };
+  const outer = (error as { finishReason?: unknown } | null | undefined)?.finishReason;
+  const reason = typeof finishReason === "string" ? finishReason : typeof outer === "string" ? outer : undefined;
+  const raw = typeof text === "string" && text !== "" ? text : undefined;
+  const known = Object.entries({
+    finishReason: reason,
+    textChars: raw?.length,
+    textHead: raw?.slice(0, ERROR_TEXT_EXCERPT),
+    textTail: raw !== undefined && raw.length > ERROR_TEXT_EXCERPT ? raw.slice(-ERROR_TEXT_EXCERPT) : undefined,
+    causeMessage: errorMessage(source ? cause : wrapped),
+  }).filter(([, value]) => value !== undefined);
+  return known.length > 0 ? Object.fromEntries(known) : undefined;
+}
+
+/**
+ * The root of the main checkout, from the parent of git's common directory
+ * (`<main>/.git` for the main checkout and for every linked worktree);
+ * `undefined` when `commonDir` is not an absolute path ending in `.git`, as in
+ * a bare repository.
+ */
+export function mainCheckoutFromCommonDir(commonDir: string): string | undefined {
+  const path = commonDir.trim();
+  return isAbsolute(path) && basename(path) === ".git" ? dirname(path) : undefined;
+}
+
+let mainCheckout: string | undefined;
+
+/** The main checkout's root: asked of git once and remembered; this checkout (`REPO_ROOT`) when git cannot tell. */
+function mainCheckoutRoot(): string {
+  mainCheckout ??= (() => {
+    try {
+      const commonDir = execFileSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], {
+        cwd: REPO_ROOT,
+        env: gitEnv(),
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
+      });
+      return mainCheckoutFromCommonDir(commonDir) ?? REPO_ROOT;
+    } catch {
+      return REPO_ROOT;
+    }
+  })();
+  return mainCheckout;
+}
+
+/**
+ * The absolute checkout a `reviewerRoot` names: an unset one, `"."` and an
+ * absolute path stay as they are (this checkout is the base), any other
+ * relative path is read from the main checkout (`mainRoot()`, asked only then),
+ * so `../streak-board-worktrees/eval-old` means the same from every worktree.
+ */
+export function resolveReviewerRoot(configured: string | undefined, mainRoot: () => string): string {
+  if (configured === undefined || configured === "." || isAbsolute(configured)) {
+    return resolve(REPO_ROOT, configured ?? ".");
+  }
+  return resolve(mainRoot(), configured);
+}
+
 /**
  * One reviewer configuration as a promptfoo provider. The constructor only
  * stores its options (`promptfoo validate` runs it, possibly before the old
@@ -306,7 +398,7 @@ export default class ReviewerProvider {
 
   /** The checkout whose reviewer this provider runs, as an absolute path. */
   private reviewerRoot(): string {
-    return resolve(REPO_ROOT, this.config.reviewerRoot ?? ".");
+    return resolveReviewerRoot(this.config.reviewerRoot, mainCheckoutRoot);
   }
 
   private loadReviewer(): Promise<ReviewerModule> {
@@ -366,11 +458,12 @@ export default class ReviewerProvider {
         }
         if (name === "ReviewRunError") {
           const failed = error as { costUsd?: number | null; usage?: LanguageModelUsage };
+          const detail = errorDetail(error);
           return {
             error: describeError(error),
             cost: failed.costUsd ?? undefined,
             tokenUsage: failed.usage ? tokenUsage(failed.usage) : undefined,
-            metadata,
+            metadata: detail ? { ...metadata, errorDetail: detail } : metadata,
           };
         }
         throw error;

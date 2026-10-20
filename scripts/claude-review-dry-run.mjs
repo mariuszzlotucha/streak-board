@@ -114,6 +114,10 @@ export function checkSummaryBody(body) {
   if (!lines.some((line) => /Commit [0-9a-f]{7}/.test(line))) failures.push("no `Commit <7 hex characters>` line");
   if (body.includes("<!-- ai-cr:summary -->")) failures.push("contains the ai-review marker <!-- ai-cr:summary -->");
   if (lines.some((line) => line === "EOF")) failures.push("contains a line that is only EOF");
+  // Mentions and links are checked outside code, where `@scope/pkg` and a URL are only text.
+  const prose = body.replace(/^(`{3,}|~{3,}).*\n[\s\S]*?^\1[`~]*[ \t]*$/gm, "").replace(/(`+)[\s\S]*?\1/g, "");
+  if (/(?<!\w)@[A-Za-z0-9]/.test(prose)) failures.push("contains an @ mention outside code");
+  if (/https?:\/\/|\]\(/.test(prose)) failures.push("contains a link outside code");
   return failures;
 }
 
