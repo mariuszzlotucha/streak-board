@@ -1,11 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import {
-  CLIENT_ERRORS_PATH,
-  UPDATE_CHECK_INTERVAL_MS,
-  isUpdate,
-  registerServiceWorker,
-  type PwaEnvironment,
-} from "@/lib/pwa/register";
+import { CLIENT_ERRORS_PATH } from "@/lib/client-error-codes";
+import { UPDATE_CHECK_INTERVAL_MS, isUpdate, registerServiceWorker, type PwaEnvironment } from "@/lib/pwa/register";
 
 /** A stubbed `navigator.serviceWorker` whose `controllerchange` the test fires by hand. */
 function stub({

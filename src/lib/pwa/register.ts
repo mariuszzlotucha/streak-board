@@ -2,21 +2,7 @@
 // over an open page, and reports registration and update failures to `POST /api/client-errors` as a fixed code only
 // (never the error text or a URL). Registration runs only in a production build: in `astro dev` a worker would get in
 // the way of HMR.
-
-/** The codes `POST /api/client-errors` accepts; the server reports them as `client.sw.<code>`. */
-export const CLIENT_ERROR_CODES = [
-  "sw_register_failed",
-  "sw_update_failed",
-  // Reminders on this device (src/lib/pwa/push.ts).
-  "push_permission_failed",
-  "push_subscribe_failed",
-  "push_save_failed",
-  "push_unsubscribe_failed",
-  "push_unsubscribe_all_failed",
-] as const;
-export type ClientErrorCode = (typeof CLIENT_ERROR_CODES)[number];
-
-export const CLIENT_ERRORS_PATH = "/api/client-errors";
+import { CLIENT_ERRORS_PATH, type ClientErrorCode } from "@/lib/client-error-codes";
 
 /**
  * The update decision: a `controllerchange` is a new version only when a worker already controlled the page before it.

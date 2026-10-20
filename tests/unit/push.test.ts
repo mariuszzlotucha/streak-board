@@ -9,7 +9,7 @@ import {
   type PushEnvironment,
   type PushManagerLike,
 } from "@/lib/pwa/push";
-import { CLIENT_ERRORS_PATH, CLIENT_ERROR_CODES } from "@/lib/pwa/register";
+import { CLIENT_ERRORS_PATH, CLIENT_ERROR_CODES } from "@/lib/client-error-codes";
 
 const KEY = "BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U";
 const ENDPOINT = "https://push.example/abc";

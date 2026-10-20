@@ -1,5 +1,6 @@
 // The island's network protocol for a check-off or an undo, kept apart from React so it can be unit-tested without a
 // DOM. Keep this file free of server-only imports so it is safe to bundle for the browser.
+import { CLIENT_ERRORS_PATH, type ClientErrorCode } from "@/lib/client-error-codes";
 import type { PeriodKey } from "@/lib/streak-rules";
 
 /** How long a tap may wait for the server (the bound of `PENDING_TIMEOUT_MS` in `useFormSubmitting`). */
@@ -13,21 +14,49 @@ export type CheckoffAction = "checkoff" | "uncheck";
  * - `rejected`: the server says the action is not allowed or the task is gone (403, 404).
  * - `expired`: the route answered a redirect (the middleware sends a signed-out request to the sign-in page): a retry
  *   cannot succeed, so reload.
- * - `failed`: no usable answer: a network error, a timeout, a server error or an unexpected body.
+ * - `failed`: no usable answer after the attempts; `reason` says why (see `CheckoffFailureReason`).
  */
 export type CheckoffSendResult =
-  { kind: "saved" } | { kind: "stale" } | { kind: "rejected" } | { kind: "expired" } | { kind: "failed" };
+  | { kind: "saved" }
+  | { kind: "stale" }
+  | { kind: "rejected" }
+  | { kind: "expired" }
+  | { kind: "failed"; reason: CheckoffFailureReason };
 
 /**
- * Both routes are idempotent, so a retry after a false timeout is safe. The body is form-encoded, never JSON: Astro's
- * Origin check only guards requests with a form-like body, so a JSON body would opt out of CSRF protection.
- * `expectedPeriod` is null for a `once` task, which has no period to compare.
+ * Why a request failed:
+ * - `network`: the fetch threw before a response arrived (offline, a dropped connection).
+ * - `timeout`: no answer within `CHECKOFF_TIMEOUT_MS`, before or while the body was read.
+ * - `status`: the Worker answered something other than 200, a redirect, 403 or 404; the route has logged it.
+ * - `body`: a 200 whose body is not `{ ok: true, period }`, or is not JSON at all.
  */
-export async function sendCheckoff(
+export type CheckoffFailureReason = "network" | "timeout" | "status" | "body";
+
+/** The client-error code that reports a failure to the operator, or null when the server already logged it. */
+export function checkoffFailureCode(action: CheckoffAction, reason: CheckoffFailureReason): ClientErrorCode | null {
+  if (reason === "status") return null;
+  return reason === "timeout" ? `${action}_timeout` : `${action}_failed`;
+}
+
+function defaultBeacon(url: string, data: string): boolean {
+  return typeof navigator !== "undefined" && typeof navigator.sendBeacon === "function"
+    ? navigator.sendBeacon(url, data)
+    : false;
+}
+
+/** Reports a failure the island has given up on as a bare code (never the error text or the task) through a beacon. */
+export function reportCheckoffFailure(
+  code: ClientErrorCode,
+  beacon: (url: string, data: string) => boolean = defaultBeacon,
+): void {
+  beacon(CLIENT_ERRORS_PATH, code);
+}
+
+async function attemptCheckoff(
   action: CheckoffAction,
   taskId: string,
   expectedPeriod: PeriodKey | null,
-  fetchImpl: typeof fetch = fetch,
+  fetchImpl: typeof fetch,
 ): Promise<CheckoffSendResult> {
   // Not `AbortSignal.timeout`: fake timers cannot drive it.
   const controller = new AbortController();
@@ -36,31 +65,63 @@ export async function sendCheckoff(
   }, CHECKOFF_TIMEOUT_MS);
 
   try {
-    const response = await fetchImpl(`/api/tasks/${action}`, {
-      method: "POST",
-      body: new URLSearchParams({ task_id: taskId }),
-      headers: { Accept: "application/json" },
-      credentials: "same-origin",
-      // An expired session answers 302 to the sign-in page; following it would end in a 200 HTML page.
-      redirect: "manual",
-      // The request outlives a navigation right after the tap.
-      keepalive: true,
-      signal: controller.signal,
-    });
+    let response: Response;
+    try {
+      response = await fetchImpl(`/api/tasks/${action}`, {
+        method: "POST",
+        body: new URLSearchParams({ task_id: taskId }),
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+        // An expired session answers 302 to the sign-in page; following it would end in a 200 HTML page.
+        redirect: "manual",
+        // The request outlives a navigation right after the tap.
+        keepalive: true,
+        signal: controller.signal,
+      });
+    } catch {
+      // The signal, not the error's name, tells our abort from a thrown fetch: browsers differ in what they throw.
+      return { kind: "failed", reason: controller.signal.aborted ? "timeout" : "network" };
+    }
 
     // A browser reports a `redirect: "manual"` redirect as an opaque response (status 0); other runtimes keep the 3xx.
     if (response.type === "opaqueredirect" || (response.status >= 300 && response.status < 400)) {
       return { kind: "expired" };
     }
     if (response.status === 403 || response.status === 404) return { kind: "rejected" };
-    if (response.status !== 200) return { kind: "failed" };
+    if (response.status !== 200) return { kind: "failed", reason: "status" };
 
-    const body = (await response.json()) as { ok?: unknown; period?: unknown } | null;
-    if (body?.ok !== true || typeof body.period !== "string") return { kind: "failed" };
+    let body: { ok?: unknown; period?: unknown } | null;
+    try {
+      body = (await response.json()) as { ok?: unknown; period?: unknown } | null;
+    } catch {
+      // The answer arrived, so a body that does not parse is not a network failure; only our own abort is.
+      return { kind: "failed", reason: controller.signal.aborted ? "timeout" : "body" };
+    }
+    if (body?.ok !== true || typeof body.period !== "string") return { kind: "failed", reason: "body" };
     return expectedPeriod === null || body.period === expectedPeriod ? { kind: "saved" } : { kind: "stale" };
-  } catch {
-    return { kind: "failed" };
   } finally {
     clearTimeout(timer);
   }
+}
+
+/**
+ * Both routes are idempotent, so a second attempt after a false timeout is safe: a request that got no answer at all
+ * (`network`, `timeout`) is sent again at once, up to `attempts` times, each with its own 15 s abort; the result is the
+ * last attempt's. Anything the server answered, or a body that is not the JSON the routes send, is final. The body is
+ * form-encoded, never JSON: Astro's Origin check only guards requests with a form-like body, so a JSON body would opt
+ * out of CSRF protection. `expectedPeriod` is null for a `once` task, which has no period to compare.
+ */
+export async function sendCheckoff(
+  action: CheckoffAction,
+  taskId: string,
+  expectedPeriod: PeriodKey | null,
+  fetchImpl: typeof fetch = fetch,
+  attempts = 2,
+): Promise<CheckoffSendResult> {
+  let result = await attemptCheckoff(action, taskId, expectedPeriod, fetchImpl);
+  for (let attempt = 1; attempt < attempts; attempt++) {
+    if (result.kind !== "failed" || (result.reason !== "network" && result.reason !== "timeout")) break;
+    result = await attemptCheckoff(action, taskId, expectedPeriod, fetchImpl);
+  }
+  return result;
 }

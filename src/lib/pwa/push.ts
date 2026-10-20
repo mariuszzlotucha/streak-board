@@ -2,7 +2,7 @@
 // through the service worker (public/sw.js shows the notifications) and tells the server through
 // `POST /api/reminders/{subscribe,unsubscribe,unsubscribe-all}`. Failures are reported like the worker's, as a fixed
 // code to `POST /api/client-errors`, never the error text, the endpoint or the keys.
-import { CLIENT_ERRORS_PATH, type ClientErrorCode } from "@/lib/pwa/register";
+import { CLIENT_ERRORS_PATH, type ClientErrorCode } from "@/lib/client-error-codes";
 
 /** `unsupported`: no push here (or no server key); `denied`: the browser blocks notifications; else off or on. */
 export type PushState = "unsupported" | "denied" | "off" | "on";

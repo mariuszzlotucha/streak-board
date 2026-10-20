@@ -43,12 +43,12 @@ Grono znajomych korzystało wcześniej ze wspólnego arkusza Google, w którym r
 
 ## At a glance
 
-| ID   | Change ID               | Outcome (user can …)                                                                                                                                                                                    | Prerequisites | PRD refs                                          | Status   |
-| ---- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------------------- | -------- |
-| S-20 | grid-mobile-readability | czytać siatkę odznaczeń grupy na ekranie telefonu bez przewijania w poziomie i rozpoznać uczestników i okresy                                                                                           | —             | PRD §NFR (smartfon); MS-01                        | done     |
-| S-21 | grid-state-feedback     | rozpoznać bez legendy odznaczone, zaległe i bieżący okres oraz dostać potwierdzenie po odznaczeniu                                                                                                      | S-20          | PRD §Vision; MS-02                                | done     |
-| S-22 | grid-save-reliability   | odznaczyć szybko, a po błędzie zapisu zobaczyć komunikat i prawdziwy stan siatki                                                                                                                        | —             | PRD guardrail (odznaczenie natychmiastowe); MS-03 | planning |
-| S-23 | dependency-hygiene      | (jakościowy) korzystać z aplikacji budowanej z zależności bez znanych podatności z dostępną poprawką, przy narzędziach poza zależnościami produkcyjnymi, przypiętym Node i alertach bezpieczeństwa w CI | —             | — (jakościowe; MS-04)                             | done     |
+| ID   | Change ID               | Outcome (user can …)                                                                                                                                                                                    | Prerequisites | PRD refs                                          | Status      |
+| ---- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------------------- | ----------- |
+| S-20 | grid-mobile-readability | czytać siatkę odznaczeń grupy na ekranie telefonu bez przewijania w poziomie i rozpoznać uczestników i okresy                                                                                           | —             | PRD §NFR (smartfon); MS-01                        | done        |
+| S-21 | grid-state-feedback     | rozpoznać bez legendy odznaczone, zaległe i bieżący okres oraz dostać potwierdzenie po odznaczeniu                                                                                                      | S-20          | PRD §Vision; MS-02                                | done        |
+| S-22 | grid-save-reliability   | odznaczyć szybko, a po błędzie zapisu zobaczyć komunikat i prawdziwy stan siatki                                                                                                                        | —             | PRD guardrail (odznaczenie natychmiastowe); MS-03 | in-progress |
+| S-23 | dependency-hygiene      | (jakościowy) korzystać z aplikacji budowanej z zależności bez znanych podatności z dostępną poprawką, przy narzędziach poza zależnościami produkcyjnymi, przypiętym Node i alertach bezpieczeństwa w CI | —             | — (jakościowe; MS-04)                             | done        |
 
 ## Baseline
 
@@ -110,7 +110,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
   - Czy odznaczenie ma być optymistyczne (od razu w widoku, cofane przy błędzie), czy czekać na odpowiedź serwera? Owner: user. Block: no — rozstrzyga `/10x-frame`.
   - Rozstrzygnięte 2026-10-20 w `frame.md`: odznaczenie zostaje optymistyczne; tryb zapisu nie zmienia tego, czy błąd zostawia ślad, a luka to brak raportu z przeglądarki i brak uzgodnienia stanu po `failed`.
 - **Risk:** błąd, który znika po cichu, wraca do stanu sprzed S-08 (połknięte błędy); kontrakt błędów z S-08 obowiązuje.
-- **Status:** planning
+- **Status:** in-progress
 
 ### S-23: Czyste zależności, przypięty runtime i alerty bezpieczeństwa w CI
 

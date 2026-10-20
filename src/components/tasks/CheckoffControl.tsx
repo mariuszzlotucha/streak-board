@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { CircleCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { sendCheckoff } from "@/lib/checkoff-client";
+import { checkoffFailureCode, reportCheckoffFailure, sendCheckoff } from "@/lib/checkoff-client";
 import { publishChecked, publishDelta } from "@/lib/checkoff-sync";
 import { streakValue, type PeriodKey, type StreakSnapshot } from "@/lib/streak-rules";
 import type { TaskRecurrence } from "@/lib/task-rules";
@@ -61,6 +61,20 @@ export default function CheckoffControl({
     buttonRef.current?.focus();
   }, [checked]);
 
+  // A page restored from the back/forward cache keeps this state in memory, and the request that set `pending` may have
+  // been cut off with the page: give the button back (like `useFormSubmitting`). A late answer of the old request still
+  // runs the tail of `handleSubmit`, which is harmless.
+  useEffect(() => {
+    function handlePageShow(event: PageTransitionEvent) {
+      if (event.persisted) setPending(false);
+    }
+
+    window.addEventListener("pageshow", handlePageShow);
+    return () => {
+      window.removeEventListener("pageshow", handlePageShow);
+    };
+  }, []);
+
   async function handleSubmit(event: React.SubmitEvent<HTMLFormElement>) {
     event.preventDefault();
     if (pending) return;
@@ -74,11 +88,8 @@ export default function CheckoffControl({
     setMessage(undefined);
     publishDelta(viewerId, delta);
 
-    const result = await sendCheckoff(
-      next ? "checkoff" : "uncheck",
-      taskId,
-      recurrence === "once" ? null : currentPeriod,
-    );
+    const action = next ? "checkoff" : "uncheck";
+    const result = await sendCheckoff(action, taskId, recurrence === "once" ? null : currentPeriod);
 
     if (result.kind === "saved") {
       setPending(false);
@@ -102,6 +113,11 @@ export default function CheckoffControl({
     }
     setPending(false);
     setMessage(FAILURE_MESSAGES[result.kind]);
+    if (result.kind === "failed") {
+      // Tell the operator about a failure the server never saw; `status` is null because the route has logged it.
+      const code = checkoffFailureCode(action, result.reason);
+      if (code !== null) reportCheckoffFailure(code);
+    }
   }
 
   return (

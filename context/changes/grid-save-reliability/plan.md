@@ -223,14 +223,14 @@ None. No schema, no data, no new secret. Rollback is a code rollback (`npx wrang
 
 #### Automated
 
-- [ ] 1.1 Unit tests pass, including the two-attempt, reason, code-mapping and event-map cases
-- [ ] 1.2 Lint, format and types pass
-- [ ] 1.3 Build passes
-- [ ] 1.4 Narrowed mutation run on `checkoff-client.ts` finishes with every runtime mutant tested and survivors listed in the PR
-- [ ] 1.5 Smoke passes with the two new client-error steps
-- [ ] 1.6 E2E round trip passes in both projects with the extended 500 test, the retry test and the beacon test
-- [ ] 1.7 Screenshot gate ends with "All screenshots taken" for the `controls` set
-- [ ] 1.8 Red proof: stash the three files, unit and e2e fail, pop and pass
+- [x] 1.1 Unit tests pass, including the two-attempt, reason, code-mapping and event-map cases
+- [x] 1.2 Lint, format and types pass
+- [x] 1.3 Build passes
+- [x] 1.4 Narrowed mutation run on `checkoff-client.ts` finishes with every runtime mutant tested and survivors listed in the PR
+- [x] 1.5 Smoke passes with the two new client-error steps
+- [x] 1.6 E2E round trip passes in both projects with the extended 500 test, the retry test and the beacon test
+- [x] 1.7 Screenshot gate ends with "All screenshots taken" for the `controls` set
+- [x] 1.8 Red proof: stash the three files, unit and e2e fail, pop and pass
 
 #### Manual
 
