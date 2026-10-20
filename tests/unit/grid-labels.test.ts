@@ -4,7 +4,7 @@
  * 2026-10-05 is a Monday, so 2026-10-05..11 run Mo..Su.
  */
 import { describe, expect, it } from "vitest";
-import { cellLabel, cellLabelPrefix, periodHeader, periodName } from "@/lib/grid-labels";
+import { cellLabel, cellLabelPrefix, currentPeriodWord, periodHeader, periodName } from "@/lib/grid-labels";
 
 describe("periodHeader", () => {
   it("gives a daily header as the weekday over the day number, for every weekday", () => {
@@ -55,6 +55,14 @@ describe("periodHeader", () => {
       expect(weekly).toHaveLength(1);
       expect(weekly[0].length).toBeLessThanOrEqual(6);
     }
+  });
+});
+
+describe("currentPeriodWord", () => {
+  it("names the current period for a daily and a weekly task and none for a once task", () => {
+    expect(currentPeriodWord("daily")).toBe("today");
+    expect(currentPeriodWord("weekly")).toBe("this week");
+    expect(currentPeriodWord("once")).toBeNull();
   });
 });
 

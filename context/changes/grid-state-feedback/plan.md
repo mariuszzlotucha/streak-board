@@ -206,15 +206,15 @@ None: no schema, no token, no data. The look changes on the next deploy for ever
 
 #### Automated
 
-- [ ] 1.1 Unit tests pass, including `tests/unit/grid-cell.test.ts` and the `currentPeriodWord` case
-- [ ] 1.2 Lint, format and types pass
-- [ ] 1.3 Build passes
-- [ ] 1.4 The contrast gate passes with the new `primary on card` pair listed
-- [ ] 1.5 Smoke passes with the marked-header step
-- [ ] 1.6 E2E round trip passes in both projects with the `aria-current` assertion and the scoped streak locator
-- [ ] 1.7 Visual gate passes at 360, 375 and 1280 px and the nine PNGs are committed
-- [ ] 1.8 S-22's files are untouched (empty `git diff --stat` on the three files)
-- [ ] 1.9 Red proof: stash the two grid files, unit, smoke and e2e fail naming the grid, pop and pass
+- [x] 1.1 Unit tests pass, including `tests/unit/grid-cell.test.ts` and the `currentPeriodWord` case — 2edc074
+- [x] 1.2 Lint, format and types pass — 2edc074
+- [x] 1.3 Build passes — 2edc074
+- [x] 1.4 The contrast gate passes with the new `primary on card` pair listed — 2edc074
+- [x] 1.5 Smoke passes with the marked-header step — 2edc074
+- [x] 1.6 E2E round trip passes in both projects with the `aria-current` assertion and the scoped streak locator — 2edc074
+- [x] 1.7 Visual gate passes at 360, 375 and 1280 px and the nine PNGs are committed — 2edc074
+- [x] 1.8 S-22's files are untouched (empty `git diff --stat` on the three files) — 2edc074
+- [x] 1.9 Red proof: stash the two grid files, unit, smoke and e2e fail naming the grid, pop and pass — 2edc074
 
 #### Manual
 

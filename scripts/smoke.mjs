@@ -234,6 +234,16 @@ function taskRowGridCell(title, participantName, state) {
   );
 }
 
+// A task row (<li>) whose check-off grid marks the current column (S-21): the last <th> of the header row carries
+// aria-current="true" and ends with the sr-only word ("today" for a daily task), and no earlier header cell carries it.
+function taskRowCurrentHeader(title, word) {
+  const inRow = "(?:(?!</li>)[\\s\\S])*";
+  const unmarkedTh = "<th(?![^>]*aria-current)[^>]*>(?:(?!</th>)[\\s\\S])*</th>\\s*";
+  return new RegExp(
+    `<li[^>]*>${inRow}<table[^>]*aria-label="Check-offs of ${escapeRegExp(title)}"${inRow}<thead>\\s*<tr>\\s*(?:${unmarkedTh})+<th[^>]*aria-current="true"[^>]*>(?:(?!</th>)[\\s\\S])*<span class="sr-only"> ${escapeRegExp(word)}</span>\\s*</th>\\s*</tr>\\s*</thead>`,
+  );
+}
+
 // A task row with a plain server-rendered form posting to the route (the Join control).
 function taskRowWithForm(title, route) {
   return new RegExp(
@@ -560,6 +570,7 @@ const B_NOTHING_TICKED = {
     taskRowWithCheckoffForm(renamedTaskTitle, "/api/tasks/checkoff"),
     taskRowStreak(renamedTaskTitle, 0),
     taskRowGridCell(renamedTaskTitle, nickB, "open"),
+    taskRowCurrentHeader(renamedTaskTitle, "today"),
     leaderboardRow(nickA, 1, 0, { you: false }),
     leaderboardRow(nickB, 1, 0, { you: true }),
     leaderboardRow(nickC, 1, 0, { you: false }),
@@ -580,6 +591,7 @@ const B_TICKED = {
     taskRowWithCheckoffForm(renamedTaskTitle, "/api/tasks/uncheck"),
     taskRowStreak(renamedTaskTitle, 1),
     taskRowGridCell(renamedTaskTitle, nickB, "done"),
+    taskRowCurrentHeader(renamedTaskTitle, "today"),
     leaderboardRow(nickB, 1, 1, { you: true }),
     leaderboardRow(nickA, 2, 0, { you: false }),
     leaderboardRow(nickC, 2, 0, { you: false }),

@@ -3,11 +3,12 @@ import { cellLabel } from "@/lib/grid-labels";
 import type { CellState } from "@/lib/grid-rules";
 import { cn } from "@/lib/utils";
 
-// Only pairs `scripts/token-contrast.mjs` checks.
+// Only pairs `scripts/token-contrast.mjs` checks: success-foreground on success, destructive on its tint, primary on card
+// (the open cell's border and dash) and muted-foreground on muted.
 const STATE_CLASSES: Record<CellState, string> = {
   done: "bg-success text-success-foreground",
   missed: "bg-destructive/10 text-destructive",
-  open: "bg-muted text-muted-foreground",
+  open: "border-2 border-primary bg-card text-primary",
   notJoined: "bg-muted text-muted-foreground",
 };
 

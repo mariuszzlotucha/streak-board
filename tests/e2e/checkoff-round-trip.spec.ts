@@ -3,7 +3,7 @@
 // the server has to record the check-off so the same state comes back after a reload; Undo has to take it back the same
 // way. If the request never reaches the database, the row looks right until the reload, where the assertions go red.
 // The spec asserts function, not latency: test-plan §7 keeps the immediacy requirement out of tests.
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Locator, type Page } from "@playwright/test";
 import { signInThroughForm, waitForHydration } from "./helpers";
 import {
   createGroupAs,
@@ -34,6 +34,26 @@ function viewerCell(page: Page, title: string, nickname: string, state: "open" |
   return taskRow(page, title)
     .getByRole("table", { name: `Check-offs of ${title}` })
     .getByText(new RegExp(`^${escapeRegExp(nickname)}, [^:]+: ${state}$`));
+}
+
+/**
+ * The streak figure of the row: the element right after the "Streak" label. The period header of the grid holds bare
+ * day numbers ("1" on the 1st-7th of a month), so the figure is never found by its text alone.
+ */
+function streakOf(row: Locator) {
+  return row.getByText("Streak", { exact: true }).locator("xpath=following-sibling::span[1]");
+}
+
+/**
+ * The marked column header of the row's grid (S-21): exactly one header carries `aria-current`, it is the last column
+ * header, and its text ends with the screen-reader word of a daily task.
+ */
+async function expectCurrentHeader(row: Locator, title: string) {
+  const table = row.getByRole("table", { name: `Check-offs of ${title}` });
+  const marked = table.locator('th[aria-current="true"]');
+  await expect(marked).toHaveCount(1);
+  await expect(marked).toHaveText(/today$/);
+  await expect(table.locator('thead th[scope="col"]').last()).toHaveAttribute("aria-current", "true");
 }
 
 /**
@@ -94,15 +114,16 @@ test.describe("risk #4: check-off round trip", () => {
 
     // Positive control: the row starts unticked at streak 0 and the viewer's total is 0.
     await expect(row.getByRole("button", { name: `Mark done ${title}` })).toBeVisible();
-    await expect(row.getByText("0", { exact: true })).toBeVisible();
+    await expect(streakOf(row)).toHaveText("0");
     await expectViewerTotal(page, owner.nickname, 0);
     await expect(viewerCell(page, title, owner.nickname, "open")).toBeAttached();
+    await expectCurrentHeader(row, title);
     await expectNoSidewaysScroll(page, title);
 
     // Tick: the row, the grid cell and the board move without a reload.
     await row.getByRole("button", { name: `Mark done ${title}` }).click();
     await expect(row.getByText("Done today", { exact: true })).toBeVisible();
-    await expect(row.getByText("1", { exact: true })).toBeVisible();
+    await expect(streakOf(row)).toHaveText("1");
     await expectViewerTotal(page, owner.nickname, 1);
     await expect(viewerCell(page, title, owner.nickname, "done")).toBeAttached();
 
@@ -110,8 +131,9 @@ test.describe("risk #4: check-off round trip", () => {
     await expect(row.getByRole("button", { name: `Undo ${title}` })).not.toHaveAttribute("aria-disabled", "true");
     // The risk assertion: the server recorded the check-off, so the reloaded page shows the same streak and total.
     await page.reload();
+    await expectCurrentHeader(row, title);
     await expect(row.getByText("Done today", { exact: true })).toBeVisible();
-    await expect(row.getByText("1", { exact: true })).toBeVisible();
+    await expect(streakOf(row)).toHaveText("1");
     await expectViewerTotal(page, owner.nickname, 1);
     await expect(viewerCell(page, title, owner.nickname, "done")).toBeAttached();
 
@@ -119,14 +141,14 @@ test.describe("risk #4: check-off round trip", () => {
     await waitForHydration(page);
     await row.getByRole("button", { name: `Undo ${title}` }).click();
     await expect(row.getByRole("button", { name: `Mark done ${title}` })).toBeVisible();
-    await expect(row.getByText("0", { exact: true })).toBeVisible();
+    await expect(streakOf(row)).toHaveText("0");
     await expectViewerTotal(page, owner.nickname, 0);
     await expect(viewerCell(page, title, owner.nickname, "open")).toBeAttached();
 
     await expect(row.getByRole("button", { name: `Mark done ${title}` })).not.toHaveAttribute("aria-disabled", "true");
     await page.reload();
     await expect(row.getByRole("button", { name: `Mark done ${title}` })).toBeVisible();
-    await expect(row.getByText("0", { exact: true })).toBeVisible();
+    await expect(streakOf(row)).toHaveText("0");
     await expectViewerTotal(page, owner.nickname, 0);
   });
 
@@ -160,7 +182,7 @@ test.describe("risk #4: check-off round trip", () => {
     // Rollback: the button, the streak, the cell and the board return to their unticked state.
     await expect(row.getByRole("button", { name: `Mark done ${title}` })).toBeVisible();
     await expect(row.getByRole("button", { name: `Mark done ${title}` })).not.toHaveAttribute("aria-disabled", "true");
-    await expect(row.getByText("0", { exact: true })).toBeVisible();
+    await expect(streakOf(row)).toHaveText("0");
     await expect(viewerCell(page, title, owner.nickname, "open")).toBeAttached();
     await expectViewerTotal(page, owner.nickname, 0);
   });
