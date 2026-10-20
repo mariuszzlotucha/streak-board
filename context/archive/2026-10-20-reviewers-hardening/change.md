@@ -1,10 +1,10 @@
 ---
 change_id: reviewers-hardening
 title: Reviewers hardening after PR #225 and #226
-status: impl_reviewed
+status: archived
 created: 2026-10-20
 updated: 2026-10-20
-archived_at: null
+archived_at: 2026-10-20T17:30:00Z
 ---
 
 ## Notes
