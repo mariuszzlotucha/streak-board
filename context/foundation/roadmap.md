@@ -22,14 +22,15 @@ milestone_status: open
 
 **M-4: Siatka odznaczeń: czytelna na telefonie, z jasnym stanem i szybkim zapisem** — Status: open
 
-- **Intent:** Poprawić siatkę odznaczeń grupy (S-13), którą członkowie grupy otwierają przy każdym tasku: ma być czytelna na ekranie telefonu, pokazywać wyraźnie, co już odznaczone, co zaległe i co zostało zapisane, oraz zapisywać odznaczenie szybko i bez cichych błędów. Zakres dotyczy widoku siatki; decyzją właściciela z 2026-10-19 kamień milowy niesie też jeden wycinek jakościowy (S-23, kotwica MS-04): porządki po health checku, bez zmiany zachowania widocznego dla użytkownika. Pytanie właściciela o north star siatki (jak sprawdzić, czy działa, bez analityki) zostaje otwarte i nie blokuje tego kamienia milowego.
-- **Source materials:** opis właściciela z 2026-10-19 (kotwice MS-01 do MS-03, wybór „Czytelność na telefonie”, „Stan i informacja zwrotna”, „Szybkość i błędy zapisu”; decyzja: tylko poprawka widoku, bez pomiaru). Główne ograniczenia z istniejących dokumentów: PRD §Non-Functional Requirements (pełna używalność na ekranie smartfona), guardrail PRD (odznaczenie natychmiastowe), polityka prywatności bez analityki. Wycinek S-13 pozostaje wzorcem zakresu (`context/archive/2026-10-17-checkoff-grid/`). Dla S-23: `context/foundation/health-check.md` (2026-10-19) i `context/foundation/open-items.md` §6 (decyzja właściciela 2026-10-19: porządki z health checku wchodzą do M-4, wzorem wycinków jakościowych S-08, S-10 i S-12 w M-2).
-- **Done when:** każdy S-NN poniżej (S-20, S-21, S-22, S-23) ma status `done`.
+- **Intent:** Poprawić siatkę odznaczeń grupy (S-13), którą członkowie grupy otwierają przy każdym tasku: ma być czytelna na ekranie telefonu, pokazywać wyraźnie, co już odznaczone, co zaległe i co zostało zapisane, oraz zapisywać odznaczenie szybko i bez cichych błędów. Zakres dotyczy widoku siatki; decyzją właściciela z 2026-10-19 kamień milowy niesie też wycinek jakościowy S-23 (kotwica MS-04): porządki po health checku, a decyzją z 2026-10-20 drugi, S-24 (kotwica MS-05): dokończenie sprawdzenia recenzentów PR po zmianach z PR #225 i #226. Oba bez zmiany zachowania widocznego dla użytkownika. Pytanie właściciela o north star siatki (jak sprawdzić, czy działa, bez analityki) zostaje otwarte i nie blokuje tego kamienia milowego.
+- **Source materials:** opis właściciela z 2026-10-19 (kotwice MS-01 do MS-03, wybór „Czytelność na telefonie”, „Stan i informacja zwrotna”, „Szybkość i błędy zapisu”; decyzja: tylko poprawka widoku, bez pomiaru). Główne ograniczenia z istniejących dokumentów: PRD §Non-Functional Requirements (pełna używalność na ekranie smartfona), guardrail PRD (odznaczenie natychmiastowe), polityka prywatności bez analityki. Wycinek S-13 pozostaje wzorcem zakresu (`context/archive/2026-10-17-checkoff-grid/`). Dla S-23: `context/foundation/health-check.md` (2026-10-19) i `context/foundation/open-items.md` §6 (decyzja właściciela 2026-10-19: porządki z health checku wchodzą do M-4, wzorem wycinków jakościowych S-08, S-10 i S-12 w M-2). Dla S-24: `context/archive/2026-10-20-reviewer-output-language/eval-results.md` (eval zdania o języku, 2026-10-20) i `context/foundation/open-items.md` §8 (decyzja właściciela 2026-10-20: poprawki po obu zmianach recenzentów w jednym wycinku jakościowym M-4).
+- **Done when:** każdy S-NN poniżej (S-20, S-21, S-22, S-23, S-24) ma status `done`.
 - **Scope anchors:**
   - MS-01: siatka odznaczeń jest czytelna na ekranie telefonu: rozmiar komórek, odstępy, nazwy uczestników i okresów mieszczą się bez poziomego przewijania, a nazwisko/nick nie zasłania kolumny (opis właściciela: „Czytelność na telefonie”).
   - MS-02: stan siatki jest widoczny od razu: odznaczone, zaległe i bieżący okres są rozróżnialne bez legendy, a po kliknięciu użytkownik dostaje potwierdzenie zapisu (opis właściciela: „Stan i informacja zwrotna”).
   - MS-03: odznaczenie zapisuje się szybko, a błąd zapisu jest pokazany użytkownikowi i nie znika po cichu; po błędzie stan siatki wraca do prawdziwego (opis właściciela: „Szybkość i błędy zapisu”).
   - MS-04: (jakościowy) zależności i runtime są uporządkowane według `context/foundation/health-check.md` z 2026-10-19: żadna znana podatność z dostępną poprawką nie zostaje w drzewie zależności (jedyna w kodzie wdrażanym to `devalue`), pakiety narzędziowe nie figurują jako zależności produkcyjne, wersja Node jest przypięta, a nowe podatności trafiają do PR-ów i do CI zamiast czekać na ręczny audyt (decyzja właściciela 2026-10-19).
+  - MS-05: (jakościowy) recenzenci PR (`ai-review` i `claude-review`) są sprawdzeni tam, gdzie PR #225 i #226 zostawiły luki: eval pokrywa wejście w innym języku niż angielski, `claude-review` przeszedł dry-run na starym PR-ze po zmianie z #225, a błędy dostawcy w evalu (błąd schematu, timeout) są zmierzone, zanim ktoś uzna je za szum albo za skutek promptu (decyzja właściciela 2026-10-20).
 
 ## Vision recap
 
@@ -43,12 +44,13 @@ Grono znajomych korzystało wcześniej ze wspólnego arkusza Google, w którym r
 
 ## At a glance
 
-| ID   | Change ID               | Outcome (user can …)                                                                                                                                                                                    | Prerequisites | PRD refs                                          | Status |
-| ---- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | ------------------------------------------------- | ------ |
-| S-20 | grid-mobile-readability | czytać siatkę odznaczeń grupy na ekranie telefonu bez przewijania w poziomie i rozpoznać uczestników i okresy                                                                                           | —             | PRD §NFR (smartfon); MS-01                        | done   |
-| S-21 | grid-state-feedback     | rozpoznać bez legendy odznaczone, zaległe i bieżący okres oraz dostać potwierdzenie po odznaczeniu                                                                                                      | S-20          | PRD §Vision; MS-02                                | done   |
-| S-22 | grid-save-reliability   | odznaczyć szybko, a po błędzie zapisu zobaczyć komunikat i prawdziwy stan siatki                                                                                                                        | —             | PRD guardrail (odznaczenie natychmiastowe); MS-03 | done   |
-| S-23 | dependency-hygiene      | (jakościowy) korzystać z aplikacji budowanej z zależności bez znanych podatności z dostępną poprawką, przy narzędziach poza zależnościami produkcyjnymi, przypiętym Node i alertach bezpieczeństwa w CI | —             | — (jakościowe; MS-04)                             | done   |
+| ID   | Change ID               | Outcome (user can …)                                                                                                                                                                                               | Prerequisites | PRD refs                                          | Status |
+| ---- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------- | ------------------------------------------------- | ------ |
+| S-20 | grid-mobile-readability | czytać siatkę odznaczeń grupy na ekranie telefonu bez przewijania w poziomie i rozpoznać uczestników i okresy                                                                                                      | —             | PRD §NFR (smartfon); MS-01                        | done   |
+| S-21 | grid-state-feedback     | rozpoznać bez legendy odznaczone, zaległe i bieżący okres oraz dostać potwierdzenie po odznaczeniu                                                                                                                 | S-20          | PRD §Vision; MS-02                                | done   |
+| S-22 | grid-save-reliability   | odznaczyć szybko, a po błędzie zapisu zobaczyć komunikat i prawdziwy stan siatki                                                                                                                                   | —             | PRD guardrail (odznaczenie natychmiastowe); MS-03 | done   |
+| S-23 | dependency-hygiene      | (jakościowy) korzystać z aplikacji budowanej z zależności bez znanych podatności z dostępną poprawką, przy narzędziach poza zależnościami produkcyjnymi, przypiętym Node i alertach bezpieczeństwa w CI            | —             | — (jakościowe; MS-04)                             | done   |
+| S-24 | reviewers-hardening     | (jakościowy) polegać na tym, że recenzenci PR piszą po angielsku także przy wejściu w innym języku, że `claude-review` zachowuje swój format po zmianach z #225, a eval odróżnia błąd dostawcy od regresji promptu | —             | — (jakościowe; MS-05)                             | ready  |
 
 ## Baseline
 
@@ -126,6 +128,20 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Risk:** aktualizacja lockfile dotyka całego drzewa naraz, więc faza musi przejść pełne CI, smoke i e2e, nie tylko testy jednostkowe; `npm audit fix --force` cofnęłoby `shadcn` i `patch-package` do starych wersji głównych (zakaz w `open-items.md` §6.1); zmiana zakresu pakietów nie zmienia wdrażanego bundla, więc nie ma skutku widocznego dla użytkownika do sprawdzenia.
 - **Status:** done
 
+### S-24: Recenzenci PR sprawdzeni po zmianach z #225 i #226
+
+- **Outcome:** (jakościowy) właściciel może polegać na tym, że komentarz `ai-review` jest po angielsku także wtedy, gdy diff, tytuł albo opis PR są w innym języku (przypadek ewaluacyjny to sprawdza), że `claude-review` po zmianie z PR #225 zachowuje kształt podsumowania, nie komentuje dokumentacji i nie wstawia wzmianek (dry-run na starym PR-ze), a błędy dostawcy w evalu (`response did not match schema`, timeout 600 s) są zmierzone na `new` i `old`, zamiast zostać zapisane jako szum.
+- **Change ID:** reviewers-hardening
+- **PRD refs:** — (jakościowe; MS-05). Źródło: `context/archive/2026-10-20-reviewer-output-language/eval-results.md` (§Wnioski i §Czego nie zmierzono), lista kroków w `context/foundation/open-items.md` §8 (8.1–8.6).
+- **Prerequisites:** —
+- **Parallel with:** — (inne wycinki M-4 są `done`; zakres to `packages/code-reviewer/`, `.claude/review/` i `scripts/`, bez kodu aplikacji)
+- **Blockers:** —
+- **Unknowns:**
+  - Limit kosztu evalu na sesję: poprzednia sesja (2026-10-20) zużyła według raportów ok. 2,3 USD, według licznika klucza 2,65 USD z 3 USD. — Owner: user. Block: no — ustala się przed pierwszym płatnym przebiegiem (lekcja „Run the eval suite, old against new, before shipping a reviewer change”).
+  - Czy propozycje 8.6 (czytanie poprzedniej recenzji przy ponownym uruchomieniu `claude-review`, skrócona ścieżka dla PR-ów tylko z dokumentacją) wchodzą do wycinka? — Owner: user. Block: no — rozstrzyga `/10x-plan`.
+- **Risk:** każda zmiana `REVIEWER_INSTRUCTIONS` przechodzi eval „stary kontra nowy” (płatny, około 1 USD za przebieg 15 przypadków) i trafia na `master` we własnym PR; zmiany `.claude/review/claude-review.md` działają dopiero po scaleniu do `master`, więc dry-run idzie przed scaleniem na wersji z drzewa roboczego; kryterium `documentation` w `ai-review` zostaje bez zmian (decyzja właściciela 2026-10-20), więc ten wycinek go nie rusza.
+- **Status:** ready
+
 ## Backlog Handoff
 
 | Roadmap ID | Change ID               | Suggested issue title                                            | Ready for `/10x-plan` | Notes                                                                                                                                                                         |
@@ -134,6 +150,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 | S-21       | grid-state-feedback     | Stan siatki (odznaczone, zaległe, bieżący okres) i potwierdzenie | yes                   | Po S-20.                                                                                                                                                                      |
 | S-22       | grid-save-reliability   | Szybki zapis odznaczenia i jawny błąd                            | yes                   | Równolegle z S-20.                                                                                                                                                            |
 | S-23       | dependency-hygiene      | Czyste zależności, przypięty Node i alerty bezpieczeństwa w CI   | yes                   | Jakościowy, niezależny od S-20 do S-22. Najpierw decyzje właściciela 6.3 i 6.9 z `open-items.md`, potem Run `/10x-plan dependency-hygiene` (po `/10x-new` i `/10x-research`). |
+| S-24       | reviewers-hardening     | Recenzenci PR sprawdzeni po zmianach z #225 i #226               | yes                   | Jakościowy, niezależny od reszty M-4. Najpierw limit kosztu evalu od właściciela, potem Run `/10x-plan reviewers-hardening` (po `/10x-new` i `/10x-research`).                |
 
 ## Open Roadmap Questions
 
