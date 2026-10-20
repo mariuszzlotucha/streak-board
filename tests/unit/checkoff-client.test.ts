@@ -157,6 +157,60 @@ describe("sendCheckoff", () => {
     expect(requests).toHaveLength(1);
   });
 
+  it("asks before the second attempt and stops when the caller says no", async () => {
+    const vetoed = respondWith(() => Promise.reject(new TypeError("Failed to fetch")));
+    const no = vi.fn(() => false);
+
+    await expect(sendCheckoff("checkoff", "task-1", TODAY, vetoed.fetchImpl, 2, no)).resolves.toEqual({
+      kind: "failed",
+      reason: "network",
+    });
+    expect(vetoed.requests).toHaveLength(1);
+    expect(no).toHaveBeenCalledOnce();
+
+    let calls = 0;
+    const allowed = respondWith(() =>
+      ++calls === 1 ? Promise.reject(new TypeError("Failed to fetch")) : json(200, { ok: true, period: TODAY }),
+    );
+    const yes = vi.fn(() => true);
+
+    await expect(sendCheckoff("checkoff", "task-1", TODAY, allowed.fetchImpl, 2, yes)).resolves.toEqual({
+      kind: "saved",
+    });
+    expect(allowed.requests).toHaveLength(2);
+    expect(yes).toHaveBeenCalledOnce();
+  });
+
+  it("does not ask when there is nothing to retry", async () => {
+    const shouldRetry = vi.fn(() => true);
+    const { fetchImpl, requests } = respondWith(() => json(500, { ok: false, error: "unknown" }));
+
+    await expect(sendCheckoff("checkoff", "task-1", TODAY, fetchImpl, 2, shouldRetry)).resolves.toEqual({
+      kind: "failed",
+      reason: "status",
+    });
+    expect(requests).toHaveLength(1);
+    expect(shouldRetry).not.toHaveBeenCalled();
+  });
+
+  it("does not resend after a timeout when the caller says no", async () => {
+    vi.useFakeTimers();
+    const { fetchImpl, requests } = respondWith(
+      (init) =>
+        new Promise<Response>((_resolve, reject) => {
+          init.signal?.addEventListener("abort", () => {
+            reject(new DOMException("The operation was aborted.", "AbortError"));
+          });
+        }),
+    );
+    const result = sendCheckoff("checkoff", "task-1", TODAY, fetchImpl, 2, () => false);
+
+    await vi.advanceTimersByTimeAsync(30_000);
+
+    await expect(result).resolves.toEqual({ kind: "failed", reason: "timeout" });
+    expect(requests).toHaveLength(1);
+  });
+
   /** A fetch that never answers and rejects when its request is aborted, like a browser's. */
   function hangingFetch(answers: (call: number) => Response | undefined = () => undefined) {
     const signals: (AbortSignal | null | undefined)[] = [];

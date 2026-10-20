@@ -7,7 +7,7 @@
 - **Reviewed phases**: 1
 - **Date**: 2026-10-20
 - **Verdict**: NEEDS ATTENTION
-- **Findings**: 0 critical, 2 warnings, 3 observations
+- **Findings**: 0 critical, 3 warnings, 3 observations (F6 added from the PR review comment)
 
 ## Verdicts
 
@@ -82,9 +82,25 @@ Success criteria: the cheap Automated commands were re-run on HEAD 062fc93 (unit
 - **Fix**: Replace the prefix test with an explicit map keyed by code; the event names stay byte for byte.
 - **Decision**: FIXED via Fix now. `clientErrorEvent` reads an explicit `Record<ClientErrorCode, string>`; the eleven event names are unchanged and `client-errors.test.ts` pins all of them.
 
+### F6 — A superseded tap's retry is still sent and can overwrite a newer tap on the server
+
+- **Severity**: ⚠️ WARNING
+- **Impact**: 🏃 LOW — quick decision; fix is obvious and narrowly scoped
+- **Dimension**: Safety & Quality
+- **Location**: src/lib/checkoff-client.ts:128 (source: inline comment of `ai-review` on PR #222, repeated in the `claude-review` summary)
+- **Detail**: `tapId` drops the result of a superseded tap but cannot cancel that tap's second attempt. After a bfcache restore with tap A in flight, the user taps Undo (B); A's first attempt then fails with `network` or `timeout` and the loop resends A's `checkoff` after B's `uncheck`: the server ends checked, the row shows unchecked. Reached only after a restore with a pending request plus a new tap inside the retry window, but it is the silent divergence this slice exists to remove, and the retry is new in this slice.
+- **Fix**: `sendCheckoff` takes an optional `shouldRetry` predicate, asked before every further attempt; the island passes `() => tapId.current === tap`.
+  - Strength: A few lines, no contract change on the routes, testable with an injected predicate.
+  - Tradeoff: A first attempt that already reached the server can still land after the newer tap (as before this slice); no client-side fix exists for it.
+  - Confidence: HIGH — the interleaving is read from the code.
+  - Blind spot: The island's wiring of the predicate has no test (no DOM runner); whether browsers keep a page with an in-flight fetch in the bfcache is unverified (manual row 1.11).
+- **Decision**: FIXED via Fix now. `shouldRetry` added (default: always retry); unit tests cover a veto after `network`, a veto after `timeout`, an allowed retry and that the predicate is not asked when there is nothing to retry.
+
 ## Triage summary
 
-- Fixed: F1, F2, F3, F4, F5 (5)
+- Fixed: F1, F2, F3, F4, F5, F6 (6)
 - Skipped / accepted / lessons: none
 
 Re-verified after the fixes: unit 759 passed, lint, `astro check` 0 errors, prettier on the changed files, narrowed mutation run on `checkoff-client.ts` (96.21 %, 126 killed, 1 timeout, 5 survivors that are the same equivalent mutants as before, no runtime mutant without a test), e2e round trip 9/9 in both projects, smoke clean in 3 consecutive runs after one run with `client error endpoint rejects a JSON body -> 500` (not reproduced; an earlier smoke run right after a cold preview start also reported one failed step that was not identified).
+
+After F6: unit 762 passed, lint clean, `astro check` 0 errors, narrowed mutation 96.35 % (129 killed, 3 timeouts, the same 5 equivalent survivors, no mutant without a test), e2e round trip 9/9.

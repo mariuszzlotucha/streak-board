@@ -92,7 +92,14 @@ export default function CheckoffControl({
     publishDelta(viewerId, delta);
 
     const action = next ? "checkoff" : "uncheck";
-    const result = await sendCheckoff(action, taskId, recurrence === "once" ? null : currentPeriod);
+    const result = await sendCheckoff(
+      action,
+      taskId,
+      recurrence === "once" ? null : currentPeriod,
+      undefined,
+      undefined,
+      () => tapId.current === tap,
+    );
 
     const superseded = tapId.current !== tap;
     if (result.kind === "saved") {

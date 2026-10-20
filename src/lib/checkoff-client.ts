@@ -113,7 +113,9 @@ async function attemptCheckoff(
  * (`network`, `timeout`) is sent again at once, up to `attempts` times, each with its own 15 s abort; the result is the
  * last attempt's. Anything the server answered, or a body that is not the JSON the routes send, is final. The body is
  * form-encoded, never JSON: Astro's Origin check only guards requests with a form-like body, so a JSON body would opt
- * out of CSRF protection. `expectedPeriod` is null for a `once` task, which has no period to compare.
+ * out of CSRF protection. `expectedPeriod` is null for a `once` task, which has no period to compare. `shouldRetry` is
+ * asked before every further attempt: the island says no once a newer tap has started, because resending an old action
+ * after the newer one would leave the server in the old state.
  */
 export async function sendCheckoff(
   action: CheckoffAction,
@@ -121,10 +123,12 @@ export async function sendCheckoff(
   expectedPeriod: PeriodKey | null,
   fetchImpl: typeof fetch = fetch,
   attempts = 2,
+  shouldRetry: () => boolean = () => true,
 ): Promise<CheckoffSendResult> {
   let result = await attemptCheckoff(action, taskId, expectedPeriod, fetchImpl);
   for (let attempt = 1; attempt < attempts; attempt++) {
     if (result.kind !== "failed" || (result.reason !== "network" && result.reason !== "timeout")) break;
+    if (!shouldRetry()) break;
     result = await attemptCheckoff(action, taskId, expectedPeriod, fetchImpl);
   }
   return result;
