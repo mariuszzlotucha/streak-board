@@ -160,11 +160,14 @@ describe("resolveReviewerRoot", () => {
     expect(resolveReviewerRoot("/elsewhere/eval-old", mainRoot)).toBe("/elsewhere/eval-old");
   });
 
-  it('keeps "." and an unset path on this checkout, without asking for the main one', () => {
+  it('keeps "." in any spelling and an unset path on this checkout, without asking for the main one', () => {
     const asked = () => {
       throw new Error("the main checkout must not be asked");
     };
     expect(resolveReviewerRoot(".", asked)).toBe(resolve(REPO_ROOT));
+    for (const spelling of ["./", "./.", "", ".//"]) {
+      expect(resolveReviewerRoot(spelling, asked)).toBe(resolve(REPO_ROOT));
+    }
     expect(resolveReviewerRoot(undefined, asked)).toBe(resolve(REPO_ROOT));
   });
 

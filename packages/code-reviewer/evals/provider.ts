@@ -375,13 +375,14 @@ function mainCheckoutRoot(): string {
 }
 
 /**
- * The absolute checkout a `reviewerRoot` names: an unset one, `"."` and an
- * absolute path stay as they are (this checkout is the base), any other
- * relative path is read from the main checkout (`mainRoot()`, asked only then),
- * so `../streak-board-worktrees/eval-old` means the same from every worktree.
+ * The absolute checkout a `reviewerRoot` names: an unset one, any spelling of
+ * the current directory (`"."`, `"./"`, `""`) and an absolute path stay as they
+ * are (this checkout is the base), any other relative path is read from the
+ * main checkout (`mainRoot()`, asked only then), so
+ * `../streak-board-worktrees/eval-old` means the same from every worktree.
  */
 export function resolveReviewerRoot(configured: string | undefined, mainRoot: () => string): string {
-  if (configured === undefined || configured === "." || isAbsolute(configured)) {
+  if (configured === undefined || isAbsolute(configured) || normalize(configured).replace(/[\\/]+$/, "") === ".") {
     return resolve(REPO_ROOT, configured ?? ".");
   }
   return resolve(mainRoot(), configured);
