@@ -41,3 +41,17 @@ None.
 - Komentarze inline: narzędzie MCP nie istnieje lokalnie, więc połowa reguł z #225 (angielski i brak wzmianek w komentarzach inline, awaria komentarza inline) czeka na prawdziwy PR z etykietą `claude-review`.
 - Zachowanie przy więcej niż 8 znaleziskach: PR #226 nie ma ani jednego znaleziska.
 - Jeden przebieg na jednym PR-ze nie mierzy rozrzutu między przebiegami.
+
+## Prawdziwy przebieg na PR #229 (etykieta `claude-review`, 2026-10-20)
+
+Pierwszy prawdziwy przebieg promptu z #225 w CI, razem z komentarzem inline, którego dry-run lokalnie nie ćwiczy.
+
+| Kontrola             | Wynik                                                                                                  |
+| -------------------- | ------------------------------------------------------------------------------------------------------ |
+| Werdykt              | APPROVED, podsumowanie po angielsku.                                                                   |
+| Komentarz inline     | Jeden, LOW, `provider.ts:384` (pisownie `"."` w `reviewerRoot`), po angielsku.                         |
+| Wzmianki `@` i linki | Brak, w podsumowaniu i w komentarzu inline.                                                            |
+| Uwagi o dokumentacji | Brak, mimo że PR zmienia README-ki i folder zmiany.                                                    |
+| Poprawka             | Naprawiona w `6d55595` (każda pisownia `"."` zostaje na tym checkoucie); PR zmergowany jako `de080b2`. |
+
+Połowa reguł, której dry-run nie widział (angielski i brak wzmianek w komentarzu inline), jest więc potwierdzona na jednym prawdziwym PR-ze. Zachowanie przy więcej niż 8 znaleziskach i rozrzut między przebiegami nadal nie są zmierzone.
