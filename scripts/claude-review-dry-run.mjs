@@ -115,7 +115,8 @@ export function checkSummaryBody(body) {
   if (!lines.some((line) => /Commit [0-9a-f]{7}/.test(line))) failures.push("no `Commit <7 hex characters>` line");
   if (body.includes("<!-- ai-cr:summary -->")) failures.push("contains the ai-review marker <!-- ai-cr:summary -->");
   if (lines.some((line) => line === "EOF")) failures.push("contains a line that is only EOF");
-  // GitHub rejects a comment longer than this; the cap also keeps the regexes below from running for seconds on a huge body.
+  // GitHub rejects a comment longer than this. The cap only bounds the work below: the code-span regex is quadratic on one
+  // long run of backticks (about 3 s at the cap, 61 ms at 10,000 characters), and a real summary is a few thousand characters.
   if (body.length > MAX_COMMENT_CHARS) {
     failures.push(`longer than GitHub's ${MAX_COMMENT_CHARS}-character comment limit`);
     return failures;
