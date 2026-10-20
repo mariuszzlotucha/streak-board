@@ -8,6 +8,7 @@ import ReviewerProvider, {
   CI_DIFF_PATHSPECS,
   errorDetail,
   findMainCheckout,
+  gitEnv,
   mainCheckoutFromCommonDir,
   resolveReviewerRoot,
 } from "../../packages/code-reviewer/evals/provider";
@@ -114,20 +115,27 @@ describe("mainCheckoutFromCommonDir", () => {
   });
 });
 
-describe("findMainCheckout", () => {
-  const silenced = () => vi.spyOn(process.stderr, "write").mockImplementation(() => true);
-
-  it("takes the parent of git's common directory without a word on stderr", () => {
-    const write = silenced();
+describe("gitEnv", () => {
+  it("drops the shell's repository selection, so git reads the directory it is given", () => {
+    vi.stubEnv("GIT_DIR", "/elsewhere/.git");
+    vi.stubEnv("GIT_WORK_TREE", "/elsewhere");
     try {
-      expect(findMainCheckout(() => "/work/streak-board/.git\n")).toBe("/work/streak-board");
-      expect(write).not.toHaveBeenCalled();
+      const env = gitEnv();
+      expect(env.GIT_DIR).toBeUndefined();
+      expect(env.GIT_WORK_TREE).toBeUndefined();
+      expect(env.GIT_CONFIG_GLOBAL).toBe("/dev/null");
     } finally {
-      write.mockRestore();
+      vi.unstubAllEnvs();
     }
   });
+});
 
-  it("falls back to this checkout, saying so on stderr, when git fails or names no .git directory", () => {
+describe("findMainCheckout", () => {
+  it("takes the parent of git's common directory, without a note", () => {
+    expect(findMainCheckout(() => "/work/streak-board/.git\n")).toEqual({ root: "/work/streak-board" });
+  });
+
+  it("falls back to this checkout, with a note, when git fails or names no .git directory", () => {
     for (const runGit of [
       () => {
         throw new Error("git: command not found");
@@ -135,40 +143,43 @@ describe("findMainCheckout", () => {
       () => "/srv/streak-board.git",
       () => "",
     ]) {
-      const write = silenced();
-      try {
-        expect(resolve(findMainCheckout(runGit))).toBe(REPO_ROOT);
-        expect(write).toHaveBeenCalledOnce();
-        expect(String(write.mock.calls[0]?.[0])).toContain("did not name the main checkout");
-      } finally {
-        write.mockRestore();
-      }
+      const main = findMainCheckout(runGit);
+      expect(resolve(main.root)).toBe(REPO_ROOT);
+      expect(main.note).toContain("did not name the main checkout");
     }
   });
 });
 
 describe("resolveReviewerRoot", () => {
-  const mainRoot = () => "/work/streak-board";
+  const mainRoot = () => ({ root: "/work/streak-board" });
 
   it("reads a relative path from the main checkout", () => {
-    expect(resolveReviewerRoot("../streak-board-worktrees/eval-old", mainRoot)).toBe(
-      "/work/streak-board-worktrees/eval-old",
-    );
+    expect(resolveReviewerRoot("../streak-board-worktrees/eval-old", mainRoot)).toEqual({
+      root: "/work/streak-board-worktrees/eval-old",
+    });
+  });
+
+  it("passes the main checkout's note on with a relative path, so the result file shows the fallback", () => {
+    const fallback = () => ({ root: "/work/streak-board", note: "git did not name the main checkout" });
+    expect(resolveReviewerRoot("../streak-board-worktrees/eval-old", fallback)).toEqual({
+      root: "/work/streak-board-worktrees/eval-old",
+      note: "git did not name the main checkout",
+    });
   });
 
   it("leaves an absolute path as it is", () => {
-    expect(resolveReviewerRoot("/elsewhere/eval-old", mainRoot)).toBe("/elsewhere/eval-old");
+    expect(resolveReviewerRoot("/elsewhere/eval-old", mainRoot)).toEqual({ root: "/elsewhere/eval-old" });
   });
 
   it('keeps "." in any spelling and an unset path on this checkout, without asking for the main one', () => {
     const asked = () => {
       throw new Error("the main checkout must not be asked");
     };
-    expect(resolveReviewerRoot(".", asked)).toBe(resolve(REPO_ROOT));
+    expect(resolveReviewerRoot(".", asked)).toEqual({ root: resolve(REPO_ROOT) });
     for (const spelling of ["./", "./.", "", ".//"]) {
-      expect(resolveReviewerRoot(spelling, asked)).toBe(resolve(REPO_ROOT));
+      expect(resolveReviewerRoot(spelling, asked)).toEqual({ root: resolve(REPO_ROOT) });
     }
-    expect(resolveReviewerRoot(undefined, asked)).toBe(resolve(REPO_ROOT));
+    expect(resolveReviewerRoot(undefined, asked)).toEqual({ root: resolve(REPO_ROOT) });
   });
 
   it("is what the provider reports as reviewerRoot, with git's main checkout as the base", async () => {
@@ -408,6 +419,19 @@ describe("report.ts", () => {
     );
     expect(report).toContain('  - text head: "{\\"summary\\":\\n\\"cut"');
     expect(report).toContain('  - text tail: "off}"');
+  });
+
+  it("prints a provider's note once, with the providers it applies to, before the tables", () => {
+    const note = "git did not name the main checkout; a relative reviewerRoot was read from /work/x";
+    const row = (label: string) => ({
+      provider: { id: "file://provider.ts", label },
+      testCase: { description: "nul-hidden", metadata: { expect: "fail" } },
+      success: true,
+      response: { output: { outcome: "unreviewable" }, metadata: { reviewerRootNote: note } },
+    });
+    const report = renderReport(readRuns({ results: { results: [row("old"), row("old"), row("new")] } }));
+    expect(report).toContain(`## Provider notes\n\n- ${note} (old, new)\n\n## Cases`);
+    expect(renderReport(readRuns(resultFile))).not.toContain("## Provider notes");
   });
 
   it("refuses a file that is not a promptfoo result", () => {

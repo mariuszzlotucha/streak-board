@@ -115,19 +115,25 @@ export function checkSummaryBody(body) {
   if (!lines.some((line) => /Commit [0-9a-f]{7}/.test(line))) failures.push("no `Commit <7 hex characters>` line");
   if (body.includes("<!-- ai-cr:summary -->")) failures.push("contains the ai-review marker <!-- ai-cr:summary -->");
   if (lines.some((line) => line === "EOF")) failures.push("contains a line that is only EOF");
-  // GitHub rejects a comment longer than this; the cap also keeps the regexes below from running for seconds on a huge body.
+  // GitHub rejects a comment longer than this. The cap only bounds the work below: the fence regex is quadratic on unclosed
+  // fence openers (about 1 s at the cap for 13,000 of them), and a real summary is a few thousand characters.
   if (body.length > MAX_COMMENT_CHARS) {
     failures.push(`longer than GitHub's ${MAX_COMMENT_CHARS}-character comment limit`);
     return failures;
   }
-  // Mentions and links are checked outside code, where `@scope/pkg` and a URL are only text. A code span ends at a run of
-  // the same length and inside its paragraph, as in CommonMark, so a stray backtick does not hide the text after it. The
-  // mention lookbehind lets an e-mail address pass.
+  // Mentions and links are checked outside code, where `@scope/pkg` and a URL are only text. A fence opens at a line of
+  // three or more backticks or tildes (the lookahead keeps one long run linear); a code span ends at a run of the same
+  // length and inside its paragraph, as in CommonMark, so a stray backtick does not hide the text after it. Code becomes
+  // one space, not nothing: GitHub reads the text after a span on its own, so `foo`@octocat is a mention. The mention
+  // lookbehind lets an e-mail address pass. A link is a URL, a `www.` address, a Markdown link (inline, by reference or
+  // as a definition line), a `mailto:` or an HTML anchor.
   const prose = body
-    .replace(/^(`{3,}|~{3,}).*\n[\s\S]*?^\1[`~]*[ \t]*$/gm, "")
-    .replace(/(?<!`)(`+)(?!`)(?:(?!\n\s*\n)[\s\S])*?(?<!`)\1(?!`)/g, "");
+    .replace(/^(`{3,}(?!`)|~{3,}(?!~)).*\n[\s\S]*?^\1[`~]*[ \t]*$/gm, " ")
+    .replace(/(?<!`)(`+)(?!`)(?:(?!\n\s*\n)[\s\S])*?(?<!`)\1(?!`)/g, " ");
   if (/(?<!\w)@[A-Za-z0-9]/.test(prose)) failures.push("contains an @ mention outside code");
-  if (/https?:\/\/|\bwww\.|\]\(|<a\b/i.test(prose)) failures.push("contains a link outside code");
+  if (/https?:\/\/|\bwww\.|\]\(|\]\[|^[ \t]{0,3}\[[^\]]+\]:\s|\bmailto:|<a\b/im.test(prose)) {
+    failures.push("contains a link outside code");
+  }
   return failures;
 }
 

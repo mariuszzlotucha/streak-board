@@ -40,6 +40,8 @@ interface Run {
   error: string | undefined;
   /** What a failed run still knew of the model's answer; only the provider's `ReviewRunError` branch sets it. */
   errorDetail: ErrorDetail | undefined;
+  /** The provider's note when a relative `reviewerRoot` was read from this checkout for want of the main one. */
+  reviewerRootNote: string | undefined;
 }
 
 /** The parts of a promptfoo result row this report reads. */
@@ -50,7 +52,12 @@ interface ResultRow {
   latencyMs?: number;
   cost?: number;
   error?: string;
-  response?: { output?: unknown; error?: string; cost?: number; metadata?: { errorDetail?: ErrorDetail } };
+  response?: {
+    output?: unknown;
+    error?: string;
+    cost?: number;
+    metadata?: { reviewerRootNote?: string; errorDetail?: ErrorDetail };
+  };
 }
 
 /** The runs of a promptfoo JSON result file (`results.results[]`). */
@@ -69,6 +76,7 @@ export function readRuns(json: unknown): Run[] {
       output: typeof output === "object" && output !== null ? output : undefined,
       error: row.response?.error ?? row.error,
       errorDetail: row.response?.metadata?.errorDetail,
+      reviewerRootNote: row.response?.metadata?.reviewerRootNote,
     };
   });
 }
@@ -190,6 +198,19 @@ export function renderReport(runs: readonly Run[]): string {
   const lines: string[] = ["# Code reviewer eval report", ""];
   const byProvider = groupBy(runs, (run) => run.provider);
   const byCase = groupBy(runs, (run) => run.description);
+
+  // A provider that read its reviewer from the wrong checkout changes what every row below means.
+  const notes = new Map<string, Set<string>>();
+  for (const run of runs) {
+    if (run.reviewerRootNote !== undefined) {
+      notes.set(run.reviewerRootNote, (notes.get(run.reviewerRootNote) ?? new Set<string>()).add(run.provider));
+    }
+  }
+  if (notes.size > 0) {
+    lines.push("## Provider notes", "");
+    for (const [note, providers] of notes) lines.push(`- ${cell(note)} (${[...providers].join(", ")})`);
+    lines.push("");
+  }
 
   lines.push("## Cases", "", ...TABLE_HEADER);
   for (const [description, caseRuns] of byCase) {

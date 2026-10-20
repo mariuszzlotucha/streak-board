@@ -114,13 +114,21 @@ export interface ErrorDetail {
   causeMessage?: string;
 }
 
+/** A checkout root as resolved, with the reason when it is this checkout for want of the main one. */
+export interface ResolvedRoot {
+  /** The absolute path. */
+  root: string;
+  /** Why a relative `reviewerRoot` was read from this checkout: git named no main checkout. Absent otherwise. */
+  note?: string;
+}
+
 /** promptfoo's provider response, as far as this provider fills it. */
 export interface ProviderResponse {
   output?: CaseOutput;
   error?: string;
   cost?: number;
   tokenUsage?: ProviderTokenUsage;
-  metadata?: { model: string; reviewerRoot: string; errorDetail?: ErrorDetail };
+  metadata?: { model: string; reviewerRoot: string; reviewerRootNote?: string; errorDetail?: ErrorDetail };
 }
 
 /** A case's input as `buildCaseInput` prepared it; `cleanup` removes a temporary repository. */
@@ -135,10 +143,21 @@ export interface CaseInput {
 type ReviewerModule = typeof Reviewer;
 type LanguageModelUsage = Reviewer.ReviewRun["usage"];
 
-/** git without the user's and the system's config, with a fixed identity: a CI runner has none. */
-function gitEnv(): NodeJS.ProcessEnv {
+/** The shell's repository selection; it would point `git init` of a case's repository and the main-checkout lookup elsewhere. */
+const GIT_REPOSITORY_VARIABLES = new Set([
+  "GIT_DIR",
+  "GIT_WORK_TREE",
+  "GIT_COMMON_DIR",
+  "GIT_INDEX_FILE",
+  "GIT_OBJECT_DIRECTORY",
+  "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+  "GIT_CEILING_DIRECTORIES",
+]);
+
+/** git without the user's and the system's config and repository selection, with a fixed identity: a CI runner has none. */
+export function gitEnv(): NodeJS.ProcessEnv {
   return {
-    ...process.env,
+    ...Object.fromEntries(Object.entries(process.env).filter(([name]) => !GIT_REPOSITORY_VARIABLES.has(name))),
     GIT_CONFIG_GLOBAL: "/dev/null",
     GIT_CONFIG_NOSYSTEM: "1",
     GIT_AUTHOR_NAME: "reviewer eval",
@@ -343,26 +362,27 @@ export function mainCheckoutFromCommonDir(commonDir: string): string | undefined
 
 /**
  * The main checkout's root from the output of `runGit` (git's common directory);
- * this checkout (`REPO_ROOT`), with a line on stderr, when git fails or names no
- * `.git` directory, so a relative `reviewerRoot` is not read from the worktree unnoticed.
+ * this checkout (`REPO_ROOT`) with a `note` when git fails or names no `.git`
+ * directory, so a relative `reviewerRoot` read from the worktree is visible in
+ * the result (the provider stays free of side effects; the report prints the note).
  */
-export function findMainCheckout(runGit: () => string): string {
+export function findMainCheckout(runGit: () => string): ResolvedRoot {
   try {
     const root = mainCheckoutFromCommonDir(runGit());
-    if (root !== undefined) return root;
+    if (root !== undefined) return { root };
   } catch {
     // reported below, like an unusable answer
   }
-  process.stderr.write(
-    `eval provider: git did not name the main checkout; a relative reviewerRoot is read from ${REPO_ROOT}\n`,
-  );
-  return REPO_ROOT;
+  return {
+    root: REPO_ROOT,
+    note: `git did not name the main checkout; a relative reviewerRoot was read from ${REPO_ROOT}`,
+  };
 }
 
-let mainCheckout: string | undefined;
+let mainCheckout: ResolvedRoot | undefined;
 
 /** The main checkout's root: asked of git once and remembered. */
-function mainCheckoutRoot(): string {
+function mainCheckoutRoot(): ResolvedRoot {
   mainCheckout ??= findMainCheckout(() =>
     execFileSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], {
       cwd: REPO_ROOT,
@@ -378,14 +398,15 @@ function mainCheckoutRoot(): string {
  * The absolute checkout a `reviewerRoot` names: an unset one, any spelling of
  * the current directory (`"."`, `"./"`, `""`) and an absolute path stay as they
  * are (this checkout is the base), any other relative path is read from the
- * main checkout (`mainRoot()`, asked only then), so
+ * main checkout (`main()`, asked only then, whose `note` is passed on), so
  * `../streak-board-worktrees/eval-old` means the same from every worktree.
  */
-export function resolveReviewerRoot(configured: string | undefined, mainRoot: () => string): string {
+export function resolveReviewerRoot(configured: string | undefined, main: () => ResolvedRoot): ResolvedRoot {
   if (configured === undefined || isAbsolute(configured) || normalize(configured).replace(/[\\/]+$/, "") === ".") {
-    return resolve(REPO_ROOT, configured ?? ".");
+    return { root: resolve(REPO_ROOT, configured ?? ".") };
   }
-  return resolve(mainRoot(), configured);
+  const { root, note } = main();
+  return note === undefined ? { root: resolve(root, configured) } : { root: resolve(root, configured), note };
 }
 
 /**
@@ -410,20 +431,22 @@ export default class ReviewerProvider {
     return this.providerId;
   }
 
-  /** The checkout whose reviewer this provider runs, as an absolute path. */
-  private reviewerRoot(): string {
+  /** The checkout whose reviewer this provider runs, as an absolute path, with the note of a fallback. */
+  private reviewerRoot(): ResolvedRoot {
     return resolveReviewerRoot(this.config.reviewerRoot, mainCheckoutRoot);
   }
 
   private loadReviewer(): Promise<ReviewerModule> {
     this.reviewer ??= import(
-      pathToFileURL(join(this.reviewerRoot(), "packages/code-reviewer/index.ts")).href
+      pathToFileURL(join(this.reviewerRoot().root, "packages/code-reviewer/index.ts")).href
     ) as Promise<ReviewerModule>;
     return this.reviewer;
   }
 
   async callApi(_prompt: string, context?: CallApiContext): Promise<ProviderResponse> {
-    const reviewerRoot = this.reviewerRoot();
+    const { root: reviewerRoot, note } = this.reviewerRoot();
+    const describeRun = (model: string) =>
+      note === undefined ? { model, reviewerRoot } : { model, reviewerRoot, reviewerRootNote: note };
     let model = this.config.model ?? "unknown";
     let input: CaseInput | undefined;
     try {
@@ -431,7 +454,7 @@ export default class ReviewerProvider {
       model = this.config.model ?? reviewer.DEFAULT_REVIEWER_MODEL;
       const vars = context?.vars ?? {};
       input = await buildCaseInput(vars, REPO_ROOT);
-      const metadata = { model, reviewerRoot };
+      const metadata = describeRun(model);
       try {
         const repo = await reviewer.resolveRepo({ baseRef: input.baseRef, headRef: input.headRef }, input.cwd);
         const run = await reviewer.reviewDiff(input.diff, {
@@ -483,7 +506,7 @@ export default class ReviewerProvider {
         throw error;
       }
     } catch (error) {
-      return { error: describeError(error), metadata: { model, reviewerRoot } };
+      return { error: describeError(error), metadata: describeRun(model) };
     } finally {
       await input?.cleanup();
     }

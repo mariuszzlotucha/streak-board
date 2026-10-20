@@ -139,7 +139,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Unknowns:**
   - Limit kosztu evalu na sesję: poprzednia sesja (2026-10-20) zużyła według raportów ok. 2,3 USD, według licznika klucza 2,65 USD z 3 USD. — Owner: user. Block: no — ustala się przed pierwszym płatnym przebiegiem (lekcja „Run the eval suite, old against new, before shipping a reviewer change”).
   - Czy propozycje 8.6 (czytanie poprzedniej recenzji przy ponownym uruchomieniu `claude-review`, skrócona ścieżka dla PR-ów tylko z dokumentacją) wchodzą do wycinka? — Owner: user. Block: no — rozstrzyga `/10x-plan`.
-- **Risk:** każda zmiana `REVIEWER_INSTRUCTIONS` przechodzi eval „stary kontra nowy” (płatny, około 1 USD za przebieg 15 przypadków) i trafia na `master` we własnym PR; zmiany `.claude/review/claude-review.md` działają dopiero po scaleniu do `master`, więc dry-run idzie przed scaleniem na wersji z drzewa roboczego; kryterium `documentation` w `ai-review` zostaje bez zmian (decyzja właściciela 2026-10-20), więc ten wycinek go nie rusza.
+- **Risk:** każda zmiana `REVIEWER_INSTRUCTIONS` przechodzi eval „stary kontra nowy” (płatny; jeden przebieg `new` na 16 przypadkach kosztował 0,72 USD z oceniającym, pomiar z 2026-10-20) i trafia na `master` we własnym PR; zmiany `.claude/review/claude-review.md` działają dopiero po scaleniu do `master`, więc dry-run idzie przed scaleniem na wersji z drzewa roboczego; kryterium `documentation` w `ai-review` zostaje bez zmian (decyzja właściciela 2026-10-20), więc ten wycinek go nie rusza.
 - **Status:** in-progress
 
 ## Backlog Handoff

@@ -61,7 +61,10 @@ describe("checkSummaryBody", () => {
   it("accepts a scoped package, an e-mail address and a path in code, and rejects the same text in prose", () => {
     expect(checkSummaryBody(`${TEMPLATE}\n\nThe \`@astrojs/react\` island is unchanged.`)).toEqual([]);
     expect(
-      checkSummaryBody(`${TEMPLATE}\n\n\`\`\`json\n{ "@scope/pkg": "https://example.com", "a": "[x](y)" }\n\`\`\``),
+      // The blank line inside the block: only the fence regex removes it, a code span stays in its paragraph.
+      checkSummaryBody(
+        `${TEMPLATE}\n\n\`\`\`json\n{ "@scope/pkg": "https://example.com",\n\n  "a": "[x](y)" }\n\`\`\``,
+      ),
     ).toEqual([]);
     expect(checkSummaryBody(`${TEMPLATE}\n\nWrite to dev@example.com.`)).toEqual([]);
     expect(checkSummaryBody(`${TEMPLATE}\n\nThe @astrojs/react island is unchanged.`)).not.toEqual([]);
@@ -72,12 +75,23 @@ describe("checkSummaryBody", () => {
     expect(checkSummaryBody(`${TEMPLATE}\n\n@octocat should look at this.`)).not.toEqual([]);
   });
 
-  it("rejects a link, bare or in Markdown, whatever its case, a www address or an HTML anchor", () => {
+  it("rejects a link, bare or in Markdown, whatever its case, a www address, a reference, a mailto: or an HTML anchor", () => {
     expect(checkSummaryBody(`${TEMPLATE}\n\nSee https://example.com.`)).not.toEqual([]);
     expect(checkSummaryBody(`${TEMPLATE}\n\nSee [x](y).`)).not.toEqual([]);
     expect(checkSummaryBody(`${TEMPLATE}\n\nSee HTTPS://EXAMPLE.COM.`)).not.toEqual([]);
     expect(checkSummaryBody(`${TEMPLATE}\n\nSee www.example.com.`)).not.toEqual([]);
+    expect(checkSummaryBody(`${TEMPLATE}\n\nSee [the plan][p].\n\n[p]: /context/changes/x/plan.md`)).not.toEqual([]);
+    expect(checkSummaryBody(`${TEMPLATE}\n\nSee [the plan].\n\n[the plan]: /context/changes/x/plan.md`)).not.toEqual(
+      [],
+    );
+    expect(checkSummaryBody(`${TEMPLATE}\n\nWrite to mailto:dev@example.com.`)).not.toEqual([]);
     expect(checkSummaryBody(`${TEMPLATE}\n\nSee <a href="x">y</a>.`)).not.toEqual([]);
+  });
+
+  it("reads the text after a code span on its own, as GitHub does", () => {
+    expect(checkSummaryBody(`${TEMPLATE}\n\nSee \`provider.ts\`@octocat.`)).not.toEqual([]);
+    expect(checkSummaryBody(`${TEMPLATE}\n\nSee \`provider.ts\`www.example.com.`)).not.toEqual([]);
+    expect(checkSummaryBody(`${TEMPLATE}\n\nAn @\`x\`octocat is no mention.`)).toEqual([]);
   });
 
   it("ends a code span at a run of the same length inside its paragraph, so a stray backtick hides nothing", () => {
@@ -87,7 +101,8 @@ describe("checkSummaryBody", () => {
   });
 
   it("rejects a body over GitHub's comment limit without scanning it", () => {
-    expect(checkSummaryBody(`${TEMPLATE}\n\n${"`".repeat(MAX_COMMENT_CHARS)}`)).toEqual([
+    // Scanned, the mention after the run would be a second failure.
+    expect(checkSummaryBody(`${TEMPLATE}\n\n${"`".repeat(MAX_COMMENT_CHARS)}\n@octocat`)).toEqual([
       `longer than GitHub's ${MAX_COMMENT_CHARS}-character comment limit`,
     ]);
   });
