@@ -1480,6 +1480,16 @@ begin
   perform rls_check.expect_value(
     $q$select count(*) from information_schema.role_table_grants where table_schema = 'public' and grantee = 'anon'$q$,
     '0', 'S-12 anon holds no table-level privilege in the public schema');
+  -- service_role (the test harnesses only) holds the four DML privileges on every data table from an explicit grant
+  -- (20261020233514_grant_service_role_table_privileges.sql), not from Supabase's default privileges, which stop
+  -- covering new tables on 2026-10-30. One direction only: a database built before that date also holds the defaults.
+  foreach v_table in array array['groups', 'group_members', 'tasks', 'task_participants', 'task_checkoffs', 'nicknames', 'push_subscriptions'] loop
+    perform rls_check.expect_value(
+      -- One call per privilege: has_table_privilege with a comma list is true when any one of them is held.
+      format($q$select bool_and(has_table_privilege('service_role', %L, p))
+                from unnest(array['select', 'insert', 'update', 'delete']) as p$q$, 'public.' || v_table),
+      'true', format('service_role holds SELECT, INSERT, UPDATE and DELETE on %s', v_table));
+  end loop;
 
   perform rls_check.as_postgres();
 end;
