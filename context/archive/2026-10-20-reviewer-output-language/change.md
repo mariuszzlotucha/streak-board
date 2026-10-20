@@ -1,9 +1,10 @@
 ---
 change_id: reviewer-output-language
 title: Output language of ai-review
-status: new
+status: archived
 created: 2026-10-20
 updated: 2026-10-20
+archived_at: 2026-10-20T13:14:22Z
 ---
 
 ## Notes
