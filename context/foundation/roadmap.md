@@ -94,6 +94,7 @@ Foundations below assume these are present and do NOT re-scaffold them.
 - **Blockers:** —
 - **Unknowns:**
   - Jak oznaczyć zaległość bez mylenia z odznaczeniem (kolor z tokenów, kształt, tekst)? Owner: user. Block: no — rozstrzyga `/10x-frame`.
+  - Rozstrzygnięte 2026-10-19 w `frame.md`: potwierdzenie zapisu = istniejąca zmiana po tapnięciu (wiersz, komórka, streak); bez nowego elementu.
 - **Risk:** nowe kolory muszą przejść `node scripts/token-contrast.mjs` w obu motywach; potwierdzenie nie może zasłaniać siatki.
 - **Status:** in-progress
 

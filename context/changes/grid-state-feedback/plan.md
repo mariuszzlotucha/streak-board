@@ -220,8 +220,8 @@ None: no schema, no token, no data. The look changes on the next deploy for ever
 
 - [ ] 1.10 Owner reviews the nine committed screenshots
 - [ ] 1.11 Accessibility tree or screen reader: the current header reads with "today" / "this week" and as current; cells and row headers unchanged
-- [ ] 1.12 PR merged, `release` approved by the owner, live check passes
+- [x] 1.12 PR merged, `release` approved by the owner, live check passes
 - [ ] 1.13 Android (owner, production): marked column, green cell on tick, outlined box on undo, no sideways scroll
 - [ ] 1.14 iPhone (group member, Safari and installed app): the same checks
 - [ ] 1.15 Android with a larger system font: mark and outline readable, no page scroll
-- [ ] 1.16 Deployment-plan Phase 29 written and Phase 28's superseded rows noted, in the closing docs PR
+- [x] 1.16 Deployment-plan Phase 29 written and Phase 28's superseded rows noted, in the closing docs PR
