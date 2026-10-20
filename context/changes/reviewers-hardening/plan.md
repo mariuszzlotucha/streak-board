@@ -233,14 +233,14 @@ None: no schema, no migration, no app code. PR A and PR B touch `packages/code-r
 
 #### Automated
 
-- [x] 2.1 Unit tests pass, including the parse of the new case
-- [x] 2.2 Lint passes
-- [x] 2.3 The eval configs validate
-- [x] 2.4 No stale "15 cases" count outside the archive
+- [x] 2.1 Unit tests pass, including the parse of the new case — 31e1fa7
+- [x] 2.2 Lint passes — 31e1fa7
+- [x] 2.3 The eval configs validate — 31e1fa7
+- [x] 2.4 No stale "15 cases" count outside the archive — 31e1fa7
 
 #### Manual
 
-- [x] 2.5 The owner gave the go after the quoted estimate and the reported cost of the session is at most 1.5 USD
-- [x] 2.6 `new` passes the new case and the cases that passed on 2026-10-20, with no `length` and `pr-103` reasoning below 24,576 tokens
-- [x] 2.7 `old` was run only on the cases `new` missed and no regression is confirmed
+- [x] 2.5 The owner gave the go after the quoted estimate and the reported cost of the session is at most 1.5 USD — 31e1fa7
+- [x] 2.6 `new` passes the new case and the cases that passed on 2026-10-20, with no `length` and `pr-103` reasoning below 24,576 tokens — 31e1fa7
+- [x] 2.7 `old` was run only on the cases `new` missed and no regression is confirmed — 31e1fa7
 - [ ] 2.8 The owner reads PR B, CI is green and PR B is merged

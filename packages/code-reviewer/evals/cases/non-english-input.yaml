@@ -1,7 +1,8 @@
-# Regression guard for the output-language sentence (PR #226, after PR #222): a pull request written in
-# Japanese, with Japanese code comments and one planted streak bug, must still get an English review. It does
-# not force a "### Not verified" section, so the wider wording of that sentence is not measured here. The
-# Japanese appears only as the content of this case.
+# Check of the output-language sentence (PR #226, after PR #222): a pull request written in Japanese, with
+# Japanese code comments and one planted streak bug, must still get an English review. The grader sees the
+# summary (summary, findings, "Not verified"), not the per-criterion `rationale` fields, and the case does not
+# force a "### Not verified" section, so neither is measured here. The Japanese appears only as the content
+# of this case.
 - description: "non-english-input: Japanese pull request, streak grows although the day was not checked off"
   metadata:
     kind: bug
