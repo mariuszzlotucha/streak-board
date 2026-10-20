@@ -110,7 +110,7 @@ export interface ErrorDetail {
   textHead?: string;
   /** The last characters of the raw text; left out when the head already holds all of it. */
   textTail?: string;
-  /** The message of the error underneath: the parse or schema failure, the abort. */
+  /** The message of the error underneath (the parse or schema failure, the abort), at most `ERROR_TEXT_EXCERPT` characters: the SDK's schema message quotes the whole value. */
   causeMessage?: string;
 }
 
@@ -325,7 +325,7 @@ export function errorDetail(error: unknown): ErrorDetail | undefined {
     textChars: raw?.length,
     textHead: raw?.slice(0, ERROR_TEXT_EXCERPT),
     textTail: raw !== undefined && raw.length > ERROR_TEXT_EXCERPT ? raw.slice(-ERROR_TEXT_EXCERPT) : undefined,
-    causeMessage: errorMessage(source ? cause : wrapped),
+    causeMessage: errorMessage(source ? cause : wrapped)?.slice(0, ERROR_TEXT_EXCERPT),
   }).filter(([, value]) => value !== undefined);
   return known.length > 0 ? Object.fromEntries(known) : undefined;
 }
@@ -341,23 +341,36 @@ export function mainCheckoutFromCommonDir(commonDir: string): string | undefined
   return isAbsolute(path) && basename(path) === ".git" ? dirname(path) : undefined;
 }
 
+/**
+ * The main checkout's root from the output of `runGit` (git's common directory);
+ * this checkout (`REPO_ROOT`), with a line on stderr, when git fails or names no
+ * `.git` directory, so a relative `reviewerRoot` is not read from the worktree unnoticed.
+ */
+export function findMainCheckout(runGit: () => string): string {
+  try {
+    const root = mainCheckoutFromCommonDir(runGit());
+    if (root !== undefined) return root;
+  } catch {
+    // reported below, like an unusable answer
+  }
+  process.stderr.write(
+    `eval provider: git did not name the main checkout; a relative reviewerRoot is read from ${REPO_ROOT}\n`,
+  );
+  return REPO_ROOT;
+}
+
 let mainCheckout: string | undefined;
 
-/** The main checkout's root: asked of git once and remembered; this checkout (`REPO_ROOT`) when git cannot tell. */
+/** The main checkout's root: asked of git once and remembered. */
 function mainCheckoutRoot(): string {
-  mainCheckout ??= (() => {
-    try {
-      const commonDir = execFileSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], {
-        cwd: REPO_ROOT,
-        env: gitEnv(),
-        encoding: "utf8",
-        stdio: ["ignore", "pipe", "ignore"],
-      });
-      return mainCheckoutFromCommonDir(commonDir) ?? REPO_ROOT;
-    } catch {
-      return REPO_ROOT;
-    }
-  })();
+  mainCheckout ??= findMainCheckout(() =>
+    execFileSync("git", ["rev-parse", "--path-format=absolute", "--git-common-dir"], {
+      cwd: REPO_ROOT,
+      env: gitEnv(),
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }),
+  );
   return mainCheckout;
 }
 

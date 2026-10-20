@@ -1,12 +1,13 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { parse } from "yaml";
 import ReviewerProvider, {
   buildCaseInput,
   CI_DIFF_PATHSPECS,
   errorDetail,
+  findMainCheckout,
   mainCheckoutFromCommonDir,
   resolveReviewerRoot,
 } from "../../packages/code-reviewer/evals/provider";
@@ -113,6 +114,39 @@ describe("mainCheckoutFromCommonDir", () => {
   });
 });
 
+describe("findMainCheckout", () => {
+  const silenced = () => vi.spyOn(process.stderr, "write").mockImplementation(() => true);
+
+  it("takes the parent of git's common directory without a word on stderr", () => {
+    const write = silenced();
+    try {
+      expect(findMainCheckout(() => "/work/streak-board/.git\n")).toBe("/work/streak-board");
+      expect(write).not.toHaveBeenCalled();
+    } finally {
+      write.mockRestore();
+    }
+  });
+
+  it("falls back to this checkout, saying so on stderr, when git fails or names no .git directory", () => {
+    for (const runGit of [
+      () => {
+        throw new Error("git: command not found");
+      },
+      () => "/srv/streak-board.git",
+      () => "",
+    ]) {
+      const write = silenced();
+      try {
+        expect(resolve(findMainCheckout(runGit))).toBe(REPO_ROOT);
+        expect(write).toHaveBeenCalledOnce();
+        expect(String(write.mock.calls[0]?.[0])).toContain("did not name the main checkout");
+      } finally {
+        write.mockRestore();
+      }
+    }
+  });
+});
+
 describe("resolveReviewerRoot", () => {
   const mainRoot = () => "/work/streak-board";
 
@@ -186,6 +220,13 @@ describe("errorDetail", () => {
     expect(errorDetail(new Error("boom"))).toBeUndefined();
     expect(errorDetail("boom")).toBeUndefined();
     expect(errorDetail(undefined)).toBeUndefined();
+  });
+
+  it("cuts a cause message that quotes the whole model output to 400 characters", () => {
+    const cause = new Error(`Type validation failed: Value: ${JSON.stringify({ verdict: "x".repeat(2000) })}`);
+    const detail = errorDetail(wrap(noObject({ text: "{}", cause })));
+    expect(detail?.causeMessage).toHaveLength(400);
+    expect(detail?.causeMessage?.startsWith("Type validation failed: Value: ")).toBe(true);
   });
 
   it("gives the message of the cause of a wrapped error that is no schema error", () => {

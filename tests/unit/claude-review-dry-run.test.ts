@@ -8,6 +8,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import {
   GH_WRAPPER,
+  MAX_COMMENT_CHARS,
   checkSummaryBody,
   classifyDenials,
   mergeDenials,
@@ -71,9 +72,24 @@ describe("checkSummaryBody", () => {
     expect(checkSummaryBody(`${TEMPLATE}\n\n@octocat should look at this.`)).not.toEqual([]);
   });
 
-  it("rejects a link, bare or in Markdown", () => {
+  it("rejects a link, bare or in Markdown, whatever its case, a www address or an HTML anchor", () => {
     expect(checkSummaryBody(`${TEMPLATE}\n\nSee https://example.com.`)).not.toEqual([]);
     expect(checkSummaryBody(`${TEMPLATE}\n\nSee [x](y).`)).not.toEqual([]);
+    expect(checkSummaryBody(`${TEMPLATE}\n\nSee HTTPS://EXAMPLE.COM.`)).not.toEqual([]);
+    expect(checkSummaryBody(`${TEMPLATE}\n\nSee www.example.com.`)).not.toEqual([]);
+    expect(checkSummaryBody(`${TEMPLATE}\n\nSee <a href="x">y</a>.`)).not.toEqual([]);
+  });
+
+  it("ends a code span at a run of the same length inside its paragraph, so a stray backtick hides nothing", () => {
+    expect(checkSummaryBody(`${TEMPLATE}\n\nUse \` here. @octocat please.\n\nAnother \` stray`)).not.toEqual([]);
+    expect(checkSummaryBody(`${TEMPLATE}\n\na \`\`\` b @bob \` c`)).not.toEqual([]);
+    expect(checkSummaryBody(`${TEMPLATE}\n\nThe \`\`a \` b\`\` span and \`@scope/pkg\`.`)).toEqual([]);
+  });
+
+  it("rejects a body over GitHub's comment limit without scanning it", () => {
+    expect(checkSummaryBody(`${TEMPLATE}\n\n${"`".repeat(MAX_COMMENT_CHARS)}`)).toEqual([
+      `longer than GitHub's ${MAX_COMMENT_CHARS}-character comment limit`,
+    ]);
   });
 });
 
