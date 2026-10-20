@@ -242,7 +242,7 @@ None. No schema, no data, no new secret. Rollback is a code rollback (`npx wrang
 
 #### Manual
 
-- [ ] 2.1 PR merged, `release` approved, live check and the `production` tag at the merge commit
+- [x] 2.1 PR merged, `release` approved, live check and the `production` tag at the merge commit — fe46c37
 - [ ] 2.2 Channel on production: a posted `checkoff_timeout` answers 204 and reaches Sentry, an unknown code answers 400
 - [ ] 2.3 Android airplane mode: alert and rollback; network back: the save lands and stays
 - [ ] 2.4 Deployment-plan Phase 30 written in the closing docs PR
